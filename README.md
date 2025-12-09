@@ -51,20 +51,9 @@ Planned issues include:
 - **Chore: Create Initial Architecture Diagram (v0.1)**  
   → Issue [#5](https://github.com/asingh0725/ai-agronomist-advisor/issues/5)
 
-## 🧱 Architecture (In Progress)
+## 🧱 Architecture
 
-A full architecture diagram is being developed and will live under: /docs/architecture/architecture-v0.png
-
-The initial architecture will represent:
-
-- Next.js client  
-- NestJS API  
-- Ingestion pipeline  
-- Retrieval (pgvector)  
-- LLM wrapper (structured JSON outputs + guardrails)  
-- Logging + persistence  
-
-Planned Issue: **Chore: Add Architecture Diagram (v0.1)** → #[TODO_ISSUE_ID]
+![Architecture Diagram](docs/architecture-diagram.png)
 
 ---
 
