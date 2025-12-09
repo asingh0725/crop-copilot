@@ -37,19 +37,19 @@ Development is tracked using **GitHub Issues** following feature-story style spe
 Planned issues include:
 
 - **Feature: Soil Test → Recommendation Flow (MVP)**  
-  → Issue [#1](https://github.com/asingh0725/ai-agronomist-advisor/issues/1)  
+  - [ ] Issue [#1](https://github.com/asingh0725/ai-agronomist-advisor/issues/1)  
 
 - **Feature: Document Ingestion → Chunking → Embeddings → pgvector**  
-  → Issue [#2](https://github.com/asingh0725/ai-agronomist-advisor/issues/2)  
+  - [ ] Issue [#2](https://github.com/asingh0725/ai-agronomist-advisor/issues/2)  
 
 - **Feature: Retrieved Context Viewer (Transparency UI)**  
-  → Issue [#3](https://github.com/asingh0725/ai-agronomist-advisor/issues/3)  
+  - [ ] Issue [#3](https://github.com/asingh0725/ai-agronomist-advisor/issues/3)  
 
 - **Feature: LLM Output Guardrails + Zod Validation + Retry Logic**  
-  → Issue [#4](https://github.com/asingh0725/ai-agronomist-advisor/issues/4)  
+  - [ ] Issue [#4](https://github.com/asingh0725/ai-agronomist-advisor/issues/4)  
 
 - **Chore: Create Initial Architecture Diagram (v0.1)**  
-  → Issue [#5](https://github.com/asingh0725/ai-agronomist-advisor/issues/5)
+  - [x] Issue [#5](https://github.com/asingh0725/ai-agronomist-advisor/issues/5)
 
 ## 🧱 Architecture
 
