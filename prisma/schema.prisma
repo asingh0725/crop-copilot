@@ -1,0 +1,146 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  directUrl  = env("DIRECT_URL")
+  extensions = [vector]
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  profile         UserProfile?
+  inputs          Input[]
+  recommendations Recommendation[]
+  feedback        Feedback[]
+}
+
+model UserProfile {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  location        String?
+  farmSize        String?
+  cropsOfInterest String[]
+  experienceLevel String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model Input {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type        String
+  imageUrl    String?
+  description String?
+  labData     Json?
+  createdAt   DateTime @default(now())
+
+  recommendations Recommendation[]
+}
+
+model Recommendation {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  inputId     String
+  input       Input    @relation(fields: [inputId], references: [id], onDelete: Cascade)
+  diagnosis   String
+  actions     Json
+  confidence  Float
+  createdAt   DateTime @default(now())
+
+  feedback Feedback[]
+  sources  RecommendationSource[]
+}
+
+model Feedback {
+  id               String         @id @default(cuid())
+  userId           String
+  user             User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  recommendationId String
+  recommendation   Recommendation @relation(fields: [recommendationId], references: [id], onDelete: Cascade)
+  helpful          Boolean?
+  accuracyRating   Int?
+  outcome          String?
+  comments         String?
+  createdAt        DateTime       @default(now())
+}
+
+model Source {
+  id          String   @id @default(cuid())
+  title       String
+  url         String?
+  sourceType  String
+  institution String?
+  createdAt   DateTime @default(now())
+
+  textChunks  TextChunk[]
+  imageChunks ImageChunk[]
+}
+
+model TextChunk {
+  id        String                       @id @default(cuid())
+  sourceId  String
+  source    Source                       @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+  content   String
+  embedding Unsupported("vector(1536)")?
+  metadata  Json?
+  createdAt DateTime                     @default(now())
+
+  recommendations RecommendationSource[]
+}
+
+model ImageChunk {
+  id        String                      @id @default(cuid())
+  sourceId  String
+  source    Source                      @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+  imageUrl  String
+  caption   String?
+  embedding Unsupported("vector(512)")?
+  metadata  Json?
+  createdAt DateTime                    @default(now())
+}
+
+model RecommendationSource {
+  id               String         @id @default(cuid())
+  recommendationId String
+  recommendation   Recommendation @relation(fields: [recommendationId], references: [id], onDelete: Cascade)
+  textChunkId      String?
+  textChunk        TextChunk?     @relation(fields: [textChunkId], references: [id])
+  relevanceScore   Float?
+}
+
+model Product {
+  id              String   @id @default(cuid())
+  name            String
+  brand           String
+  type            String
+  description     String?
+  applicationRate String?
+  targetCrops     String[]
+  retailerLinks   Json?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  prices ProductPrice[]
+}
+
+model ProductPrice {
+  id        String   @id @default(cuid())
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  retailer  String
+  price     Float
+  unit      String
+  url       String?
+  fetchedAt DateTime @default(now())
+}
