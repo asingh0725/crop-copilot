@@ -1,5 +1,7 @@
 "use client";
 
+import { Toaster } from "sonner";
+
 /**
  * Providers Component
  *
@@ -12,5 +14,10 @@
  */
 
 export function Providers({ children }: { children: React.ReactNode }) {
-  return <>{children}</>;
+  return (
+    <>
+      {children}
+      <Toaster position="top-right" richColors />
+    </>
+  );
 }
