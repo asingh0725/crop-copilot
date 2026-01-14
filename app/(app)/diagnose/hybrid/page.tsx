@@ -49,15 +49,15 @@ export default function HybridDiagnosePage() {
   const [imageFile, setImageFile] = useState<File | null>(null)
   const [imageError, setImageError] = useState<string>('')
 
-  const form = useForm<HybridDiagnoseInput>({
+  const form = useForm({
     resolver: zodResolver(hybridDiagnoseSchema),
     defaultValues: {
       description: '',
-      ph: undefined,
-      organicMatter: undefined,
-      nitrogen: undefined,
-      phosphorus: undefined,
-      potassium: undefined,
+      ph: '',
+      organicMatter: '',
+      nitrogen: '',
+      phosphorus: '',
+      potassium: '',
       crop: '',
       growthStage: '',
       locationState: '',
@@ -91,8 +91,8 @@ export default function HybridDiagnosePage() {
     fetchProfile()
   }, [form])
 
-  async function onSubmit(data: HybridDiagnoseInput) {
-    // Check if at least one data source is provided
+  async function onSubmit(data: any) {
+    // Check if at least one data source is provided (not empty string)
     const hasImage = imageFile !== null
     const hasLabData = [
       data.ph,
@@ -100,7 +100,7 @@ export default function HybridDiagnosePage() {
       data.nitrogen,
       data.phosphorus,
       data.potassium,
-    ].some(value => value !== undefined)
+    ].some(value => value !== undefined && value !== '')
 
     if (!hasImage && !hasLabData) {
       toast.error('Please provide either a photo or lab data')
@@ -111,9 +111,19 @@ export default function HybridDiagnosePage() {
     setImageError('')
 
     try {
-      // Log the form data
-      const submissionData: any = {
+      // Convert string numbers to actual numbers for API submission
+      const numericData = {
         ...data,
+        ph: data.ph ? parseFloat(data.ph) : undefined,
+        organicMatter: data.organicMatter ? parseFloat(data.organicMatter) : undefined,
+        nitrogen: data.nitrogen ? parseFloat(data.nitrogen) : undefined,
+        phosphorus: data.phosphorus ? parseFloat(data.phosphorus) : undefined,
+        potassium: data.potassium ? parseFloat(data.potassium) : undefined,
+      }
+
+      // Log the form data
+      const submissionData = {
+        ...numericData,
         sections: {
           photo: hasImage ? { hasImage: true, imageFile: imageFile?.name } : null,
           lab: hasLabData ? 'macronutrients' : null,
@@ -143,7 +153,7 @@ export default function HybridDiagnosePage() {
     form.watch('nitrogen'),
     form.watch('phosphorus'),
     form.watch('potassium'),
-  ].some(value => value !== undefined)
+  ].some(value => value !== undefined && value !== '')
 
   if (isFetching) {
     return (
