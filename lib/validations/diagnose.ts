@@ -78,7 +78,7 @@ export const hybridDiagnoseSchema = z.object({
   // Photo section (optional)
   description: z.string().max(1000).optional(),
 
-  // Lab section - just macronutrients (all optional, stored as strings)
+  // Lab section - just macronutrients (all optional)
   ph: optionalStringNumber(0, 14),
   organicMatter: optionalStringNumber(0, 100),
   nitrogen: optionalStringNumber(0),
