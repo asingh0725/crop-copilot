@@ -1,28 +1,28 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
-import Link from "next/link"
-import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { ChevronRight, CheckCircle2, Circle } from "lucide-react"
-import { toast } from "sonner"
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { ChevronRight, CheckCircle2, Circle } from "lucide-react";
+import { toast } from "sonner";
 import {
   hybridDiagnoseSchema,
   type HybridDiagnoseInput,
   GROWTH_STAGES,
-} from "@/lib/validations/diagnose"
-import { CROP_OPTIONS, LOCATIONS } from "@/lib/constants/profile"
-import { ImageUploadZone } from "@/components/diagnose/image-upload-zone"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
+} from "@/lib/validations/diagnose";
+import { CROP_OPTIONS, LOCATIONS } from "@/lib/constants/profile";
+import { ImageUploadZone } from "@/components/diagnose/image-upload-zone";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card"
+} from "@/components/ui/card";
 import {
   Form,
   FormControl,
@@ -31,137 +31,166 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form"
+} from "@/components/ui/form";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
-import { Textarea } from "@/components/ui/textarea"
-import { Input } from "@/components/ui/input"
+} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 
 export default function HybridDiagnosePage() {
-  const router = useRouter()
-  const [isLoading, setIsLoading] = useState(false)
-  const [isFetching, setIsFetching] = useState(true)
-  const [imageFile, setImageFile] = useState<File | null>(null)
-  const [imageError, setImageError] = useState<string>('')
+  const router = useRouter();
+  const [isLoading, setIsLoading] = useState(false);
+  const [isFetching, setIsFetching] = useState(true);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imageError, setImageError] = useState<string>("");
 
-  const form = useForm<HybridDiagnoseInput>({
+  const form = useForm({
     resolver: zodResolver(hybridDiagnoseSchema),
     defaultValues: {
-      description: '',
-      ph: undefined,
-      organicMatter: undefined,
-      nitrogen: undefined,
-      phosphorus: undefined,
-      potassium: undefined,
-      crop: '',
-      growthStage: '',
-      locationState: '',
-      locationCountry: 'US',
+      description: "",
+      ph: "",
+      organicMatter: "",
+      nitrogen: "",
+      phosphorus: "",
+      potassium: "",
+      crop: "",
+      growthStage: "",
+      locationState: "",
+      locationCountry: "US",
     },
-  })
+  });
 
-  const description = form.watch('description')
+  const description = form.watch("description");
 
   useEffect(() => {
     async function fetchProfile() {
       try {
-        const response = await fetch('/api/profile')
+        const response = await fetch("/api/profile");
         if (response.ok) {
-          const { profile } = await response.json()
+          const { profile } = await response.json();
           if (profile?.location) {
-            const location = LOCATIONS.find(loc => loc.value === profile.location)
+            const location = LOCATIONS.find(
+              (loc) => loc.value === profile.location
+            );
             if (location) {
-              form.setValue('locationState', location.value)
-              form.setValue('locationCountry', location.country)
+              form.setValue("locationState", location.value);
+              form.setValue("locationCountry", location.country);
             }
           }
         }
       } catch (error) {
-        console.error('Error fetching profile:', error)
+        console.error("Error fetching profile:", error);
       } finally {
-        setIsFetching(false)
+        setIsFetching(false);
       }
     }
 
-    fetchProfile()
-  }, [form])
+    fetchProfile();
+  }, [form]);
 
-  async function onSubmit(data: HybridDiagnoseInput) {
-    // Check if at least one data source is provided
-    const hasImage = imageFile !== null
+  async function onSubmit(data: any) {
+    // Check if at least one data source is provided (not empty string)
+    const hasImage = imageFile !== null;
     const hasLabData = [
       data.ph,
       data.organicMatter,
       data.nitrogen,
       data.phosphorus,
       data.potassium,
-    ].some(value => value !== undefined)
+    ].some((value) => value !== undefined && value !== "");
 
     if (!hasImage && !hasLabData) {
-      toast.error('Please provide either a photo or lab data')
-      return
+      toast.error("Please provide either a photo or lab data");
+      return;
     }
 
-    setIsLoading(true)
-    setImageError('')
+    setIsLoading(true);
+    setImageError("");
 
     try {
-      // Log the form data
-      const submissionData: any = {
+      // Convert string numbers to actual numbers for API submission
+      const numericData = {
         ...data,
+        ph: data.ph ? parseFloat(data.ph) : undefined,
+        organicMatter: data.organicMatter
+          ? parseFloat(data.organicMatter)
+          : undefined,
+        nitrogen: data.nitrogen ? parseFloat(data.nitrogen) : undefined,
+        phosphorus: data.phosphorus ? parseFloat(data.phosphorus) : undefined,
+        potassium: data.potassium ? parseFloat(data.potassium) : undefined,
+      };
+
+      // Log the form data
+      const submissionData = {
+        ...numericData,
         sections: {
-          photo: hasImage ? { hasImage: true, imageFile: imageFile?.name } : null,
-          lab: hasLabData ? 'macronutrients' : null,
-        }
-      }
+          photo: hasImage
+            ? { hasImage: true, imageFile: imageFile?.name }
+            : null,
+          lab: hasLabData ? "macronutrients" : null,
+        },
+      };
 
-      console.log('Hybrid Diagnosis Submission:', submissionData)
+      console.log("Hybrid Diagnosis Submission:", submissionData);
 
-      toast.success('Hybrid analysis submitted! (Demo mode)')
+      toast.success("Hybrid analysis submitted! (Demo mode)");
 
       // In production, you would upload the image and submit the data here
       // await uploadImage(imageFile)
       // await submitHybridDiagnosis(data)
     } catch (error) {
-      console.error('Error submitting hybrid diagnosis:', error)
-      toast.error('Failed to submit analysis')
+      console.error("Error submitting hybrid diagnosis:", error);
+      toast.error("Failed to submit analysis");
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
   }
 
   // Check section completion
-  const photoSectionComplete = imageFile !== null || (description && description.length >= 20)
-  const labSectionComplete = [
-    form.watch('ph'),
-    form.watch('organicMatter'),
-    form.watch('nitrogen'),
-    form.watch('phosphorus'),
-    form.watch('potassium'),
-  ].some(value => value !== undefined)
+  const photoSectionComplete =
+    imageFile !== null || (description && description.length >= 20);
+  const labSectionComplete =
+    [
+      form.watch("ph"),
+      form.watch("organicMatter"),
+      form.watch("nitrogen"),
+      form.watch("phosphorus"),
+      form.watch("potassium"),
+    ].some((value) => value !== undefined && value !== "") &&
+    !form.formState.errors.ph &&
+    !form.formState.errors.organicMatter &&
+    !form.formState.errors.nitrogen &&
+    !form.formState.errors.phosphorus &&
+    !form.formState.errors.potassium;
 
   if (isFetching) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex min-h-screen items-center justify-center">
         <p className="text-muted-foreground">Loading...</p>
       </div>
-    )
+    );
   }
 
   return (
     <div className="container max-w-4xl py-8">
       {/* Breadcrumb */}
-      <div className="flex items-center gap-2 text-sm text-muted-foreground mb-6">
-        <Link href="/dashboard" className="hover:text-foreground transition-colors">
+      <div className="mb-6 flex items-center gap-2 text-sm text-muted-foreground">
+        <Link
+          href="/dashboard"
+          className="transition-colors hover:text-foreground"
+        >
           Dashboard
         </Link>
         <ChevronRight className="h-4 w-4" />
-        <Link href="/diagnose" className="hover:text-foreground transition-colors">
+        <Link
+          href="/diagnose"
+          className="transition-colors hover:text-foreground"
+        >
           Diagnose
         </Link>
         <ChevronRight className="h-4 w-4" />
@@ -170,7 +199,7 @@ export default function HybridDiagnosePage() {
 
       {/* Header */}
       <div className="mb-8">
-        <div className="flex items-center gap-3 mb-2">
+        <div className="mb-2 flex items-center gap-3">
           <h1 className="text-3xl font-bold tracking-tight">
             Hybrid Diagnosis
           </h1>
@@ -179,7 +208,8 @@ export default function HybridDiagnosePage() {
           </Badge>
         </div>
         <p className="text-muted-foreground">
-          Combine visual observation with soil test data for comprehensive analysis
+          Combine visual observation with soil test data for comprehensive
+          analysis
         </p>
       </div>
 
@@ -199,7 +229,8 @@ export default function HybridDiagnosePage() {
                     Photo + Description
                   </CardTitle>
                   <CardDescription>
-                    Upload a field photo and describe what you&apos;re observing (optional)
+                    Upload a field photo and describe what you&apos;re observing
+                    (optional)
                   </CardDescription>
                 </div>
               </div>
@@ -265,7 +296,12 @@ export default function HybridDiagnosePage() {
                     <FormItem>
                       <FormLabel>pH</FormLabel>
                       <FormControl>
-                        <Input type="number" step="0.1" placeholder="0-14" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value ? parseFloat(e.target.value) : undefined)} />
+                        <Input
+                          type="number"
+                          step="0.1"
+                          placeholder="0-14"
+                          {...field}
+                        />
                       </FormControl>
                       <FormDescription>pH scale</FormDescription>
                       <FormMessage />
@@ -280,7 +316,12 @@ export default function HybridDiagnosePage() {
                     <FormItem>
                       <FormLabel>Organic Matter</FormLabel>
                       <FormControl>
-                        <Input type="number" step="0.1" placeholder="0-100" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value ? parseFloat(e.target.value) : undefined)} />
+                        <Input
+                          type="number"
+                          step="0.1"
+                          placeholder="0-100"
+                          {...field}
+                        />
                       </FormControl>
                       <FormDescription>%</FormDescription>
                       <FormMessage />
@@ -295,7 +336,12 @@ export default function HybridDiagnosePage() {
                     <FormItem>
                       <FormLabel>Nitrogen (N)</FormLabel>
                       <FormControl>
-                        <Input type="number" step="0.1" placeholder="ppm" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value ? parseFloat(e.target.value) : undefined)} />
+                        <Input
+                          type="number"
+                          step="0.1"
+                          placeholder="ppm"
+                          {...field}
+                        />
                       </FormControl>
                       <FormDescription>ppm</FormDescription>
                       <FormMessage />
@@ -310,7 +356,12 @@ export default function HybridDiagnosePage() {
                     <FormItem>
                       <FormLabel>Phosphorus (P)</FormLabel>
                       <FormControl>
-                        <Input type="number" step="0.1" placeholder="ppm" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value ? parseFloat(e.target.value) : undefined)} />
+                        <Input
+                          type="number"
+                          step="0.1"
+                          placeholder="ppm"
+                          {...field}
+                        />
                       </FormControl>
                       <FormDescription>ppm</FormDescription>
                       <FormMessage />
@@ -325,7 +376,12 @@ export default function HybridDiagnosePage() {
                     <FormItem>
                       <FormLabel>Potassium (K)</FormLabel>
                       <FormControl>
-                        <Input type="number" step="0.1" placeholder="ppm" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value ? parseFloat(e.target.value) : undefined)} />
+                        <Input
+                          type="number"
+                          step="0.1"
+                          placeholder="ppm"
+                          {...field}
+                        />
                       </FormControl>
                       <FormDescription>ppm</FormDescription>
                       <FormMessage />
@@ -405,7 +461,10 @@ export default function HybridDiagnosePage() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Country *</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value}
+                      >
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Select country" />
@@ -427,7 +486,10 @@ export default function HybridDiagnosePage() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>State/Province *</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value}
+                      >
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Select location" />
@@ -435,9 +497,13 @@ export default function HybridDiagnosePage() {
                         </FormControl>
                         <SelectContent className="max-h-[300px]">
                           {LOCATIONS.filter(
-                            loc => loc.country === form.watch('locationCountry')
+                            (loc) =>
+                              loc.country === form.watch("locationCountry")
                           ).map((location) => (
-                            <SelectItem key={location.value} value={location.value}>
+                            <SelectItem
+                              key={location.value}
+                              value={location.value}
+                            >
                               {location.label}
                             </SelectItem>
                           ))}
@@ -468,5 +534,5 @@ export default function HybridDiagnosePage() {
         </form>
       </Form>
     </div>
-  )
+  );
 }
