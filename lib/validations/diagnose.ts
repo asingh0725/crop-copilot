@@ -1,31 +1,34 @@
-import { z } from 'zod'
+import { z } from "zod";
 
 export const GROWTH_STAGES = [
-  'Seedling',
-  'Vegetative',
-  'Flowering',
-  'Fruiting',
-  'Mature',
-  'Harvest',
-] as const
+  "Seedling",
+  "Vegetative",
+  "Flowering",
+  "Fruiting",
+  "Mature",
+  "Harvest",
+];
 
 export const photoDiagnoseSchema = z.object({
-  description: z.string().min(20, 'Please provide at least 20 characters').max(1000),
-  crop: z.string().min(1, 'Please select a crop'),
-  growthStage: z.string().min(1, 'Please select a growth stage'),
-  locationState: z.string().min(1, 'Please select a state/province'),
-  locationCountry: z.string().min(1, 'Please select a country'),
-})
+  description: z
+    .string()
+    .min(20, "Please provide at least 20 characters")
+    .max(1000),
+  crop: z.string().min(1, "Please select a crop"),
+  growthStage: z.string().min(1, "Please select a growth stage"),
+  locationState: z.string().min(1, "Please select a state/province"),
+  locationCountry: z.string().min(1, "Please select a country"),
+});
 
-export type PhotoDiagnoseInput = z.infer<typeof photoDiagnoseSchema>
+export type PhotoDiagnoseInput = z.infer<typeof photoDiagnoseSchema>;
 
 // Helper for optional string number fields with validation
 const optionalStringNumber = (min = 0, max?: number) => {
   let schema = z.string().refine(
     (val) => {
-      if (val === '') return true
-      const num = parseFloat(val)
-      return !isNaN(num) && num >= min && (max === undefined || num <= max)
+      if (val === "") return true;
+      const num = parseFloat(val);
+      return !isNaN(num) && num >= min && (max === undefined || num <= max);
     },
     {
       message:
@@ -33,9 +36,9 @@ const optionalStringNumber = (min = 0, max?: number) => {
           ? `Must be a number between ${min} and ${max}`
           : `Must be a number >= ${min}`,
     }
-  )
-  return schema.optional()
-}
+  );
+  return schema.optional();
+};
 
 export const labReportSchema = z.object({
   // Basic Info
@@ -67,9 +70,29 @@ export const labReportSchema = z.object({
   baseSaturation: optionalStringNumber(0, 100),
 
   // Required context
-  crop: z.string().min(1, 'Please select a crop'),
+  crop: z.string().min(1, "Please select a crop"),
   locationState: z.string().min(1),
   locationCountry: z.string().min(1),
-})
+});
 
-export type LabReportInput = z.infer<typeof labReportSchema>
+export type LabReportInput = z.infer<typeof labReportSchema>;
+
+export const hybridDiagnoseSchema = z.object({
+  // Photo section (optional)
+  description: z.string().max(1000).optional(),
+
+  // Lab section - just macronutrients (all optional)
+  ph: optionalStringNumber(0, 14),
+  organicMatter: optionalStringNumber(0, 100),
+  nitrogen: optionalStringNumber(0),
+  phosphorus: optionalStringNumber(0),
+  potassium: optionalStringNumber(0),
+
+  // Shared required fields
+  crop: z.string().min(1, "Please select a crop"),
+  growthStage: z.string().min(1, "Please select a growth stage"),
+  locationState: z.string().min(1),
+  locationCountry: z.string().min(1),
+});
+
+export type HybridDiagnoseInput = z.infer<typeof hybridDiagnoseSchema>;
