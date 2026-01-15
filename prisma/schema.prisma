@@ -42,6 +42,9 @@ model Input {
   imageUrl    String?
   description String?
   labData     Json?
+  location    String?
+  crop        String?
+  season      String?
   createdAt   DateTime @default(now())
 
   recommendations Recommendation[]
