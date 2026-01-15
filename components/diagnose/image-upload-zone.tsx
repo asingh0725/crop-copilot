@@ -127,13 +127,14 @@ export function ImageUploadZone({ value, onChange, error }: ImageUploadZoneProps
 
   return (
     <div className="space-y-4">
+      {/* Drop zone - clickable for browse */}
       <div
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
         onClick={handleBrowseClick}
         className={cn(
-          "relative rounded-lg border-2 border-dashed p-12 text-center cursor-pointer transition-colors",
+          "relative rounded-lg border-2 border-dashed p-8 text-center cursor-pointer transition-colors",
           isDragging && "border-primary bg-primary/5",
           error && "border-destructive",
           !isDragging && !error && "border-muted-foreground/25 hover:border-primary/50"
@@ -168,19 +169,29 @@ export function ImageUploadZone({ value, onChange, error }: ImageUploadZoneProps
               JPEG, PNG, or WebP (max 10MB)
             </p>
           </div>
-
-          <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleCameraClick}
-              className="gap-2"
-            >
-              <Camera className="h-4 w-4" />
-              Take Photo
-            </Button>
-          </div>
         </div>
+      </div>
+
+      {/* Buttons OUTSIDE the drop zone */}
+      <div className="flex justify-center gap-2">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={handleBrowseClick}
+          className="gap-2"
+        >
+          <Upload className="h-4 w-4" />
+          Browse Files
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={handleCameraClick}
+          className="gap-2"
+        >
+          <Camera className="h-4 w-4" />
+          Take Photo
+        </Button>
       </div>
 
       {error && (
