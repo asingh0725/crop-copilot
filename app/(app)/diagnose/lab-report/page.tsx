@@ -125,36 +125,50 @@ export default function LabReportPage() {
     setIsLoading(true)
 
     try {
-      // Convert string numbers to actual numbers for API submission
-      const numericData = {
-        ...data,
-        ph: data.ph ? parseFloat(data.ph) : undefined,
-        organicMatter: data.organicMatter ? parseFloat(data.organicMatter) : undefined,
-        nitrogen: data.nitrogen ? parseFloat(data.nitrogen) : undefined,
-        phosphorus: data.phosphorus ? parseFloat(data.phosphorus) : undefined,
-        potassium: data.potassium ? parseFloat(data.potassium) : undefined,
-        calcium: data.calcium ? parseFloat(data.calcium) : undefined,
-        magnesium: data.magnesium ? parseFloat(data.magnesium) : undefined,
-        sulfur: data.sulfur ? parseFloat(data.sulfur) : undefined,
-        zinc: data.zinc ? parseFloat(data.zinc) : undefined,
-        manganese: data.manganese ? parseFloat(data.manganese) : undefined,
-        iron: data.iron ? parseFloat(data.iron) : undefined,
-        copper: data.copper ? parseFloat(data.copper) : undefined,
-        boron: data.boron ? parseFloat(data.boron) : undefined,
-        cec: data.cec ? parseFloat(data.cec) : undefined,
-        baseSaturation: data.baseSaturation ? parseFloat(data.baseSaturation) : undefined,
+      // Extract nutrient values into labData object
+      const labData = {
+        ph: data.ph ? parseFloat(data.ph) : null,
+        organicMatter: data.organicMatter ? parseFloat(data.organicMatter) : null,
+        nitrogen: data.nitrogen ? parseFloat(data.nitrogen) : null,
+        phosphorus: data.phosphorus ? parseFloat(data.phosphorus) : null,
+        potassium: data.potassium ? parseFloat(data.potassium) : null,
+        calcium: data.calcium ? parseFloat(data.calcium) : null,
+        magnesium: data.magnesium ? parseFloat(data.magnesium) : null,
+        sulfur: data.sulfur ? parseFloat(data.sulfur) : null,
+        zinc: data.zinc ? parseFloat(data.zinc) : null,
+        manganese: data.manganese ? parseFloat(data.manganese) : null,
+        iron: data.iron ? parseFloat(data.iron) : null,
+        copper: data.copper ? parseFloat(data.copper) : null,
+        boron: data.boron ? parseFloat(data.boron) : null,
+        cec: data.cec ? parseFloat(data.cec) : null,
+        baseSaturation: data.baseSaturation ? parseFloat(data.baseSaturation) : null,
+        labName: data.labName || null,
+        testDate: data.testDate || null,
+        sampleId: data.sampleId || null,
       }
 
-      // Log the form data
-      console.log('Lab Report Submission:', numericData)
+      const inputRes = await fetch('/api/inputs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'LAB_REPORT',
+          labData,
+          crop: data.crop,
+          location: `${data.locationState}, ${data.locationCountry}`,
+        }),
+      })
 
-      toast.success('Lab report submitted! (Demo mode)')
+      if (!inputRes.ok) {
+        const err = await inputRes.json()
+        throw new Error(err.error || 'Failed to save input')
+      }
 
-      // In production, you would submit the data here
-      // await submitLabReport(data)
+      const input = await inputRes.json()
+      toast.success('Lab report submitted!')
+      router.push(`/recommendations/${input.id}`)
     } catch (error) {
       console.error('Error submitting lab report:', error)
-      toast.error('Failed to submit lab report')
+      toast.error(error instanceof Error ? error.message : 'Failed to submit lab report')
     } finally {
       setIsLoading(false)
     }
