@@ -23,6 +23,7 @@
     "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "^2.90.1",
     "class-variance-authority": "^0.7.1",
+    "date-fns": "^4.1.0",
     "lucide-react": "^0.562.0",
     "next": "^14.2.18",
     "prisma": "^5.0.0",
