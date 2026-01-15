@@ -306,7 +306,7 @@ export default function PhotoDiagnosePage() {
                 >
                   Cancel
                 </Button>
-                <Button type="submit" disabled={isLoading || !imageFile}>
+                <Button type="submit" disabled={isLoading || (!imageFile && !form.formState.isValid)}>
                   {isLoading ? "Analyzing..." : "Analyze Crop"}
                 </Button>
               </div>
