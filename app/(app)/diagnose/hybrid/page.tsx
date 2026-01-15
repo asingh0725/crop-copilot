@@ -113,39 +113,69 @@ export default function HybridDiagnosePage() {
     setImageError("");
 
     try {
-      // Convert string numbers to actual numbers for API submission
-      const numericData = {
-        ...data,
-        ph: data.ph ? parseFloat(data.ph) : undefined,
+      let imageUrl: string | null = null;
+
+      // Step 1: Upload image if provided
+      if (imageFile) {
+        const uploadForm = new FormData();
+        uploadForm.append("file", imageFile);
+
+        const uploadRes = await fetch("/api/upload", {
+          method: "POST",
+          body: uploadForm,
+        });
+
+        if (!uploadRes.ok) {
+          const err = await uploadRes.json();
+          throw new Error(err.error || "Upload failed");
+        }
+
+        const uploadData = await uploadRes.json();
+        imageUrl = uploadData.url;
+      }
+
+      // Step 2: Build labData from form
+      const labData = {
+        ph: data.ph ? parseFloat(data.ph) : null,
         organicMatter: data.organicMatter
           ? parseFloat(data.organicMatter)
-          : undefined,
-        nitrogen: data.nitrogen ? parseFloat(data.nitrogen) : undefined,
-        phosphorus: data.phosphorus ? parseFloat(data.phosphorus) : undefined,
-        potassium: data.potassium ? parseFloat(data.potassium) : undefined,
+          : null,
+        nitrogen: data.nitrogen ? parseFloat(data.nitrogen) : null,
+        phosphorus: data.phosphorus ? parseFloat(data.phosphorus) : null,
+        potassium: data.potassium ? parseFloat(data.potassium) : null,
       };
 
-      // Log the form data
-      const submissionData = {
-        ...numericData,
-        sections: {
-          photo: hasImage
-            ? { hasImage: true, imageFile: imageFile?.name }
-            : null,
-          lab: hasLabData ? "macronutrients" : null,
-        },
-      };
+      // Check if any lab data was provided
+      const hasLabDataValues = Object.values(labData).some((v) => v !== null);
 
-      console.log("Hybrid Diagnosis Submission:", submissionData);
+      // Step 3: Create input record
+      const inputRes = await fetch("/api/inputs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: "HYBRID",
+          imageUrl,
+          description: data.description || null,
+          labData: hasLabDataValues ? labData : null,
+          crop: data.crop,
+          season: data.growthStage,
+          location: `${data.locationState}, ${data.locationCountry}`,
+        }),
+      });
 
-      toast.success("Hybrid analysis submitted! (Demo mode)");
+      if (!inputRes.ok) {
+        const err = await inputRes.json();
+        throw new Error(err.error || "Failed to save input");
+      }
 
-      // In production, you would upload the image and submit the data here
-      // await uploadImage(imageFile)
-      // await submitHybridDiagnosis(data)
+      const input = await inputRes.json();
+      toast.success("Hybrid analysis submitted!");
+      router.push(`/recommendations/${input.id}`);
     } catch (error) {
       console.error("Error submitting hybrid diagnosis:", error);
-      toast.error("Failed to submit analysis");
+      toast.error(
+        error instanceof Error ? error.message : "Failed to submit analysis"
+      );
     } finally {
       setIsLoading(false);
     }
