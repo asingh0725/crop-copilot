@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { useForm } from "react-hook-form"
+import { useForm, type ControllerRenderProps } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { createClient } from "@/lib/supabase/client"
 import { loginSchema, type LoginInput } from "@/lib/validations/auth"
@@ -27,10 +27,10 @@ import {
 import { Input } from "@/components/ui/input"
 import { Leaf } from "lucide-react"
 
-export default function LoginPage() {
+export default function LoginPage(): JSX.Element {
   const router = useRouter()
   const [error, setError] = useState<string | null>(null)
-  const [isLoading, setIsLoading] = useState(false)
+  const [isLoading, setIsLoading] = useState<boolean>(false)
 
   const form = useForm<LoginInput>({
     resolver: zodResolver(loginSchema),
@@ -40,7 +40,7 @@ export default function LoginPage() {
     },
   })
 
-  async function onSubmit(data: LoginInput) {
+  async function onSubmit(data: LoginInput): Promise<void> {
     setIsLoading(true)
     setError(null)
 
@@ -58,7 +58,7 @@ export default function LoginPage() {
 
       router.push("/dashboard")
       router.refresh()
-    } catch (err) {
+    } catch (err: unknown) {
       setError("An unexpected error occurred")
     } finally {
       setIsLoading(false)
@@ -83,7 +83,11 @@ export default function LoginPage() {
               <FormField
                 control={form.control}
                 name="email"
-                render={({ field }) => (
+                render={({
+                  field,
+                }: {
+                  field: ControllerRenderProps<LoginInput, "email">
+                }) => (
                   <FormItem>
                     <FormLabel>Email</FormLabel>
                     <FormControl>
@@ -100,7 +104,11 @@ export default function LoginPage() {
               <FormField
                 control={form.control}
                 name="password"
-                render={({ field }) => (
+                render={({
+                  field,
+                }: {
+                  field: ControllerRenderProps<LoginInput, "password">
+                }) => (
                   <FormItem>
                     <FormLabel>Password</FormLabel>
                     <FormControl>

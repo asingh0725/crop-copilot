@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { useForm } from "react-hook-form"
+import { useForm, type ControllerRenderProps } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { createClient } from "@/lib/supabase/client"
 import { signupSchema, type SignupInput } from "@/lib/validations/auth"
@@ -27,10 +27,10 @@ import {
 import { Input } from "@/components/ui/input"
 import { Leaf } from "lucide-react"
 
-export default function SignupPage() {
+export default function SignupPage(): JSX.Element {
   const router = useRouter()
   const [error, setError] = useState<string | null>(null)
-  const [isLoading, setIsLoading] = useState(false)
+  const [isLoading, setIsLoading] = useState<boolean>(false)
 
   const form = useForm<SignupInput>({
     resolver: zodResolver(signupSchema),
@@ -41,7 +41,7 @@ export default function SignupPage() {
     },
   })
 
-  async function onSubmit(data: SignupInput) {
+  async function onSubmit(data: SignupInput): Promise<void> {
     setIsLoading(true)
     setError(null)
 
@@ -63,7 +63,7 @@ export default function SignupPage() {
       // Successfully signed up - redirect to dashboard
       router.push("/dashboard")
       router.refresh()
-    } catch (err) {
+    } catch (err: unknown) {
       setError("An unexpected error occurred")
     } finally {
       setIsLoading(false)
@@ -88,7 +88,11 @@ export default function SignupPage() {
               <FormField
                 control={form.control}
                 name="email"
-                render={({ field }) => (
+                render={({
+                  field,
+                }: {
+                  field: ControllerRenderProps<SignupInput, "email">
+                }) => (
                   <FormItem>
                     <FormLabel>Email</FormLabel>
                     <FormControl>
@@ -105,7 +109,11 @@ export default function SignupPage() {
               <FormField
                 control={form.control}
                 name="password"
-                render={({ field }) => (
+                render={({
+                  field,
+                }: {
+                  field: ControllerRenderProps<SignupInput, "password">
+                }) => (
                   <FormItem>
                     <FormLabel>Password</FormLabel>
                     <FormControl>
@@ -118,7 +126,11 @@ export default function SignupPage() {
               <FormField
                 control={form.control}
                 name="confirmPassword"
-                render={({ field }) => (
+                render={({
+                  field,
+                }: {
+                  field: ControllerRenderProps<SignupInput, "confirmPassword">
+                }) => (
                   <FormItem>
                     <FormLabel>Confirm Password</FormLabel>
                     <FormControl>

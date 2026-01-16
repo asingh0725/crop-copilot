@@ -1,12 +1,15 @@
 import { createClient } from '@/lib/supabase/server'
 import { prisma } from '@/lib/prisma'
-import { profileSchema } from '@/lib/validations/profile'
+import { profileSchema, type ProfileInput } from '@/lib/validations/profile'
 import { NextResponse } from 'next/server'
 
-export async function GET() {
+export async function GET(): Promise<NextResponse> {
   try {
     const supabase = await createClient()
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser()
 
     if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -17,7 +20,7 @@ export async function GET() {
     })
 
     return NextResponse.json({ profile })
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Error fetching profile:', error)
     return NextResponse.json(
       { error: 'Failed to fetch profile' },
@@ -26,20 +29,23 @@ export async function GET() {
   }
 }
 
-export async function PUT(request: Request) {
+export async function PUT(request: Request): Promise<NextResponse> {
   try {
     const supabase = await createClient()
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser()
 
     if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const body = await request.json()
-    const validatedData = profileSchema.parse(body)
+    const body: unknown = await request.json()
+    const validatedData: ProfileInput = profileSchema.parse(body)
 
     // Ensure cropsOfInterest is an array
-    const profileData = {
+    const profileData: ProfileInput = {
       ...validatedData,
       cropsOfInterest: validatedData.cropsOfInterest || []
     }
@@ -65,7 +71,7 @@ export async function PUT(request: Request) {
     })
 
     return NextResponse.json({ profile })
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Error updating profile:', error)
 
     if (error instanceof Error && error.name === 'ZodError') {

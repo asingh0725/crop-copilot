@@ -1,4 +1,19 @@
-export const US_STATES = [
+export interface LocationOption {
+  value: string
+  label: string
+  country: 'US' | 'CA'
+}
+
+export interface LabeledOption {
+  value: string
+  label: string
+}
+
+export interface CropOption extends LabeledOption {
+  category: string
+}
+
+export const US_STATES: readonly string[] = [
   'Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California', 'Colorado', 'Connecticut',
   'Delaware', 'Florida', 'Georgia', 'Hawaii', 'Idaho', 'Illinois', 'Indiana', 'Iowa',
   'Kansas', 'Kentucky', 'Louisiana', 'Maine', 'Maryland', 'Massachusetts', 'Michigan',
@@ -9,18 +24,26 @@ export const US_STATES = [
   'Wisconsin', 'Wyoming'
 ]
 
-export const CA_PROVINCES = [
+export const CA_PROVINCES: readonly string[] = [
   'Alberta', 'British Columbia', 'Manitoba', 'New Brunswick', 'Newfoundland and Labrador',
   'Northwest Territories', 'Nova Scotia', 'Nunavut', 'Ontario', 'Prince Edward Island',
   'Quebec', 'Saskatchewan', 'Yukon'
 ]
 
-export const LOCATIONS = [
-  ...US_STATES.map(state => ({ value: state, label: state, country: 'US' })),
-  ...CA_PROVINCES.map(province => ({ value: province, label: province, country: 'CA' }))
+export const LOCATIONS: readonly LocationOption[] = [
+  ...US_STATES.map((state: string): LocationOption => ({
+    value: state,
+    label: state,
+    country: 'US',
+  })),
+  ...CA_PROVINCES.map((province: string): LocationOption => ({
+    value: province,
+    label: province,
+    country: 'CA',
+  }))
 ]
 
-export const FARM_SIZES = [
+export const FARM_SIZES: readonly LabeledOption[] = [
   { value: 'hobby', label: 'Hobby (< 1 acre)' },
   { value: 'small', label: 'Small (1-10 acres)' },
   { value: 'medium', label: 'Medium (10-100 acres)' },
@@ -28,14 +51,14 @@ export const FARM_SIZES = [
   { value: 'commercial', label: 'Commercial (> 1000 acres)' }
 ]
 
-export const EXPERIENCE_LEVELS = [
+export const EXPERIENCE_LEVELS: readonly LabeledOption[] = [
   { value: 'beginner', label: 'Beginner' },
   { value: 'intermediate', label: 'Intermediate' },
   { value: 'advanced', label: 'Advanced' },
   { value: 'professional', label: 'Professional' }
 ]
 
-export const CROP_OPTIONS = [
+export const CROP_OPTIONS: readonly CropOption[] = [
   // Grains
   { value: 'wheat', label: 'Wheat', category: 'Grains' },
   { value: 'corn', label: 'Corn', category: 'Grains' },

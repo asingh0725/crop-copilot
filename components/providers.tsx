@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { Toaster } from "sonner";
 
 /**
@@ -13,7 +14,11 @@ import { Toaster } from "sonner";
  * Add additional providers as needed in future sessions.
  */
 
-export function Providers({ children }: { children: React.ReactNode }) {
+export interface ProvidersProps {
+  children: ReactNode;
+}
+
+export function Providers({ children }: ProvidersProps): JSX.Element {
   return (
     <>
       {children}

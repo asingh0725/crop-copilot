@@ -3,12 +3,21 @@
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { useForm } from "react-hook-form"
+import {
+  useForm,
+  type ControllerRenderProps,
+  type FieldPath,
+} from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { ChevronRight } from "lucide-react"
 import { toast } from "sonner"
 import { labReportSchema, type LabReportInput } from "@/lib/validations/diagnose"
-import { CROP_OPTIONS, LOCATIONS } from "@/lib/constants/profile"
+import {
+  CROP_OPTIONS,
+  LOCATIONS,
+  type CropOption,
+  type LocationOption,
+} from "@/lib/constants/profile"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -41,13 +50,40 @@ import {
 } from "@/components/ui/accordion"
 import { Input } from "@/components/ui/input"
 
-export default function LabReportPage() {
-  const router = useRouter()
-  const [isLoading, setIsLoading] = useState(false)
-  const [isFetching, setIsFetching] = useState(true)
+type LabReportFieldRenderProps = {
+  field: ControllerRenderProps<LabReportInput, FieldPath<LabReportInput>>
+}
 
-  const form = useForm({
-    resolver: zodResolver(labReportSchema),
+type LabReportDataPayload = {
+  ph: number | null
+  organicMatter: number | null
+  nitrogen: number | null
+  phosphorus: number | null
+  potassium: number | null
+  calcium: number | null
+  magnesium: number | null
+  sulfur: number | null
+  zinc: number | null
+  manganese: number | null
+  iron: number | null
+  copper: number | null
+  boron: number | null
+  cec: number | null
+  baseSaturation: number | null
+  labName: string | null
+  testDate: string | null
+  sampleId: string | null
+}
+
+export default function LabReportPage(): JSX.Element {
+  const router = useRouter()
+  const [isLoading, setIsLoading] = useState<boolean>(false)
+  const [isFetching, setIsFetching] = useState<boolean>(true)
+
+  const form = useForm<LabReportInput, unknown, LabReportInput>({
+    resolver: zodResolver<LabReportInput, unknown, LabReportInput>(
+      labReportSchema
+    ),
     defaultValues: {
       labName: '',
       testDate: '',
@@ -73,21 +109,26 @@ export default function LabReportPage() {
     },
   })
 
-  useEffect(() => {
-    async function fetchProfile() {
+  useEffect((): void => {
+    async function fetchProfile(): Promise<void> {
       try {
         const response = await fetch('/api/profile')
         if (response.ok) {
-          const { profile } = await response.json()
+          const responseData: {
+            profile?: { location?: string | null } | null
+          } = await response.json()
+          const { profile } = responseData
           if (profile?.location) {
-            const location = LOCATIONS.find(loc => loc.value === profile.location)
+            const location: LocationOption | undefined = LOCATIONS.find(
+              (loc: LocationOption): boolean => loc.value === profile.location
+            )
             if (location) {
               form.setValue('locationState', location.value)
               form.setValue('locationCountry', location.country)
             }
           }
         }
-      } catch (error) {
+      } catch (error: unknown) {
         console.error('Error fetching profile:', error)
       } finally {
         setIsFetching(false)
@@ -97,9 +138,9 @@ export default function LabReportPage() {
     fetchProfile()
   }, [form])
 
-  async function onSubmit(data: any) {
+  async function onSubmit(data: LabReportInput): Promise<void> {
     // Check if at least one nutrient value is provided (not empty string)
-    const hasNutrientValue = [
+    const hasNutrientValue: boolean = [
       data.ph,
       data.organicMatter,
       data.nitrogen,
@@ -115,7 +156,7 @@ export default function LabReportPage() {
       data.boron,
       data.cec,
       data.baseSaturation,
-    ].some(value => value !== undefined && value !== '')
+    ].some((value: string | undefined): boolean => value !== undefined && value !== '')
 
     if (!hasNutrientValue) {
       toast.error('Please enter at least one nutrient value')
@@ -126,7 +167,7 @@ export default function LabReportPage() {
 
     try {
       // Extract nutrient values into labData object
-      const labData = {
+      const labData: LabReportDataPayload = {
         ph: data.ph ? parseFloat(data.ph) : null,
         organicMatter: data.organicMatter ? parseFloat(data.organicMatter) : null,
         nitrogen: data.nitrogen ? parseFloat(data.nitrogen) : null,
@@ -159,16 +200,18 @@ export default function LabReportPage() {
       })
 
       if (!inputRes.ok) {
-        const err = await inputRes.json()
-        throw new Error(err.error || 'Failed to save input')
+        const err: { error?: string } = await inputRes.json()
+        throw new Error(err.error ?? 'Failed to save input')
       }
 
-      const input = await inputRes.json()
+      const input: { id: string } = await inputRes.json()
       toast.success('Lab report submitted!')
       router.push(`/recommendations/${input.id}`)
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error submitting lab report:', error)
-      toast.error(error instanceof Error ? error.message : 'Failed to submit lab report')
+      toast.error(
+        error instanceof Error ? error.message : 'Failed to submit lab report'
+      )
     } finally {
       setIsLoading(false)
     }
@@ -225,7 +268,7 @@ export default function LabReportPage() {
                     <FormField
                       control={form.control}
                       name="labName"
-                      render={({ field }) => (
+                      render={({ field }: LabReportFieldRenderProps): JSX.Element => (
                         <FormItem>
                           <FormLabel>Lab Name</FormLabel>
                           <FormControl>
@@ -239,7 +282,7 @@ export default function LabReportPage() {
                     <FormField
                       control={form.control}
                       name="testDate"
-                      render={({ field }) => (
+                      render={({ field }: LabReportFieldRenderProps): JSX.Element => (
                         <FormItem>
                           <FormLabel>Test Date</FormLabel>
                           <FormControl>
@@ -253,7 +296,7 @@ export default function LabReportPage() {
                     <FormField
                       control={form.control}
                       name="sampleId"
-                      render={({ field }) => (
+                      render={({ field }: LabReportFieldRenderProps): JSX.Element => (
                         <FormItem>
                           <FormLabel>Sample ID</FormLabel>
                           <FormControl>
@@ -274,7 +317,7 @@ export default function LabReportPage() {
                       <FormField
                         control={form.control}
                         name="ph"
-                        render={({ field }) => (
+                        render={({ field }: LabReportFieldRenderProps): JSX.Element => (
                           <FormItem>
                             <FormLabel>pH</FormLabel>
                             <FormControl>
@@ -289,7 +332,7 @@ export default function LabReportPage() {
                       <FormField
                         control={form.control}
                         name="organicMatter"
-                        render={({ field }) => (
+                        render={({ field }: LabReportFieldRenderProps): JSX.Element => (
                           <FormItem>
                             <FormLabel>Organic Matter</FormLabel>
                             <FormControl>
@@ -304,7 +347,7 @@ export default function LabReportPage() {
                       <FormField
                         control={form.control}
                         name="nitrogen"
-                        render={({ field }) => (
+                        render={({ field }: LabReportFieldRenderProps): JSX.Element => (
                           <FormItem>
                             <FormLabel>Nitrogen (N)</FormLabel>
                             <FormControl>
@@ -319,7 +362,7 @@ export default function LabReportPage() {
                       <FormField
                         control={form.control}
                         name="phosphorus"
-                        render={({ field }) => (
+                        render={({ field }: LabReportFieldRenderProps): JSX.Element => (
                           <FormItem>
                             <FormLabel>Phosphorus (P)</FormLabel>
                             <FormControl>
@@ -334,7 +377,7 @@ export default function LabReportPage() {
                       <FormField
                         control={form.control}
                         name="potassium"
-                        render={({ field }) => (
+                        render={({ field }: LabReportFieldRenderProps): JSX.Element => (
                           <FormItem>
                             <FormLabel>Potassium (K)</FormLabel>
                             <FormControl>
@@ -357,7 +400,7 @@ export default function LabReportPage() {
                       <FormField
                         control={form.control}
                         name="calcium"
-                        render={({ field }) => (
+                        render={({ field }: LabReportFieldRenderProps): JSX.Element => (
                           <FormItem>
                             <FormLabel>Calcium (Ca)</FormLabel>
                             <FormControl>
@@ -372,7 +415,7 @@ export default function LabReportPage() {
                       <FormField
                         control={form.control}
                         name="magnesium"
-                        render={({ field }) => (
+                        render={({ field }: LabReportFieldRenderProps): JSX.Element => (
                           <FormItem>
                             <FormLabel>Magnesium (Mg)</FormLabel>
                             <FormControl>
@@ -387,7 +430,7 @@ export default function LabReportPage() {
                       <FormField
                         control={form.control}
                         name="sulfur"
-                        render={({ field }) => (
+                        render={({ field }: LabReportFieldRenderProps): JSX.Element => (
                           <FormItem>
                             <FormLabel>Sulfur (S)</FormLabel>
                             <FormControl>
@@ -410,7 +453,7 @@ export default function LabReportPage() {
                       <FormField
                         control={form.control}
                         name="zinc"
-                        render={({ field }) => (
+                        render={({ field }: LabReportFieldRenderProps): JSX.Element => (
                           <FormItem>
                             <FormLabel>Zinc (Zn)</FormLabel>
                             <FormControl>
@@ -425,7 +468,7 @@ export default function LabReportPage() {
                       <FormField
                         control={form.control}
                         name="manganese"
-                        render={({ field }) => (
+                        render={({ field }: LabReportFieldRenderProps): JSX.Element => (
                           <FormItem>
                             <FormLabel>Manganese (Mn)</FormLabel>
                             <FormControl>
@@ -440,7 +483,7 @@ export default function LabReportPage() {
                       <FormField
                         control={form.control}
                         name="iron"
-                        render={({ field }) => (
+                        render={({ field }: LabReportFieldRenderProps): JSX.Element => (
                           <FormItem>
                             <FormLabel>Iron (Fe)</FormLabel>
                             <FormControl>
@@ -455,7 +498,7 @@ export default function LabReportPage() {
                       <FormField
                         control={form.control}
                         name="copper"
-                        render={({ field }) => (
+                        render={({ field }: LabReportFieldRenderProps): JSX.Element => (
                           <FormItem>
                             <FormLabel>Copper (Cu)</FormLabel>
                             <FormControl>
@@ -470,7 +513,7 @@ export default function LabReportPage() {
                       <FormField
                         control={form.control}
                         name="boron"
-                        render={({ field }) => (
+                        render={({ field }: LabReportFieldRenderProps): JSX.Element => (
                           <FormItem>
                             <FormLabel>Boron (B)</FormLabel>
                             <FormControl>
@@ -493,7 +536,7 @@ export default function LabReportPage() {
                       <FormField
                         control={form.control}
                         name="cec"
-                        render={({ field }) => (
+                        render={({ field }: LabReportFieldRenderProps): JSX.Element => (
                           <FormItem>
                             <FormLabel>CEC</FormLabel>
                             <FormControl>
@@ -508,7 +551,7 @@ export default function LabReportPage() {
                       <FormField
                         control={form.control}
                         name="baseSaturation"
-                        render={({ field }) => (
+                        render={({ field }: LabReportFieldRenderProps): JSX.Element => (
                           <FormItem>
                             <FormLabel>Base Saturation</FormLabel>
                             <FormControl>
@@ -531,7 +574,7 @@ export default function LabReportPage() {
                 <FormField
                   control={form.control}
                   name="crop"
-                  render={({ field }) => (
+                  render={({ field }: LabReportFieldRenderProps): JSX.Element => (
                     <FormItem>
                       <FormLabel>Crop *</FormLabel>
                       <Select onValueChange={field.onChange} value={field.value}>
@@ -541,7 +584,7 @@ export default function LabReportPage() {
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent className="max-h-[300px]">
-                          {CROP_OPTIONS.map((crop) => (
+                          {CROP_OPTIONS.map((crop: CropOption): JSX.Element => (
                             <SelectItem key={crop.value} value={crop.value}>
                               {crop.label}
                             </SelectItem>
@@ -557,7 +600,7 @@ export default function LabReportPage() {
                   <FormField
                     control={form.control}
                     name="locationCountry"
-                    render={({ field }) => (
+                    render={({ field }: LabReportFieldRenderProps): JSX.Element => (
                       <FormItem>
                         <FormLabel>Country *</FormLabel>
                         <Select onValueChange={field.onChange} value={field.value}>
@@ -579,7 +622,7 @@ export default function LabReportPage() {
                   <FormField
                     control={form.control}
                     name="locationState"
-                    render={({ field }) => (
+                    render={({ field }: LabReportFieldRenderProps): JSX.Element => (
                       <FormItem>
                         <FormLabel>State/Province *</FormLabel>
                         <Select onValueChange={field.onChange} value={field.value}>
@@ -590,8 +633,9 @@ export default function LabReportPage() {
                           </FormControl>
                           <SelectContent className="max-h-[300px]">
                             {LOCATIONS.filter(
-                              loc => loc.country === form.watch('locationCountry')
-                            ).map((location) => (
+                              (loc: LocationOption): boolean =>
+                                loc.country === form.watch('locationCountry')
+                            ).map((location: LocationOption): JSX.Element => (
                               <SelectItem key={location.value} value={location.value}>
                                 {location.label}
                               </SelectItem>
@@ -610,7 +654,7 @@ export default function LabReportPage() {
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => router.back()}
+                  onClick={(): void => router.back()}
                   disabled={isLoading}
                 >
                   Cancel

@@ -2,10 +2,16 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Camera, FileSpreadsheet, Layers } from 'lucide-react'
+import { Camera, FileSpreadsheet, Layers, type LucideIcon } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 
 interface Input {
@@ -17,32 +23,36 @@ interface Input {
   recommendations: { id: string }[]
 }
 
-const typeIcons = {
+type InputType = Input['type']
+
+const typeIcons: Record<InputType, LucideIcon> = {
   PHOTO: Camera,
   LAB_REPORT: FileSpreadsheet,
   HYBRID: Layers,
 }
 
-const typeLabels = {
+const typeLabels: Record<InputType, string> = {
   PHOTO: 'Photo Analysis',
   LAB_REPORT: 'Lab Report',
   HYBRID: 'Hybrid Analysis',
 }
 
-export default function HistoryPage() {
+export default function HistoryPage(): JSX.Element {
   const [inputs, setInputs] = useState<Input[]>([])
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState<boolean>(true)
   const [error, setError] = useState<string | null>(null)
   const router = useRouter()
 
-  useEffect(() => {
-    async function fetchInputs() {
+  useEffect((): void => {
+    async function fetchInputs(): Promise<void> {
       try {
         const res = await fetch('/api/inputs')
-        if (!res.ok) throw new Error('Failed to fetch inputs')
-        const data = await res.json()
+        if (!res.ok) {
+          throw new Error('Failed to fetch inputs')
+        }
+        const data: Input[] = await res.json()
         setInputs(data)
-      } catch (err) {
+      } catch (err: unknown) {
         setError(err instanceof Error ? err.message : 'Something went wrong')
       } finally {
         setLoading(false)
@@ -56,7 +66,7 @@ export default function HistoryPage() {
     return (
       <div className="container max-w-4xl py-8 space-y-4">
         <h1 className="text-2xl font-bold">Diagnosis History</h1>
-        {[1, 2, 3].map((i) => (
+        {[1, 2, 3].map((i: number): JSX.Element => (
           <Skeleton key={i} className="h-24 w-full" />
         ))}
       </div>
@@ -89,15 +99,16 @@ export default function HistoryPage() {
     <div className="container max-w-4xl py-8 space-y-4">
       <h1 className="text-2xl font-bold">Diagnosis History</h1>
 
-      {inputs.map((input) => {
-        const Icon = typeIcons[input.type]
-        const hasRecommendation = input.recommendations && input.recommendations.length > 0
+      {inputs.map((input: Input): JSX.Element => {
+        const Icon: LucideIcon = typeIcons[input.type]
+        const hasRecommendation: boolean =
+          input.recommendations && input.recommendations.length > 0
 
         return (
           <Card
             key={input.id}
             className="cursor-pointer hover:bg-muted/50 transition-colors"
-            onClick={() => router.push(`/recommendations/${input.id}`)}
+            onClick={(): void => router.push(`/recommendations/${input.id}`)}
           >
             <CardHeader className="flex flex-row items-center gap-4 py-4">
               <div className="p-2 bg-muted rounded-lg">
