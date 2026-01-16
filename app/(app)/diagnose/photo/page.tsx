@@ -49,6 +49,7 @@ export default function PhotoDiagnosePage() {
 
   const form = useForm<PhotoDiagnoseInput>({
     resolver: zodResolver(photoDiagnoseSchema),
+    mode: 'onChange',
     defaultValues: {
       description: '',
       crop: '',
@@ -94,26 +95,51 @@ export default function PhotoDiagnosePage() {
     setImageError('')
 
     try {
-      // Log the form data
-      console.log('Photo Diagnosis Submission:', {
-        ...data,
-        imageAttached: imageFile.name,
+      // Step 1: Upload image
+      const uploadForm = new FormData()
+      uploadForm.append('file', imageFile)
+
+      const uploadRes = await fetch('/api/upload', {
+        method: 'POST',
+        body: uploadForm,
       })
 
-      toast.success('Analysis submitted! (Demo mode)')
+      if (!uploadRes.ok) {
+        const err = await uploadRes.json()
+        throw new Error(err.error || 'Upload failed')
+      }
 
-      // In production, you would upload the image and submit the data here
-      // await uploadImage(imageFile)
-      // await submitDiagnosis(data)
+      const { url: imageUrl } = await uploadRes.json()
+
+      // Step 2: Create input record
+      const inputRes = await fetch('/api/inputs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'PHOTO',
+          imageUrl,
+          description: data.description,
+          crop: data.crop,
+          season: data.growthStage,
+          location: `${data.locationState}, ${data.locationCountry}`,
+        }),
+      })
+
+      if (!inputRes.ok) {
+        const err = await inputRes.json()
+        throw new Error(err.error || 'Failed to save input')
+      }
+
+      const input = await inputRes.json()
+      toast.success('Analysis submitted!')
+      router.push(`/recommendations/${input.id}`)
     } catch (error) {
       console.error('Error submitting diagnosis:', error)
-      toast.error('Failed to submit analysis')
+      toast.error(error instanceof Error ? error.message : 'Failed to submit analysis')
     } finally {
       setIsLoading(false)
     }
   }
-
-  const isFormValid = form.formState.isValid && imageFile !== null
 
   if (isFetching) {
     return (
@@ -307,7 +333,7 @@ export default function PhotoDiagnosePage() {
                 >
                   Cancel
                 </Button>
-                <Button type="submit" disabled={!isFormValid || isLoading}>
+                <Button type="submit" disabled={isLoading || (!imageFile && !form.formState.isValid)}>
                   {isLoading ? "Analyzing..." : "Analyze Crop"}
                 </Button>
               </div>
