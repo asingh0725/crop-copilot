@@ -1,11 +1,11 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { ChevronRight } from "lucide-react"
+import { ChevronRight, Mic, MicOff } from "lucide-react"
 import { toast } from "sonner"
 import {
   photoDiagnoseSchema,
@@ -13,6 +13,7 @@ import {
   GROWTH_STAGES,
 } from "@/lib/validations/diagnose"
 import { CROP_OPTIONS, LOCATIONS } from "@/lib/constants/profile"
+import { useSpeechRecognition } from "@/lib/hooks/use-speech-recognition"
 import { ImageUploadZone } from "@/components/diagnose/image-upload-zone"
 import { Button } from "@/components/ui/button"
 import {
@@ -60,6 +61,24 @@ export default function PhotoDiagnosePage() {
   })
 
   const description = form.watch('description')
+  const handleTranscript = useCallback((transcript: string) => {
+    const currentValue = form.getValues('description') || ''
+    const nextValue = currentValue
+      ? `${currentValue.trimEnd()} ${transcript}`.trim()
+      : transcript
+    form.setValue('description', nextValue, {
+      shouldDirty: true,
+      shouldValidate: true,
+    })
+  }, [form])
+
+  const {
+    isSupported: isSpeechSupported,
+    isRecording,
+    error: speechError,
+    start: startDictation,
+    stop: stopDictation,
+  } = useSpeechRecognition({ onTranscript: handleTranscript })
 
   useEffect(() => {
     async function fetchProfile() {
@@ -200,7 +219,30 @@ export default function PhotoDiagnosePage() {
                 name="description"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Description *</FormLabel>
+                    <div className="flex items-center justify-between">
+                      <FormLabel>Description *</FormLabel>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        onClick={isRecording ? stopDictation : startDictation}
+                        disabled={!isSpeechSupported}
+                        aria-pressed={isRecording}
+                        title={
+                          isSpeechSupported
+                            ? isRecording
+                              ? "Stop voice input"
+                              : "Start voice input"
+                            : "Voice input not supported in this browser"
+                        }
+                      >
+                        {isRecording ? (
+                          <MicOff className="h-4 w-4" />
+                        ) : (
+                          <Mic className="h-4 w-4" />
+                        )}
+                      </Button>
+                    </div>
                     <FormControl>
                       <Textarea
                         placeholder="Describe what you see: yellowing leaves, spots, wilting, etc."
@@ -209,7 +251,12 @@ export default function PhotoDiagnosePage() {
                       />
                     </FormControl>
                     <FormDescription>
-                      {description.length}/1000 characters
+                      <span>{description.length}/1000 characters</span>
+                      {speechError && (
+                        <span className="block text-destructive">
+                          Voice input error: {speechError}
+                        </span>
+                      )}
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
