@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import type { ReactNode } from "react";
 import { Providers } from "@/components/providers";
 import "./globals.css";
 
@@ -33,11 +34,13 @@ export const metadata: Metadata = {
   },
 };
 
+export interface RootLayoutProps {
+  readonly children: ReactNode;
+}
+
 export default function RootLayout({
   children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+}: RootLayoutProps): JSX.Element {
   return (
     <html lang="en" suppressHydrationWarning>
       <body className="font-sans antialiased">

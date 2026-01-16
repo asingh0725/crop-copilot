@@ -1,7 +1,13 @@
 "use client"
 
 import Link from "next/link"
-import { Camera, FileSpreadsheet, Layers, ChevronRight } from "lucide-react"
+import {
+  Camera,
+  FileSpreadsheet,
+  Layers,
+  ChevronRight,
+  type LucideIcon,
+} from "lucide-react"
 import {
   Card,
   CardContent,
@@ -11,7 +17,16 @@ import {
 } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 
-const inputMethods = [
+interface InputMethod {
+  id: string
+  title: string
+  description: string
+  icon: LucideIcon
+  href: string
+  time: string
+}
+
+const inputMethods: readonly InputMethod[] = [
   {
     id: 'photo',
     title: 'Photo + Description',
@@ -38,7 +53,7 @@ const inputMethods = [
   }
 ]
 
-export default function DiagnosePage() {
+export default function DiagnosePage(): JSX.Element {
   return (
     <div className="container max-w-7xl py-8">
       {/* Breadcrumb */}
@@ -62,8 +77,8 @@ export default function DiagnosePage() {
 
       {/* Input Method Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {inputMethods.map((method) => {
-          const Icon = method.icon
+        {inputMethods.map((method: InputMethod): JSX.Element => {
+          const Icon: LucideIcon = method.icon
           return (
             <Link key={method.id} href={method.href}>
               <Card className="h-full transition-all hover:shadow-lg hover:border-primary cursor-pointer">

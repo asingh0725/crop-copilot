@@ -1,6 +1,6 @@
-import { z } from "zod";
+import { z, type ZodOptional, type ZodType } from "zod";
 
-export const GROWTH_STAGES = [
+export const GROWTH_STAGES: readonly string[] = [
   "Seedling",
   "Vegetative",
   "Flowering",
@@ -20,13 +20,24 @@ export const photoDiagnoseSchema = z.object({
   locationCountry: z.string().min(1, "Please select a country"),
 });
 
-export type PhotoDiagnoseInput = z.infer<typeof photoDiagnoseSchema>;
+export interface PhotoDiagnoseInput {
+  description: string;
+  crop: string;
+  growthStage: string;
+  locationState: string;
+  locationCountry: string;
+}
 
 // Helper for optional string number fields with validation
-const optionalStringNumber = (min = 0, max?: number) => {
-  let schema = z.string().refine(
-    (val) => {
-      if (val === "") return true;
+const optionalStringNumber = (
+  min: number = 0,
+  max?: number
+): ZodOptional<ZodType<string, string>> => {
+  const schema: ZodType<string, string> = z.string().refine(
+    (val: string): boolean => {
+      if (val === "") {
+        return true;
+      }
       const num = parseFloat(val);
       return !isNaN(num) && num >= min && (max === undefined || num <= max);
     },
@@ -75,7 +86,29 @@ export const labReportSchema = z.object({
   locationCountry: z.string().min(1),
 });
 
-export type LabReportInput = z.infer<typeof labReportSchema>;
+export interface LabReportInput {
+  labName?: string;
+  testDate?: string;
+  sampleId?: string;
+  ph?: string;
+  organicMatter?: string;
+  nitrogen?: string;
+  phosphorus?: string;
+  potassium?: string;
+  calcium?: string;
+  magnesium?: string;
+  sulfur?: string;
+  zinc?: string;
+  manganese?: string;
+  iron?: string;
+  copper?: string;
+  boron?: string;
+  cec?: string;
+  baseSaturation?: string;
+  crop: string;
+  locationState: string;
+  locationCountry: string;
+}
 
 export const hybridDiagnoseSchema = z.object({
   // Photo section (optional)
@@ -95,4 +128,15 @@ export const hybridDiagnoseSchema = z.object({
   locationCountry: z.string().min(1),
 });
 
-export type HybridDiagnoseInput = z.infer<typeof hybridDiagnoseSchema>;
+export interface HybridDiagnoseInput {
+  description?: string;
+  ph?: string;
+  organicMatter?: string;
+  nitrogen?: string;
+  phosphorus?: string;
+  potassium?: string;
+  crop: string;
+  growthStage: string;
+  locationState: string;
+  locationCountry: string;
+}

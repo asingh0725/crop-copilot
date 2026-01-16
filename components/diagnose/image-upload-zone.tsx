@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useRef, useCallback } from "react"
+import type { ChangeEvent, DragEvent } from "react"
 import { Upload, Camera, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
@@ -14,8 +15,12 @@ interface ImageUploadZoneProps {
 const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp']
 
-export function ImageUploadZone({ value, onChange, error }: ImageUploadZoneProps) {
-  const [isDragging, setIsDragging] = useState(false)
+export function ImageUploadZone({
+  value,
+  onChange,
+  error,
+}: ImageUploadZoneProps): JSX.Element {
+  const [isDragging, setIsDragging] = useState<boolean>(false)
   const [preview, setPreview] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const cameraInputRef = useRef<HTMLInputElement>(null)
@@ -30,7 +35,7 @@ export function ImageUploadZone({ value, onChange, error }: ImageUploadZoneProps
     return null
   }, [])
 
-  const handleFile = useCallback((file: File) => {
+  const handleFile = useCallback((file: File): void => {
     const validationError = validateFile(file)
     if (validationError) {
       onChange(null)
@@ -42,51 +47,62 @@ export function ImageUploadZone({ value, onChange, error }: ImageUploadZoneProps
 
     // Create preview
     const reader = new FileReader()
-    reader.onloadend = () => {
-      setPreview(reader.result as string)
+    reader.onloadend = (): void => {
+      const result = reader.result
+      if (typeof result === "string") {
+        setPreview(result)
+      } else {
+        setPreview(null)
+      }
     }
     reader.readAsDataURL(file)
   }, [onChange, validateFile])
 
-  const handleDragOver = useCallback((e: React.DragEvent) => {
+  const handleDragOver = useCallback((e: DragEvent<HTMLDivElement>): void => {
     e.preventDefault()
     setIsDragging(true)
   }, [])
 
-  const handleDragLeave = useCallback((e: React.DragEvent) => {
+  const handleDragLeave = useCallback((e: DragEvent<HTMLDivElement>): void => {
     e.preventDefault()
     setIsDragging(false)
   }, [])
 
-  const handleDrop = useCallback((e: React.DragEvent) => {
+  const handleDrop = useCallback((e: DragEvent<HTMLDivElement>): void => {
     e.preventDefault()
     setIsDragging(false)
 
     const files = e.dataTransfer.files
     if (files.length > 0) {
-      handleFile(files[0])
+      const file = files.item(0)
+      if (file) {
+        handleFile(file)
+      }
     }
   }, [handleFile])
 
-  const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = useCallback((e: ChangeEvent<HTMLInputElement>): void => {
     const files = e.target.files
     if (files && files.length > 0) {
-      handleFile(files[0])
+      const file = files.item(0)
+      if (file) {
+        handleFile(file)
+      }
     }
   }, [handleFile])
 
-  const handleRemove = useCallback(() => {
+  const handleRemove = useCallback((): void => {
     onChange(null)
     setPreview(null)
     if (fileInputRef.current) fileInputRef.current.value = ''
     if (cameraInputRef.current) cameraInputRef.current.value = ''
   }, [onChange])
 
-  const handleBrowseClick = useCallback(() => {
+  const handleBrowseClick = useCallback((): void => {
     fileInputRef.current?.click()
   }, [])
 
-  const handleCameraClick = useCallback(() => {
+  const handleCameraClick = useCallback((): void => {
     cameraInputRef.current?.click()
   }, [])
 

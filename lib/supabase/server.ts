@@ -1,21 +1,32 @@
-import { createServerClient, type CookieOptions } from '@supabase/ssr'
+import {
+  createServerClient,
+  type CookieOptions,
+  type SetAllCookies,
+} from '@supabase/ssr'
 import { cookies } from 'next/headers'
 
-export async function createClient() {
+import { getRequiredEnv } from '../env'
+
+type CookiesToSet = Parameters<SetAllCookies>[0]
+type CookieToSet = CookiesToSet[number]
+
+export async function createClient(): Promise<ReturnType<typeof createServerClient>> {
   const cookieStore = await cookies()
 
   return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    getRequiredEnv('NEXT_PUBLIC_SUPABASE_URL'),
+    getRequiredEnv('NEXT_PUBLIC_SUPABASE_ANON_KEY'),
     {
       cookies: {
-        getAll() {
+        getAll(): ReturnType<typeof cookieStore.getAll> {
           return cookieStore.getAll()
         },
-        setAll(cookiesToSet) {
+        setAll(cookiesToSet: CookiesToSet): void {
           try {
-            cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, options)
+            cookiesToSet.forEach(
+              ({ name, value, options }: CookieToSet): void => {
+                cookieStore.set(name, value, options)
+              }
             )
           } catch {
             // Server component context

@@ -3,7 +3,11 @@
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { useForm } from "react-hook-form"
+import {
+  useForm,
+  type ControllerRenderProps,
+  type FieldPath,
+} from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { ChevronRight } from "lucide-react"
 import { toast } from "sonner"
@@ -12,7 +16,12 @@ import {
   type PhotoDiagnoseInput,
   GROWTH_STAGES,
 } from "@/lib/validations/diagnose"
-import { CROP_OPTIONS, LOCATIONS } from "@/lib/constants/profile"
+import {
+  CROP_OPTIONS,
+  LOCATIONS,
+  type CropOption,
+  type LocationOption,
+} from "@/lib/constants/profile"
 import { ImageUploadZone } from "@/components/diagnose/image-upload-zone"
 import { Button } from "@/components/ui/button"
 import {
@@ -40,15 +49,21 @@ import {
 } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 
-export default function PhotoDiagnosePage() {
+type PhotoFieldRenderProps = {
+  field: ControllerRenderProps<PhotoDiagnoseInput, FieldPath<PhotoDiagnoseInput>>
+}
+
+export default function PhotoDiagnosePage(): JSX.Element {
   const router = useRouter()
-  const [isLoading, setIsLoading] = useState(false)
-  const [isFetching, setIsFetching] = useState(true)
+  const [isLoading, setIsLoading] = useState<boolean>(false)
+  const [isFetching, setIsFetching] = useState<boolean>(true)
   const [imageFile, setImageFile] = useState<File | null>(null)
   const [imageError, setImageError] = useState<string>('')
 
-  const form = useForm<PhotoDiagnoseInput>({
-    resolver: zodResolver(photoDiagnoseSchema),
+  const form = useForm<PhotoDiagnoseInput, unknown, PhotoDiagnoseInput>({
+    resolver: zodResolver<PhotoDiagnoseInput, unknown, PhotoDiagnoseInput>(
+      photoDiagnoseSchema
+    ),
     mode: 'onChange',
     defaultValues: {
       description: '',
@@ -59,23 +74,28 @@ export default function PhotoDiagnosePage() {
     },
   })
 
-  const description = form.watch('description')
+  const description: string = form.watch('description')
 
-  useEffect(() => {
-    async function fetchProfile() {
+  useEffect((): void => {
+    async function fetchProfile(): Promise<void> {
       try {
         const response = await fetch('/api/profile')
         if (response.ok) {
-          const { profile } = await response.json()
+          const responseData: {
+            profile?: { location?: string | null } | null
+          } = await response.json()
+          const { profile } = responseData
           if (profile?.location) {
-            const location = LOCATIONS.find(loc => loc.value === profile.location)
+            const location: LocationOption | undefined = LOCATIONS.find(
+              (loc: LocationOption): boolean => loc.value === profile.location
+            )
             if (location) {
               form.setValue('locationState', location.value)
               form.setValue('locationCountry', location.country)
             }
           }
         }
-      } catch (error) {
+      } catch (error: unknown) {
         console.error('Error fetching profile:', error)
       } finally {
         setIsFetching(false)
@@ -85,7 +105,7 @@ export default function PhotoDiagnosePage() {
     fetchProfile()
   }, [form])
 
-  async function onSubmit(data: PhotoDiagnoseInput) {
+  async function onSubmit(data: PhotoDiagnoseInput): Promise<void> {
     if (!imageFile) {
       setImageError('Please upload an image')
       return
@@ -105,11 +125,12 @@ export default function PhotoDiagnosePage() {
       })
 
       if (!uploadRes.ok) {
-        const err = await uploadRes.json()
-        throw new Error(err.error || 'Upload failed')
+        const err: { error?: string } = await uploadRes.json()
+        throw new Error(err.error ?? 'Upload failed')
       }
 
-      const { url: imageUrl } = await uploadRes.json()
+      const uploadData: { url: string } = await uploadRes.json()
+      const imageUrl: string = uploadData.url
 
       // Step 2: Create input record
       const inputRes = await fetch('/api/inputs', {
@@ -126,16 +147,18 @@ export default function PhotoDiagnosePage() {
       })
 
       if (!inputRes.ok) {
-        const err = await inputRes.json()
-        throw new Error(err.error || 'Failed to save input')
+        const err: { error?: string } = await inputRes.json()
+        throw new Error(err.error ?? 'Failed to save input')
       }
 
-      const input = await inputRes.json()
+      const input: { id: string } = await inputRes.json()
       toast.success('Analysis submitted!')
       router.push(`/recommendations/${input.id}`)
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error submitting diagnosis:', error)
-      toast.error(error instanceof Error ? error.message : 'Failed to submit analysis')
+      toast.error(
+        error instanceof Error ? error.message : 'Failed to submit analysis'
+      )
     } finally {
       setIsLoading(false)
     }
@@ -198,7 +221,7 @@ export default function PhotoDiagnosePage() {
               <FormField
                 control={form.control}
                 name="description"
-                render={({ field }) => (
+                render={({ field }: PhotoFieldRenderProps): JSX.Element => (
                   <FormItem>
                     <FormLabel>Description *</FormLabel>
                     <FormControl>
@@ -220,7 +243,7 @@ export default function PhotoDiagnosePage() {
               <FormField
                 control={form.control}
                 name="crop"
-                render={({ field }) => (
+                render={({ field }: PhotoFieldRenderProps): JSX.Element => (
                   <FormItem>
                     <FormLabel>Crop *</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value}>
@@ -230,7 +253,7 @@ export default function PhotoDiagnosePage() {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent className="max-h-[300px]">
-                        {CROP_OPTIONS.map((crop) => (
+                        {CROP_OPTIONS.map((crop: CropOption): JSX.Element => (
                           <SelectItem key={crop.value} value={crop.value}>
                             {crop.label}
                           </SelectItem>
@@ -246,7 +269,7 @@ export default function PhotoDiagnosePage() {
               <FormField
                 control={form.control}
                 name="growthStage"
-                render={({ field }) => (
+                render={({ field }: PhotoFieldRenderProps): JSX.Element => (
                   <FormItem>
                     <FormLabel>Growth Stage *</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value}>
@@ -256,7 +279,7 @@ export default function PhotoDiagnosePage() {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {GROWTH_STAGES.map((stage) => (
+                        {GROWTH_STAGES.map((stage: string): JSX.Element => (
                           <SelectItem key={stage} value={stage}>
                             {stage}
                           </SelectItem>
@@ -276,7 +299,7 @@ export default function PhotoDiagnosePage() {
                 <FormField
                   control={form.control}
                   name="locationCountry"
-                  render={({ field }) => (
+                  render={({ field }: PhotoFieldRenderProps): JSX.Element => (
                     <FormItem>
                       <FormLabel>Country *</FormLabel>
                       <Select onValueChange={field.onChange} value={field.value}>
@@ -298,7 +321,7 @@ export default function PhotoDiagnosePage() {
                 <FormField
                   control={form.control}
                   name="locationState"
-                  render={({ field }) => (
+                  render={({ field }: PhotoFieldRenderProps): JSX.Element => (
                     <FormItem>
                       <FormLabel>State/Province *</FormLabel>
                       <Select onValueChange={field.onChange} value={field.value}>
@@ -309,8 +332,9 @@ export default function PhotoDiagnosePage() {
                         </FormControl>
                         <SelectContent className="max-h-[300px]">
                           {LOCATIONS.filter(
-                            loc => loc.country === form.watch('locationCountry')
-                          ).map((location) => (
+                            (loc: LocationOption): boolean =>
+                              loc.country === form.watch('locationCountry')
+                          ).map((location: LocationOption): JSX.Element => (
                             <SelectItem key={location.value} value={location.value}>
                               {location.label}
                             </SelectItem>
@@ -328,7 +352,7 @@ export default function PhotoDiagnosePage() {
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => router.back()}
+                  onClick={(): void => router.back()}
                   disabled={isLoading}
                 >
                   Cancel

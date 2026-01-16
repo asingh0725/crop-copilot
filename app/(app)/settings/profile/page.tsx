@@ -2,14 +2,21 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { useForm } from "react-hook-form"
+import {
+  useForm,
+  type ControllerRenderProps,
+  type FieldPath,
+} from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { profileSchema, type ProfileInput } from "@/lib/validations/profile"
 import {
   LOCATIONS,
   FARM_SIZES,
   EXPERIENCE_LEVELS,
-  CROP_OPTIONS
+  CROP_OPTIONS,
+  type CropOption,
+  type LocationOption,
+  type LabeledOption,
 } from "@/lib/constants/profile"
 import { Button } from "@/components/ui/button"
 import {
@@ -36,12 +43,19 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
+import type { CheckedState } from "@radix-ui/react-checkbox"
 import { toast } from "sonner"
 
-export default function ProfilePage() {
+type ProfileFieldRenderProps<Name extends FieldPath<ProfileInput>> = {
+  field: ControllerRenderProps<ProfileInput, Name>
+}
+
+type CropsByCategory = Record<string, CropOption[]>
+
+export default function ProfilePage(): JSX.Element {
   const router = useRouter()
-  const [isLoading, setIsLoading] = useState(false)
-  const [isFetching, setIsFetching] = useState(true)
+  const [isLoading, setIsLoading] = useState<boolean>(false)
+  const [isFetching, setIsFetching] = useState<boolean>(true)
 
   const form = useForm<ProfileInput>({
     resolver: zodResolver(profileSchema),
@@ -53,12 +67,15 @@ export default function ProfilePage() {
     },
   })
 
-  useEffect(() => {
-    async function fetchProfile() {
+  useEffect((): void => {
+    async function fetchProfile(): Promise<void> {
       try {
         const response = await fetch('/api/profile')
         if (response.ok) {
-          const { profile } = await response.json()
+          const responseData: {
+            profile?: ProfileInput | null
+          } = await response.json()
+          const { profile } = responseData
           if (profile) {
             form.reset({
               location: profile.location || undefined,
@@ -68,7 +85,7 @@ export default function ProfilePage() {
             })
           }
         }
-      } catch (error) {
+      } catch (error: unknown) {
         console.error('Error fetching profile:', error)
         toast.error('Failed to load profile')
       } finally {
@@ -79,7 +96,7 @@ export default function ProfilePage() {
     fetchProfile()
   }, [form])
 
-  async function onSubmit(data: ProfileInput) {
+  async function onSubmit(data: ProfileInput): Promise<void> {
     setIsLoading(true)
 
     try {
@@ -95,7 +112,7 @@ export default function ProfilePage() {
 
       toast.success('Profile updated successfully')
       router.refresh()
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error updating profile:', error)
       toast.error('Failed to update profile')
     } finally {
@@ -103,16 +120,15 @@ export default function ProfilePage() {
     }
   }
 
-  const cropsOfInterest = form.watch('cropsOfInterest')
-
   // Group crops by category
-  const cropsByCategory = CROP_OPTIONS.reduce((acc, crop) => {
-    if (!acc[crop.category]) {
-      acc[crop.category] = []
-    }
-    acc[crop.category].push(crop)
-    return acc
-  }, {} as Record<string, typeof CROP_OPTIONS>)
+  const cropsByCategory: CropsByCategory = CROP_OPTIONS.reduce(
+    (acc: CropsByCategory, crop: CropOption): CropsByCategory => {
+      const current: CropOption[] = acc[crop.category] ?? []
+      acc[crop.category] = [...current, crop]
+      return acc
+    },
+    {}
+  )
 
   if (isFetching) {
     return (
@@ -137,7 +153,7 @@ export default function ProfilePage() {
               <FormField
                 control={form.control}
                 name="location"
-                render={({ field }) => (
+                render={({ field }: ProfileFieldRenderProps<"location">): JSX.Element => (
                   <FormItem>
                     <FormLabel>Location</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value}>
@@ -150,7 +166,9 @@ export default function ProfilePage() {
                         <div className="px-2 py-1.5 text-sm font-semibold text-muted-foreground">
                           United States
                         </div>
-                        {LOCATIONS.filter(loc => loc.country === 'US').map((location) => (
+                        {LOCATIONS.filter(
+                          (loc: LocationOption): boolean => loc.country === 'US'
+                        ).map((location: LocationOption): JSX.Element => (
                           <SelectItem key={location.value} value={location.value}>
                             {location.label}
                           </SelectItem>
@@ -158,7 +176,9 @@ export default function ProfilePage() {
                         <div className="px-2 py-1.5 text-sm font-semibold text-muted-foreground mt-2">
                           Canada
                         </div>
-                        {LOCATIONS.filter(loc => loc.country === 'CA').map((location) => (
+                        {LOCATIONS.filter(
+                          (loc: LocationOption): boolean => loc.country === 'CA'
+                        ).map((location: LocationOption): JSX.Element => (
                           <SelectItem key={location.value} value={location.value}>
                             {location.label}
                           </SelectItem>
@@ -176,7 +196,7 @@ export default function ProfilePage() {
               <FormField
                 control={form.control}
                 name="farmSize"
-                render={({ field }) => (
+                render={({ field }: ProfileFieldRenderProps<"farmSize">): JSX.Element => (
                   <FormItem>
                     <FormLabel>Farm Size</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value}>
@@ -186,7 +206,7 @@ export default function ProfilePage() {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {FARM_SIZES.map((size) => (
+                        {FARM_SIZES.map((size: LabeledOption): JSX.Element => (
                           <SelectItem key={size.value} value={size.value}>
                             {size.label}
                           </SelectItem>
@@ -204,7 +224,7 @@ export default function ProfilePage() {
               <FormField
                 control={form.control}
                 name="experienceLevel"
-                render={({ field }) => (
+                render={({ field }: ProfileFieldRenderProps<"experienceLevel">): JSX.Element => (
                   <FormItem>
                     <FormLabel>Experience Level</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value}>
@@ -214,11 +234,13 @@ export default function ProfilePage() {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {EXPERIENCE_LEVELS.map((level) => (
+                        {EXPERIENCE_LEVELS.map(
+                          (level: LabeledOption): JSX.Element => (
                           <SelectItem key={level.value} value={level.value}>
                             {level.label}
                           </SelectItem>
-                        ))}
+                          )
+                        )}
                       </SelectContent>
                     </Select>
                     <FormDescription>
@@ -232,7 +254,7 @@ export default function ProfilePage() {
               <FormField
                 control={form.control}
                 name="cropsOfInterest"
-                render={() => (
+                render={(): JSX.Element => (
                   <FormItem>
                     <div className="mb-4">
                       <FormLabel>Crops of Interest</FormLabel>
@@ -241,16 +263,19 @@ export default function ProfilePage() {
                       </FormDescription>
                     </div>
                     <div className="space-y-6">
-                      {Object.entries(cropsByCategory).map(([category, crops]) => (
+                      {Object.entries(cropsByCategory).map(
+                        ([category, crops]: [string, CropOption[]]): JSX.Element => (
                         <div key={category} className="space-y-3">
                           <h4 className="font-medium text-sm">{category}</h4>
                           <div className="grid grid-cols-2 gap-3">
-                            {crops.map((crop) => (
+                            {crops.map((crop: CropOption): JSX.Element => (
                               <FormField
                                 key={crop.value}
                                 control={form.control}
                                 name="cropsOfInterest"
-                                render={({ field }) => {
+                                render={({
+                                  field,
+                                }: ProfileFieldRenderProps<"cropsOfInterest">): JSX.Element => {
                                   return (
                                     <FormItem
                                       key={crop.value}
@@ -259,15 +284,26 @@ export default function ProfilePage() {
                                       <FormControl>
                                         <Checkbox
                                           checked={field.value?.includes(crop.value)}
-                                          onCheckedChange={(checked) => {
-                                            const currentValue = field.value || []
-                                            return checked
-                                              ? field.onChange([...currentValue, crop.value])
-                                              : field.onChange(
-                                                  currentValue.filter(
-                                                    (value) => value !== crop.value
-                                                  )
-                                                )
+                                          onCheckedChange={(
+                                            checked: CheckedState
+                                          ): void => {
+                                            const currentValue: string[] =
+                                              field.value ?? []
+                                            const shouldAdd: boolean =
+                                              checked !== false
+                                            if (shouldAdd) {
+                                              field.onChange([
+                                                ...currentValue,
+                                                crop.value,
+                                              ])
+                                              return
+                                            }
+                                            field.onChange(
+                                              currentValue.filter(
+                                                (value: string): boolean =>
+                                                  value !== crop.value
+                                              )
+                                            )
                                           }}
                                         />
                                       </FormControl>
@@ -281,7 +317,8 @@ export default function ProfilePage() {
                             ))}
                           </div>
                         </div>
-                      ))}
+                        )
+                      )}
                     </div>
                     <FormMessage />
                   </FormItem>
@@ -292,7 +329,7 @@ export default function ProfilePage() {
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => router.back()}
+                  onClick={(): void => router.back()}
                   disabled={isLoading}
                 >
                   Cancel

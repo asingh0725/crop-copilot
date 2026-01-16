@@ -1,28 +1,37 @@
-import { createServerClient } from '@supabase/ssr'
+import { createServerClient, type SetAllCookies } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
-export async function middleware(request: NextRequest) {
-  let response = NextResponse.next({
+import { getRequiredEnv } from './lib/env'
+
+type CookiesToSet = Parameters<SetAllCookies>[0]
+type CookieToSet = CookiesToSet[number]
+
+export async function middleware(request: NextRequest): Promise<NextResponse> {
+  let response: NextResponse = NextResponse.next({
     request: { headers: request.headers },
   })
 
   const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    getRequiredEnv('NEXT_PUBLIC_SUPABASE_URL'),
+    getRequiredEnv('NEXT_PUBLIC_SUPABASE_ANON_KEY'),
     {
       cookies: {
-        getAll() {
+        getAll(): ReturnType<NextRequest['cookies']['getAll']> {
           return request.cookies.getAll()
         },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) =>
-            request.cookies.set(name, value)
+        setAll(cookiesToSet: CookiesToSet): void {
+          cookiesToSet.forEach(
+            ({ name, value }: CookieToSet): void => {
+              request.cookies.set(name, value)
+            }
           )
           response = NextResponse.next({
             request: { headers: request.headers },
           })
-          cookiesToSet.forEach(({ name, value, options }) =>
-            response.cookies.set(name, value, options)
+          cookiesToSet.forEach(
+            ({ name, value, options }: CookieToSet): void => {
+              response.cookies.set(name, value, options)
+            }
           )
         },
       },
@@ -31,8 +40,17 @@ export async function middleware(request: NextRequest) {
 
   const { data: { user } } = await supabase.auth.getUser()
 
-  const protectedPaths = ['/dashboard', '/diagnose', '/recommendations', '/products', '/history', '/settings']
-  const isProtected = protectedPaths.some(path => request.nextUrl.pathname.startsWith(path))
+  const protectedPaths: readonly string[] = [
+    '/dashboard',
+    '/diagnose',
+    '/recommendations',
+    '/products',
+    '/history',
+    '/settings',
+  ]
+  const isProtected: boolean = protectedPaths.some((path: string): boolean =>
+    request.nextUrl.pathname.startsWith(path)
+  )
 
   if (isProtected && !user) {
     const url = request.nextUrl.clone()
@@ -40,8 +58,10 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
-  const authPaths = ['/login', '/signup']
-  const isAuthPage = authPaths.some(path => request.nextUrl.pathname.startsWith(path))
+  const authPaths: readonly string[] = ['/login', '/signup']
+  const isAuthPage: boolean = authPaths.some((path: string): boolean =>
+    request.nextUrl.pathname.startsWith(path)
+  )
 
   if (isAuthPage && user) {
     const url = request.nextUrl.clone()
@@ -52,7 +72,7 @@ export async function middleware(request: NextRequest) {
   return response
 }
 
-export const config = {
+export const config: { matcher: string[] } = {
   matcher: [
     '/((?!_next/static|_next/image|favicon.ico|icons|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],

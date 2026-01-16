@@ -3,7 +3,11 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { useForm } from "react-hook-form";
+import {
+  useForm,
+  type ControllerRenderProps,
+  type FieldPath,
+} from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ChevronRight, CheckCircle2, Circle } from "lucide-react";
 import { toast } from "sonner";
@@ -12,7 +16,12 @@ import {
   type HybridDiagnoseInput,
   GROWTH_STAGES,
 } from "@/lib/validations/diagnose";
-import { CROP_OPTIONS, LOCATIONS } from "@/lib/constants/profile";
+import {
+  CROP_OPTIONS,
+  LOCATIONS,
+  type CropOption,
+  type LocationOption,
+} from "@/lib/constants/profile";
 import { ImageUploadZone } from "@/components/diagnose/image-upload-zone";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -42,15 +51,29 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 
-export default function HybridDiagnosePage() {
+type HybridFieldRenderProps = {
+  field: ControllerRenderProps<HybridDiagnoseInput, FieldPath<HybridDiagnoseInput>>;
+};
+
+type HybridLabDataPayload = {
+  ph: number | null;
+  organicMatter: number | null;
+  nitrogen: number | null;
+  phosphorus: number | null;
+  potassium: number | null;
+};
+
+export default function HybridDiagnosePage(): JSX.Element {
   const router = useRouter();
-  const [isLoading, setIsLoading] = useState(false);
-  const [isFetching, setIsFetching] = useState(true);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isFetching, setIsFetching] = useState<boolean>(true);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imageError, setImageError] = useState<string>("");
 
-  const form = useForm({
-    resolver: zodResolver(hybridDiagnoseSchema),
+  const form = useForm<HybridDiagnoseInput, unknown, HybridDiagnoseInput>({
+    resolver: zodResolver<HybridDiagnoseInput, unknown, HybridDiagnoseInput>(
+      hybridDiagnoseSchema
+    ),
     defaultValues: {
       description: "",
       ph: "",
@@ -65,17 +88,20 @@ export default function HybridDiagnosePage() {
     },
   });
 
-  const description = form.watch("description");
+  const description: string = form.watch("description") ?? "";
 
-  useEffect(() => {
-    async function fetchProfile() {
+  useEffect((): void => {
+    async function fetchProfile(): Promise<void> {
       try {
         const response = await fetch("/api/profile");
         if (response.ok) {
-          const { profile } = await response.json();
+          const responseData: {
+            profile?: { location?: string | null } | null;
+          } = await response.json();
+          const { profile } = responseData;
           if (profile?.location) {
-            const location = LOCATIONS.find(
-              (loc) => loc.value === profile.location
+            const location: LocationOption | undefined = LOCATIONS.find(
+              (loc: LocationOption): boolean => loc.value === profile.location
             );
             if (location) {
               form.setValue("locationState", location.value);
@@ -83,7 +109,7 @@ export default function HybridDiagnosePage() {
             }
           }
         }
-      } catch (error) {
+      } catch (error: unknown) {
         console.error("Error fetching profile:", error);
       } finally {
         setIsFetching(false);
@@ -93,16 +119,16 @@ export default function HybridDiagnosePage() {
     fetchProfile();
   }, [form]);
 
-  async function onSubmit(data: any) {
+  async function onSubmit(data: HybridDiagnoseInput): Promise<void> {
     // Check if at least one data source is provided (not empty string)
-    const hasImage = imageFile !== null;
-    const hasLabData = [
+    const hasImage: boolean = imageFile !== null;
+    const hasLabData: boolean = [
       data.ph,
       data.organicMatter,
       data.nitrogen,
       data.phosphorus,
       data.potassium,
-    ].some((value) => value !== undefined && value !== "");
+    ].some((value: string | undefined): boolean => value !== undefined && value !== "");
 
     if (!hasImage && !hasLabData) {
       toast.error("Please provide either a photo or lab data");
@@ -126,16 +152,16 @@ export default function HybridDiagnosePage() {
         });
 
         if (!uploadRes.ok) {
-          const err = await uploadRes.json();
-          throw new Error(err.error || "Upload failed");
+          const err: { error?: string } = await uploadRes.json();
+          throw new Error(err.error ?? "Upload failed");
         }
 
-        const uploadData = await uploadRes.json();
+        const uploadData: { url: string } = await uploadRes.json();
         imageUrl = uploadData.url;
       }
 
       // Step 2: Build labData from form
-      const labData = {
+      const labData: HybridLabDataPayload = {
         ph: data.ph ? parseFloat(data.ph) : null,
         organicMatter: data.organicMatter
           ? parseFloat(data.organicMatter)
@@ -146,7 +172,9 @@ export default function HybridDiagnosePage() {
       };
 
       // Check if any lab data was provided
-      const hasLabDataValues = Object.values(labData).some((v) => v !== null);
+      const hasLabDataValues: boolean = Object.values(labData).some(
+        (value: number | null): boolean => value !== null
+      );
 
       // Step 3: Create input record
       const inputRes = await fetch("/api/inputs", {
@@ -164,14 +192,14 @@ export default function HybridDiagnosePage() {
       });
 
       if (!inputRes.ok) {
-        const err = await inputRes.json();
-        throw new Error(err.error || "Failed to save input");
+        const err: { error?: string } = await inputRes.json();
+        throw new Error(err.error ?? "Failed to save input");
       }
 
-      const input = await inputRes.json();
+      const input: { id: string } = await inputRes.json();
       toast.success("Hybrid analysis submitted!");
       router.push(`/recommendations/${input.id}`);
-    } catch (error) {
+    } catch (error: unknown) {
       console.error("Error submitting hybrid diagnosis:", error);
       toast.error(
         error instanceof Error ? error.message : "Failed to submit analysis"
@@ -182,16 +210,16 @@ export default function HybridDiagnosePage() {
   }
 
   // Check section completion
-  const photoSectionComplete =
-    imageFile !== null || (description && description.length >= 20);
-  const labSectionComplete =
+  const photoSectionComplete: boolean =
+    imageFile !== null || description.length >= 20;
+  const labSectionComplete: boolean =
     [
       form.watch("ph"),
       form.watch("organicMatter"),
       form.watch("nitrogen"),
       form.watch("phosphorus"),
       form.watch("potassium"),
-    ].some((value) => value !== undefined && value !== "") &&
+    ].some((value: string | undefined): boolean => value !== undefined && value !== "") &&
     !form.formState.errors.ph &&
     !form.formState.errors.organicMatter &&
     !form.formState.errors.nitrogen &&
@@ -278,7 +306,7 @@ export default function HybridDiagnosePage() {
               <FormField
                 control={form.control}
                 name="description"
-                render={({ field }) => (
+                render={({ field }: HybridFieldRenderProps): JSX.Element => (
                   <FormItem>
                     <FormLabel>Description</FormLabel>
                     <FormControl>
@@ -322,7 +350,7 @@ export default function HybridDiagnosePage() {
                 <FormField
                   control={form.control}
                   name="ph"
-                  render={({ field }) => (
+                  render={({ field }: HybridFieldRenderProps): JSX.Element => (
                     <FormItem>
                       <FormLabel>pH</FormLabel>
                       <FormControl>
@@ -342,7 +370,7 @@ export default function HybridDiagnosePage() {
                 <FormField
                   control={form.control}
                   name="organicMatter"
-                  render={({ field }) => (
+                  render={({ field }: HybridFieldRenderProps): JSX.Element => (
                     <FormItem>
                       <FormLabel>Organic Matter</FormLabel>
                       <FormControl>
@@ -362,7 +390,7 @@ export default function HybridDiagnosePage() {
                 <FormField
                   control={form.control}
                   name="nitrogen"
-                  render={({ field }) => (
+                  render={({ field }: HybridFieldRenderProps): JSX.Element => (
                     <FormItem>
                       <FormLabel>Nitrogen (N)</FormLabel>
                       <FormControl>
@@ -382,7 +410,7 @@ export default function HybridDiagnosePage() {
                 <FormField
                   control={form.control}
                   name="phosphorus"
-                  render={({ field }) => (
+                  render={({ field }: HybridFieldRenderProps): JSX.Element => (
                     <FormItem>
                       <FormLabel>Phosphorus (P)</FormLabel>
                       <FormControl>
@@ -402,7 +430,7 @@ export default function HybridDiagnosePage() {
                 <FormField
                   control={form.control}
                   name="potassium"
-                  render={({ field }) => (
+                  render={({ field }: HybridFieldRenderProps): JSX.Element => (
                     <FormItem>
                       <FormLabel>Potassium (K)</FormLabel>
                       <FormControl>
@@ -434,7 +462,7 @@ export default function HybridDiagnosePage() {
               <FormField
                 control={form.control}
                 name="crop"
-                render={({ field }) => (
+                render={({ field }: HybridFieldRenderProps): JSX.Element => (
                   <FormItem>
                     <FormLabel>Crop *</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value}>
@@ -444,7 +472,7 @@ export default function HybridDiagnosePage() {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent className="max-h-[300px]">
-                        {CROP_OPTIONS.map((crop) => (
+                        {CROP_OPTIONS.map((crop: CropOption): JSX.Element => (
                           <SelectItem key={crop.value} value={crop.value}>
                             {crop.label}
                           </SelectItem>
@@ -459,7 +487,7 @@ export default function HybridDiagnosePage() {
               <FormField
                 control={form.control}
                 name="growthStage"
-                render={({ field }) => (
+                render={({ field }: HybridFieldRenderProps): JSX.Element => (
                   <FormItem>
                     <FormLabel>Growth Stage *</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value}>
@@ -469,7 +497,7 @@ export default function HybridDiagnosePage() {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {GROWTH_STAGES.map((stage) => (
+                        {GROWTH_STAGES.map((stage: string): JSX.Element => (
                           <SelectItem key={stage} value={stage}>
                             {stage}
                           </SelectItem>
@@ -488,7 +516,7 @@ export default function HybridDiagnosePage() {
                 <FormField
                   control={form.control}
                   name="locationCountry"
-                  render={({ field }) => (
+                  render={({ field }: HybridFieldRenderProps): JSX.Element => (
                     <FormItem>
                       <FormLabel>Country *</FormLabel>
                       <Select
@@ -513,7 +541,7 @@ export default function HybridDiagnosePage() {
                 <FormField
                   control={form.control}
                   name="locationState"
-                  render={({ field }) => (
+                  render={({ field }: HybridFieldRenderProps): JSX.Element => (
                     <FormItem>
                       <FormLabel>State/Province *</FormLabel>
                       <Select
@@ -527,9 +555,9 @@ export default function HybridDiagnosePage() {
                         </FormControl>
                         <SelectContent className="max-h-[300px]">
                           {LOCATIONS.filter(
-                            (loc) =>
+                            (loc: LocationOption): boolean =>
                               loc.country === form.watch("locationCountry")
-                          ).map((location) => (
+                          ).map((location: LocationOption): JSX.Element => (
                             <SelectItem
                               key={location.value}
                               value={location.value}
@@ -552,7 +580,7 @@ export default function HybridDiagnosePage() {
             <Button
               type="button"
               variant="outline"
-              onClick={() => router.back()}
+              onClick={(): void => router.back()}
               disabled={isLoading}
             >
               Cancel
