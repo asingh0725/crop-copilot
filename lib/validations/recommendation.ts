@@ -13,7 +13,7 @@ export const ValidationFailureSchema = z.object({
 export const QualityFactorsSchema = z.object({
   imageClarity: z.enum(['unclear', 'acceptable', 'clear']).nullable(),
   imageRelevance: z.enum(['not_agricultural', 'agricultural']).nullable(),
-  descriptionDetail: z.enum(['vague', 'basic', 'detailed']).nullable(),
+  descriptionDetail: z.enum(['basic', 'moderate', 'detailed']).nullable(),
   labDataProvided: z.boolean(),
 })
 

@@ -75,7 +75,7 @@ For the primary condition:
 - Name the specific condition (not vague categories)
 - Explain your reasoning in terms both new and experienced farmers understand
 - Describe what visual/data evidence supports this diagnosis
-- Rate severity based on potential yield/crop impact
+- - Rate severity as one of: "low", "moderate", "high", or "critical" (use "low" for normal/healthy conditions)
 
 For differential diagnoses (include 2-3 alternatives):
 - Only include conditions with >10% likelihood
