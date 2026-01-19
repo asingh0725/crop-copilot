@@ -1,16 +1,15 @@
-import Replicate from "replicate";
+import OpenAI from "openai";
 
-const replicate = new Replicate({
-  auth: process.env.REPLICATE_API_TOKEN,
+const openai = new OpenAI({
+  apiKey:
+    "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",
 });
 
-// CLIP model for image embeddings
-const CLIP_MODEL =
-  "andreasjansson/clip-features:75b33f253f7714a281ad3e9b28f63e3232d583716ef6718f2e46641077ea040a";
+const EMBEDDING_MODEL = "text-embedding-3-small";
 const EMBEDDING_DIMENSIONS = 512;
 
 // Pricing: ~$0.0002 per image (estimated)
-const COST_PER_IMAGE = 0.0002;
+const COST_PER_MILLION_TOKENS = 0.02;
 
 // Retry configuration
 const MAX_RETRIES = 3;
@@ -19,15 +18,16 @@ const RETRY_BACKOFF_FACTOR = 2;
 
 export interface ImageEmbeddingResult {
   embedding: number[];
+  tokens: number;
   model: string;
   dimensions: number;
 }
 
 export interface BatchImageEmbeddingResult {
   embeddings: number[][];
-  total: number;
-  succeeded: number;
-  failed: number;
+  totalImages: number;
+  totalTokens: number;
+  model: string;
   estimatedCost: number;
 }
 
@@ -38,9 +38,6 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-/**
- * Generate CLIP embedding for an image URL with retry logic
- */
 export async function generateImageEmbedding(
   imageUrl: string,
   retries: number = MAX_RETRIES
@@ -53,36 +50,33 @@ export async function generateImageEmbedding(
 
   for (let attempt = 1; attempt <= retries; attempt++) {
     try {
-      const output = await replicate.run(CLIP_MODEL, {
-        input: {
-          inputs: imageUrl,
-        },
+      const response = await openai.embeddings.create({
+        model: EMBEDDING_MODEL,
+        input: imageUrl, // image URL is valid input
+        dimensions: EMBEDDING_DIMENSIONS,
       });
 
-      // The output is an array of embeddings (one per input)
-      const embedding = Array.isArray(output) ? output[0] : output;
+      const embedding = response.data[0].embedding;
+      const tokens = response.usage.total_tokens;
 
-      if (!Array.isArray(embedding)) {
-        throw new Error("Unexpected output format from CLIP model");
+      if (embedding.length !== EMBEDDING_DIMENSIONS) {
+        throw new Error(
+          `Invalid embedding length: expected ${EMBEDDING_DIMENSIONS}, got ${embedding.length}`
+        );
       }
 
       return {
         embedding,
-        model: CLIP_MODEL,
+        tokens,
+        model: EMBEDDING_MODEL,
         dimensions: EMBEDDING_DIMENSIONS,
       };
     } catch (error) {
       lastError = error instanceof Error ? error : new Error(String(error));
-      console.error(
-        `Attempt ${attempt}/${retries} failed for image ${imageUrl}:`,
-        lastError.message
-      );
 
-      // Don't retry if this is the last attempt
       if (attempt < retries) {
         const delayMs =
           INITIAL_RETRY_DELAY_MS * Math.pow(RETRY_BACKOFF_FACTOR, attempt - 1);
-        console.log(`Retrying in ${delayMs}ms...`);
         await sleep(delayMs);
       }
     }
@@ -94,8 +88,45 @@ export async function generateImageEmbedding(
 }
 
 /**
- * Generate CLIP embedding from base64 encoded image
+ * Generate embeddings for multiple images (batched, cost-aware)
  */
+export async function generateBatchImageEmbeddings(
+  imageUrls: string[]
+): Promise<BatchImageEmbeddingResult> {
+  if (imageUrls.length === 0) {
+    throw new Error("Image URLs array cannot be empty");
+  }
+
+  const response = await openai.embeddings.create({
+    model: EMBEDDING_MODEL,
+    input: imageUrls,
+    dimensions: EMBEDDING_DIMENSIONS,
+  });
+
+  const embeddings = response.data.map((item) => item.embedding);
+  const totalTokens = response.usage.total_tokens;
+  const estimatedCost = (totalTokens / 1_000_000) * COST_PER_MILLION_TOKENS;
+
+  return {
+    embeddings,
+    totalImages: imageUrls.length,
+    totalTokens,
+    model: EMBEDDING_MODEL,
+    estimatedCost,
+  };
+}
+
+/**
+ * Estimate cost for image embeddings
+ */
+export function estimateImageEmbeddingCost(
+  imageCount: number,
+  avgTokensPerImage: number = 100
+): number {
+  const totalTokens = imageCount * avgTokensPerImage;
+  return (totalTokens / 1_000_000) * COST_PER_MILLION_TOKENS;
+}
+
 export async function generateImageEmbeddingFromBase64(
   base64: string,
   mediaType: "image/jpeg" | "image/png" | "image/webp" = "image/jpeg",
@@ -105,82 +136,7 @@ export async function generateImageEmbeddingFromBase64(
     throw new Error("Base64 data cannot be empty");
   }
 
-  // Create data URI from base64
   const dataUri = `data:${mediaType};base64,${base64}`;
 
   return generateImageEmbedding(dataUri, retries);
-}
-
-/**
- * Generate embeddings for multiple images with rate limiting and error handling
- *
- * @param imageUrls - Array of image URLs to process
- * @param concurrency - Number of concurrent requests (default: 3)
- * @param onProgress - Optional callback for progress updates
- */
-export async function generateBatchImageEmbeddings(
-  imageUrls: string[],
-  concurrency: number = 3,
-  onProgress?: (
-    current: number,
-    total: number,
-    succeeded: number,
-    failed: number
-  ) => void
-): Promise<BatchImageEmbeddingResult> {
-  if (imageUrls.length === 0) {
-    throw new Error("Image URLs array cannot be empty");
-  }
-
-  const embeddings: number[][] = [];
-  let succeeded = 0;
-  let failed = 0;
-
-  // Process in batches with concurrency control
-  for (let i = 0; i < imageUrls.length; i += concurrency) {
-    const batch = imageUrls.slice(i, i + concurrency);
-
-    const results = await Promise.allSettled(
-      batch.map((url) => generateImageEmbedding(url))
-    );
-
-    for (const result of results) {
-      if (result.status === "fulfilled") {
-        embeddings.push(result.value.embedding);
-        succeeded++;
-      } else {
-        console.error("Failed to generate embedding:", result.reason);
-        failed++;
-      }
-    }
-
-    if (onProgress) {
-      onProgress(i + batch.length, imageUrls.length, succeeded, failed);
-    }
-
-    // Add delay between batches to respect rate limits
-    if (i + concurrency < imageUrls.length) {
-      await sleep(500); // 500ms delay between batches
-    }
-  }
-
-  const estimatedCost = imageUrls.length * COST_PER_IMAGE;
-
-  return {
-    embeddings,
-    total: imageUrls.length,
-    succeeded,
-    failed,
-    estimatedCost,
-  };
-}
-
-/**
- * Estimate the cost of generating image embeddings
- *
- * @param imageCount - Number of images to embed
- * @returns Estimated cost in USD
- */
-export function estimateImageEmbeddingCost(imageCount: number): number {
-  return imageCount * COST_PER_IMAGE;
 }
