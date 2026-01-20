@@ -1,4 +1,5 @@
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
+import { createHash } from "crypto";
 
 // Cloudflare R2 configuration
 const r2Client = new S3Client({
@@ -11,7 +12,7 @@ const r2Client = new S3Client({
 });
 
 const BUCKET_NAME = process.env.R2_BUCKET_NAME || "";
-const PUBLIC_URL = process.env.NEXT_PUBLIC_R2_PUBLIC_URL || "";
+const PUBLIC_URL = process.env.R2_PUBLIC_URL || "";
 
 export interface UploadResult {
   key: string;
@@ -68,24 +69,29 @@ export async function uploadToR2(
 }
 
 /**
- * Generate a unique key for an image in R2
- *
- * @param originalUrl - Original URL of the image
- * @param prefix - Optional prefix for the key (default: "images")
- * @returns Unique key for the image
+ * Generate a deterministic key for an image in R2.
+ * - Same URL → same key (idempotent)
+ * - Safe for retries / reprocessing
+ * - Avoids duplicate uploads & DB rows
  */
 export function generateImageKey(
   originalUrl: string,
   prefix: string = "images"
 ): string {
-  // Extract file extension from URL
-  const urlParts = originalUrl.split("?")[0].split("/");
-  const filename = urlParts[urlParts.length - 1];
-  const ext = filename.includes(".") ? filename.split(".").pop() : "jpg";
+  // Strip query params so cache-busting tokens don't change the key
+  const cleanUrl = originalUrl.split("?")[0];
 
-  // Generate unique identifier based on URL
-  const hash = Buffer.from(originalUrl).toString("base64url").slice(0, 16);
-  const timestamp = Date.now();
+  // Extract extension (fallback to jpg)
+  const filename = cleanUrl.split("/").pop() || "";
+  const ext = filename.includes(".")
+    ? filename.split(".").pop()
+    : "jpg";
 
-  return `${prefix}/${timestamp}-${hash}.${ext}`;
+  // Stable, collision-resistant hash of the URL
+  const hash = createHash("sha256")
+    .update(cleanUrl)
+    .digest("hex")
+    .slice(0, 32); // short but safe
+
+  return `${prefix}/${hash}.${ext}`;
 }

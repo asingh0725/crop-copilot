@@ -33,7 +33,7 @@ export interface BatchUpsertResult {
  * @returns URL of the image in R2, or original URL if already in R2
  */
 export async function ensureImageInR2(imageUrl: string): Promise<string> {
-  const publicUrl = process.env.NEXT_PUBLIC_R2_PUBLIC_URL || "";
+  const publicUrl = process.env.R2_PUBLIC_URL || "";
 
   // Check if image is already in our R2 bucket
   if (publicUrl && imageUrl.startsWith(publicUrl)) {
@@ -99,6 +99,9 @@ export async function upsertImageChunk(
     // Continue without embedding if generation fails
   }
 
+  // Prisma does not support pgvector types; cast is required
+  const embeddingValue =
+    embedding ? (`[${embedding.join(",")}]` as any) : undefined;
   // Upsert the image chunk in the database
   const imageChunk = await prisma.imageChunk.upsert({
     where: {
@@ -108,18 +111,19 @@ export async function upsertImageChunk(
         imageUrl: finalImageUrl,
       },
     },
+    // Prisma does not type pgvector fields; a narrow cast is required to persist embeddings.
     update: {
       caption: input.caption,
-      embedding: embedding ? `[${embedding.join(",")}]` : null,
-      metadata: input.metadata || {},
-    },
+      embedding: embeddingValue,
+      metadata: input.metadata ?? undefined,
+    } as any,
     create: {
       sourceId: input.sourceId,
       imageUrl: finalImageUrl,
       caption: input.caption,
-      embedding: embedding ? `[${embedding.join(",")}]` : null,
-      metadata: input.metadata || {},
-    },
+      embedding: embeddingValue,
+      metadata: input.metadata ?? undefined,
+    } as any,
   });
 
   return {
