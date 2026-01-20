@@ -10,6 +10,14 @@ datasource db {
   extensions = [vector]
 }
 
+enum SourceType {
+  UNIVERSITY_EXTENSION
+  MANUFACTURER
+  RETAILER
+  RESEARCH_PAPER
+  GOVERNMENT
+}
+
 model User {
   id        String   @id @default(cuid())
   email     String   @unique
@@ -51,16 +59,16 @@ model Input {
 }
 
 model Recommendation {
-  id          String   @id @default(cuid())
-  userId      String
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  inputId     String   @unique
-  input       Input    @relation(fields: [inputId], references: [id], onDelete: Cascade)
-  diagnosis   Json
-  confidence  Float
-  modelUsed   String
-  tokensUsed  Int?
-  createdAt   DateTime @default(now())
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  inputId    String   @unique
+  input      Input    @relation(fields: [inputId], references: [id], onDelete: Cascade)
+  diagnosis  Json
+  confidence Float
+  modelUsed  String
+  tokensUsed Int?
+  createdAt  DateTime @default(now())
 
   feedback Feedback[]
   sources  RecommendationSource[]
@@ -80,12 +88,12 @@ model Feedback {
 }
 
 model Source {
-  id          String   @id @default(cuid())
+  id          String     @id @default(cuid())
   title       String
-  url         String?
-  sourceType  String
+  url         String?    @unique
+  sourceType  SourceType
   institution String?
-  createdAt   DateTime @default(now())
+  createdAt   DateTime   @default(now())
 
   textChunks  TextChunk[]
   imageChunks ImageChunk[]
@@ -112,6 +120,8 @@ model ImageChunk {
   embedding Unsupported("vector(512)")?
   metadata  Json?
   createdAt DateTime                    @default(now())
+
+  @@unique([sourceId, imageUrl])
 }
 
 model RecommendationSource {
