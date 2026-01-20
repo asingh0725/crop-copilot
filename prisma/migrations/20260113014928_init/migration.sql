@@ -1,6 +1,9 @@
 -- CreateExtension
 CREATE EXTENSION IF NOT EXISTS "vector";
 
+-- CreateEnum
+CREATE TYPE "SourceType" AS ENUM ('UNIVERSITY_EXTENSION', 'MANUFACTURER', 'RETAILER', 'RESEARCH_PAPER', 'GOVERNMENT');
+
 -- CreateTable
 CREATE TABLE "User" (
     "id" TEXT NOT NULL,
@@ -33,6 +36,9 @@ CREATE TABLE "Input" (
     "imageUrl" TEXT,
     "description" TEXT,
     "labData" JSONB,
+    "location" TEXT,
+    "crop" TEXT,
+    "season" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "Input_pkey" PRIMARY KEY ("id")
@@ -43,9 +49,10 @@ CREATE TABLE "Recommendation" (
     "id" TEXT NOT NULL,
     "userId" TEXT NOT NULL,
     "inputId" TEXT NOT NULL,
-    "diagnosis" TEXT NOT NULL,
-    "actions" JSONB NOT NULL,
+    "diagnosis" JSONB NOT NULL,
     "confidence" DOUBLE PRECISION NOT NULL,
+    "modelUsed" TEXT NOT NULL,
+    "tokensUsed" INTEGER,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "Recommendation_pkey" PRIMARY KEY ("id")
@@ -70,7 +77,7 @@ CREATE TABLE "Source" (
     "id" TEXT NOT NULL,
     "title" TEXT NOT NULL,
     "url" TEXT,
-    "sourceType" TEXT NOT NULL,
+    "sourceType" "SourceType" NOT NULL,
     "institution" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
@@ -146,6 +153,12 @@ CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "UserProfile_userId_key" ON "UserProfile"("userId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Recommendation_inputId_key" ON "Recommendation"("inputId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Source_url_key" ON "Source"("url");
 
 -- AddForeignKey
 ALTER TABLE "UserProfile" ADD CONSTRAINT "UserProfile_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
