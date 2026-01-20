@@ -120,6 +120,8 @@ model ImageChunk {
   embedding Unsupported("vector(512)")?
   metadata  Json?
   createdAt DateTime                    @default(now())
+
+  @@unique([sourceId, imageUrl])
 }
 
 model RecommendationSource {
