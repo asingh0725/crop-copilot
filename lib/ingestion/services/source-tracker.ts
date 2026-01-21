@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { SourceType } from "@prisma/client";
+import { Prisma, SourceType } from "@prisma/client";
 
 export interface RegisterSourceInput {
   title: string;
@@ -8,20 +8,12 @@ export interface RegisterSourceInput {
   institution?: string;
 }
 
-export interface SourceWithChunks {
-  id: string;
-  title: string;
-  url: string | null;
-  sourceType: SourceType;
-  institution: string | null;
-  status: string;
-  chunksCount: number;
-  errorMessage: string | null;
-  createdAt: Date;
-  updatedAt: Date;
-  textChunks: Array<{ id: string }>;
-  imageChunks: Array<{ id: string }>;
-}
+export type SourceWithChunks = Prisma.SourceGetPayload<{
+  include: {
+    textChunks: { select: { id: true } };
+    imageChunks: { select: { id: true } };
+  };
+}>;
 
 export interface IngestionStats {
   textChunks: number;
@@ -51,7 +43,7 @@ export interface IngestionSummary {
  */
 export async function registerSource(
   input: RegisterSourceInput
-): Promise<SourceWithChunks> {
+): Promise<{ source: SourceWithChunks; created: boolean }> {
   // If URL is provided, try to find existing source
   if (input.url) {
     const existing = await prisma.source.findUnique({
@@ -64,7 +56,7 @@ export async function registerSource(
 
     if (existing) {
       console.log(`Source already exists: ${existing.title} (${existing.id})`);
-      return existing;
+      return { source: existing, created: false };
     }
   }
 
@@ -85,7 +77,7 @@ export async function registerSource(
 
   console.log(`Registered new source: ${source.title} (${source.id})`);
 
-  return source;
+  return { source, created: true };
 }
 
 /**

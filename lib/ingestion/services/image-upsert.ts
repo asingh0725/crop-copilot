@@ -99,32 +99,34 @@ export async function upsertImageChunk(
     // Continue without embedding if generation fails
   }
 
-  // Prisma does not support pgvector types; cast is required
-  const embeddingValue =
-    embedding ? (`[${embedding.join(",")}]` as any) : undefined;
-  // Upsert the image chunk in the database
+  // 1️⃣ Upsert image chunk WITHOUT embedding (Prisma limitation)
   const imageChunk = await prisma.imageChunk.upsert({
     where: {
-      // Use composite unique constraint on sourceId + imageUrl
       sourceId_imageUrl: {
         sourceId: input.sourceId,
         imageUrl: finalImageUrl,
       },
     },
-    // Prisma does not type pgvector fields; a narrow cast is required to persist embeddings.
     update: {
       caption: input.caption,
-      embedding: embeddingValue,
       metadata: input.metadata ?? undefined,
-    } as any,
+    },
     create: {
       sourceId: input.sourceId,
       imageUrl: finalImageUrl,
       caption: input.caption,
-      embedding: embeddingValue,
       metadata: input.metadata ?? undefined,
-    } as any,
+    },
   });
+
+  // 2️⃣ Persist embedding via raw SQL (pgvector)
+  if (embedding) {
+    await prisma.$executeRawUnsafe(`
+      UPDATE "ImageChunk"
+      SET embedding = '[${embedding.join(",")}]'
+      WHERE id = '${imageChunk.id}'
+    `);
+  }
 
   return {
     id: imageChunk.id,

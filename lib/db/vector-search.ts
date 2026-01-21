@@ -81,16 +81,16 @@ export async function searchSimilarTextChunks(
   >`
     SELECT
       tc.id,
-      tc.source_id,
+      tc."sourceId",
       tc.content,
       tc.metadata,
       tc.embedding <=> ${embeddingString}::vector AS distance,
       s.title AS source_title,
       s.url AS source_url,
-      s.source_type,
+      s."sourceType",
       s.institution AS source_institution
     FROM "TextChunk" tc
-    JOIN "Source" s ON s.id = tc.source_id
+    JOIN "Source" s ON s.id = tc."sourceId"
     WHERE tc.embedding IS NOT NULL
       AND (1 - (tc.embedding <=> ${embeddingString}::vector) / 2) >= ${threshold}
     ORDER BY distance ASC

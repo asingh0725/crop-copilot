@@ -37,6 +37,7 @@ const MIN_CHUNK_SIZE = 100; // minimum viable chunk size
 
 interface TestStats {
   sourceId?: string;
+  sourceCreated?: boolean;
   textChunks: number;
   imageChunks: number;
   textEmbeddings: number;
@@ -155,13 +156,15 @@ async function registerAndChunkSource(
   console.log("\n📝 Step 2: Registering source and chunking content...");
 
   // Register source
-  const source = await registerSource({
+  const { source, created } = await registerSource({
     title,
     url,
     sourceType: "UNIVERSITY_EXTENSION",
     institution: "Iowa State University",
   });
 
+  stats.sourceId = source.id;
+  stats.sourceCreated = created;
   console.log(`✅ Source registered: ${source.id}`);
 
   // Chunk content
@@ -207,17 +210,23 @@ async function processTextChunks(
     const chunk = chunks[i];
     const embedding = embeddingResult.embeddings[i];
 
-    await prisma.textChunk.create({
+    const textChunk = await prisma.textChunk.create({
       data: {
         sourceId,
         content: chunk,
-        embedding: `[${embedding.join(",")}]` as any,
         metadata: {
           chunkIndex: i,
           chunkSize: chunk.length,
         },
       },
     });
+
+    // pgvector write must use raw SQL (Prisma does not support vector fields)
+    await prisma.$executeRawUnsafe(`
+      UPDATE "TextChunk"
+      SET embedding = '[${embedding.join(",")}]'
+      WHERE id = '${textChunk.id}'
+    `);
   }
 
   console.log(`✅ Saved ${chunks.length} text chunks to database`);
@@ -292,11 +301,13 @@ async function verifyVectorSearch(sourceId: string): Promise<void> {
     where: { sourceId },
   });
 
-  if (imageChunks.length > 0 && imageChunks[0].embedding) {
+  const embedding = (imageChunks[0] as any).embedding;
+
+  if (imageChunks.length > 0 && embedding) {
     console.log("\n🖼️  Testing image vector search...");
 
     // Get the embedding of our test image
-    const testImageEmbedding = imageChunks[0].embedding as any as string;
+    const testImageEmbedding = embedding as any as string;
     const embeddingArray = JSON.parse(
       testImageEmbedding.replace(/^{/, "[").replace(/}$/, "]")
     );
