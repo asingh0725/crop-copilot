@@ -3,6 +3,8 @@ import * as cheerio from "cheerio";
 import * as fs from "fs/promises";
 import * as path from "path";
 
+const BOT_NAME = "agribot";
+
 export interface FertilizerProduct {
   name: string;
   brand: string;
@@ -51,11 +53,18 @@ async function checkRobotsTxt(baseUrl: string, path: string): Promise<boolean> {
 
       if (trimmed.startsWith("user-agent:")) {
         const agent = trimmed.split(":")[1].trim();
-        userAgentMatches = agent === "*" || agent === "bot";
+        userAgentMatches =
+          agent === "*" || agent === BOT_NAME || agent.startsWith(BOT_NAME);
       }
 
       if (userAgentMatches && trimmed.startsWith("disallow:")) {
         const disallowPath = trimmed.split(":")[1].trim();
+
+        // Empty Disallow means allow all paths
+        if (!disallowPath) {
+          continue;
+        }
+
         if (path.startsWith(disallowPath)) {
           disallowed = true;
           break;
