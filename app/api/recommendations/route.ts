@@ -1,105 +1,176 @@
-export const dynamic = 'force-dynamic'
+import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
+import { createClient } from "@/lib/supabase/server";
+import { prisma } from "@/lib/prisma";
+import { searchTextChunks, searchImageChunks } from "@/lib/retrieval/search";
+import { assembleContext } from "@/lib/retrieval/context-assembly";
+import { generateWithRetry, ValidationError } from "@/lib/validation/retry";
 
-import { createClient } from '@/lib/supabase/server'
-import { prisma } from '@/lib/prisma'
-import { NextRequest, NextResponse } from 'next/server'
-import { z } from 'zod'
-import { generateRecommendation, inputToPromptInput } from '@/lib/ai/services/recommendation'
-import { isValidationFailure } from '@/lib/validations/recommendation'
-
-const generateSchema = z.object({
-  inputId: z.string().min(1),
-})
+const requestSchema = z.object({
+  inputId: z.string().cuid(),
+});
 
 export async function POST(request: NextRequest) {
+  const startTime = Date.now();
+
   try {
-    const supabase = await createClient()
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    // Validate authentication
+    const supabase = await createClient();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
 
     if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const body = await request.json()
-    const validated = generateSchema.safeParse(body)
+    // Parse and validate request body
+    const body = await request.json();
+    const { inputId } = requestSchema.parse(body);
 
-    if (!validated.success) {
-      return NextResponse.json({ error: 'Invalid request', details: validated.error.flatten() }, { status: 400 })
-    }
+    console.log("Generating recommendation:", {
+      inputId,
+      userId: user.id,
+      timestamp: new Date().toISOString(),
+    });
 
-    // Fetch the input and verify ownership
+    // Fetch input from database
     const input = await prisma.input.findUnique({
-      where: { id: validated.data.inputId },
-    })
+      where: { id: inputId },
+      include: { user: { include: { profile: true } } },
+    });
 
     if (!input) {
-      return NextResponse.json({ error: 'Input not found' }, { status: 404 })
+      return NextResponse.json({ error: "Input not found" }, { status: 404 });
     }
 
+    // Verify input belongs to authenticated user
     if (input.userId !== user.id) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    // Check if recommendation already exists
-    const existingRecommendation = await prisma.recommendation.findUnique({
-      where: { inputId: input.id },
-    })
+    // Build query from input
+    const query = buildQuery(input);
 
-    if (existingRecommendation) {
-      return NextResponse.json(existingRecommendation)
+    // Retrieve relevant chunks
+    const textResults = await searchTextChunks(query, 5);
+    const imageResults = await searchImageChunks(query, 3);
+
+    // Assemble context
+    const context = await assembleContext(textResults, imageResults);
+
+    if (context.totalChunks === 0) {
+      return NextResponse.json(
+        {
+          error: "No relevant knowledge found",
+          details: "Unable to find context for this input",
+        },
+        { status: 422 }
+      );
     }
 
-    // Generate recommendation
-    const promptInput = inputToPromptInput({
-      ...input,
-      labData: input.labData as Record<string, any> | null,
-    })
-    const result = await generateRecommendation(promptInput)
+    // Normalize input for agent
+    const normalizedInput = {
+      type: input.type,
+      description: input.description || undefined,
+      labData: input.labData || undefined,
+      imageUrl: input.imageUrl || undefined,
+      crop: (input.labData as any)?.crop || undefined,
+      location: input.user.profile?.location || undefined,
+    };
 
-    if (!result.success || !result.response) {
-      return NextResponse.json({
-        error: 'Failed to generate recommendation',
-        details: result.error
-      }, { status: 500 })
-    }
+    // Generate recommendation with retry logic
+    const recommendation = await generateWithRetry(normalizedInput, context);
 
-    // Handle validation failure from AI
-    if (isValidationFailure(result.response)) {
-      return NextResponse.json({
-        error: 'Input validation failed',
-        validationIssues: result.response.validation.issues,
-      }, { status: 422 })
-    }
-
-    // Save successful recommendation to database
-    const recommendation = await prisma.recommendation.create({
+    // Store recommendation in database
+    const savedRecommendation = await prisma.recommendation.create({
       data: {
         userId: user.id,
         inputId: input.id,
-        diagnosis: result.response.diagnosis,
-        confidence: result.response.diagnosis.primaryCondition.confidence,
-        modelUsed: result.model || 'claude-sonnet-4-20250514',
-        tokensUsed: (result.usage?.inputTokens || 0) + (result.usage?.outputTokens || 0),
+        diagnosis: recommendation.diagnosis,
+        confidence: recommendation.confidence,
+        modelUsed: "claude-3-5-sonnet-20241022",
       },
-    })
+    });
 
-    // Return full response including AI output
+    // Store source links
+    await Promise.all(
+      recommendation.sources.map((source) =>
+        prisma.recommendationSource.create({
+          data: {
+            recommendationId: savedRecommendation.id,
+            textChunkId: source.chunkId,
+            relevanceScore: source.relevance,
+          },
+        })
+      )
+    );
+
+    const latency = Date.now() - startTime;
+
+    console.log("Recommendation generated successfully:", {
+      recommendationId: savedRecommendation.id,
+      latencyMs: latency,
+    });
+
     return NextResponse.json({
-      id: recommendation.id,
-      inputId: recommendation.inputId,
-      diagnosis: result.response.diagnosis,
-      recommendations: result.response.recommendations,
-      confidenceExplanation: result.response.confidenceExplanation,
-      additionalNotes: result.response.additionalNotes,
-      disclaimers: result.response.disclaimers,
-      validation: result.response.validation,
-      modelUsed: recommendation.modelUsed,
-      tokensUsed: recommendation.tokensUsed,
-      createdAt: recommendation.createdAt,
-    }, { status: 201 })
-
+      id: savedRecommendation.id,
+      recommendation,
+      metadata: {
+        latencyMs: latency,
+        chunksUsed: context.totalChunks,
+        tokensUsed: context.totalTokens,
+      },
+    });
   } catch (error) {
-    console.error('Generate recommendation error:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    const latency = Date.now() - startTime;
+
+    console.error("Recommendation generation failed:", {
+      error,
+      latencyMs: latency,
+    });
+
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { error: "Invalid request", details: error.errors },
+        { status: 400 }
+      );
+    }
+
+    if (error instanceof ValidationError) {
+      return NextResponse.json(
+        {
+          error: "Recommendation validation failed",
+          details: error.details,
+        },
+        { status: 422 }
+      );
+    }
+
+    return NextResponse.json(
+      { error: "Failed to generate recommendation" },
+      { status: 500 }
+    );
   }
+}
+
+/**
+ * Build search query from input
+ */
+function buildQuery(input: any): string {
+  const parts: string[] = [];
+
+  if (input.description) {
+    parts.push(input.description);
+  }
+
+  if (input.labData) {
+    const labData = input.labData as any;
+    if (labData.crop) parts.push(`Crop: ${labData.crop}`);
+    if (labData.symptoms) parts.push(`Symptoms: ${labData.symptoms}`);
+    if (labData.soilPh) parts.push(`pH: ${labData.soilPh}`);
+  }
+
+  return parts.join(". ");
 }
