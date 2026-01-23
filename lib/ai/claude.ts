@@ -1,11 +1,12 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { createClient } from "@/lib/supabase/server";
 
-const anthropic = new Anthropic({
+export const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
 });
 
-const MODEL = "claude-sonnet-4-20250514";
+export const CLAUDE_MODEL = "claude-sonnet-4-5";
+const MODEL = "claude-sonnet-4-5";
 const MAX_TOKENS = 4096;
 const TIMEOUT_MS = 60000;
 

@@ -77,7 +77,7 @@ Users can provide information through three pathways, accommodating different le
 
 ### AI-Powered Diagnosis
 
-- **Vision Analysis**: Claude 3.5 Sonnet analyzes uploaded images to identify symptoms, deficiencies, diseases, and pest damage
+- **Vision Analysis**: Claude 4.5 Sonnet analyzes uploaded images to identify symptoms, deficiencies, diseases, and pest damage
 - **Symptom Extraction**: Natural language processing extracts key indicators from user descriptions
 - **Pattern Matching**: Multi-modal RAG matches observations against reference images and documented conditions
 
@@ -168,7 +168,7 @@ Users can provide information through three pathways, accommodating different le
 │   │                                                                      │  │
 │   │  ┌─────────────────┐              ┌─────────────────┐               │  │
 │   │  │  Text Embedding │              │ Image Embedding │               │  │
-│   │  │  (OpenAI)       │              │ (CLIP)          │               │  │
+│   │  │  (OpenAI)       │              │ (OpenAI)        │               │  │
 │   │  └────────┬────────┘              └────────┬────────┘               │  │
 │   │           │                                │                         │  │
 │   │           ▼                                ▼                         │  │
@@ -277,7 +277,7 @@ Users can provide information through three pathways, accommodating different le
 │  │ └────────────────────┘ │ │ └────────────────┘ │ │ └────────────────┘ │ │
 │  │ ┌────────────────────┐ │ │ ┌────────────────┐ │ │ ┌────────────────┐ │ │
 │  │ │ Recommendation     │ │ │ │ Image Embedding│ │ │ │ Price Lookup   │ │ │
-│  │ │ Agent              │ │ │ │ (CLIP)         │ │ │ │ Service        │ │ │
+│  │ │ Agent              │ │ │ │ (OpenAI)       │ │ │ │ Service        │ │ │
 │  │ └────────────────────┘ │ │ └────────────────┘ │ │ └────────────────┘ │ │
 │  │ ┌────────────────────┐ │ │ ┌────────────────┐ │ │ ┌────────────────┐ │ │
 │  │ │ Retrieval Critic   │ │ │ │ Similarity     │ │ │ │ Retailer Links │ │ │
@@ -327,7 +327,7 @@ Users can provide information through three pathways, accommodating different le
 │  │                                                                       │ │
 │  │  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌────────┐ │ │
 │  │  │ Scrapers │─▶│ Parsers  │─▶│ Chunking │─▶│Embeddings│─▶│pgvector│ │ │
-│  │  │Playwright│  │PDF/HTML  │  │ + Images │  │Text+CLIP │  │ Upsert │ │ │
+│  │  │Playwright│  │PDF/HTML  │  │ + Images │  │Text+IMG  │  │ Upsert │ │ │
 │  │  └──────────┘  └──────────┘  └──────────┘  └──────────┘  └────────┘ │ │
 │  │                                                                       │ │
 │  │  Sources: University Extensions, Product Manufacturers, Ag Retailers │ │
@@ -336,11 +336,11 @@ Users can provide information through three pathways, accommodating different le
 │  ┌───────────────────────────────────────────────────────────────────────┐ │
 │  │                    EXTERNAL SERVICES                                  │ │
 │  │                                                                       │ │
-│  │  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐ ┌─────────────┐    │ │
-│  │  │ Anthropic   │ │ OpenAI      │ │ Replicate/  │ │ Vercel      │    │ │
-│  │  │ Claude API  │ │ Embeddings  │ │ HuggingFace │ │ Analytics   │    │ │
-│  │  │             │ │ API         │ │ (CLIP)      │ │             │    │ │
-│  │  └─────────────┘ └─────────────┘ └─────────────┘ └─────────────┘    │ │
+│  │  ┌─────────────┐ ┌─────────────┐  ┌─────────────┐                     │ │
+│  │  │ Anthropic   │ │ OpenAI      │  │ Vercel      │                     │ │
+│  │  │ Claude API  │ │ Embeddings  │  │ Analytics   │                     │ │
+│  │  │             │ │ API         │  │             │                     │ │
+│  │  └─────────────┘ └─────────────┘  └─────────────┘                     │ │
 │  └───────────────────────────────────────────────────────────────────────┘ │
 │                                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
@@ -353,8 +353,8 @@ Users can provide information through three pathways, accommodating different le
 | **Unified Framework** | Next.js 14 (App Router) | Single deployment, shared types, lower cost than separate frontend/backend |
 | **Database** | Supabase (PostgreSQL + pgvector) | Free tier includes vectors, auth, storage; scales well |
 | **Image Storage** | Cloudflare R2 | Zero egress fees, S3-compatible, generous free tier |
-| **Primary LLM** | Claude 3.5 Sonnet | Best vision + reasoning combination, competitive pricing |
-| **Embeddings** | OpenAI text-embedding-3-small + CLIP | Best quality/cost ratio for text; CLIP for multi-modal |
+| **Primary LLM** | Claude 4.5 Sonnet | Best vision + reasoning combination, competitive pricing |
+| **Embeddings** | OpenAI text-embedding-3-small | Best quality/cost ratio for text|
 | **Auth** | Supabase Auth | Included free, handles OAuth, email, magic links |
 | **Deployment** | Vercel | Optimal for Next.js, edge functions, automatic scaling |
 
@@ -399,10 +399,9 @@ Users can provide information through three pathways, accommodating different le
 
 | Technology | Purpose | Cost |
 |------------|---------|------|
-| Claude 3.5 Sonnet | Vision analysis, recommendation generation | ~$3/M input, ~$15/M output tokens |
+| Claude 4.5 Sonnet | Vision analysis, recommendation generation | ~$3/M input, ~$15/M output tokens |
 | GPT-4o-mini | Lightweight tasks, validation | ~$0.15/M input, ~$0.60/M output tokens |
 | OpenAI text-embedding-3-small | Text embeddings | $0.02/M tokens |
-| CLIP (via Replicate) | Image embeddings | ~$0.0002/image |
 
 #### Database & Storage
 
@@ -448,7 +447,6 @@ Cost breakdown at MVP scale:
 | Cloudflare R2 | $0 (free tier) |
 | Claude API | ~$15-25 |
 | OpenAI Embeddings | ~$5-10 |
-| CLIP Embeddings | ~$2-5 |
 | **Total** | **~$25-40** |
 
 ---
@@ -1763,8 +1761,8 @@ The ingestion pipeline collects, processes, and indexes agricultural knowledge f
 │  │  ┌──────────────────────────┐  ┌──────────────────────────┐         │ │
 │  │  │     Text Embeddings      │  │    Image Embeddings      │         │ │
 │  │  │                          │  │                          │         │ │
-│  │  │  Model: OpenAI           │  │  Model: CLIP             │         │ │
-│  │  │  text-embedding-3-small  │  │  (via Replicate)         │         │ │
+│  │  │  Model: OpenAI           │  │  Model: OpenAI           │         │ │
+│  │  │  text-embedding-3-small  │  │  text-embedding-3-small  │         │ │
 │  │  │                          │  │                          │         │ │
 │  │  │  Dimensions: 1536        │  │  Dimensions: 512         │         │ │
 │  │  │  Cost: $0.02/1M tokens   │  │  Cost: ~$0.0002/image    │         │ │
