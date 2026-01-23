@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { searchTextChunks, searchImageChunks } from "@/lib/retrieval/search";
+import { searchTextChunks, searchImageChunks, SearchResult } from "@/lib/retrieval/search";
 
 const searchSchema = z.object({
   query: z.string().min(1, "Query is required"),
@@ -13,8 +13,8 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { query, type, limit } = searchSchema.parse(body);
 
-    let textResults = [];
-    let imageResults = [];
+    let textResults: SearchResult[] = [];
+    let imageResults: SearchResult[] = [];
 
     if (type === "text" || type === "both") {
       textResults = await searchTextChunks(query, limit);
@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: "Invalid request", details: error.errors },
+        { error: "Invalid request", details: error.issues },
         { status: 400 }
       );
     }

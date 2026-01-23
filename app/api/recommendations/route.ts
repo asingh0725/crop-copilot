@@ -90,7 +90,7 @@ export async function POST(request: NextRequest) {
         inputId: input.id,
         diagnosis: recommendation.diagnosis,
         confidence: recommendation.confidence,
-        modelUsed: "claude-3-5-sonnet-20241022",
+        modelUsed: "claude-sonnet-4-5",
       },
     });
 
@@ -133,7 +133,7 @@ export async function POST(request: NextRequest) {
 
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: "Invalid request", details: error.errors },
+        { error: "Invalid request", details: error.issues },
         { status: 400 }
       );
     }
