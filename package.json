@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "next lint",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
-    "test:ingestion": "tsx scripts/test-ingestion.ts"
+    "test:ingestion": "tsx scripts/ingestion/test-ingestion.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.71.2",
