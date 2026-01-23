@@ -1,6 +1,8 @@
 import { prisma } from "@/lib/prisma";
 import { generateEmbedding } from "@/lib/embeddings/generate";
 
+const TEXT_EMBEDDING_DIMENSIONS = 1536
+const IMAGE_EMBEDDING_DIMENSIONS = 512
 export interface SearchResult {
   id: string;
   content: string;
@@ -16,7 +18,7 @@ export async function searchTextChunks(
   query: string,
   limit: number = 5
 ): Promise<SearchResult[]> {
-  const embedding = await generateEmbedding(query);
+  const embedding = await generateEmbedding(query, TEXT_EMBEDDING_DIMENSIONS);
   const embeddingString = `[${embedding.join(",")}]`;
 
   const results = await prisma.$queryRaw<any[]>`
@@ -48,7 +50,7 @@ export async function searchImageChunks(
   query: string,
   limit: number = 5
 ): Promise<SearchResult[]> {
-  const embedding = await generateEmbedding(query);
+  const embedding = await generateEmbedding(query, IMAGE_EMBEDDING_DIMENSIONS);
   const embeddingString = `[${embedding.join(",")}]`;
 
   const results = await prisma.$queryRaw<any[]>`
