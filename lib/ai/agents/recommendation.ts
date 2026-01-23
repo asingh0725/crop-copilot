@@ -119,8 +119,25 @@ export async function generateRecommendation(
       throw new Error("Unexpected response type from Claude");
     }
 
-    // Parse JSON response
-    const recommendation = JSON.parse(content.text);
+    // Parse JSON response - strip markdown code blocks if present
+    let jsonText = content.text.trim();
+
+    // Remove markdown code blocks if present
+    if (jsonText.startsWith("```")) {
+      // Remove opening ```json or ```
+      jsonText = jsonText.replace(/^```(?:json)?\n?/, "");
+      // Remove closing ```
+      jsonText = jsonText.replace(/\n?```$/, "");
+      jsonText = jsonText.trim();
+    }
+
+    // Sometimes Claude adds explanatory text after the JSON
+    // Try to extract just the JSON object
+    const jsonMatch = jsonText.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      jsonText = jsonMatch[0];
+    }
+    const recommendation = JSON.parse(jsonText);
     return recommendation;
   } catch (error) {
     console.error("Error generating recommendation:", error);
