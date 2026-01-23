@@ -81,7 +81,7 @@ function deduplicateById(results: SearchResult[]): SearchResult[] {
 async function enrichWithSourceMetadata(
   results: SearchResult[]
 ): Promise<RetrievedChunk[]> {
-  const sourceIds = [...new Set(results.map((r) => r.sourceId))];
+  const sourceIds = Array.from(new Set(results.map((r) => r.sourceId)));
 
   const sources = await prisma.source.findMany({
     where: { id: { in: sourceIds } },
