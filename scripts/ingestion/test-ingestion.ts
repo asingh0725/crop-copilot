@@ -13,20 +13,20 @@
 
 import { chromium } from "playwright";
 import * as cheerio from "cheerio";
-import { prisma } from "../lib/prisma";
+import { prisma } from "../../lib/prisma";
 import {
   registerSource,
   markSourceAsCompleted,
   markSourceAsFailed,
   deleteSource,
-} from "../lib/ingestion/services/source-tracker";
-import { generateBatchTextEmbeddings } from "../lib/ai/embeddings/text";
-import { generateImageEmbedding } from "../lib/ai/embeddings/image";
-import { upsertImageChunk } from "../lib/ingestion/services/image-upsert";
+} from "../../lib/ingestion/services/source-tracker";
+import { generateBatchTextEmbeddings } from "../../lib/ai/embeddings/text";
+import { generateImageEmbedding } from "../../lib/ai/embeddings/image";
+import { upsertImageChunk } from "../../lib/ingestion/services/image-upsert";
 import {
   searchSimilarTextChunks,
   searchSimilarImages,
-} from "../lib/db/vector-search";
+} from "../../lib/db/vector-search";
 
 // Test configuration
 const TEST_URL =
