@@ -3,13 +3,26 @@ import Anthropic from "@anthropic-ai/sdk";
 import type { ChunkData, ProcessedImage, CostTracker } from "../scrapers/types";
 import { countTokens } from "./chunker";
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+let openai: OpenAI | null = null;
+let anthropic: Anthropic | null = null;
 
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
-});
+function getOpenAI(): OpenAI {
+  if (!openai) {
+    openai = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
+    });
+  }
+  return openai;
+}
+
+function getAnthropic(): Anthropic {
+  if (!anthropic) {
+    anthropic = new Anthropic({
+      apiKey: process.env.ANTHROPIC_API_KEY,
+    });
+  }
+  return anthropic;
+}
 
 const TEXT_EMBEDDING_DIMENSIONS = 1536;
 const BATCH_SIZE = 100; // OpenAI allows up to 2048, but 100 is safer
@@ -86,7 +99,7 @@ async function generateEmbeddingBatch(
   attempt = 1
 ): Promise<number[][]> {
   try {
-    const response = await openai.embeddings.create({
+    const response = await getOpenAI().embeddings.create({
       model: "text-embedding-3-small",
       input: texts,
       encoding_format: "float",
@@ -193,7 +206,7 @@ async function generateImageDescription(
   attempt = 1
 ): Promise<string> {
   try {
-    const message = await anthropic.messages.create({
+    const message = await getAnthropic().messages.create({
       model: "claude-3-5-sonnet-20241022",
       max_tokens: 300,
       messages: [
