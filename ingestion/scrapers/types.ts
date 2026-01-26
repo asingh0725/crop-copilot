@@ -68,6 +68,25 @@ export interface ChunkData {
   };
 }
 
+// NEW: ImageData for embedding generation
+export interface ImageData {
+  id: string;
+  sourceId: string;
+  imageUrl: string;
+  altText: string | null;
+  caption: string | null;
+  contextText: string | null;
+  contextChunkId: string | null;
+  metadata: {
+    category?: string;
+    tags?: string[];
+    crop?: string;
+    subject?: string;
+    pageNumber?: number;
+    position: number;
+  };
+}
+
 export interface ProcessedImage {
   r2Url: string; // 'https://pub-xxx.r2.dev/images/corn_deficiency_nitrogen_001.jpg'
   originalUrl: string;
@@ -125,4 +144,14 @@ export interface SourceUrlConfig {
       }>;
     }
   >;
+}
+
+// Image extraction stats
+export interface ImageExtractionStats {
+  totalImages: number;
+  byCategory: Record<string, number>;
+  byCrop: Record<string, number>;
+  avgAltTextLength: number;
+  imagesWithContext: number;
+  imagesWithCaptions: number;
 }

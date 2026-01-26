@@ -5,23 +5,18 @@ import { ExtensionScraper } from "../scrapers/extension-scraper";
 import { parseHTML } from "../parsers/html-parser";
 import { parsePDF } from "../parsers/pdf-parser";
 import { chunkDocument } from "../processing/chunker";
-import {
-  generateTextEmbeddings,
-  generateImageEmbeddings,
-  logCosts,
-} from "../processing/embedder";
-import {
-  upsertSources,
-  upsertTextChunks,
-  upsertImageChunks,
-} from "../processing/upserter";
+import { generateTextEmbeddings } from "../processing/embedder";
+import { upsertSources, upsertTextChunks } from "../processing/upserter";
+import { extractImages, calculateImageStats } from "../processing/image-extractor";
+import { generateImageEmbeddings } from "../processing/embedder";
+import { upsertImageChunks } from "../processing/upserter";
 import type {
   SourceUrlConfig,
   ScrapedDocument,
   ParsedContent,
   ChunkData,
-  CostTracker,
   ProgressTracker,
+  ImageData,
 } from "../scrapers/types";
 
 interface RunOptions {
@@ -30,6 +25,62 @@ interface RunOptions {
   skipScrape: boolean;
   skipImages: boolean;
   dryRun: boolean;
+}
+
+/**
+ * Detect actual content type from buffer, not URL extension
+ * Prevents misclassifying HTML error pages as PDFs
+ */
+function detectContentType(buffer: Buffer, url: string): 'html' | 'pdf' | 'unknown' {
+  if (!buffer || buffer.length < 10) {
+    return 'unknown';
+  }
+
+  // Check magic bytes (first few bytes)
+  const header = buffer.slice(0, 10).toString('ascii');
+  
+  // PDF magic bytes: %PDF-
+  if (header.startsWith('%PDF-')) {
+    return 'pdf';
+  }
+  
+  // HTML indicators
+  const htmlIndicators = ['<!DOCTYPE', '<!doctype', '<html', '<HTML', '<?xml', '<head', '<HEAD'];
+  if (htmlIndicators.some(indicator => header.startsWith(indicator))) {
+    return 'html';
+  }
+  
+  // Check first 100 bytes for HTML tags
+  const sample = buffer.slice(0, 100).toString('utf8').toLowerCase();
+  if (sample.includes('<html') || sample.includes('<!doctype') || sample.includes('<head')) {
+    return 'html';
+  }
+  
+  return 'unknown';
+}
+
+/**
+ * Calculate total URLs from SourceUrlConfig
+ */
+function countTotalUrls(urlList: SourceUrlConfig): number {
+  let total = 0;
+  for (const sourceKey of Object.keys(urlList.sources)) {
+    total += urlList.sources[sourceKey].urls.length;
+  }
+  return total;
+}
+
+/**
+ * Calculate estimated chunks from SourceUrlConfig
+ */
+function estimateChunks(urlList: SourceUrlConfig): number {
+  let total = 0;
+  for (const sourceKey of Object.keys(urlList.sources)) {
+    for (const url of urlList.sources[sourceKey].urls) {
+      total += url.expectedChunks || 25; // Default 25 chunks per doc
+    }
+  }
+  return total;
 }
 
 async function runPhase1Ingestion(options: RunOptions) {
@@ -48,13 +99,15 @@ async function runPhase1Ingestion(options: RunOptions) {
   // Load URL list
   const urlFile = options.test
     ? "ingestion/sources/test-urls.json"
-    : "ingestion/sources/phase1-urls.json";
+    : "ingestion/sources/phase3-urls.json";
 
   const urlList: SourceUrlConfig = JSON.parse(
     await fs.readFile(urlFile, "utf-8")
   );
 
-  let totalUrls = urlList.totalUrls;
+  let totalUrls = countTotalUrls(urlList);
+  const estimatedChunks = estimateChunks(urlList);
+  
   if (options.limit) {
     totalUrls = Math.min(totalUrls, options.limit);
     console.log(`⚠️  Limiting to first ${options.limit} URLs\n`);
@@ -62,7 +115,7 @@ async function runPhase1Ingestion(options: RunOptions) {
 
   console.log(`📦 Target: ${totalUrls} URLs`);
   console.log(`📚 Sources: ${Object.keys(urlList.sources).length}`);
-  console.log(`📊 Estimated chunks: ${urlList.estimatedChunks || "N/A"}\n`);
+  console.log(`📊 Estimated chunks: ${estimatedChunks}\n`);
 
   // Initialize trackers
   const tracker: ProgressTracker = {
@@ -73,14 +126,6 @@ async function runPhase1Ingestion(options: RunOptions) {
     imagesProcessed: 0,
     imagesEmbedded: 0,
     costs: { text: 0, images: 0, total: 0 },
-  };
-
-  const costTracker: CostTracker = {
-    textTokens: 0,
-    textCost: 0,
-    imageDescriptions: 0,
-    imageCost: 0,
-    totalCost: 0,
   };
 
   // Step 1: Scraping
@@ -126,6 +171,30 @@ async function runPhase1Ingestion(options: RunOptions) {
     documents = documents.slice(0, options.limit);
   }
 
+  // DEBUG: Check scraped content for images
+  console.log('\n🔍 DEBUG: Checking scraped documents for <img> tags...');
+  if (documents.length > 0) {
+    const firstDoc = documents[0];
+    console.log(`   First doc title: ${firstDoc.title}`);
+    console.log(`   Content type: ${firstDoc.contentType}`);
+    console.log(`   Content length: ${firstDoc.content.length} chars`);
+    
+    // Check for <img tags in HTML
+    if (firstDoc.contentType === 'html') {
+      const imgMatches = firstDoc.content.match(/<img/gi);
+      console.log(`   Contains <img tags: ${imgMatches ? imgMatches.length : 0}`);
+      
+      if (imgMatches && imgMatches.length > 0) {
+        // Show first image tag
+        const imgTagRegex = /<img[^>]+>/gi;
+        const imgTags = firstDoc.content.match(imgTagRegex);
+        if (imgTags && imgTags.length > 0) {
+          console.log(`   First image tag preview: ${imgTags[0].slice(0, 150)}...`);
+        }
+      }
+    }
+  }
+
   // Step 2: Create Source records
   console.log("\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
   console.log("📚 Step 2: Creating Source Records");
@@ -149,6 +218,7 @@ async function runPhase1Ingestion(options: RunOptions) {
   console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
 
   const parsed: Array<{ doc: ScrapedDocument; parsed: ParsedContent }> = [];
+  const failedDocs: Array<{ url: string; title: string; error: string }> = [];
 
   for (let i = 0; i < documents.length; i++) {
     const doc = documents[i];
@@ -159,11 +229,26 @@ async function runPhase1Ingestion(options: RunOptions) {
     try {
       let parsedContent: ParsedContent;
 
+      // CRITICAL: Detect actual content type from buffer, not URL
       if (doc.contentType === "html") {
+        // Already marked as HTML by scraper
         parsedContent = parseHTML(doc.content, doc.url);
       } else {
+        // For "pdf" or unknown, check actual content
         const buffer = Buffer.from(doc.content, "base64");
-        parsedContent = await parsePDF(buffer, doc.url);
+        const actualType = detectContentType(buffer, doc.url);
+        
+        if (actualType === 'pdf') {
+          parsedContent = await parsePDF(buffer, doc.url);
+        } else if (actualType === 'html') {
+          console.log('   ⚠️  URL ends in .pdf but content is HTML - parsing as HTML');
+          // Decode buffer back to string for HTML parser
+          parsedContent = parseHTML(buffer.toString('utf8'), doc.url);
+        } else {
+          // Unknown type - try HTML first (most common fallback)
+          console.log('   ⚠️  Unknown content type, attempting HTML parse');
+          parsedContent = parseHTML(buffer.toString('utf8'), doc.url);
+        }
       }
 
       parsed.push({ doc, parsed: parsedContent });
@@ -173,11 +258,49 @@ async function runPhase1Ingestion(options: RunOptions) {
         `  ✓ Sections: ${parsedContent.sections.length}, Images: ${parsedContent.metadata.imageCount}, Tables: ${parsedContent.metadata.tableCount}, Words: ${parsedContent.metadata.wordCount}`
       );
     } catch (error) {
-      console.error(`  ✗ Failed to parse:`, error);
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      console.error(`  ✗ Failed to parse: ${errorMsg}`);
+      
+      failedDocs.push({
+        url: doc.url,
+        title: doc.title,
+        error: errorMsg,
+      });
     }
   }
 
   console.log(`\n✅ Parsed ${parsed.length} documents`);
+  
+  if (failedDocs.length > 0) {
+    console.log(`⚠️  ${failedDocs.length} documents failed to parse`);
+    await fs.writeFile(
+      'ingestion/state/failed-docs.json',
+      JSON.stringify(failedDocs, null, 2)
+    );
+  }
+
+  // DEBUG: Check parsed content for images
+  console.log('\n🔍 DEBUG: Checking parsed documents for images...');
+  console.log(`   Total parsed documents: ${parsed.length}`);
+  if (parsed.length > 0) {
+    const { doc, parsed: parsedContent } = parsed[0];
+    console.log(`   First doc title: ${parsedContent.title}`);
+    console.log(`   First doc sections: ${parsedContent.sections.length}`);
+    
+    parsedContent.sections.forEach((section, idx) => {
+      console.log(`   Section ${idx}: ${section.heading || 'No heading'}`);
+      console.log(`     - Text length: ${section.text.length} chars`);
+      console.log(`     - Images in section: ${section.images.length}`);
+      
+      if (section.images.length > 0) {
+        section.images.forEach((img, imgIdx) => {
+          console.log(`       Image ${imgIdx}: ${img.url.slice(0, 80)}...`);
+          console.log(`         - Alt: ${img.alt || 'none'}`);
+          console.log(`         - Caption: ${img.caption || 'none'}`);
+        });
+      }
+    });
+  }
 
   // Step 4: Chunking
   console.log("\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
@@ -228,10 +351,9 @@ async function runPhase1Ingestion(options: RunOptions) {
   console.log("🔢 Step 5: Generating Text Embeddings");
   console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
 
-  const embeddedChunks = await generateTextEmbeddings(
-    allChunks,
-    costTracker
-  );
+  // NEW: embedder now returns ChunkData & { embedding } directly!
+  const embeddedChunks = await generateTextEmbeddings(allChunks);
+  
   tracker.chunksEmbedded = embeddedChunks.length;
 
   // Step 6: Upsert to database
@@ -256,7 +378,81 @@ async function runPhase1Ingestion(options: RunOptions) {
 
   // Step 7: Image processing (skipped for test)
   if (!options.skipImages) {
-    console.log("\n⚠️  Image processing not yet implemented");
+    console.log("\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+    console.log("🖼️  Step 7: Extracting Images");
+    console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
+
+    const allImages: ImageData[] = [];
+
+    for (const { doc, parsed: parsedContent } of parsed) {
+      const sourceId = sourceIdMap.get(doc.url);
+      if (!sourceId) continue;
+
+      const images = extractImages(parsedContent, sourceId);
+      allImages.push(...images);
+
+      if (images.length > 0) {
+        console.log(
+          `  ${doc.title.slice(0, 50)}: ${images.length} images`
+        );
+      }
+    }
+
+    tracker.imagesProcessed = allImages.length;
+
+    console.log(`\n✅ Extracted ${allImages.length} images`);
+
+    if (allImages.length > 0) {
+      // Show image stats
+      const stats = calculateImageStats(allImages);
+      console.log(`\n📊 Image Statistics:`);
+      console.log(`   By category:`);
+      Object.entries(stats.byCategory).forEach(([cat, count]) => {
+        console.log(`      ${cat}: ${count}`);
+      });
+      
+      if (Object.keys(stats.byCrop).length > 0) {
+        console.log(`   By crop:`);
+        Object.entries(stats.byCrop).forEach(([crop, count]) => {
+          console.log(`      ${crop}: ${count}`);
+        });
+      }
+      
+      console.log(`   With alt text: ${stats.avgAltTextLength > 0 ? allImages.filter(i => i.altText).length : 0}`);
+      console.log(`   With captions: ${stats.imagesWithCaptions}`);
+      console.log(`   With context: ${stats.imagesWithContext}`);
+
+      // Step 8: Generate Image Embeddings
+      console.log("\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+      console.log("🔢 Step 8: Generating Image Embeddings");
+      console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+
+      const embeddedImages = await generateImageEmbeddings(allImages);
+      tracker.imagesEmbedded = embeddedImages.length;
+
+      // Step 9: Upsert Images to Database
+      if (!options.dryRun) {
+        console.log("\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+        console.log("💾 Step 9: Upserting Images to Database");
+        console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+
+        const imageResult = await upsertImageChunks(embeddedImages);
+
+        console.log(`\n✅ Image database upsert complete:`);
+        console.log(`   Inserted: ${imageResult.inserted}`);
+        console.log(`   Updated: ${imageResult.updated}`);
+        console.log(`   Skipped: ${imageResult.skipped}`);
+      } else {
+        console.log("\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+        console.log("💾 Step 9: Image Database Upsert");
+        console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
+        console.log(
+          `🔍 [DRY RUN] Would insert ${embeddedImages.length} image chunks`
+        );
+      }
+    } else {
+      console.log("\n⚠️  No images found in parsed documents");
+    }
   }
 
   // Final report
@@ -276,8 +472,6 @@ async function runPhase1Ingestion(options: RunOptions) {
   console.log(`   Images processed: ${tracker.imagesProcessed}`);
   console.log("");
 
-  logCosts(costTracker);
-
   console.log(`\n⏱️  Total time: ${elapsedMin}m ${elapsedSec}s`);
   console.log("");
 
@@ -289,7 +483,6 @@ async function runPhase1Ingestion(options: RunOptions) {
         phase: 1,
         completedAt: new Date().toISOString(),
         tracker,
-        costTracker,
         elapsed,
       },
       null,
