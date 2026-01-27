@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { prisma } from "@/lib/prisma";
 import { DiagnosisDisplay } from "@/components/recommendations/diagnosis-display";
 import { ActionItemsDisplay } from "@/components/recommendations/action-items-display";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -18,31 +19,124 @@ interface RecommendationPageProps {
 async function getRecommendation(id: string) {
   const supabase = await createClient();
   const {
-    data: { session },
-  } = await supabase.auth.getSession();
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  if (!session) {
+  if (!user) {
     return null;
   }
 
-  const response = await fetch(
-    `${process.env.NEXT_PUBLIC_APP_URL}/api/recommendations/${id}`,
-    {
-      headers: {
-        Cookie: `sb-access-token=${session.access_token}; sb-refresh-token=${session.refresh_token}`,
+  // First try to find by recommendation ID
+  let recommendation = await prisma.recommendation.findUnique({
+    where: { id },
+    include: {
+      input: {
+        include: {
+          user: {
+            include: {
+              profile: true,
+            },
+          },
+        },
       },
-      cache: "no-store",
-    }
-  );
+      sources: {
+        include: {
+          textChunk: {
+            include: {
+              source: true,
+            },
+          },
+          imageChunk: {
+            include: {
+              source: true,
+            },
+          },
+        },
+      },
+    },
+  });
 
-  if (!response.ok) {
-    if (response.status === 404) {
-      return null;
-    }
-    throw new Error("Failed to fetch recommendation");
+  // If not found, try to find by input ID
+  if (!recommendation) {
+    recommendation = await prisma.recommendation.findUnique({
+      where: { inputId: id },
+      include: {
+        input: {
+          include: {
+            user: {
+              include: {
+                profile: true,
+              },
+            },
+          },
+        },
+        sources: {
+          include: {
+            textChunk: {
+              include: {
+                source: true,
+              },
+            },
+            imageChunk: {
+              include: {
+                source: true,
+              },
+            },
+          },
+        },
+      },
+    });
   }
 
-  return response.json();
+  if (!recommendation) {
+    return null;
+  }
+
+  // Check if user owns this recommendation
+  if (recommendation.input.userId !== user.id) {
+    return null;
+  }
+
+  // Format response with all necessary data
+  return {
+    id: recommendation.id,
+    createdAt: recommendation.createdAt,
+    diagnosis: recommendation.diagnosis,
+    confidence: recommendation.confidence,
+    modelUsed: recommendation.modelUsed,
+    input: {
+      id: recommendation.input.id,
+      type: recommendation.input.type,
+      description: recommendation.input.description,
+      imageUrl: recommendation.input.imageUrl,
+      labData: recommendation.input.labData,
+      crop: recommendation.input.crop,
+      location: recommendation.input.location,
+      season: recommendation.input.season,
+      createdAt: recommendation.input.createdAt,
+    },
+    sources: recommendation.sources.map((source) => {
+      const chunk = source.textChunk || source.imageChunk;
+      const sourceDoc = chunk?.source;
+
+      return {
+        id: source.id,
+        chunkId: source.textChunkId || source.imageChunkId,
+        type: source.textChunkId ? "text" : "image",
+        content: source.textChunk?.content || source.imageChunk?.caption,
+        imageUrl: source.imageChunk?.imageUrl,
+        relevanceScore: source.relevanceScore,
+        source: sourceDoc
+          ? {
+              id: sourceDoc.id,
+              title: sourceDoc.title,
+              type: sourceDoc.sourceType,
+              url: sourceDoc.url,
+            }
+          : null,
+      };
+    }),
+  };
 }
 
 export default async function RecommendationPage({
