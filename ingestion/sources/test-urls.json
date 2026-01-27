@@ -1,0 +1,206 @@
+{
+  "phase": 1,
+  "description": "Test subset for pipeline validation",
+  "totalUrls": 10,
+  "estimatedChunks": 250,
+  "sources": {
+    "iowa_state": {
+      "institution": "Iowa State University Extension",
+      "baseUrl": "https://crops.extension.iastate.edu/",
+      "priority": "critical",
+      "urlCount": 8,
+      "urls": [
+        {
+          "url": "https://shop.iastate.edu/extension/farm-environment/crops-and-soils/soil-fertility-and-management/pm2015.html",
+          "title": "Concepts and Rationale for Regional Nitrogen Rate Guidelines for Corn",
+          "publicationId": "PM 2015",
+          "crops": [
+            "corn"
+          ],
+          "topics": [
+            "nutrients",
+            "nitrogen"
+          ],
+          "type": "pdf",
+          "publishYear": "2006/updated",
+          "estimatedChunks": 35,
+          "priority": "critical",
+          "notes": "Regional nitrogen rate guidelines."
+        },
+        {
+          "url": "https://www.agronext.iastate.edu/soilfertility/info/NitrogenManagementCornProduction2020b.pdf",
+          "title": "Nitrogen Management for Corn Production",
+          "publicationId": "N/A",
+          "crops": [
+            "corn"
+          ],
+          "topics": [
+            "nutrients",
+            "nitrogen"
+          ],
+          "type": "pdf",
+          "publishYear": "2020",
+          "estimatedChunks": 45,
+          "priority": "high",
+          "notes": "Comprehensive nitrogen management guide."
+        },
+        {
+          "url": "https://crops.extension.iastate.edu/cropnews/2017/05/new-late-spring-soil-nitrate-test-publication-now-available",
+          "title": "New Late-Spring Soil Nitrate Test Publication (CROP 3140)",
+          "publicationId": "CROP 3140",
+          "crops": [
+            "corn"
+          ],
+          "topics": [
+            "nutrients",
+            "nitrogen"
+          ],
+          "type": "html",
+          "publishYear": "2017",
+          "estimatedChunks": 7,
+          "priority": "critical",
+          "notes": "CROP 3140 replacement for PM 1714."
+        },
+        {
+          "url": "https://crops.extension.iastate.edu/encyclopedia/post-plant-nitrogen-applications-corn",
+          "title": "Post-plant Nitrogen Applications on Corn",
+          "publicationId": "N/A",
+          "crops": [
+            "corn"
+          ],
+          "topics": [
+            "nutrients",
+            "nitrogen"
+          ],
+          "type": "html",
+          "publishYear": "2001/updated",
+          "estimatedChunks": 9,
+          "priority": "high",
+          "notes": "Post-plant nitrogen application guidance."
+        },
+        {
+          "url": "https://store.extension.iastate.edu/Product/2418.pdf",
+          "title": "Nutrient Deficiencies and Application Injuries in Field Crops",
+          "publicationId": "IPM",
+          "crops": [
+            "corn",
+            "soybeans",
+            "wheat"
+          ],
+          "topics": [
+            "nutrients",
+            "deficiency"
+          ],
+          "type": "pdf",
+          "publishYear": "Current",
+          "estimatedChunks": 25,
+          "priority": "critical",
+          "notes": "Photo guide for nutrient deficiencies and injuries."
+        },
+        {
+          "url": "https://crops.extension.iastate.edu/files/icm/PM1649_0.pdf",
+          "title": "SCN-Resistant Soybean Varieties",
+          "publicationId": "PM 1649",
+          "crops": [
+            "soybeans"
+          ],
+          "topics": [
+            "variety-selection",
+            "SCN"
+          ],
+          "type": "pdf",
+          "publishYear": "2014",
+          "estimatedChunks": 23,
+          "priority": "high",
+          "notes": "Variety resistance guidance."
+        },
+        {
+          "url": "https://crops.extension.iastate.edu/cropnews/2023/02/newly-updated-phosphorus-and-potassium-guidelines",
+          "title": "Newly Updated Phosphorus and Potassium Guidelines",
+          "publicationId": "PM 1688 ref",
+          "crops": [
+            "corn",
+            "soybeans"
+          ],
+          "topics": [
+            "nutrients",
+            "P",
+            "K"
+          ],
+          "type": "html",
+          "publishYear": "2023",
+          "estimatedChunks": 11,
+          "priority": "high",
+          "notes": "Updates to P and K recommendations."
+        },
+        {
+          "url": "https://store.extension.iastate.edu/Product/2418.pdf",
+          "title": "Nutrient Deficiencies and Application Injuries in Field Crops",
+          "publicationId": "IPM",
+          "crops": [
+            "corn",
+            "soybeans",
+            "wheat"
+          ],
+          "topics": [
+            "nutrients",
+            "deficiency"
+          ],
+          "type": "pdf",
+          "publishYear": "Current",
+          "estimatedChunks": 25,
+          "priority": "critical",
+          "notes": "Photo guide for nutrient deficiencies and injuries."
+        }
+      ]
+    },
+    "purdue": {
+      "institution": "Purdue Extension",
+      "baseUrl": "https://www.extension.purdue.edu/extmedia/",
+      "priority": "critical",
+      "urlCount": 2,
+      "urls": [
+        {
+          "url": "https://www.extension.purdue.edu/extmedia/ay/ay-9-32.pdf",
+          "title": "Tri-State Fertilizer Recommendations for Corn, Soybeans, Wheat & Alfalfa",
+          "publicationId": "AY-9-32",
+          "crops": [
+            "corn",
+            "soybeans",
+            "wheat"
+          ],
+          "topics": [
+            "nutrients",
+            "N",
+            "P",
+            "K"
+          ],
+          "type": "pdf",
+          "publishYear": "2020",
+          "estimatedChunks": 65,
+          "priority": "critical",
+          "notes": "Tri-state fertilizer recommendations."
+        },
+        {
+          "url": "https://www.extension.purdue.edu/extmedia/AY/AY-239.html",
+          "title": "Micronutrient Needs of Indiana Crops",
+          "publicationId": "AY-239",
+          "crops": [
+            "corn",
+            "soybeans",
+            "wheat"
+          ],
+          "topics": [
+            "nutrients",
+            "micronutrients"
+          ],
+          "type": "html",
+          "publishYear": "2015+",
+          "estimatedChunks": 18,
+          "priority": "high",
+          "notes": "Micronutrient guidance."
+        }
+      ]
+    }
+  }
+}

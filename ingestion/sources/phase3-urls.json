@@ -1,0 +1,1851 @@
+{
+  "phase": 3,
+  "totalUrls": 150,
+  "sources": [
+    {
+      "name": "UC Agriculture and Natural Resources",
+      "institution": "University of California",
+      "baseUrl": "https://anrcatalog.ucanr.edu",
+      "priority": "high",
+      "focus": ["tree fruits", "nuts", "vegetables", "wine grapes"],
+      "estimatedChunks": 959,
+      "urls": [
+        {
+          "url": "https://ipm.ucanr.edu/PDF/PMG/pmgalmond.pdf",
+          "title": "Almond: UC IPM Pest Management Guidelines",
+          "type": "pdf",
+          "crops": ["almonds"],
+          "topics": ["IPM", "pest", "disease", "weed", "monitoring"],
+          "estimatedChunks": 51,
+          "notes": "UC IPM Pest Management Guidelines PDF (multi-page). Includes pest/disease/weed management, monitoring guidance, and treatment timing.",
+          "verified": true,
+          "publicationYear": 2019
+        },
+        {
+          "url": "https://ipm.ucanr.edu/PDF/PMG/pmgapple.pdf",
+          "title": "Apple: UC IPM Pest Management Guidelines",
+          "type": "pdf",
+          "crops": ["apples"],
+          "topics": ["IPM", "pest", "disease", "weed", "monitoring"],
+          "estimatedChunks": 29,
+          "notes": "UC IPM Pest Management Guidelines PDF (multi-page).",
+          "verified": true,
+          "publicationYear": 2017
+        },
+        {
+          "url": "https://www.ipm.ucanr.edu/PDF/PMG/pmgapricot.pdf",
+          "title": "Apricot: UC IPM Pest Management Guidelines",
+          "type": "pdf",
+          "crops": ["apricots", "stone fruits"],
+          "topics": ["IPM", "pest", "disease", "weed", "monitoring"],
+          "estimatedChunks": 38,
+          "notes": "UC IPM Pest Management Guidelines PDF (multi-page).",
+          "verified": true,
+          "publicationYear": 2017
+        },
+        {
+          "url": "https://ipm.ucanr.edu/PDF/PMG/pmgavocado.pdf",
+          "title": "Avocado: UC IPM Pest Management Guidelines",
+          "type": "pdf",
+          "crops": ["avocados"],
+          "topics": ["IPM", "pest", "disease", "weed", "monitoring"],
+          "estimatedChunks": 35,
+          "notes": "UC IPM Pest Management Guidelines PDF (multi-page).",
+          "verified": true,
+          "publicationYear": 2017
+        },
+        {
+          "url": "https://ipm.ucanr.edu/PDF/PMG/pmgblueberry.pdf",
+          "title": "Blueberry: UC IPM Pest Management Guidelines",
+          "type": "pdf",
+          "crops": ["blueberries"],
+          "topics": ["IPM", "pest", "disease", "weed", "monitoring"],
+          "estimatedChunks": 6,
+          "notes": "UC IPM Pest Management Guidelines PDF (multi-page).",
+          "verified": true,
+          "publicationYear": 2018
+        },
+        {
+          "url": "https://ipm.ucanr.edu/PDF/PMG/pmgcaneberries.pdf",
+          "title": "Caneberries: UC IPM Pest Management Guidelines",
+          "type": "pdf",
+          "crops": ["berries", "caneberries", "raspberries", "blackberries"],
+          "topics": ["IPM", "pest", "disease", "weed", "monitoring"],
+          "estimatedChunks": 56,
+          "notes": "UC IPM Pest Management Guidelines PDF (multi-page).",
+          "verified": true,
+          "publicationYear": 2015
+        },
+        {
+          "url": "https://ipm.ucanr.edu/PDF/PMG/pmgcarrot.pdf",
+          "title": "Carrot: UC IPM Pest Management Guidelines",
+          "type": "pdf",
+          "crops": ["carrots"],
+          "topics": ["IPM", "pest", "disease", "weed", "monitoring"],
+          "estimatedChunks": 37,
+          "notes": "UC IPM Pest Management Guidelines PDF (multi-page).",
+          "verified": true,
+          "publicationYear": 2024
+        },
+        {
+          "url": "https://ipm.ucanr.edu/PDF/PMG/pmgcherry.pdf",
+          "title": "Cherry: UC IPM Pest Management Guidelines",
+          "type": "pdf",
+          "crops": ["cherries"],
+          "topics": ["IPM", "pest", "disease", "weed", "monitoring"],
+          "estimatedChunks": 26,
+          "notes": "UC IPM Pest Management Guidelines PDF (multi-page).",
+          "verified": true,
+          "publicationYear": 2017
+        },
+        {
+          "url": "https://ipm.ucanr.edu/PDF/PMG/pmgcitrus.pdf",
+          "title": "Citrus: UC IPM Pest Management Guidelines",
+          "type": "pdf",
+          "crops": ["citrus", "oranges"],
+          "topics": ["IPM", "pest", "disease", "weed", "monitoring"],
+          "estimatedChunks": 50,
+          "notes": "UC IPM Pest Management Guidelines PDF (multi-page).",
+          "verified": true,
+          "publicationYear": 2020
+        },
+        {
+          "url": "https://www.ipm.ucanr.edu/PDF/PMG/pmgcolecrops.pdf",
+          "title": "Cole Crops: UC IPM Pest Management Guidelines",
+          "type": "pdf",
+          "crops": ["cabbage", "broccoli", "cauliflower"],
+          "topics": ["IPM", "pest", "disease", "weed", "monitoring"],
+          "estimatedChunks": 35,
+          "notes": "UC IPM Pest Management Guidelines PDF (multi-page).",
+          "verified": true,
+          "publicationYear": 2020
+        },
+        {
+          "url": "https://ipm.ucanr.edu/PDF/PMG/pmgcucurbits.pdf",
+          "title": "Cucurbits: UC IPM Pest Management Guidelines",
+          "type": "pdf",
+          "crops": ["cucumbers", "watermelon", "cucurbits"],
+          "topics": ["IPM", "pest", "disease", "weed", "monitoring"],
+          "estimatedChunks": 35,
+          "notes": "UC IPM Pest Management Guidelines PDF (multi-page).",
+          "verified": true,
+          "publicationYear": 2016
+        },
+        {
+          "url": "https://ipm.ucanr.edu/PDF/PMG/pmggrape.pdf",
+          "title": "Grape: UC IPM Pest Management Guidelines",
+          "type": "pdf",
+          "crops": ["grapes"],
+          "topics": ["IPM", "pest", "disease", "weed", "monitoring"],
+          "estimatedChunks": 53,
+          "notes": "UC IPM Pest Management Guidelines PDF (multi-page).",
+          "verified": true,
+          "publicationYear": 2019
+        },
+        {
+          "url": "https://ipm.ucanr.edu/PDF/PMG/pmgkiwifruit.pdf",
+          "title": "Kiwifruit: UC IPM Pest Management Guidelines",
+          "type": "pdf",
+          "crops": ["kiwifruit"],
+          "topics": ["IPM", "pest", "disease", "weed", "monitoring"],
+          "estimatedChunks": 30,
+          "notes": "UC IPM Pest Management Guidelines PDF (multi-page).",
+          "verified": true,
+          "publicationYear": 2017
+        },
+        {
+          "url": "https://ipm.ucanr.edu/PDF/PMG/pmglettuce.pdf",
+          "title": "Lettuce: UC IPM Pest Management Guidelines",
+          "type": "pdf",
+          "crops": ["lettuce"],
+          "topics": ["IPM", "pest", "disease", "weed", "monitoring"],
+          "estimatedChunks": 38,
+          "notes": "UC IPM Pest Management Guidelines PDF (multi-page).",
+          "verified": true,
+          "publicationYear": 2017
+        },
+        {
+          "url": "https://ipm.ucanr.edu/PDF/PMG/pmgnectarine.pdf",
+          "title": "Nectarine: UC IPM Pest Management Guidelines",
+          "type": "pdf",
+          "crops": ["nectarines", "stone fruits"],
+          "topics": ["IPM", "pest", "disease", "weed", "monitoring"],
+          "estimatedChunks": 40,
+          "notes": "UC IPM Pest Management Guidelines PDF (multi-page).",
+          "verified": true,
+          "publicationYear": 2017
+        },
+        {
+          "url": "https://ipm.ucanr.edu/PDF/PMG/pmgolive.pdf",
+          "title": "Olive: UC IPM Pest Management Guidelines",
+          "type": "pdf",
+          "crops": ["olives"],
+          "topics": ["IPM", "pest", "disease", "weed", "monitoring"],
+          "estimatedChunks": 24,
+          "notes": "UC IPM Pest Management Guidelines PDF (multi-page).",
+          "verified": true,
+          "publicationYear": 2014
+        },
+        {
+          "url": "https://ipm.ucanr.edu/PDF/PMG/pmgpeach.pdf",
+          "title": "Peach: UC IPM Pest Management Guidelines",
+          "type": "pdf",
+          "crops": ["peaches"],
+          "topics": ["IPM", "pest", "disease", "weed", "monitoring"],
+          "estimatedChunks": 45,
+          "notes": "UC IPM Pest Management Guidelines PDF (multi-page).",
+          "verified": true,
+          "publicationYear": 2017
+        },
+        {
+          "url": "https://ipm.ucanr.edu/PDF/PMG/pmgpear.pdf",
+          "title": "Pear: UC IPM Pest Management Guidelines",
+          "type": "pdf",
+          "crops": ["pears"],
+          "topics": ["IPM", "pest", "disease", "weed", "monitoring"],
+          "estimatedChunks": 46,
+          "notes": "UC IPM Pest Management Guidelines PDF (multi-page).",
+          "verified": true,
+          "publicationYear": 2017
+        },
+        {
+          "url": "https://ipm.ucanr.edu/PDF/PMG/pmgpistachio.pdf",
+          "title": "Pistachio: UC IPM Pest Management Guidelines",
+          "type": "pdf",
+          "crops": ["pistachios"],
+          "topics": ["IPM", "pest", "disease", "weed", "monitoring"],
+          "estimatedChunks": 38,
+          "notes": "UC IPM Pest Management Guidelines PDF (multi-page).",
+          "verified": true,
+          "publicationYear": 2019
+        },
+        {
+          "url": "https://ipm.ucanr.edu/PDF/PMG/pmgplum.pdf",
+          "title": "Plum: UC IPM Pest Management Guidelines",
+          "type": "pdf",
+          "crops": ["plums"],
+          "topics": ["IPM", "pest", "disease", "weed", "monitoring"],
+          "estimatedChunks": 49,
+          "notes": "UC IPM Pest Management Guidelines PDF (multi-page).",
+          "verified": true,
+          "publicationYear": 2025
+        },
+        {
+          "url": "https://www.ipm.ucanr.edu/PDF/PMG/pmgpomegranate.pdf",
+          "title": "Pomegranate: UC IPM Pest Management Guidelines",
+          "type": "pdf",
+          "crops": ["pomegranates"],
+          "topics": ["IPM", "pest", "disease", "weed", "monitoring"],
+          "estimatedChunks": 14,
+          "notes": "UC IPM Pest Management Guidelines PDF (multi-page).",
+          "verified": true,
+          "publicationYear": 2018
+        },
+        {
+          "url": "https://ipm.ucanr.edu/PDF/PMG/pmgprune.pdf",
+          "title": "Prune: UC IPM Pest Management Guidelines",
+          "type": "pdf",
+          "crops": ["prunes"],
+          "topics": ["IPM", "pest", "disease", "weed", "monitoring"],
+          "estimatedChunks": 47,
+          "notes": "UC IPM Pest Management Guidelines PDF (multi-page).",
+          "verified": true,
+          "publicationYear": 2025
+        },
+        {
+          "url": "https://ipm.ucanr.edu/PDF/PMG/pmgstrawberry.pdf",
+          "title": "Strawberry: UC IPM Pest Management Guidelines",
+          "type": "pdf",
+          "crops": ["strawberries"],
+          "topics": ["IPM", "pest", "disease", "weed", "monitoring"],
+          "estimatedChunks": 45,
+          "notes": "UC IPM Pest Management Guidelines PDF (multi-page).",
+          "verified": true,
+          "publicationYear": 2018
+        },
+        {
+          "url": "https://ipm.ucanr.edu/PDF/PMG/pmgtomato.pdf",
+          "title": "Tomato: UC IPM Pest Management Guidelines",
+          "type": "pdf",
+          "crops": ["tomatoes"],
+          "topics": ["IPM", "pest", "disease", "weed", "monitoring"],
+          "estimatedChunks": 46,
+          "notes": "UC IPM Pest Management Guidelines PDF (multi-page).",
+          "verified": true,
+          "publicationYear": 2016
+        },
+        {
+          "url": "https://ipm.ucanr.edu/PDF/PMG/pmgwalnut.pdf",
+          "title": "Walnut: UC IPM Pest Management Guidelines",
+          "type": "pdf",
+          "crops": ["walnuts"],
+          "topics": ["IPM", "pest", "disease", "weed", "monitoring"],
+          "estimatedChunks": 46,
+          "notes": "UC IPM Pest Management Guidelines PDF (multi-page).",
+          "verified": true,
+          "publicationYear": 2020
+        }
+      ]
+    },
+    {
+      "name": "WSU Tree Fruit (Extension/Research)",
+      "institution": "Washington State University",
+      "baseUrl": "https://treefruit.wsu.edu",
+      "priority": "high",
+      "focus": [
+        "apples",
+        "pears",
+        "cherries",
+        "tree fruit IPM",
+        "disease management",
+        "insect/vector management"
+      ],
+      "estimatedChunks": 330,
+      "urls": [
+        {
+          "url": "https://treefruit.wsu.edu/crop-protection/disease-management/fire-blight/",
+          "title": "Fire Blight of Apple and Pear",
+          "type": "html",
+          "crops": ["apples", "pears"],
+          "topics": ["disease", "IPM", "diagnosis", "orchard management"],
+          "estimatedChunks": 25,
+          "notes": "Comprehensive fire blight management page; updated Dec 2024.",
+          "verified": true,
+          "publicationYear": 2024
+        },
+        {
+          "url": "https://treefruit.wsu.edu/crop-protection/apple-powdery-mildew/",
+          "title": "Apple Powdery Mildew",
+          "type": "html",
+          "crops": ["apples"],
+          "topics": ["disease", "IPM", "fungicide", "diagnosis"],
+          "estimatedChunks": 20,
+          "notes": "Disease symptoms, epidemiology, and management; updated July 2024.",
+          "verified": true,
+          "publicationYear": 2024
+        },
+        {
+          "url": "https://treefruit.wsu.edu/crop-protection/disease-management/phytophthora/",
+          "title": "Phytophthora Crown, Collar and Root Rot",
+          "type": "html",
+          "crops": ["apples", "cherries"],
+          "topics": ["disease", "diagnosis", "water management", "IPM"],
+          "estimatedChunks": 18,
+          "notes": "Root/crown rot identification and management guidance (March 2019).",
+          "verified": true,
+          "publicationYear": 2019
+        },
+        {
+          "url": "https://treefruit.wsu.edu/article/replant_trials/",
+          "title": "Evaluating IPM Methods to Control Apple Replant Disease",
+          "type": "html",
+          "crops": ["apples"],
+          "topics": ["disease", "soilborne", "replant", "IPM"],
+          "estimatedChunks": 14,
+          "notes": "Trial-based IPM options for apple replant disease (Jan 26, 2021).",
+          "verified": true,
+          "publicationYear": 2021
+        },
+        {
+          "url": "https://treefruit.wsu.edu/article/prepare-for-the-season-management-of-mildew-and-rot-pathogens-in-apple-and-pear-orchards/",
+          "title": "Prepare for the season. Management of mildew and rot pathogens in apple and pear orchards",
+          "type": "html",
+          "crops": ["apples", "pears"],
+          "topics": ["disease", "fungicide", "IPM", "rot pathogens"],
+          "estimatedChunks": 18,
+          "notes": "Seasonal disease management planning for mildew and rots (Mar 10, 2025).",
+          "verified": true,
+          "publicationYear": 2025
+        },
+        {
+          "url": "https://treefruit.wsu.edu/fall-nutrient-sprays-in-tree-fruit/",
+          "title": "Fall Nutrient Sprays in Tree Fruit",
+          "type": "html",
+          "crops": ["apples", "pears", "cherries"],
+          "topics": ["nutrition", "orchard management", "fertility"],
+          "estimatedChunks": 12,
+          "notes": "Nutrient spray timing/considerations; updated Oct 2024.",
+          "verified": true,
+          "publicationYear": 2024
+        },
+        {
+          "url": "https://treefruit.wsu.edu/article/early-fall-defoliation-in-sweet-cherry/",
+          "title": "Early Fall Defoliation in Sweet Cherry",
+          "type": "html",
+          "crops": ["cherries"],
+          "topics": ["physiology", "nutrition", "orchard management"],
+          "estimatedChunks": 14,
+          "notes": "Impacts of early defoliation on yield/bud nutrients.",
+          "verified": true,
+          "publicationYear": 2025
+        },
+        {
+          "url": "https://treefruit.wsu.edu/article/effective-strategies-for-managing-bacterial-canker-during-fall/",
+          "title": "Effective Strategies for Managing Bacterial Canker During Fall",
+          "type": "html",
+          "crops": ["cherries"],
+          "topics": ["disease", "IPM", "sanitation", "orchard management"],
+          "estimatedChunks": 18,
+          "notes": "Fall-focused bacterial canker management.",
+          "verified": true,
+          "publicationYear": 2025
+        },
+        {
+          "url": "https://treefruit.wsu.edu/article/how-to-effectively-remove-cankers-and-associated-pathogens-in-sweet-cherry-orchards/",
+          "title": "How to effectively remove cankers and associated pathogens in sweet cherry orchards",
+          "type": "html",
+          "crops": ["cherries"],
+          "topics": ["disease", "sanitation", "orchard management"],
+          "estimatedChunks": 12,
+          "notes": "Practical canker removal/sanitation guidance.",
+          "verified": true,
+          "publicationYear": 2025
+        },
+        {
+          "url": "https://treefruit.wsu.edu/article/spring-considerations-to-prevent-bacterial-canker-disease-in-sweet-cherries/",
+          "title": "Spring considerations to prevent bacterial canker disease in sweet cherries",
+          "type": "html",
+          "crops": ["cherries"],
+          "topics": ["disease", "IPM", "orchard management"],
+          "estimatedChunks": 18,
+          "notes": "Spring prevention strategies.",
+          "verified": true,
+          "publicationYear": 2025
+        },
+        {
+          "url": "https://treefruit.wsu.edu/article/current-status-of-the-powdery-mildew-fungicide-toolbox-in-cherries/",
+          "title": "Current Status of the Powdery Mildew Fungicide Toolbox in Cherries",
+          "type": "html",
+          "crops": ["cherries"],
+          "topics": ["disease", "fungicide", "resistance management", "IPM"],
+          "estimatedChunks": 20,
+          "notes": "Fungicide toolbox and resistance considerations.",
+          "verified": true,
+          "publicationYear": 2020
+        },
+        {
+          "url": "https://treefruit.wsu.edu/crop-protection/pear-ipm/",
+          "title": "Pear IPM",
+          "type": "html",
+          "crops": ["pears"],
+          "topics": ["IPM", "pest", "mite", "biocontrol"],
+          "estimatedChunks": 22,
+          "notes": "Integrated program guidance for pear pests.",
+          "verified": true,
+          "publicationYear": 2022
+        },
+        {
+          "url": "https://treefruit.wsu.edu/article/fall-pear-sprays/",
+          "title": "Fall Pear Sprays",
+          "type": "html",
+          "crops": ["pears"],
+          "topics": ["IPM", "pest", "disease", "orchard management"],
+          "estimatedChunks": 14,
+          "notes": "Key fall applications for next-season success.",
+          "verified": true,
+          "publicationYear": 2025
+        },
+        {
+          "url": "https://treefruit.wsu.edu/article/a-pre-bloom-pear-psylla-management-program-2024/",
+          "title": "A Pre-bloom Pear Psylla Management Program, 2024",
+          "type": "html",
+          "crops": ["pears"],
+          "topics": ["pest", "IPM", "thresholds", "spray timing"],
+          "estimatedChunks": 20,
+          "notes": "Pre-bloom program design for pear psylla control.",
+          "verified": true,
+          "publicationYear": 2024
+        },
+        {
+          "url": "https://treefruit.wsu.edu/crop-protection/pear-ipm/postharvest-sprays/",
+          "title": "Pear Psylla Management – Postharvest Sprays",
+          "type": "html",
+          "crops": ["pears"],
+          "topics": ["pest", "IPM", "spray timing"],
+          "estimatedChunks": 14,
+          "notes": "Postharvest spray guidance for pear psylla management.",
+          "verified": true,
+          "publicationYear": 2017
+        },
+        {
+          "url": "https://treefruit.wsu.edu/article/monitor-and-manage-vectors-of-x-disease-phytoplasma/",
+          "title": "Monitor and Manage Vectors of X-disease phytoplasma",
+          "type": "html",
+          "crops": ["cherries"],
+          "topics": ["disease", "vector", "monitoring", "IPM"],
+          "estimatedChunks": 12,
+          "notes": "Vector monitoring/management guidance.",
+          "verified": true,
+          "publicationYear": 2022
+        },
+        {
+          "url": "https://treefruit.wsu.edu/article/efficacy-of-new-and-experimental-products-for-control-of-powdery-mildew-on-apple/",
+          "title": "Efficacy of new and experimental products for control of powdery mildew on apple",
+          "type": "html",
+          "crops": ["apples"],
+          "topics": ["disease", "fungicide efficacy", "IPM"],
+          "estimatedChunks": 15,
+          "notes": "Trial results for apple powdery mildew products.",
+          "verified": true,
+          "publicationYear": 2018
+        },
+        {
+          "url": "https://treefruit.wsu.edu/bacterial-canker-in-washington-sweet-cherries/",
+          "title": "Bacterial canker in Washington sweet cherries",
+          "type": "html",
+          "crops": ["cherries"],
+          "topics": ["disease", "diagnosis", "IPM"],
+          "estimatedChunks": 22,
+          "notes": "Comprehensive bacterial canker background.",
+          "verified": true,
+          "publicationYear": 2024
+        },
+        {
+          "url": "https://treefruit.wsu.edu/crop-protection/disease-management/apple-replant-disease/",
+          "title": "Apple Replant Disease",
+          "type": "html",
+          "crops": ["apples"],
+          "topics": ["disease", "soilborne", "replant", "IPM"],
+          "estimatedChunks": 18,
+          "notes": "WSU Tree Fruit IPM strategies page.",
+          "verified": true,
+          "publicationYear": 2024
+        },
+        {
+          "url": "https://treefruit.wsu.edu/crop-protection/chemical-control/",
+          "title": "Chemical Control (WSU Tree Fruit IPM Guidance)",
+          "type": "html",
+          "crops": ["tree fruits"],
+          "topics": ["ipm", "pesticides", "spray management"],
+          "estimatedChunks": 10,
+          "notes": "WSU Tree Fruit IPM guidance page.",
+          "verified": true,
+          "publicationYear": 2020
+        }
+      ]
+    },
+    {
+      "name": "Oregon State University Extension Service",
+      "institution": "Oregon State University",
+      "baseUrl": "https://extension.oregonstate.edu",
+      "priority": "medium",
+      "focus": [
+        "hops",
+        "potatoes",
+        "berries",
+        "vineyards",
+        "pasture management"
+      ],
+      "estimatedChunks": 90,
+      "urls": [
+        {
+          "url": "https://extension.oregonstate.edu/sites/extd8/files/documents/em9115.pdf",
+          "title": "Growing Hops in the Home Garden (EM 9115)",
+          "type": "pdf",
+          "crops": ["hops"],
+          "topics": ["production", "pest", "disease", "IPM"],
+          "estimatedChunks": 20,
+          "notes": "Hops establishment and management.",
+          "verified": true,
+          "publicationYear": 2015
+        },
+        {
+          "url": "https://extension.oregonstate.edu/sites/extd8/files/catalog/auto/EM9302.pdf",
+          "title": "Introduction to Pasture and Grazing Management in Western Oregon (EM 9302)",
+          "type": "pdf",
+          "crops": ["alfalfa"],
+          "topics": ["forage", "pasture", "grazing management", "systems"],
+          "estimatedChunks": 18,
+          "notes": "Pasture/grazing systems primer.",
+          "verified": true,
+          "publicationYear": 2020
+        },
+        {
+          "url": "https://extension.oregonstate.edu/sites/extd8/files/documents/em9173.pdf",
+          "title": "Lygus Bugs on Potatoes in the Pacific Northwest (EM 9173)",
+          "type": "pdf",
+          "crops": ["potatoes"],
+          "topics": ["pest", "insect identification", "IPM"],
+          "estimatedChunks": 12,
+          "notes": "Identification, scouting, and management.",
+          "verified": true,
+          "publicationYear": 2017
+        },
+        {
+          "url": "https://extension.oregonstate.edu/sites/extd8/files/documents/em9179.pdf",
+          "title": "Growing Berries on the Oregon Coast: Blueberries (EM 9179)",
+          "type": "pdf",
+          "crops": ["blueberries"],
+          "topics": ["production", "nutrition", "site selection", "IPM"],
+          "estimatedChunks": 16,
+          "notes": "Coastal production practices for blueberries.",
+          "verified": true,
+          "publicationYear": 2018
+        },
+        {
+          "url": "https://extension.oregonstate.edu/sites/extd8/files/documents/em9177.pdf",
+          "title": "Growing Berries on the Oregon Coast: An Overview (EM 9177)",
+          "type": "pdf",
+          "crops": ["strawberries", "blueberries"],
+          "topics": ["production", "site selection", "cultivars"],
+          "estimatedChunks": 14,
+          "notes": "Overview of berry production considerations.",
+          "verified": true,
+          "publicationYear": 2018
+        },
+        {
+          "url": "https://extension.oregonstate.edu/sites/extd8/files/documents/em8975.pdf",
+          "title": "Recognize the Symptoms and Causes of Stunted Growth in Vineyards (EM 8975)",
+          "type": "pdf",
+          "crops": ["grapes"],
+          "topics": ["diagnosis", "nutrient", "pest", "disease"],
+          "estimatedChunks": 10,
+          "notes": "Diagnostic guide for vineyard stunting.",
+          "verified": true,
+          "publicationYear": 2016
+        },
+        {
+          "url": "https://extension.oregonstate.edu/sites/extd8/files/documents/em9092.pdf",
+          "title": "Distribution and Monitoring of Grape Mealybug in the Pacific Northwest",
+          "type": "pdf",
+          "crops": ["grapes"],
+          "topics": ["insects", "monitoring", "ipm"],
+          "estimatedChunks": 6,
+          "notes": "Short, image-rich extension PDF.",
+          "verified": true,
+          "publicationYear": 2014
+        },
+        {
+          "url": "https://extension.oregonstate.edu/sites/extd8/files/documents/em8860.pdf",
+          "title": "Preventing Herbicide Drift and Injury to Grapes",
+          "type": "pdf",
+          "crops": ["grapes"],
+          "topics": ["herbicide injury", "weed management", "diagnostics"],
+          "estimatedChunks": 12,
+          "notes": "Diagnostic symptom descriptions for herbicide drift.",
+          "verified": true,
+          "publicationYear": 2014
+        },
+        {
+          "url": "https://extension.oregonstate.edu/sites/extd8/files/documents/em9256.pdf",
+          "title": "Managing Powdery Mildew in Hop",
+          "type": "pdf",
+          "crops": ["hops"],
+          "topics": [
+            "disease",
+            "ipm",
+            "fungicide resistance",
+            "canopy management"
+          ],
+          "estimatedChunks": 12,
+          "notes": "Hop powdery mildew biology and integrated management.",
+          "verified": true,
+          "publicationYear": 2019
+        },
+        {
+          "url": "https://extension.oregonstate.edu/sites/extd8/files/documents/donnelja/2025-pest-management-guide-for-wine-grapes.pdf",
+          "title": "2025 Pest Management Guide for Wine Grapes in Oregon",
+          "type": "pdf",
+          "crops": ["grapes"],
+          "topics": ["ipm", "insects", "diseases", "weeds"],
+          "estimatedChunks": 35,
+          "notes": "Comprehensive seasonal pest management timing.",
+          "verified": true,
+          "publicationYear": 2025
+        }
+      ]
+    },
+    {
+      "name": "Ontario Ministry of Agriculture, Food and Rural Affairs (OMAFRA)",
+      "institution": "Government of Ontario",
+      "baseUrl": "https://www.omafra.gov.on.ca",
+      "priority": "high",
+      "focus": [
+        "field crops",
+        "horticulture",
+        "soil fertility",
+        "integrated pest management"
+      ],
+      "estimatedChunks": 240,
+      "urls": [
+        {
+          "url": "https://www.omafra.gov.on.ca/CropOp/en/general_agronomics/integrated_pest_management.htm",
+          "title": "Integrated Pest Management",
+          "type": "html",
+          "crops": ["corn", "wheat", "soybeans", "canola", "alfalfa"],
+          "topics": ["ipm", "pest", "disease", "insect", "weed", "scouting"],
+          "estimatedChunks": 18,
+          "notes": "OMAFRA overview of IPM concepts.",
+          "verified": true,
+          "publicationYear": 2012
+        },
+        {
+          "url": "https://www.omafra.gov.on.ca/CropOp/en/general_agronomics/nutrient_management/fertility_recommendations.html",
+          "title": "Fertility Recommendations",
+          "type": "html",
+          "crops": ["corn", "wheat", "soybeans", "canola", "alfalfa"],
+          "topics": [
+            "nutrient management",
+            "soil",
+            "fertility",
+            "recommendations"
+          ],
+          "estimatedChunks": 14,
+          "notes": "Practical fertility recommendations.",
+          "verified": true,
+          "publicationYear": 2012
+        },
+        {
+          "url": "https://www.omafra.gov.on.ca/CropOp/en/general_agronomics/pest_management/introduction_pest_management.html",
+          "title": "Introduction to Pest Management",
+          "type": "html",
+          "crops": ["corn", "wheat", "soybeans", "canola", "alfalfa"],
+          "topics": ["ipm", "scouting", "monitoring", "thresholds"],
+          "estimatedChunks": 12,
+          "notes": "Foundational pest management principles.",
+          "verified": true,
+          "publicationYear": 2012
+        },
+        {
+          "url": "https://www.omafra.gov.on.ca/CropOp/en/general_agronomics/pest_management/diseases.html",
+          "title": "Diseases",
+          "type": "html",
+          "crops": ["corn", "wheat", "soybeans", "canola", "alfalfa"],
+          "topics": ["disease", "diagnostics", "ipm"],
+          "estimatedChunks": 10,
+          "notes": "General disease management concepts.",
+          "verified": true,
+          "publicationYear": 2012
+        },
+        {
+          "url": "https://www.omafra.gov.on.ca/CropOp/en/general_agronomics/pest_management/insects.html",
+          "title": "Insects",
+          "type": "html",
+          "crops": ["corn", "wheat", "soybeans", "canola", "alfalfa"],
+          "topics": ["insect", "diagnostics", "ipm"],
+          "estimatedChunks": 10,
+          "notes": "General insect pest management concepts.",
+          "verified": true,
+          "publicationYear": 2012
+        },
+        {
+          "url": "https://www.omafra.gov.on.ca/CropOp/en/general_agronomics/nutrient_management/macronutrients.html",
+          "title": "Macronutrients",
+          "type": "html",
+          "crops": ["corn", "wheat", "soybeans", "canola", "alfalfa"],
+          "topics": ["nutrient management", "fertility", "soil", "diagnostics"],
+          "estimatedChunks": 12,
+          "notes": "Macronutrient roles and deficiency concepts.",
+          "verified": true,
+          "publicationYear": 2012
+        },
+        {
+          "url": "https://www.omafra.gov.on.ca/CropOp/en/general_agronomics/nutrient_management/micronutrients.html",
+          "title": "Micronutrients",
+          "type": "html",
+          "crops": ["corn", "wheat", "soybeans", "canola", "alfalfa"],
+          "topics": ["nutrient management", "fertility", "diagnostics"],
+          "estimatedChunks": 10,
+          "notes": "Micronutrient deficiency concepts.",
+          "verified": true,
+          "publicationYear": 2012
+        },
+        {
+          "url": "https://www.omafra.gov.on.ca/CropOp/en/general_agronomics/nutrient_management/plant_analysis.html",
+          "title": "Plant Analysis",
+          "type": "html",
+          "crops": ["corn", "wheat", "soybeans", "canola", "alfalfa"],
+          "topics": ["diagnostics", "nutrient management", "tissue testing"],
+          "estimatedChunks": 10,
+          "notes": "Tissue analysis interpretation.",
+          "verified": true,
+          "publicationYear": 2012
+        },
+        {
+          "url": "https://www.omafra.gov.on.ca/CropOp/en/general_agronomics/soil_management/soil_testing.html",
+          "title": "Soil Testing",
+          "type": "html",
+          "crops": ["corn", "wheat", "soybeans", "canola", "alfalfa"],
+          "topics": ["soil", "diagnostics", "nutrient management"],
+          "estimatedChunks": 10,
+          "notes": "Soil testing concepts and interpretation.",
+          "verified": true,
+          "publicationYear": 2012
+        },
+        {
+          "url": "https://www.omafra.gov.on.ca/CropOp/en/general_agronomics/irrigation.html",
+          "title": "Irrigation",
+          "type": "html",
+          "crops": ["corn", "soybeans", "potatoes", "onions", "carrots"],
+          "topics": ["irrigation", "water management", "production"],
+          "estimatedChunks": 10,
+          "notes": "Irrigation management concepts for Ontario.",
+          "verified": true,
+          "publicationYear": 2012
+        },
+        {
+          "url": "https://www.omafra.gov.on.ca/CropOp/en/spec_vegetables/bokc.html",
+          "title": "Bok Choy",
+          "type": "html",
+          "crops": ["cabbage"],
+          "topics": ["production", "disease", "insect", "weed", "fertility"],
+          "estimatedChunks": 8,
+          "notes": "Specialty vegetable crop profile.",
+          "verified": true,
+          "publicationYear": 2012
+        },
+        {
+          "url": "https://www.omafra.gov.on.ca/CropOp/en/spec_vegetables/chive.html",
+          "title": "Chives",
+          "type": "html",
+          "crops": ["onions"],
+          "topics": ["production", "disease", "insect", "weed", "fertility"],
+          "estimatedChunks": 8,
+          "notes": "Specialty vegetable crop profile.",
+          "verified": true,
+          "publicationYear": 2012
+        },
+        {
+          "url": "http://www.omafra.gov.on.ca/neworchard/english/planning/3site.htm",
+          "title": "Site Selection",
+          "type": "html",
+          "crops": ["apples"],
+          "topics": [
+            "production",
+            "orchard establishment",
+            "soil",
+            "site selection"
+          ],
+          "estimatedChunks": 12,
+          "notes": "Apple orchard site selection.",
+          "verified": true,
+          "publicationYear": 2012
+        },
+        {
+          "url": "http://www.omafra.gov.on.ca/neworchard/english/planning/20cultivar.htm",
+          "title": "Choosing Cultivars",
+          "type": "html",
+          "crops": ["apples"],
+          "topics": [
+            "production",
+            "variety selection",
+            "orchard establishment"
+          ],
+          "estimatedChunks": 14,
+          "notes": "Apple cultivar selection.",
+          "verified": true,
+          "publicationYear": 2012
+        },
+        {
+          "url": "http://www.omafra.gov.on.ca/neworchard/english/planning/5design.htm",
+          "title": "Orchard Design",
+          "type": "html",
+          "crops": ["apples"],
+          "topics": ["production", "orchard establishment", "planting density"],
+          "estimatedChunks": 14,
+          "notes": "Row spacing and density guidance.",
+          "verified": true,
+          "publicationYear": 2012
+        },
+        {
+          "url": "http://www.omafra.gov.on.ca/neworchard/english/planning/6training.htm",
+          "title": "Training Systems",
+          "type": "html",
+          "crops": ["apples"],
+          "topics": ["production", "canopy management", "pruning"],
+          "estimatedChunks": 14,
+          "notes": "Apple orchard training systems.",
+          "verified": true,
+          "publicationYear": 2012
+        },
+        {
+          "url": "http://www.omafra.gov.on.ca/neworchard/english/planning/25fert.htm",
+          "title": "Fertilizing New Apple Orchards",
+          "type": "html",
+          "crops": ["apples"],
+          "topics": ["nutrient management", "soil", "fertility"],
+          "estimatedChunks": 12,
+          "notes": "Nutrient management for new apple orchards.",
+          "verified": true,
+          "publicationYear": 2012
+        },
+        {
+          "url": "http://www.omafra.gov.on.ca/neworchard/english/management/18trickle.htm",
+          "title": "Trickle Irrigation",
+          "type": "html",
+          "crops": ["apples"],
+          "topics": ["irrigation", "water management", "orchard establishment"],
+          "estimatedChunks": 10,
+          "notes": "Trickle irrigation for apple orchards.",
+          "verified": true,
+          "publicationYear": 2012
+        },
+        {
+          "url": "http://www.omafra.gov.on.ca/neworchard/english/management/19floor.htm",
+          "title": "Floor Management",
+          "type": "html",
+          "crops": ["apples"],
+          "topics": ["weed", "orchard floor management", "ipm"],
+          "estimatedChunks": 10,
+          "notes": "Orchard floor management approaches.",
+          "verified": true,
+          "publicationYear": 2012
+        },
+        {
+          "url": "http://www.omafra.gov.on.ca/neworchard/english/management/24rot.htm",
+          "title": "Rootstocks",
+          "type": "html",
+          "crops": ["apples"],
+          "topics": ["production", "rootstocks", "orchard establishment"],
+          "estimatedChunks": 12,
+          "notes": "Rootstock selection for apples.",
+          "verified": true,
+          "publicationYear": 2012
+        }
+      ]
+    },
+    {
+      "name": "Province of Manitoba Agriculture",
+      "institution": "Government of Manitoba",
+      "baseUrl": "https://www.gov.mb.ca/agriculture",
+      "priority": "medium",
+      "focus": ["crop protection", "soil fertility", "field crop production"],
+      "estimatedChunks": 150,
+      "urls": [
+        {
+          "url": "https://www.gov.mb.ca/agriculture/crops/guides-and-publications/pubs/guide-crop-protection-insects-2025.pdf",
+          "title": "Guide to Crop Protection — Insect Control (2025)",
+          "type": "pdf",
+          "crops": ["corn", "wheat", "canola", "soybeans", "alfalfa"],
+          "topics": ["insect", "ipm", "scouting", "thresholds", "control"],
+          "estimatedChunks": 45,
+          "notes": "Manitoba insect control guide 2025.",
+          "verified": true,
+          "publicationYear": 2025
+        },
+        {
+          "url": "https://www.gov.mb.ca/agriculture/crops/guides-and-publications/pubs/guide-crop-protection-diseases-2025.pdf",
+          "title": "Guide to Crop Protection — Plant Disease Control (2025)",
+          "type": "pdf",
+          "crops": ["corn", "wheat", "canola", "soybeans", "alfalfa"],
+          "topics": ["disease", "ipm", "diagnostics", "control"],
+          "estimatedChunks": 55,
+          "notes": "Manitoba plant disease guide 2025.",
+          "verified": true,
+          "publicationYear": 2025
+        },
+        {
+          "url": "https://www.gov.mb.ca/agriculture/crops/insects/pubs/beneficial-insects-predators-and-parasitoids-revised-june2024.pdf",
+          "title": "Beneficial Insects: Predators and Parasitoids (Revised June 2024)",
+          "type": "pdf",
+          "crops": ["corn", "wheat", "canola", "soybeans", "alfalfa"],
+          "topics": ["insect", "biological control", "ipm", "identification"],
+          "estimatedChunks": 18,
+          "notes": "Beneficial insects identification resource.",
+          "verified": true,
+          "publicationYear": 2024
+        },
+        {
+          "url": "https://www.gov.mb.ca/agriculture/crops/soil-fertility/pubs/fer01s01.pdf",
+          "title": "Fall Nitrogen Application and Dry Soils",
+          "type": "pdf",
+          "crops": ["wheat", "canola", "corn"],
+          "topics": ["nutrient management", "nitrogen", "soil"],
+          "estimatedChunks": 8,
+          "notes": "Soil fertility facts 2012.",
+          "verified": true,
+          "publicationYear": 2012
+        },
+        {
+          "url": "https://www.gov.mb.ca/agriculture/crops/soil-fertility/pubs/phosphorus-fertilization-strategies-for-manitoba.pdf",
+          "title": "Phosphorus Fertilization Strategies",
+          "type": "pdf",
+          "crops": ["corn", "wheat", "canola", "soybeans"],
+          "topics": [
+            "nutrient management",
+            "phosphorus",
+            "soil",
+            "environment"
+          ],
+          "estimatedChunks": 24,
+          "notes": "Long-term P strategy 2015.",
+          "verified": true,
+          "publicationYear": 2015
+        },
+        {
+          "url": "https://www.gov.mb.ca/agriculture/crops/guides-and-publications/pubs/guide-crop-protection-2025.pdf",
+          "title": "Guide to Crop Protection (2025) — Full Guide",
+          "type": "pdf",
+          "crops": [
+            "wheat",
+            "barley",
+            "oats",
+            "canola",
+            "corn",
+            "soybeans",
+            "alfalfa"
+          ],
+          "topics": ["crop protection", "weed", "disease", "insect", "ipm"],
+          "estimatedChunks": 200,
+          "notes": "Comprehensive Manitoba crop protection guide.",
+          "verified": true,
+          "publicationYear": 2025
+        },
+        {
+          "url": "https://www.gov.mb.ca/agriculture/crops/guides-and-publications/pubs/guide-crop-protection-weeds-2025.pdf",
+          "title": "Guide to Crop Protection (2025) — Weed Control",
+          "type": "pdf",
+          "crops": ["wheat", "barley", "oats", "canola", "corn", "soybeans"],
+          "topics": ["weed", "herbicide", "crop protection", "ipm"],
+          "estimatedChunks": 120,
+          "notes": "Weed identification and herbicide options.",
+          "verified": true,
+          "publicationYear": 2025
+        },
+        {
+          "url": "https://www.gov.mb.ca/agriculture/crops/guides-and-publications/pubs/guide-crop-protection-pgr-2025.pdf",
+          "title": "Guide to Crop Protection (2025) — Plant Growth Regulators",
+          "type": "pdf",
+          "crops": ["wheat", "barley", "oats"],
+          "topics": ["plant growth regulator", "crop management", "lodging"],
+          "estimatedChunks": 5,
+          "notes": "PGR product information.",
+          "verified": true,
+          "publicationYear": 2025
+        },
+        {
+          "url": "https://www.gov.mb.ca/agriculture/crops/guides-and-publications/pubs/guide-crop-protection-2024.pdf",
+          "title": "Guide to Crop Protection (2024) — Full Guide",
+          "type": "pdf",
+          "crops": [
+            "wheat",
+            "barley",
+            "oats",
+            "canola",
+            "corn",
+            "soybeans",
+            "alfalfa"
+          ],
+          "topics": ["crop protection", "weed", "disease", "insect", "ipm"],
+          "estimatedChunks": 200,
+          "notes": "Prior-year Manitoba full guide.",
+          "verified": true,
+          "publicationYear": 2024
+        },
+        {
+          "url": "https://www.gov.mb.ca/agriculture/crops/guides-and-publications/pubs/guide-crop-protection-weeds-2024.pdf",
+          "title": "Guide to Crop Protection (2024) — Weed Control",
+          "type": "pdf",
+          "crops": ["wheat", "barley", "oats", "canola", "corn", "soybeans"],
+          "topics": ["weed", "herbicide", "crop protection", "ipm"],
+          "estimatedChunks": 120,
+          "notes": "2024 weed control section.",
+          "verified": true,
+          "publicationYear": 2024
+        },
+        {
+          "url": "https://www.gov.mb.ca/agriculture/crops/guides-and-publications/pubs/guide-crop-protection-insect-2024.pdf",
+          "title": "Guide to Crop Protection (2024) — Insect Control",
+          "type": "pdf",
+          "crops": ["wheat", "barley", "oats", "canola", "corn", "soybeans"],
+          "topics": [
+            "insect",
+            "insecticide",
+            "scouting",
+            "thresholds",
+            "crop protection"
+          ],
+          "estimatedChunks": 25,
+          "notes": "2024 insect control section.",
+          "verified": true,
+          "publicationYear": 2024
+        }
+      ]
+    },
+    {
+      "name": "Agriculture Publications PDFs",
+      "institution": "Government of Saskatchewan",
+      "baseUrl": "https://pubsaskdev.blob.core.windows.net/pubsask-prod",
+      "priority": "medium",
+      "focus": [
+        "canola",
+        "wheat",
+        "barley",
+        "oats",
+        "pulses",
+        "sunflower",
+        "soil fertility",
+        "crop rotation",
+        "clubroot",
+        "plant disease"
+      ],
+      "estimatedChunks": 60,
+      "urls": [
+        {
+          "url": "https://pubsaskdev.blob.core.windows.net/pubsask-prod/118749/nitrogen-fertilization-in-crop-production-0217.pdf",
+          "title": "Nitrogen Fertilization in Crop Production (0217)",
+          "type": "pdf",
+          "crops": ["wheat", "barley", "oats", "canola"],
+          "topics": ["nitrogen", "fertility", "nutrient management"],
+          "estimatedChunks": 8,
+          "notes": "Nitrogen rate and source guidance.",
+          "verified": true,
+          "publicationYear": 2017
+        },
+        {
+          "url": "https://pubsaskdev.blob.core.windows.net/pubsask-prod/119241/principles-and-practices-of-crop-rotation-0217.pdf",
+          "title": "Principles and Practices of Crop Rotation (0217)",
+          "type": "pdf",
+          "crops": ["wheat", "barley", "oats", "canola", "peas", "lentils"],
+          "topics": [
+            "crop rotation",
+            "soil health",
+            "disease management",
+            "weed management"
+          ],
+          "estimatedChunks": 12,
+          "notes": "Rotation principles with examples.",
+          "verified": true,
+          "publicationYear": 2017
+        },
+        {
+          "url": "https://pubsaskdev.blob.core.windows.net/pubsask-prod/118747/plant-disease-scouting-101-factsheet-0918.pdf",
+          "title": "Plant Disease Scouting 101 (Factsheet 0918)",
+          "type": "pdf",
+          "crops": ["wheat", "barley", "oats", "canola", "peas", "lentils"],
+          "topics": ["disease", "scouting", "diagnostics"],
+          "estimatedChunks": 4,
+          "notes": "Disease diagnosis workflow.",
+          "verified": true,
+          "publicationYear": 2018
+        },
+        {
+          "url": "https://pubsaskdev.blob.core.windows.net/pubsask-prod/118757/clubroot-soil-sampling-on-the-prairies-0819.pdf",
+          "title": "Clubroot Soil Sampling on the Prairies (0819)",
+          "type": "pdf",
+          "crops": ["canola"],
+          "topics": ["clubroot", "disease", "sampling", "biosecurity"],
+          "estimatedChunks": 4,
+          "notes": "Clubroot sampling protocol.",
+          "verified": true,
+          "publicationYear": 2019
+        },
+        {
+          "url": "https://pubsaskdev.blob.core.windows.net/pubsask-prod/118758/interpreting-clubroot-soil-test-result-092019.pdf",
+          "title": "Interpreting Clubroot Soil Test Results (092019)",
+          "type": "pdf",
+          "crops": ["canola"],
+          "topics": ["clubroot", "disease", "soil testing", "risk assessment"],
+          "estimatedChunks": 4,
+          "notes": "Risk assessment lab interpretation.",
+          "verified": true,
+          "publicationYear": 2019
+        },
+        {
+          "url": "https://pubsaskdev.blob.core.windows.net/pubsask-prod/119247/saskatchewan-no-till-sunflower-production-guide-2017.pdf",
+          "title": "Saskatchewan No-Till Sunflower Production Guide (2017)",
+          "type": "pdf",
+          "crops": ["sunflower"],
+          "topics": [
+            "production",
+            "no-till",
+            "seeding",
+            "fertility",
+            "weed management"
+          ],
+          "estimatedChunks": 15,
+          "notes": "Sunflower production practices.",
+          "verified": true,
+          "publicationYear": 2017
+        }
+      ]
+    },
+    {
+      "name": "Alberta Agriculture and Forestry PDFs",
+      "institution": "Government of Alberta",
+      "baseUrl": "https://www1.agriculture.alberta.ca",
+      "priority": "medium",
+      "focus": [
+        "canola",
+        "wheat",
+        "barley",
+        "alfalfa",
+        "pulses",
+        "crop protection",
+        "irrigation",
+        "clubroot",
+        "weed management",
+        "fusarium"
+      ],
+      "estimatedChunks": 260,
+      "urls": [
+        {
+          "url": "https://www1.agriculture.alberta.ca/%24department/deptdocs.nsf/all/agdex14757/%24file/640-15.pdf",
+          "title": "Invasive Plants in Alberta: Forages and Hay Land",
+          "type": "pdf",
+          "crops": ["alfalfa"],
+          "topics": ["weed", "invasive plants", "forage management"],
+          "estimatedChunks": 5,
+          "notes": "Invasive plant management 2014.",
+          "verified": true,
+          "publicationYear": 2014
+        },
+        {
+          "url": "https://www1.agriculture.alberta.ca/%24Department/deptdocs.nsf/ba3468a2a8681f69872569d60073fde1/64f71281cca7eb63872578d1004c6b12/%24FILE/121_561-1.pdf",
+          "title": "Irrigation Scheduling for Alfalfa Hay (Agdex 561-1)",
+          "type": "pdf",
+          "crops": ["alfalfa"],
+          "topics": ["irrigation", "water management", "forage production"],
+          "estimatedChunks": 6,
+          "notes": "Irrigation scheduling guide.",
+          "verified": true,
+          "publicationYear": 2011
+        },
+        {
+          "url": "https://www1.agriculture.alberta.ca/%24department/deptdocs.nsf/all/agdex3795/%24file/142_32-1.pdf",
+          "title": "Varieties of Pulse Crops for Alberta",
+          "type": "pdf",
+          "crops": ["peas", "lentils", "beans"],
+          "topics": ["varieties", "yield", "disease resistance"],
+          "estimatedChunks": 10,
+          "notes": "Pulse crop variety trials.",
+          "verified": true,
+          "publicationYear": 2019
+        },
+        {
+          "url": "https://www1.agriculture.alberta.ca/%24department/deptdocs.nsf/all/agdex32/%24file/606-1_2019.pdf?OpenElement=",
+          "title": "Crop Protection 2019 (Alberta 'Blue Book')",
+          "type": "pdf",
+          "crops": ["wheat", "barley", "oats", "canola", "peas", "lentils"],
+          "topics": ["crop protection", "pesticides", "ipm", "labels"],
+          "estimatedChunks": 150,
+          "notes": "Alberta Blue Book 2019.",
+          "verified": true,
+          "publicationYear": 2019
+        },
+        {
+          "url": "https://www1.agriculture.alberta.ca/%24department/deptdocs.nsf/all/agdex121/%24file/147_20-2.pdf",
+          "title": "Coriander (Agdex 147/20-2)",
+          "type": "pdf",
+          "crops": ["coriander"],
+          "topics": ["production", "seeding", "fertility", "harvest"],
+          "estimatedChunks": 5,
+          "notes": "Specialty crop production.",
+          "verified": true,
+          "publicationYear": 2016
+        },
+        {
+          "url": "https://www1.agriculture.alberta.ca/%24Department/deptdocs.nsf/all/agdex561-17/%24file/Agdex561-17.pdf",
+          "title": "Irrigation Scheduling for Canola",
+          "type": "pdf",
+          "crops": ["canola"],
+          "topics": ["irrigation", "water management", "crop management"],
+          "estimatedChunks": 5,
+          "verified": true,
+          "publicationYear": 2011
+        },
+        {
+          "url": "https://www1.agriculture.alberta.ca/%24Department/deptdocs.nsf/all/agdex622-30/%24file/pea-leaf-weevil.pdf",
+          "title": "Pea Leaf Weevil (Agdex 622-30)",
+          "type": "pdf",
+          "crops": ["peas", "beans"],
+          "topics": ["insect", "scouting", "ipm"],
+          "estimatedChunks": 5,
+          "verified": true,
+          "publicationYear": 2014
+        },
+        {
+          "url": "https://www1.agriculture.alberta.ca/%24Department/deptdocs.nsf/all/plant13441/%24file/alberta-fg-management-plan.pdf",
+          "title": "Alberta Fusarium graminearum Management Plan",
+          "type": "pdf",
+          "crops": ["wheat", "barley"],
+          "topics": ["fusarium", "disease", "biosecurity", "seed health"],
+          "estimatedChunks": 15,
+          "verified": true,
+          "publicationYear": 2012
+        },
+        {
+          "url": "https://www1.agriculture.alberta.ca/%24Department/deptdocs.nsf/all/agdex140_638-2?opendocument",
+          "title": "Alberta Clubroot Management Plan",
+          "type": "html",
+          "crops": ["canola"],
+          "topics": ["clubroot", "disease", "biosecurity", "sanitation"],
+          "estimatedChunks": 20,
+          "verified": true,
+          "publicationYear": 2014
+        },
+        {
+          "url": "https://www1.agriculture.alberta.ca/%24Department/deptdocs.nsf/all/agdex140_638-1/%24file/clubroot.pdf",
+          "title": "Clubroot Disease of Canola and Mustard",
+          "type": "pdf",
+          "crops": ["canola", "mustard"],
+          "topics": ["clubroot", "disease", "diagnostics", "management"],
+          "estimatedChunks": 10,
+          "verified": true,
+          "publicationYear": 2015
+        },
+        {
+          "url": "https://www.alberta.ca/system/files/custom_downloaded_images/af-clubroot-and-energy-utility-developments.pdf",
+          "title": "Clubroot and Utility Developments",
+          "type": "pdf",
+          "crops": ["canola"],
+          "topics": ["clubroot", "biosecurity", "equipment sanitation"],
+          "estimatedChunks": 12,
+          "verified": true,
+          "publicationYear": 2018
+        },
+        {
+          "url": "https://www.alberta.ca/system/files/custom_downloaded_images/ep-herbicide-resistance.pdf",
+          "title": "Herbicide Resistance and Invasive Plants",
+          "type": "pdf",
+          "crops": [
+            "wheat",
+            "barley",
+            "oats",
+            "canola",
+            "alfalfa",
+            "peas",
+            "lentils"
+          ],
+          "topics": [
+            "herbicide resistance",
+            "weed",
+            "integrated weed management"
+          ],
+          "estimatedChunks": 3,
+          "verified": true,
+          "publicationYear": 2014
+        }
+      ]
+    },
+    {
+      "name": "Michigan State University Extension",
+      "institution": "Michigan State University",
+      "baseUrl": "https://www.canr.msu.edu",
+      "priority": "high",
+      "focus": ["tree fruits", "small fruits", "vegetables", "IPM scouting"],
+      "estimatedChunks": 350,
+      "urls": [
+        {
+          "url": "https://www.canr.msu.edu/apples/uploads/files/Apple%20Sprays%20for%20Gardeners%20Final.pdf",
+          "title": "Apple Sprays for Gardeners",
+          "type": "pdf",
+          "crops": ["apples"],
+          "topics": ["pest", "disease", "spray program", "IPM"],
+          "estimatedChunks": 12,
+          "verified": true,
+          "publicationYear": 2025
+        },
+        {
+          "url": "https://www.canr.msu.edu/blueberries/uploads/files/E3490_Blueberry_Varieties_MI_AA.pdf",
+          "title": "Blueberry Varieties for Michigan",
+          "type": "pdf",
+          "crops": ["blueberries"],
+          "topics": ["varieties", "cultivar selection", "production"],
+          "estimatedChunks": 18,
+          "verified": true,
+          "publicationYear": 2024
+        },
+        {
+          "url": "https://www.canr.msu.edu/blueberries/uploads/files/E3482_Replanting_Blueberries_AA.pdf",
+          "title": "Best Practices for Replanting Blueberries",
+          "type": "pdf",
+          "crops": ["blueberries"],
+          "topics": ["soil", "replanting", "disease", "production"],
+          "estimatedChunks": 10,
+          "verified": true,
+          "publicationYear": 2023
+        },
+        {
+          "url": "https://www.canr.msu.edu/uploads/resources/pdfs/managing_the_nutrtion_of_highbush_blueberries_%28e2011%29.pdf",
+          "title": "Managing the Nutrition of Blueberries (E2011)",
+          "type": "pdf",
+          "crops": ["blueberries"],
+          "topics": ["nutrient management", "soil fertility", "diagnosis"],
+          "estimatedChunks": 14,
+          "verified": true,
+          "publicationYear": 2016
+        },
+        {
+          "url": "https://www.canr.msu.edu/blueberries/uploads/files/Blueberry%20Facts%20AlternariaRot-FinalWEB.pdf",
+          "title": "Michigan Blueberry Facts: Alternaria Fruit Rot",
+          "type": "pdf",
+          "crops": ["blueberries"],
+          "topics": ["disease", "diagnosis", "management"],
+          "estimatedChunks": 6,
+          "verified": true,
+          "publicationYear": 2020
+        },
+        {
+          "url": "https://www.canr.msu.edu/grapes/uploads/files/GrapeGuide-PDF-final2020.pdf",
+          "title": "Guide for Grape IPM Scouting",
+          "type": "pdf",
+          "crops": ["grapes"],
+          "topics": ["IPM", "scouting", "pest", "disease", "identification"],
+          "estimatedChunks": 120,
+          "verified": true,
+          "publicationYear": 2020
+        },
+        {
+          "url": "https://www.canr.msu.edu/uploads/resources/pdfs/msu_organic_swd_factsheet_dec2016.pdf",
+          "title": "Management of Spotted Wing Drosophila",
+          "type": "pdf",
+          "crops": ["strawberries", "blueberries", "cherries", "grapes"],
+          "topics": ["insects", "IPM", "organic", "monitoring", "management"],
+          "estimatedChunks": 14,
+          "verified": true,
+          "publicationYear": 2016
+        },
+        {
+          "url": "https://www.canr.msu.edu/ipm/uploads/files/swd/NCPA22.pdf",
+          "title": "National Pest Alert: Spotted Wing Drosophila",
+          "type": "pdf",
+          "crops": ["berries", "cherries", "grapes"],
+          "topics": ["insects", "identification", "monitoring", "management"],
+          "estimatedChunks": 6,
+          "verified": true,
+          "publicationYear": 2019
+        },
+        {
+          "url": "https://www.canr.msu.edu/uploads/resources/pdfs/e2890.pdf",
+          "title": "Cherry Orchard Floor Management (E2890)",
+          "type": "pdf",
+          "crops": ["cherries"],
+          "topics": ["weed management", "orchard management", "production"],
+          "estimatedChunks": 12,
+          "verified": true,
+          "publicationYear": 2015
+        },
+        {
+          "url": "https://www.canr.msu.edu/uploads/resources/pdfs/pest_scouting_in_vegetables.pdf",
+          "title": "Pest Scouting in Vegetable Crops",
+          "type": "pdf",
+          "crops": ["vegetables"],
+          "topics": ["IPM", "scouting", "diagnosis"],
+          "estimatedChunks": 8,
+          "verified": true,
+          "publicationYear": 2015
+        },
+        {
+          "url": "https://www.canr.msu.edu/uploads/resources/pdfs/pest_scouting_in_field_crops.pdf",
+          "title": "Pest Scouting in Field Crops",
+          "type": "pdf",
+          "crops": ["field crops"],
+          "topics": ["IPM", "scouting", "diagnosis"],
+          "estimatedChunks": 8,
+          "verified": true,
+          "publicationYear": 2015
+        },
+        {
+          "url": "https://www.canr.msu.edu/uploads/resources/pdfs/pest_scouting_in_perennial_agricultural_crops.pdf",
+          "title": "Pest Scouting in Perennial Crops",
+          "type": "pdf",
+          "crops": ["perennial crops"],
+          "topics": ["IPM", "scouting", "diagnosis"],
+          "estimatedChunks": 8,
+          "verified": true,
+          "publicationYear": 2015
+        },
+        {
+          "url": "https://www.canr.msu.edu/ipm/uploads/files/SWD-Biology-and-Identification-June-2020.pdf",
+          "title": "Spotted Wing Drosophila Biology",
+          "type": "pdf",
+          "crops": ["berries", "cherries", "grapes"],
+          "topics": ["insects", "identification", "biology", "monitoring"],
+          "estimatedChunks": 6,
+          "verified": true,
+          "publicationYear": 2020
+        },
+        {
+          "url": "https://www.canr.msu.edu/ipm/uploads/files/SWD-Home-Garden-June-2020.pdf",
+          "title": "SWD Management in Home Fruit",
+          "type": "pdf",
+          "crops": [
+            "strawberries",
+            "blueberries",
+            "raspberries",
+            "blackberries",
+            "cherries"
+          ],
+          "topics": ["insects", "management", "monitoring", "sanitation"],
+          "estimatedChunks": 6,
+          "verified": true,
+          "publicationYear": 2020
+        },
+        {
+          "url": "https://www.canr.msu.edu/resources/fruit-crop-pest-management-commercial-applicators-guide-category-1c-manual",
+          "title": "Fruit Crop Pest Management Guide",
+          "type": "html",
+          "crops": ["apples", "cherries", "grapes", "berries"],
+          "topics": ["pest", "disease", "weeds", "IPM"],
+          "estimatedChunks": 80,
+          "verified": true,
+          "publicationYear": 2015
+        }
+      ]
+    },
+    {
+      "name": "University of Wisconsin–Madison Division of Extension",
+      "institution": "University of Wisconsin–Madison",
+      "baseUrl": "https://extension.wisc.edu",
+      "priority": "high",
+      "focus": ["forages", "pasture management", "alfalfa", "grazing systems"],
+      "estimatedChunks": 250,
+      "urls": [
+        {
+          "url": "https://cropsandsoils.extension.wisc.edu/files/2025/07/Fact-Sheet-Grazing-Cover-Crops-Annual-Forages.pdf",
+          "title": "Grazing Cover Crops & Annual Forages",
+          "type": "pdf",
+          "crops": ["forages", "cover crops"],
+          "topics": ["grazing", "forage chain", "production", "management"],
+          "estimatedChunks": 28,
+          "verified": true,
+          "publicationYear": 2025
+        },
+        {
+          "url": "https://cropsandsoils.extension.wisc.edu/files/2025/02/Fact-Sheet-What-Should-I-Plant-in-My-Pasture-Final.pdf",
+          "title": "What Should I Plant in My Pasture?",
+          "type": "pdf",
+          "crops": ["pastures", "forages"],
+          "topics": [
+            "species selection",
+            "pasture establishment",
+            "management"
+          ],
+          "estimatedChunks": 8,
+          "verified": true,
+          "publicationYear": 2025
+        },
+        {
+          "url": "https://fyi.extension.wisc.edu/forage/files/2020/04/2019-WAYP-Summary1.pdf",
+          "title": "WAYP Program 2019 Summary Report",
+          "type": "pdf",
+          "crops": ["alfalfa"],
+          "topics": ["forage quality", "yield", "stand persistence"],
+          "estimatedChunks": 38,
+          "verified": true,
+          "publicationYear": 2020
+        },
+        {
+          "url": "https://fyi.extension.wisc.edu/forage/files/2021/03/2020-WAYP-Summary.pdf",
+          "title": "WAYP Program 2020 Summary Report",
+          "type": "pdf",
+          "crops": ["alfalfa"],
+          "topics": ["forage quality", "yield", "stand persistence"],
+          "estimatedChunks": 42,
+          "verified": true,
+          "publicationYear": 2021
+        },
+        {
+          "url": "https://fyi.extension.wisc.edu/forage/files/2014/01/PastureFert.pdf",
+          "title": "Pasture Fertilization",
+          "type": "pdf",
+          "crops": ["pastures", "forages"],
+          "topics": ["nutrient management", "soil pH", "lime", "fertility"],
+          "estimatedChunks": 6,
+          "verified": true,
+          "publicationYear": 2014
+        },
+        {
+          "url": "https://cropsandsoils.extension.wisc.edu/files/2023/09/Grazing-Stick-Guide.pdf",
+          "title": "Using a Grazing Stick",
+          "type": "pdf",
+          "crops": ["pastures", "forages"],
+          "topics": [
+            "grazing management",
+            "forage inventory",
+            "decision support"
+          ],
+          "estimatedChunks": 6,
+          "verified": true,
+          "publicationYear": 2023
+        },
+        {
+          "url": "https://cropsandsoils.extension.wisc.edu/files/2023/05/A3637.pdf",
+          "title": "Identifying Pasture Grasses (A3637)",
+          "type": "pdf",
+          "crops": ["pastures", "forages"],
+          "topics": [
+            "species identification",
+            "diagnostic guide",
+            "pasture management"
+          ],
+          "estimatedChunks": 30,
+          "verified": true,
+          "publicationYear": 2023
+        },
+        {
+          "url": "https://fyi.extension.wisc.edu/grain/files/2021/03/Pasture-nutrient-management-handout.pdf",
+          "title": "Pasture Nutrient Management",
+          "type": "pdf",
+          "crops": ["pastures", "forages"],
+          "topics": ["nutrient management", "nitrogen", "soil pH", "fertility"],
+          "estimatedChunks": 8,
+          "verified": true,
+          "publicationYear": 2021
+        },
+        {
+          "url": "https://cropsandsoils.extension.wisc.edu/files/2025/11/Cover-Crop-Sampling-Protocol-CC-Species.pdf",
+          "title": "Cover Crop Sampling Protocol",
+          "type": "pdf",
+          "crops": ["cover crops", "forages"],
+          "topics": [
+            "sampling",
+            "nutrient uptake",
+            "forage quality",
+            "protocol"
+          ],
+          "estimatedChunks": 12,
+          "verified": true,
+          "publicationYear": 2025
+        },
+        {
+          "url": "https://cropsandsoils.extension.wisc.edu/files/2023/05/Fact-Sheet-Renovating-Pastures.pdf",
+          "title": "Renovating Cool-Season Pastures",
+          "type": "pdf",
+          "crops": ["pastures", "forages"],
+          "topics": [
+            "pasture renovation",
+            "establishment",
+            "grazing management",
+            "soil fertility"
+          ],
+          "estimatedChunks": 10,
+          "verified": true,
+          "publicationYear": 2023
+        }
+      ]
+    },
+    {
+      "name": "Cornell Cooperative Extension Crop & Pest Management Guides",
+      "institution": "Cornell University",
+      "baseUrl": "https://cce.cornell.edu",
+      "priority": "medium",
+      "focus": ["tree fruits", "grapes", "berries", "vegetables", "IPM"],
+      "estimatedChunks": 529,
+      "urls": [
+        {
+          "url": "https://cropandpestguides.cce.cornell.edu/Preview/2025/2025_Tree_Fruit_Preview.pdf",
+          "title": "2025 Tree Fruit Pest Management Guidelines",
+          "type": "pdf",
+          "crops": ["apples", "pears", "cherries", "peaches"],
+          "topics": ["ipm", "insects", "diseases", "weeds"],
+          "estimatedChunks": 90,
+          "verified": true,
+          "publicationYear": 2025
+        },
+        {
+          "url": "https://cropandpestguides.cce.cornell.edu/Preview/2025/2025_Grape_Guide_Preview.pdf",
+          "title": "2025 Grape Pest Management Guidelines",
+          "type": "pdf",
+          "crops": ["grapes"],
+          "topics": ["ipm", "insects", "diseases", "weeds"],
+          "estimatedChunks": 70,
+          "verified": true,
+          "publicationYear": 2025
+        },
+        {
+          "url": "https://cropandpestguides.cce.cornell.edu/Preview/2024/2024_Berry_Crops_Preview.pdf",
+          "title": "2024 Berry Crops Pest Management Guidelines",
+          "type": "pdf",
+          "crops": [
+            "strawberries",
+            "blueberries",
+            "raspberries",
+            "blackberries"
+          ],
+          "topics": ["ipm", "insects", "diseases", "weeds"],
+          "estimatedChunks": 75,
+          "verified": true,
+          "publicationYear": 2024
+        },
+        {
+          "url": "https://cropandpestguides.cce.cornell.edu/Preview/2025/2025_Veg_Guide_Preview.pdf",
+          "title": "2025 Vegetable Crop Pest Management Guidelines",
+          "type": "pdf",
+          "crops": ["vegetables"],
+          "topics": ["ipm", "insects", "diseases", "weeds"],
+          "estimatedChunks": 65,
+          "verified": true,
+          "publicationYear": 2025
+        },
+        {
+          "url": "https://rvpadmin.cce.cornell.edu/uploads/doc_907.pdf",
+          "title": "Early-Season Grape Disease Management",
+          "type": "pdf",
+          "crops": ["grapes"],
+          "topics": ["disease", "ipm", "spray timing"],
+          "estimatedChunks": 16,
+          "verified": true,
+          "publicationYear": 2020
+        },
+        {
+          "url": "https://rvpadmin.cce.cornell.edu/uploads/doc_432.pdf",
+          "title": "Grape Pests for Cold Climate Vineyards",
+          "type": "pdf",
+          "crops": ["grapes"],
+          "topics": ["insects", "ipm", "monitoring"],
+          "estimatedChunks": 18,
+          "verified": true,
+          "publicationYear": 2016
+        },
+        {
+          "url": "https://rvpadmin.cce.cornell.edu/uploads/doc_512.pdf",
+          "title": "Fire Blight Management Program for Apple",
+          "type": "pdf",
+          "crops": ["apples", "pears"],
+          "topics": ["disease", "ipm", "forecasting"],
+          "estimatedChunks": 12,
+          "verified": true,
+          "publicationYear": 2017
+        },
+        {
+          "url": "https://rvpadmin.cce.cornell.edu/uploads/doc_852.pdf",
+          "title": "Apple Scab Update",
+          "type": "pdf",
+          "crops": ["apples"],
+          "topics": ["disease", "ipm", "fungicide resistance"],
+          "estimatedChunks": 10,
+          "verified": true,
+          "publicationYear": 2020
+        },
+        {
+          "url": "https://rvpadmin.cce.cornell.edu/uploads/doc_1110.pdf",
+          "title": "Apple Viruses of Concern",
+          "type": "pdf",
+          "crops": ["apples"],
+          "topics": ["disease", "diagnostics", "virus"],
+          "estimatedChunks": 20,
+          "verified": true,
+          "publicationYear": 2023
+        },
+        {
+          "url": "https://rvpadmin.cce.cornell.edu/uploads/doc_299.pdf",
+          "title": "Orchard Disease Management Strategies",
+          "type": "pdf",
+          "crops": ["apples", "tree fruits"],
+          "topics": ["disease", "ipm", "pathogen biology"],
+          "estimatedChunks": 14,
+          "verified": true,
+          "publicationYear": 2015
+        },
+        {
+          "url": "https://cropandpestguides.cce.cornell.edu/Preview/2024/2024_Tree_Fruit_Preview.pdf",
+          "title": "2024 Tree Fruit Pest Management Guidelines",
+          "type": "pdf",
+          "crops": ["apples", "pears", "cherries", "peaches"],
+          "topics": ["ipm", "insects", "diseases", "weeds"],
+          "estimatedChunks": 60,
+          "verified": true,
+          "publicationYear": 2024
+        },
+        {
+          "url": "https://cropandpestguides.cce.cornell.edu/Preview/2024/2024_Grape_Preview.pdf",
+          "title": "2024 Grape Pest Management Guidelines",
+          "type": "pdf",
+          "crops": ["grapes"],
+          "topics": ["ipm", "insects", "diseases", "weeds"],
+          "estimatedChunks": 45,
+          "verified": true,
+          "publicationYear": 2024
+        },
+        {
+          "url": "https://rvpadmin.cce.cornell.edu/uploads/doc_670.pdf",
+          "title": "Fungicides for Apple Scab and Mildew",
+          "type": "pdf",
+          "crops": ["apples"],
+          "topics": ["disease", "fungicides", "ipm"],
+          "estimatedChunks": 12,
+          "verified": true,
+          "publicationYear": 2018
+        },
+        {
+          "url": "https://rvpadmin.cce.cornell.edu/uploads/doc_522.pdf",
+          "title": "Fire Blight in a Changing Climate",
+          "type": "pdf",
+          "crops": ["apples", "pears"],
+          "topics": ["disease", "ipm", "forecasting"],
+          "estimatedChunks": 22,
+          "verified": true,
+          "publicationYear": 2017
+        }
+      ]
+    },
+    {
+      "name": "Penn State Fruit Research and Extension Center",
+      "institution": "The Pennsylvania State University",
+      "baseUrl": "https://agsci.psu.edu/research/centers-facilities/extension/frec/resources",
+      "priority": "medium",
+      "focus": [
+        "tree fruits",
+        "orchard management",
+        "fruit pests",
+        "fruit diseases",
+        "IPM"
+      ],
+      "estimatedChunks": 159,
+      "urls": [
+        {
+          "url": "https://agsci.psu.edu/research/centers-facilities/extension/frec/resources/treefruit_booklet_plaincommunity_optimized.pdf",
+          "title": "Tree Fruit Field Guide",
+          "type": "pdf",
+          "crops": ["apples", "peaches", "cherries", "pears"],
+          "topics": ["diagnostics", "insects", "diseases", "ipm"],
+          "estimatedChunks": 60,
+          "verified": true,
+          "publicationYear": 2020
+        },
+        {
+          "url": "https://agsci.psu.edu/research/centers-facilities/extension/frec/resources/spanish/bilingual_treefruit_booklet_optimized.pdf",
+          "title": "Tree Fruit Field Guide (Bilingual)",
+          "type": "pdf",
+          "crops": ["apples", "peaches", "cherries", "pears"],
+          "topics": ["diagnostics", "insects", "diseases", "ipm"],
+          "estimatedChunks": 55,
+          "verified": true,
+          "publicationYear": 2015
+        },
+        {
+          "url": "https://agsci.psu.edu/research/centers-facilities/extension/frec/resources/tree-fruit-program-summary-report-2019-2020.pdf",
+          "title": "Tree Fruit Program Summary Report",
+          "type": "pdf",
+          "crops": ["apples", "peaches", "cherries"],
+          "topics": ["ipm", "disease", "insects", "horticulture"],
+          "estimatedChunks": 22,
+          "verified": true,
+          "publicationYear": 2020
+        },
+        {
+          "url": "https://agsci.psu.edu/research/centers-facilities/extension/frec/resources/workshop-presentations/2018-commercial-tree-fruit-school/pruning-by-the-numbers-jim-schupp.pdf",
+          "title": "Pruning by the Numbers",
+          "type": "pdf",
+          "crops": ["apples", "pears"],
+          "topics": ["canopy management", "production", "training"],
+          "estimatedChunks": 10,
+          "verified": true,
+          "publicationYear": 2018
+        },
+        {
+          "url": "https://agsci.psu.edu/research/centers-facilities/extension/frec/resources/workshop-presentations/2019-winter-tree-fruit-schools/franklin-county/greg-krawczyk-potential-new-invasive-pest-spotted-lanternfly.pdf",
+          "title": "New Invasive Pest: Spotted Lanternfly",
+          "type": "pdf",
+          "crops": ["grapes", "tree fruits"],
+          "topics": ["invasive pests", "ipm", "identification"],
+          "estimatedChunks": 8,
+          "verified": true,
+          "publicationYear": 2019
+        },
+        {
+          "url": "https://agsci.psu.edu/research/centers-facilities/extension/frec/resources/sprayrecords/psu-spray-record-keeping-spreadsheet/2022-readme.pdf",
+          "title": "Spray Record-Keeping Spreadsheet",
+          "type": "pdf",
+          "crops": ["general"],
+          "topics": ["record keeping", "ipm documentation"],
+          "estimatedChunks": 4,
+          "verified": true,
+          "publicationYear": 2022
+        }
+      ]
+    }
+  ]
+}

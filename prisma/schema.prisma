@@ -7,7 +7,159 @@ datasource db {
   provider   = "postgresql"
   url        = env("DATABASE_URL")
   directUrl  = env("DIRECT_URL")
-  extensions = [vector]
+  extensions = [uuid_ossp(map: "uuid-ossp", schema: "extensions"), vector]
+}
+
+model User {
+  id              String           @id @default(cuid())
+  email           String           @unique
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  feedback        Feedback[]
+  inputs          Input[]
+  recommendations Recommendation[]
+  profile         UserProfile?
+}
+
+model UserProfile {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  location        String?
+  farmSize        String?
+  cropsOfInterest String[]
+  experienceLevel String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Input {
+  id              String          @id @default(cuid())
+  userId          String
+  type            String
+  imageUrl        String?
+  description     String?
+  labData         Json?
+  location        String?
+  crop            String?
+  season          String?
+  createdAt       DateTime        @default(now())
+  user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  recommendations Recommendation?
+}
+
+model Recommendation {
+  id         String                 @id @default(cuid())
+  userId     String
+  inputId    String                 @unique
+  diagnosis  Json
+  confidence Float
+  modelUsed  String
+  tokensUsed Int?
+  createdAt  DateTime               @default(now())
+  feedback   Feedback[]
+  input      Input                  @relation(fields: [inputId], references: [id], onDelete: Cascade)
+  user       User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sources    RecommendationSource[]
+}
+
+model Feedback {
+  id               String         @id @default(cuid())
+  userId           String
+  recommendationId String
+  helpful          Boolean?
+  accuracyRating   Int?
+  outcome          String?
+  comments         String?
+  createdAt        DateTime       @default(now())
+  recommendation   Recommendation @relation(fields: [recommendationId], references: [id], onDelete: Cascade)
+  user             User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Source {
+  id           String       @id @default(cuid())
+  title        String
+  url          String?      @unique
+  sourceType   SourceType
+  institution  String?
+  status       String       @default("pending")
+  chunksCount  Int          @default(0)
+  errorMessage String?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  metadata     Json?
+  imageChunks  ImageChunk[]
+  textChunks   TextChunk[]
+}
+
+model TextChunk {
+  id              String                 @id @default(cuid())
+  sourceId        String
+  content         String
+  embedding       Unsupported("vector")?
+  metadata        Json?
+  createdAt       DateTime               @default(now())
+  chunkIndex      Int                    @default(0)
+  contentHash     String?                @unique
+  recommendations RecommendationSource[]
+  source          Source                 @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+
+  @@index([sourceId])
+}
+
+model ImageChunk {
+  id                    String                 @id @default(cuid())
+  sourceId              String
+  imageUrl              String
+  caption               String?
+  embedding             Unsupported("vector")?
+  metadata              Json?
+  createdAt             DateTime               @default(now())
+  contentHash           String?                @unique
+  altText               String?
+  contextText           String?
+  contextChunkId        String?
+  source                Source                 @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+  recommendationSources RecommendationSource[]
+
+  @@unique([sourceId, imageUrl])
+  @@index([sourceId])
+}
+
+model RecommendationSource {
+  id               String         @id @default(cuid())
+  recommendationId String
+  textChunkId      String?
+  imageChunkId     String?
+  relevanceScore   Float?
+  imageChunk       ImageChunk?    @relation(fields: [imageChunkId], references: [id])
+  recommendation   Recommendation @relation(fields: [recommendationId], references: [id], onDelete: Cascade)
+  textChunk        TextChunk?     @relation(fields: [textChunkId], references: [id])
+}
+
+model Product {
+  id              String         @id @default(cuid())
+  name            String
+  brand           String
+  type            String
+  description     String?
+  applicationRate String?
+  targetCrops     String[]
+  retailerLinks   Json?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  prices          ProductPrice[]
+}
+
+model ProductPrice {
+  id        String   @id @default(cuid())
+  productId String
+  retailer  String
+  price     Float
+  unit      String
+  url       String?
+  fetchedAt DateTime @default(now())
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
 }
 
 enum SourceType {
@@ -16,153 +168,4 @@ enum SourceType {
   RETAILER
   RESEARCH_PAPER
   GOVERNMENT
-}
-
-model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  profile         UserProfile?
-  inputs          Input[]
-  recommendations Recommendation[]
-  feedback        Feedback[]
-}
-
-model UserProfile {
-  id              String   @id @default(cuid())
-  userId          String   @unique
-  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  location        String?
-  farmSize        String?
-  cropsOfInterest String[]
-  experienceLevel String?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-}
-
-model Input {
-  id          String   @id @default(cuid())
-  userId      String
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  type        String
-  imageUrl    String?
-  description String?
-  labData     Json?
-  location    String?
-  crop        String?
-  season      String?
-  createdAt   DateTime @default(now())
-
-  recommendations Recommendation[]
-}
-
-model Recommendation {
-  id         String   @id @default(cuid())
-  userId     String
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  inputId    String   @unique
-  input      Input    @relation(fields: [inputId], references: [id], onDelete: Cascade)
-  diagnosis  Json
-  confidence Float
-  modelUsed  String
-  tokensUsed Int?
-  createdAt  DateTime @default(now())
-
-  feedback Feedback[]
-  sources  RecommendationSource[]
-}
-
-model Feedback {
-  id               String         @id @default(cuid())
-  userId           String
-  user             User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  recommendationId String
-  recommendation   Recommendation @relation(fields: [recommendationId], references: [id], onDelete: Cascade)
-  helpful          Boolean?
-  accuracyRating   Int?
-  outcome          String?
-  comments         String?
-  createdAt        DateTime       @default(now())
-}
-
-model Source {
-  id           String     @id @default(cuid())
-  title        String
-  url          String?    @unique
-  sourceType   SourceType
-  institution  String?
-  status       String     @default("pending")
-  chunksCount  Int        @default(0)
-  errorMessage String?
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
-
-  textChunks  TextChunk[]
-  imageChunks ImageChunk[]
-}
-
-model TextChunk {
-  id        String                       @id @default(cuid())
-  sourceId  String
-  source    Source                       @relation(fields: [sourceId], references: [id], onDelete: Cascade)
-  content   String
-  embedding Unsupported("vector(1536)")?
-  metadata  Json?
-  createdAt DateTime                     @default(now())
-
-  recommendations RecommendationSource[]
-}
-
-model ImageChunk {
-  id        String                      @id @default(cuid())
-  sourceId  String
-  source    Source                      @relation(fields: [sourceId], references: [id], onDelete: Cascade)
-  imageUrl  String
-  caption   String?
-  embedding Unsupported("vector(512)")?
-  metadata  Json?
-  createdAt DateTime                    @default(now())
-
-  recommendationSources RecommendationSource[]
-
-  @@unique([sourceId, imageUrl])
-}
-
-model RecommendationSource {
-  id               String         @id @default(cuid())
-  recommendationId String
-  recommendation   Recommendation @relation(fields: [recommendationId], references: [id], onDelete: Cascade)
-  textChunkId      String?
-  textChunk        TextChunk?     @relation(fields: [textChunkId], references: [id])
-  imageChunkId     String?
-  imageChunk       ImageChunk?    @relation(fields: [imageChunkId], references: [id])
-  relevanceScore   Float?
-}
-
-model Product {
-  id              String   @id @default(cuid())
-  name            String
-  brand           String
-  type            String
-  description     String?
-  applicationRate String?
-  targetCrops     String[]
-  retailerLinks   Json?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-
-  prices ProductPrice[]
-}
-
-model ProductPrice {
-  id        String   @id @default(cuid())
-  productId String
-  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  retailer  String
-  price     Float
-  unit      String
-  url       String?
-  fetchedAt DateTime @default(now())
 }

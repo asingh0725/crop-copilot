@@ -37,3 +37,8 @@ pnpm-debug.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# ingestion pipeline cache
+/ingestion/.cache/
+/ingestion/logs/
+ingestion/state/scraped-documents.json
