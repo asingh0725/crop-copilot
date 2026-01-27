@@ -34,6 +34,19 @@ export abstract class BaseScraper {
     }
   }
 
+  protected getHeaders(url: string) {
+    return {
+      "User-Agent":
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
+      Accept:
+        "application/pdf,text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+      "Accept-Language": "en-US,en;q=0.5",
+      Referer: new URL(url).origin, // Mimic internal navigation
+      Connection: "keep-alive",
+      "Upgrade-Insecure-Requests": "1",
+    };
+  }
+
   /**
    * Close browser
    */
@@ -63,7 +76,10 @@ export abstract class BaseScraper {
   /**
    * Check if response is cached
    */
-  protected async isCached(url: string, type: "html" | "pdf"): Promise<boolean> {
+  protected async isCached(
+    url: string,
+    type: "html" | "pdf"
+  ): Promise<boolean> {
     try {
       const cachePath = this.getCachePath(url, type);
       await fs.access(cachePath);
@@ -76,7 +92,10 @@ export abstract class BaseScraper {
   /**
    * Read from cache
    */
-  protected async readFromCache(url: string, type: "html" | "pdf"): Promise<string | null> {
+  protected async readFromCache(
+    url: string,
+    type: "html" | "pdf"
+  ): Promise<string | null> {
     try {
       const cachePath = this.getCachePath(url, type);
       const content = await fs.readFile(cachePath, "utf-8");
@@ -169,7 +188,10 @@ export abstract class BaseScraper {
 
       try {
         html = await this.fetchWithRetry(async () => {
-          await page.goto(url, { waitUntil: "domcontentloaded", timeout: 30000 });
+          await page.goto(url, {
+            waitUntil: "domcontentloaded",
+            timeout: 30000,
+          });
           return await page.content();
         }, url);
       } finally {
@@ -208,9 +230,7 @@ export abstract class BaseScraper {
 
     const buffer = await this.fetchWithRetry(async () => {
       const response = await fetch(url, {
-        headers: {
-          "User-Agent": this.config.userAgent,
-        },
+        headers: this.getHeaders(url),
       });
 
       if (!response.ok) {
@@ -305,7 +325,9 @@ export abstract class BaseScraper {
         console.log(`  ✓ Success: ${doc.title}`);
       } catch (error) {
         console.error(`  ✗ Failed: ${url}`);
-        console.error(`  Error: ${error instanceof Error ? error.message : String(error)}`);
+        console.error(
+          `  Error: ${error instanceof Error ? error.message : String(error)}`
+        );
       }
 
       if (onProgress) {

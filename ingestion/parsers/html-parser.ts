@@ -7,6 +7,69 @@ import type { ParsedContent } from "../scrapers/types";
  * Parse HTML content and extract structured information
  */
 export function parseHTML(html: string, sourceUrl: string): ParsedContent {
+  // FIRST: Extract images from raw HTML before Readability cleans it
+  const $raw = cheerio.load(html);
+  const rawImages: Array<{
+    url: string;
+    alt?: string;
+    caption?: string;
+    contextText: string;
+  }> = [];
+
+  $raw('img').each((_, img) => {
+    const $img = $raw(img);
+    let src = $img.attr('src') || $img.attr('data-src');
+    if (!src) return;
+
+    // Convert relative URLs to absolute
+    if (src.startsWith('/')) {
+      const url = new URL(sourceUrl);
+      src = `${url.protocol}//${url.host}${src}`;
+    } else if (!src.startsWith('http')) {
+      try {
+        const url = new URL(sourceUrl);
+        const basePath = url.pathname.substring(0, url.pathname.lastIndexOf('/'));
+        src = `${url.protocol}//${url.host}${basePath}/${src}`;
+      } catch {
+        return; // Skip invalid URLs
+      }
+    }
+
+    // Skip small images (logos, icons)
+    const width = parseInt($img.attr('width') || '0');
+    const height = parseInt($img.attr('height') || '0');
+    if ((width > 0 && width < 200) || (height > 0 && height < 200)) {
+      return;
+    }
+
+    // Get caption from figure if present
+    let caption: string | undefined;
+    const $figure = $img.closest('figure');
+    if ($figure.length) {
+      caption = $figure.find('figcaption').text().trim() || undefined;
+    }
+
+    // Get surrounding paragraph text for context
+    const contextParagraphs: string[] = [];
+    $img.parent().prevAll('p').slice(0, 2).each((_, p) => {
+      const text = $raw(p).text().trim();
+      if (text) contextParagraphs.unshift(text);
+    });
+    $img.parent().nextAll('p').slice(0, 1).each((_, p) => {
+      const text = $raw(p).text().trim();
+      if (text) contextParagraphs.push(text);
+    });
+
+    rawImages.push({
+      url: src,
+      alt: $img.attr('alt') || undefined,
+      caption,
+      contextText: contextParagraphs.join(' '),
+    });
+  });
+
+  console.log(`  🔍 Found ${rawImages.length} images in raw HTML (before Readability)`);
+
   // Use Readability to extract main content
   const dom = new JSDOM(html, { url: sourceUrl });
   const reader = new Readability(dom.window.document);
@@ -18,7 +81,7 @@ export function parseHTML(html: string, sourceUrl: string): ParsedContent {
   }
 
   // Parse the cleaned content with cheerio
-  const $ = cheerio.load(article.content);
+  const $ = cheerio.load(article.content ? article.content : '');
 
   const sections: ParsedContent["sections"] = [];
   const tables: ParsedContent["tables"] = [];
@@ -26,7 +89,7 @@ export function parseHTML(html: string, sourceUrl: string): ParsedContent {
   // Process sections
   let currentSection: ParsedContent["sections"][0] = {
     text: "",
-    images: [],
+    images: rawImages, // Add all images to first section
   };
 
   $("body")
@@ -46,33 +109,6 @@ export function parseHTML(html: string, sourceUrl: string): ParsedContent {
           text: "",
           images: [],
         };
-      }
-      // Extract images
-      else if (tagName === "img") {
-        const image = extractImage($elem, $, sourceUrl);
-        if (image) {
-          currentSection.images.push(image);
-        }
-      }
-      // Handle figures with images
-      else if (tagName === "figure") {
-        $elem.find("img").each((_, img) => {
-          const image = extractImage($(img), $, sourceUrl);
-          if (image) {
-            // Get figcaption if present
-            const caption = $elem.find("figcaption").text().trim();
-            if (caption) {
-              image.caption = caption;
-            }
-            currentSection.images.push(image);
-          }
-        });
-
-        // Add figure text to section
-        const figText = $elem.text().trim();
-        if (figText) {
-          currentSection.text += (currentSection.text ? "\n\n" : "") + figText;
-        }
       }
       // Extract tables
       else if (tagName === "table") {
@@ -94,13 +130,6 @@ export function parseHTML(html: string, sourceUrl: string): ParsedContent {
   if (currentSection.text.trim() || currentSection.images.length > 0) {
     sections.push(currentSection);
   }
-
-  // Get context text for images (3 paragraphs around each image)
-  sections.forEach((section) => {
-    section.images.forEach((image) => {
-      image.contextText = getContextAroundImage(section.text, 3);
-    });
-  });
 
   // Calculate metadata
   const wordCount = sections.reduce(
@@ -139,7 +168,7 @@ function parseHTMLBasic(html: string, sourceUrl: string): ParsedContent {
 
   // Simple extraction of main content
   const mainSelectors = ["main", "article", ".content", "#content", "body"];
-  let $main = $("body");
+  let $main: cheerio.Cheerio<any> = $("body");
 
   for (const selector of mainSelectors) {
     const $elem = $(selector);
@@ -229,13 +258,13 @@ function extractImage(
   // Skip small images (likely icons/logos)
   const width = parseInt($img.attr("width") || "0");
   const height = parseInt($img.attr("height") || "0");
-  if ((width > 0 && width < 300) || (height > 0 && height < 300)) {
+  if ((width > 0 && width < 200) || (height > 0 && height < 200)) {
     return null;
   }
 
   return {
     url: src,
-    alt: $img.attr("alt"),
+    alt: $img.attr("alt") || undefined,
     caption: $img.parent("figure").find("figcaption").text().trim() || undefined,
     contextText: "", // Will be filled later
   };
@@ -274,18 +303,4 @@ function extractTable(
     caption,
     rows,
   };
-}
-
-/**
- * Get context text around an image (approximate - get section text)
- */
-function getContextAroundImage(sectionText: string, paragraphs: number): string {
-  const sentences = sectionText.split(/\.\s+/);
-  const maxSentences = paragraphs * 3; // Rough approximation
-
-  if (sentences.length <= maxSentences) {
-    return sectionText;
-  }
-
-  return sentences.slice(0, maxSentences).join(". ") + ".";
 }

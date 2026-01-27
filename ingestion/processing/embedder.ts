@@ -1,270 +1,368 @@
+/**
+ * Text and Image Embedder with ACCURATE Token Counting using tiktoken
+ * 
+ * Uses @dqbd/tiktoken for exact token counts matching OpenAI's API
+ */
+
 import OpenAI from "openai";
-import Anthropic from "@anthropic-ai/sdk";
-import type { ChunkData, ProcessedImage, CostTracker } from "../scrapers/types";
-import { countTokens } from "./chunker";
+import { encoding_for_model } from "@dqbd/tiktoken";
+import type { ChunkData, ImageData } from "../scrapers/types";
 
-let openai: OpenAI | null = null;
-let anthropic: Anthropic | null = null;
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
 
-function getOpenAI(): OpenAI {
-  if (!openai) {
-    openai = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY,
-    });
+// OpenAI text-embedding-3-small limits
+const MAX_TOKENS_PER_REQUEST = 8000; // Conservative (actual limit 8,192)
+const MAX_TOKENS_PER_CHUNK = 8000; // Individual chunk limit
+const EMBEDDING_MODEL = "text-embedding-3-small";
+const COST_PER_1M_TOKENS = 0.02;
+
+// Reusable encoder (important for performance)
+let encoder: ReturnType<typeof encoding_for_model> | null = null;
+
+function getEncoder() {
+  if (!encoder) {
+    encoder = encoding_for_model("text-embedding-3-small");
   }
-  return openai;
+  return encoder;
 }
-
-function getAnthropic(): Anthropic {
-  if (!anthropic) {
-    anthropic = new Anthropic({
-      apiKey: process.env.ANTHROPIC_API_KEY,
-    });
-  }
-  return anthropic;
-}
-
-const TEXT_EMBEDDING_DIMENSIONS = 1536;
-const BATCH_SIZE = 100; // OpenAI allows up to 2048, but 100 is safer
-const IMAGE_BATCH_SIZE = 5; // Claude Vision batching
-const MAX_RETRIES = 3;
 
 /**
- * Generate embeddings for text chunks with batching and cost tracking
+ * Count exact tokens using tiktoken (cl100k_base encoding)
  */
-export async function generateTextEmbeddings(
+function countTokens(text: string): number {
+  const enc = getEncoder();
+  const tokens = enc.encode(text);
+  const count = tokens.length;
+  return count;
+}
+
+// ============================================================================
+// TEXT EMBEDDINGS
+// ============================================================================
+
+function createTokenLimitedBatches(
   chunks: ChunkData[],
-  costTracker?: CostTracker
-): Promise<Array<ChunkData & { embedding: number[] }>> {
-  const totalChunks = chunks.length;
-  const results: Array<ChunkData & { embedding: number[] }> = [];
+  maxTokensPerBatch: number = MAX_TOKENS_PER_REQUEST
+): ChunkData[][] {
+  const batches: ChunkData[][] = [];
+  let currentBatch: ChunkData[] = [];
+  let currentTokenCount = 0;
 
-  console.log(`\n🔢 Generating text embeddings for ${totalChunks} chunks...`);
+  for (const chunk of chunks) {
+    let processedChunk = chunk;
+    let chunkTokens = countTokens(chunk.content);
 
-  for (let i = 0; i < chunks.length; i += BATCH_SIZE) {
-    const batch = chunks.slice(i, i + BATCH_SIZE);
-    const batchNum = Math.floor(i / BATCH_SIZE) + 1;
-    const totalBatches = Math.ceil(chunks.length / BATCH_SIZE);
-
-    console.log(
-      `   Batch ${batchNum}/${totalBatches} (${batch.length} chunks)...`
-    );
-
-    try {
-      const embeddings = await generateEmbeddingBatch(
-        batch.map((c) => c.content)
+    if (chunkTokens > MAX_TOKENS_PER_CHUNK) {
+      console.warn(
+        `⚠️  Chunk ${chunk.sourceId} too large (${chunkTokens} tokens). Truncating to ${MAX_TOKENS_PER_CHUNK}...`
       );
-
-      // Combine chunks with embeddings
-      for (let j = 0; j < batch.length; j++) {
-        results.push({
-          ...batch[j],
-          embedding: embeddings[j],
-        });
+      
+      let left = 0;
+      let right = chunk.content.length;
+      let bestLength = 0;
+      
+      while (left <= right) {
+        const mid = Math.floor((left + right) / 2);
+        const truncated = chunk.content.slice(0, mid);
+        const tokens = countTokens(truncated + "...[truncated]");
+        
+        if (tokens <= MAX_TOKENS_PER_CHUNK) {
+          bestLength = mid;
+          left = mid + 1;
+        } else {
+          right = mid - 1;
+        }
       }
+      
+      processedChunk = {
+        ...chunk,
+        content: chunk.content.slice(0, bestLength) + "...[truncated]",
+      };
+      chunkTokens = countTokens(processedChunk.content);
+    }
 
-      // Update cost tracker
-      if (costTracker) {
-        const tokens = batch.reduce((sum, c) => sum + c.tokenCount, 0);
-        costTracker.textTokens += tokens;
-        costTracker.textCost = (costTracker.textTokens / 1_000_000) * 0.02; // $0.02 per 1M tokens
-        costTracker.totalCost = costTracker.textCost + costTracker.imageCost;
-
-        console.log(
-          `   Cost so far: $${costTracker.totalCost.toFixed(4)} (${tokens.toLocaleString()} tokens this batch)`
-        );
+    if (chunkTokens > maxTokensPerBatch * 0.9) {
+      if (currentBatch.length > 0) {
+        batches.push(currentBatch);
+        currentBatch = [];
+        currentTokenCount = 0;
       }
+      
+      batches.push([processedChunk]);
+      continue;
+    }
 
-      // Progress
-      const percent = Math.round(((i + batch.length) / totalChunks) * 100);
-      console.log(
-        `   ✓ Progress: ${i + batch.length}/${totalChunks} (${percent}%)`
-      );
-    } catch (error) {
-      console.error(`   ✗ Failed to embed batch ${batchNum}:`, error);
-      throw error;
+    if (currentTokenCount + chunkTokens > maxTokensPerBatch) {
+      if (currentBatch.length > 0) {
+        batches.push(currentBatch);
+      }
+      currentBatch = [processedChunk];
+      currentTokenCount = chunkTokens;
+    } else {
+      currentBatch.push(processedChunk);
+      currentTokenCount += chunkTokens;
     }
   }
 
-  console.log(`✅ Text embedding complete: ${results.length} chunks embedded`);
+  if (currentBatch.length > 0) {
+    batches.push(currentBatch);
+  }
 
-  return results;
+  return batches;
 }
 
-/**
- * Generate embeddings for a batch of texts with retry logic
- */
 async function generateEmbeddingBatch(
-  texts: string[],
-  attempt = 1
-): Promise<number[][]> {
-  try {
-    const response = await getOpenAI().embeddings.create({
-      model: "text-embedding-3-small",
-      input: texts,
-      encoding_format: "float",
-      dimensions: TEXT_EMBEDDING_DIMENSIONS,
-    });
+  chunks: ChunkData[],
+  retries = 3
+): Promise<Array<ChunkData & { embedding: number[] }>> {
+  const texts = chunks.map((c) => c.content);
+  const totalTokens = texts.reduce((sum, t) => sum + countTokens(t), 0);
 
-    return response.data.map((item) => item.embedding);
-  } catch (error: any) {
-    // Handle rate limits with exponential backoff
-    if (error?.status === 429 && attempt < MAX_RETRIES) {
-      const waitTime = Math.pow(2, attempt) * 1000; // 2s, 4s, 8s
-      console.log(`   Rate limited. Waiting ${waitTime}ms before retry ${attempt}/${MAX_RETRIES}...`);
-      await new Promise((resolve) => setTimeout(resolve, waitTime));
-      return generateEmbeddingBatch(texts, attempt + 1);
-    }
-
-    throw error;
+  if (totalTokens > MAX_TOKENS_PER_REQUEST) {
+    throw new Error(
+      `Batch too large: ${totalTokens} tokens exceeds ${MAX_TOKENS_PER_REQUEST} limit`
+    );
   }
+
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      const response = await openai.embeddings.create({
+        model: EMBEDDING_MODEL,
+        input: texts,
+      });
+
+      return chunks.map((chunk, i) => ({
+        ...chunk,
+        embedding: response.data[i].embedding,
+      }));
+    } catch (error: any) {
+      if (error?.status === 400 && error?.message?.includes("maximum context length")) {
+        if (chunks.length > 1) {
+          console.log(`🔄 Emergency split: dividing batch in half...`);
+          const mid = Math.floor(chunks.length / 2);
+          const left = chunks.slice(0, mid);
+          const right = chunks.slice(mid);
+          
+          const leftResults = await generateEmbeddingBatch(left, retries);
+          const rightResults = await generateEmbeddingBatch(right, retries);
+          
+          return [...leftResults, ...rightResults];
+        } else {
+          throw new Error(`Single chunk ${chunks[0].sourceId} exceeds token limit`);
+        }
+      }
+
+      if (error?.status === 429) {
+        const waitTime = Math.min(1000 * Math.pow(2, attempt - 1), 10000);
+        console.warn(`⚠️  Rate limited. Waiting ${waitTime}ms...`);
+        await new Promise((resolve) => setTimeout(resolve, waitTime));
+        continue;
+      }
+
+      if (attempt === retries) throw error;
+
+      console.warn(`⚠️  Attempt ${attempt}/${retries} failed: ${error.message}`);
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+    }
+  }
+
+  throw new Error(`Failed after ${retries} retries`);
 }
 
-/**
- * Generate embeddings for images (Claude Vision description + OpenAI embedding)
- */
-export async function generateImageEmbeddings(
-  images: ProcessedImage[],
-  costTracker?: CostTracker
-): Promise<Array<ProcessedImage & { embedding: number[] }>> {
-  const totalImages = images.length;
-  const results: Array<ProcessedImage & { embedding: number[] }> = [];
+export async function generateTextEmbeddings(
+  chunks: ChunkData[]
+): Promise<Array<ChunkData & { embedding: number[] }>> {
+  console.log(`\n🔢 Generating text embeddings for ${chunks.length} chunks...`);
 
-  console.log(`\n🖼️  Generating image embeddings for ${totalImages} images...`);
+  const batches = createTokenLimitedBatches(chunks);
+  console.log(`   Split into ${batches.length} batches (token-limited)`);
 
-  for (let i = 0; i < images.length; i += IMAGE_BATCH_SIZE) {
-    const batch = images.slice(i, i + IMAGE_BATCH_SIZE);
-    const batchNum = Math.floor(i / IMAGE_BATCH_SIZE) + 1;
-    const totalBatches = Math.ceil(images.length / IMAGE_BATCH_SIZE);
+  const results: Array<ChunkData & { embedding: number[] }> = [];
+  let totalCost = 0;
 
+  for (let i = 0; i < batches.length; i++) {
+    const batch = batches[i];
+    const batchTokens = batch.reduce((sum, c) => sum + countTokens(c.content), 0);
+    
     console.log(
-      `   Batch ${batchNum}/${totalBatches} (${batch.length} images)...`
+      `   Batch ${i + 1}/${batches.length} (${batch.length} chunks, ~${batchTokens.toLocaleString()} tokens)...`
     );
 
-    try {
-      // Generate descriptions using Claude Vision
-      const descriptions = await Promise.all(
-        batch.map((img) => generateImageDescription(img.r2Url))
-      );
+    const batchResults = await generateEmbeddingBatch(batch);
+    results.push(...batchResults);
 
-      // Generate embeddings from descriptions
-      const embeddings = await generateEmbeddingBatch(descriptions);
+    const batchCost = (batchTokens / 1_000_000) * COST_PER_1M_TOKENS;
+    totalCost += batchCost;
+    console.log(`   Cost so far: $${totalCost.toFixed(4)}`);
+    console.log(`   ✓ Progress: ${results.length}/${chunks.length} (${Math.round((results.length / chunks.length) * 100)}%)`);
 
-      // Combine with images
-      for (let j = 0; j < batch.length; j++) {
-        results.push({
-          ...batch[j],
-          caption: descriptions[j],
-          embedding: embeddings[j],
-        });
-      }
-
-      // Update cost tracker
-      if (costTracker) {
-        // Claude Vision cost: ~$3 per 1M input tokens
-        // Rough estimate: 1 image = ~1000 input tokens for Claude
-        const claudeTokens = batch.length * 1000;
-        costTracker.imageDescriptions += batch.length;
-        costTracker.imageCost = (costTracker.imageDescriptions * 1000 / 1_000_000) * 3.0;
-
-        // OpenAI embedding cost for descriptions
-        const descTokens = descriptions.reduce(
-          (sum, desc) => sum + countTokens(desc),
-          0
-        );
-        costTracker.textTokens += descTokens;
-        costTracker.textCost = (costTracker.textTokens / 1_000_000) * 0.02;
-
-        costTracker.totalCost = costTracker.textCost + costTracker.imageCost;
-
-        console.log(
-          `   Cost so far: $${costTracker.totalCost.toFixed(4)} (${batch.length} images this batch)`
-        );
-      }
-
-      // Progress
-      const percent = Math.round(((i + batch.length) / totalImages) * 100);
-      console.log(
-        `   ✓ Progress: ${i + batch.length}/${totalImages} (${percent}%)`
-      );
-    } catch (error) {
-      console.error(`   ✗ Failed to process image batch ${batchNum}:`, error);
-      throw error;
+    if (i < batches.length - 1) {
+      await new Promise((resolve) => setTimeout(resolve, 100));
     }
   }
 
-  console.log(`✅ Image embedding complete: ${results.length} images embedded`);
+  console.log(`\n✅ Generated ${results.length} embeddings`);
+  console.log(`   Total cost: $${totalCost.toFixed(4)}`);
+
+  if (encoder) {
+    encoder.free();
+    encoder = null;
+  }
 
   return results;
 }
 
-/**
- * Generate description for an image using Claude Vision
- */
-async function generateImageDescription(
-  imageUrl: string,
-  attempt = 1
-): Promise<string> {
-  try {
-    const message = await getAnthropic().messages.create({
-      model: "claude-3-5-sonnet-20241022",
-      max_tokens: 300,
-      messages: [
-        {
-          role: "user",
-          content: [
-            {
-              type: "image",
-              source: {
-                type: "url",
-                url: imageUrl,
-              },
-            },
-            {
-              type: "text",
-              text: "Describe this agricultural image in 2-3 sentences, focusing on visible symptoms, conditions, or features relevant to crop diagnosis. Include crop type if identifiable, symptom location (leaves, stems, roots, fruit), symptom appearance (color, pattern, texture), and severity if apparent.",
-            },
-          ],
-        },
-      ],
-    });
+// ============================================================================
+// IMAGE EMBEDDINGS
+// ============================================================================
 
-    const textContent = message.content.find((c) => c.type === "text");
-    if (!textContent || textContent.type !== "text") {
-      throw new Error("No text content in Claude response");
-    }
-
-    return textContent.text;
-  } catch (error: any) {
-    // Handle rate limits with exponential backoff
-    if (
-      (error?.status === 429 || error?.error?.type === "rate_limit_error") &&
-      attempt < MAX_RETRIES
-    ) {
-      const waitTime = Math.pow(2, attempt) * 1000;
-      console.log(
-        `   Rate limited on image. Waiting ${waitTime}ms before retry ${attempt}/${MAX_RETRIES}...`
-      );
-      await new Promise((resolve) => setTimeout(resolve, waitTime));
-      return generateImageDescription(imageUrl, attempt + 1);
-    }
-
-    console.error(`Failed to describe image ${imageUrl}:`, error);
-    // Return fallback description
-    return "Agricultural image - description generation failed";
+function createImageEmbeddingText(image: ImageData): string {
+  const parts: string[] = [];
+  
+  if (image.altText) parts.push(image.altText);
+  if (image.caption) parts.push(image.caption);
+  
+  if (image.contextText) {
+    const context = image.contextText.length > 500 
+      ? image.contextText.slice(0, 500) + "..."
+      : image.contextText;
+    parts.push(context);
   }
+  
+  if (image.metadata.category) {
+    parts.push(`Image category: ${image.metadata.category}`);
+  }
+  if (image.metadata.crop) {
+    parts.push(`Crop: ${image.metadata.crop}`);
+  }
+  if (image.metadata.subject) {
+    parts.push(`Subject: ${image.metadata.subject}`);
+  }
+  
+  return parts.join(". ");
 }
 
-/**
- * Log cost summary
- */
-export function logCosts(tracker: CostTracker): void {
-  console.log(`\n💰 Cost Summary:`);
-  console.log(
-    `   Text embeddings: ${tracker.textTokens.toLocaleString()} tokens = $${tracker.textCost.toFixed(4)}`
-  );
-  console.log(
-    `   Image descriptions: ${tracker.imageDescriptions} images = $${tracker.imageCost.toFixed(4)}`
-  );
-  console.log(`   Total: $${tracker.totalCost.toFixed(4)}`);
+function createImageBatches(
+  images: ImageData[],
+  maxTokensPerBatch: number = MAX_TOKENS_PER_REQUEST
+): ImageData[][] {
+  const batches: ImageData[][] = [];
+  let currentBatch: ImageData[] = [];
+  let currentTokenCount = 0;
+
+  for (const image of images) {
+    const embeddingText = createImageEmbeddingText(image);
+    const tokens = countTokens(embeddingText);
+
+    if (currentTokenCount + tokens > maxTokensPerBatch && currentBatch.length > 0) {
+      batches.push(currentBatch);
+      currentBatch = [image];
+      currentTokenCount = tokens;
+    } else {
+      currentBatch.push(image);
+      currentTokenCount += tokens;
+    }
+  }
+
+  if (currentBatch.length > 0) {
+    batches.push(currentBatch);
+  }
+
+  return batches;
 }
+
+async function generateImageEmbeddingBatch(
+  images: ImageData[],
+  retries = 3
+): Promise<Array<ImageData & { embedding: number[] }>> {
+  const texts = images.map(img => createImageEmbeddingText(img));
+  const totalTokens = texts.reduce((sum, t) => sum + countTokens(t), 0);
+
+  if (totalTokens > MAX_TOKENS_PER_REQUEST) {
+    throw new Error(`Image batch too large: ${totalTokens} tokens`);
+  }
+
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      const response = await openai.embeddings.create({
+        model: EMBEDDING_MODEL,
+        input: texts,
+        dimensions: 512 
+      });
+
+      return images.map((image, i) => ({
+        ...image,
+        embedding: response.data[i].embedding,
+      }));
+    } catch (error: any) {
+      if (error?.status === 429) {
+        const waitTime = Math.min(1000 * Math.pow(2, attempt - 1), 10000);
+        console.warn(`⚠️  Rate limited. Waiting ${waitTime}ms...`);
+        await new Promise((resolve) => setTimeout(resolve, waitTime));
+        continue;
+      }
+
+      if (error?.status === 400 && error?.message?.includes("maximum context length")) {
+        if (images.length > 1) {
+          console.log(`🔄 Emergency split: dividing image batch...`);
+          const mid = Math.floor(images.length / 2);
+          const leftResults = await generateImageEmbeddingBatch(images.slice(0, mid), retries);
+          const rightResults = await generateImageEmbeddingBatch(images.slice(mid), retries);
+          return [...leftResults, ...rightResults];
+        }
+      }
+
+      if (attempt === retries) throw error;
+      console.warn(`⚠️  Image batch attempt ${attempt}/${retries} failed: ${error.message}`);
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+    }
+  }
+
+  throw new Error(`Failed after ${retries} retries`);
+}
+
+export async function generateImageEmbeddings(
+  images: ImageData[]
+): Promise<Array<ImageData & { embedding: number[] }>> {
+  console.log(`\n🖼️  Generating image embeddings for ${images.length} images...`);
+  console.log(`   Using text-embedding-3-small (alt text + caption + context)`);
+
+  const batches = createImageBatches(images);
+  console.log(`   Split into ${batches.length} batches\n`);
+
+  const results: Array<ImageData & { embedding: number[] }> = [];
+  let totalCost = 0;
+
+  for (let i = 0; i < batches.length; i++) {
+    const batch = batches[i];
+    const batchTexts = batch.map(img => createImageEmbeddingText(img));
+    const batchTokens = batchTexts.reduce((sum, t) => sum + countTokens(t), 0);
+    
+    console.log(`   Batch ${i + 1}/${batches.length} (${batch.length} images, ~${batchTokens.toLocaleString()} tokens)...`);
+
+    const batchResults = await generateImageEmbeddingBatch(batch);
+    results.push(...batchResults);
+
+    const batchCost = (batchTokens / 1_000_000) * COST_PER_1M_TOKENS;
+    totalCost += batchCost;
+    console.log(`   Cost so far: $${totalCost.toFixed(4)}`);
+    console.log(`   ✓ Progress: ${results.length}/${images.length} (${Math.round((results.length / images.length) * 100)}%)\n`);
+
+    if (i < batches.length - 1) {
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    }
+  }
+
+  console.log(`✅ Generated ${results.length} image embeddings`);
+  console.log(`   Total cost: $${totalCost.toFixed(4)}`);
+
+  return results;
+}
+
+process.on("exit", () => {
+  if (encoder) {
+    encoder.free();
+  }
+});

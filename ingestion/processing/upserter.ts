@@ -1,7 +1,7 @@
 import crypto from "crypto";
 import { prisma } from "@/lib/prisma";
 import type { SourceType } from "@prisma/client";
-import type { ChunkData, ProcessedImage, ScrapedDocument } from "../scrapers/types";
+import type { ChunkData, ImageData, ProcessedImage, ScrapedDocument } from "../scrapers/types";
 
 /**
  * Generate MD5 hash for content
@@ -131,12 +131,13 @@ export async function upsertTextChunks(
  * Upsert image chunks to database with deduplication
  */
 export async function upsertImageChunks(
-  images: Array<ProcessedImage & { embedding: number[] }>,
+  images: Array<ImageData & { embedding: number[] }>,
   batchSize = 20
-): Promise<{ inserted: number; skipped: number }> {
+): Promise<{ inserted: number; updated: number; skipped: number }> {
   console.log(`\n🖼️  Upserting ${images.length} image chunks to database...`);
 
   let inserted = 0;
+  let updated = 0;
   let skipped = 0;
 
   for (let i = 0; i < images.length; i += batchSize) {
@@ -148,50 +149,73 @@ export async function upsertImageChunks(
 
     try {
       for (const image of batch) {
-        // Generate content hash for deduplication
-        const hash = generateHash(image.r2Url);
-
-        // Convert embedding array to Prisma-compatible format
         const embeddingString = `[${image.embedding.join(",")}]`;
 
         try {
-          // Check if exists
-          const existing = await prisma.imageChunk.findUnique({
-            where: { contentHash: hash },
-          });
+          // Check if exists by URL
+          const existing = await prisma.$queryRaw<Array<{ id: string }>>`
+            SELECT id FROM "ImageChunk"
+            WHERE "imageUrl" = ${image.imageUrl}
+            AND "sourceId" = ${image.sourceId}
+            LIMIT 1
+          `;
 
-          if (existing) {
-            skipped++;
-          } else {
-            // Insert new chunk
+          if (existing.length > 0) {
+            // Update existing
             await prisma.$executeRaw`
-              INSERT INTO "ImageChunk"
-                ("id", "contentHash", "sourceId", "imageUrl", "caption", "embedding", "metadata", "createdAt")
-              VALUES
-                (gen_random_uuid()::text, ${hash}, ${image.metadata.sourceId}, ${image.r2Url},
-                 ${image.caption}, ${embeddingString}::vector(1536), ${JSON.stringify(image.metadata)}::jsonb, NOW())
+              UPDATE "ImageChunk"
+              SET 
+                "altText" = ${image.altText},
+                "embedding" = ${embeddingString}::vector,
+                "contextChunkId" = ${image.contextChunkId},
+                "metadata" = ${JSON.stringify(image.metadata)}::jsonb
+              WHERE id = ${existing[0].id}
+            `;
+            updated++;
+          } else {
+            // Insert new
+            await prisma.$executeRaw`
+              INSERT INTO "ImageChunk" (
+                id, "sourceId", "imageUrl", "altText", embedding, 
+                "contextChunkId", metadata, "createdAt"
+              )
+              VALUES (
+                ${image.id},
+                ${image.sourceId},
+                ${image.imageUrl},
+                ${image.altText},
+                ${embeddingString}::vector,
+                ${image.contextChunkId},
+                ${JSON.stringify(image.metadata)}::jsonb,
+                NOW()
+              )
             `;
             inserted++;
           }
         } catch (error: any) {
-          // Handle unique constraint violations (sourceId + imageUrl unique)
           if (error?.code === "23505") {
             skipped++;
           } else {
-            console.error(`    ✗ Failed to insert image:`, error);
+            console.warn(`⚠️  Failed to upsert image ${image.id}: ${error.message}`);
+            skipped++;
           }
         }
       }
 
-      console.log(`   ✓ Batch complete: +${inserted}, ~${skipped} skipped`);
+      if ((inserted + updated + skipped) % 50 === 0) {
+        console.log(`   Progress: ${inserted + updated + skipped}/${images.length}`);
+      }
     } catch (error) {
       console.error(`   ✗ Batch ${batchNum} failed:`, error);
     }
   }
 
-  console.log(`✅ Image chunks upserted: ${inserted} inserted, ${skipped} skipped`);
+  console.log(`\n✅ Image upsert complete:`);
+  console.log(`   Inserted: ${inserted}`);
+  console.log(`   Updated: ${updated}`);
+  console.log(`   Skipped: ${skipped}`);
 
-  return { inserted, skipped };
+  return { inserted, updated, skipped };
 }
 
 /**

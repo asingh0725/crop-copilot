@@ -1,0 +1,1422 @@
+{
+  "phase": 2,
+  "sources": [
+    {
+      "name": "Crop Protection Network",
+      "institution": "Multi-State Extension Collaboration",
+      "baseUrl": "https://cropprotectionnetwork.org",
+      "priority": "high",
+      "focus": ["corn", "soybeans", "wheat"],
+      "estimatedChunks": 450,
+      "urls": [
+        {
+          "url": "https://cropprotectionnetwork.org/publications/an-overview-of-northern-corn-leaf-blight",
+          "title": "An Overview of Northern Corn Leaf Blight",
+          "type": "html",
+          "crops": ["corn"],
+          "topics": ["disease"],
+          "estimatedChunks": 15,
+          "notes": "NCLB symptoms, disease cycle, management"
+        },
+        {
+          "url": "https://cropprotectionnetwork.org/publications/an-overview-of-ear-rots",
+          "title": "An Overview of Ear Rots",
+          "type": "html",
+          "crops": ["corn"],
+          "topics": ["disease"],
+          "estimatedChunks": 35,
+          "notes": "Aspergillus, Fusarium, Gibberella ear rots with mycotoxin info"
+        },
+        {
+          "url": "https://cropprotectionnetwork.org/encyclopedia/anthracnose-leaf-blight-of-corn",
+          "title": "Anthracnose Leaf Blight of Corn",
+          "type": "html",
+          "crops": ["corn"],
+          "topics": ["disease"],
+          "estimatedChunks": 8,
+          "notes": "Disease cycle, symptoms, resistant hybrids"
+        },
+        {
+          "url": "https://cropprotectionnetwork.org/encyclopedia/gray-leaf-spot-of-corn",
+          "title": "Gray Leaf Spot of Corn",
+          "type": "html",
+          "crops": ["corn"],
+          "topics": ["disease"],
+          "estimatedChunks": 10,
+          "notes": "GLS symptoms, conditions favoring disease"
+        },
+        {
+          "url": "https://cropprotectionnetwork.org/publications/an-overview-of-tar-spot",
+          "title": "An Overview of Tar Spot",
+          "type": "html",
+          "crops": ["corn"],
+          "topics": ["disease"],
+          "estimatedChunks": 25,
+          "notes": "Tar spot diagnosis, severity charts, differentiation"
+        },
+        {
+          "url": "https://cropprotectionnetwork.org/encyclopedia/tar-spot-of-corn",
+          "title": "Tar Spot of Corn",
+          "type": "html",
+          "crops": ["corn"],
+          "topics": ["disease"],
+          "estimatedChunks": 10,
+          "notes": "Quick reference for tar spot identification"
+        },
+        {
+          "url": "https://cropprotectionnetwork.org/publications/an-overview-of-gosss-bacterial-wilt-and-blight",
+          "title": "An Overview of Goss's Bacterial Wilt and Blight",
+          "type": "html",
+          "crops": ["corn"],
+          "topics": ["disease"],
+          "estimatedChunks": 20,
+          "notes": "Goss's wilt symptoms, bacterial ooze identification"
+        },
+        {
+          "url": "https://cropprotectionnetwork.org/publications/an-overview-of-southern-rust",
+          "title": "An Overview of Southern Rust",
+          "type": "html",
+          "crops": ["corn"],
+          "topics": ["disease"],
+          "estimatedChunks": 18,
+          "notes": "Southern rust ID, fungicide management"
+        },
+        {
+          "url": "https://cropprotectionnetwork.org/encyclopedia/southern-rust-of-corn",
+          "title": "Southern Rust of Corn",
+          "type": "html",
+          "crops": ["corn"],
+          "topics": ["disease"],
+          "estimatedChunks": 8,
+          "notes": "Disease cycle and management"
+        },
+        {
+          "url": "https://cropprotectionnetwork.org/encyclopedia/fusarium-stalk-rot-of-corn",
+          "title": "Fusarium Stalk Rot of Corn",
+          "type": "html",
+          "crops": ["corn"],
+          "topics": ["disease"],
+          "estimatedChunks": 8,
+          "notes": "Stalk rot symptoms, harvest timing"
+        },
+        {
+          "url": "https://cropprotectionnetwork.org/publications/fungicide-efficacy-for-control-of-corn-diseases",
+          "title": "Fungicide Efficacy for Control of Corn Diseases",
+          "type": "pdf",
+          "crops": ["corn"],
+          "topics": ["disease"],
+          "estimatedChunks": 15,
+          "notes": "Annual fungicide efficacy table"
+        },
+        {
+          "url": "https://cropprotectionnetwork.org/publications/corn-foliar-disease-diagnostic-poster",
+          "title": "Corn Foliar Disease Diagnostic Poster",
+          "type": "pdf",
+          "crops": ["corn"],
+          "topics": ["disease"],
+          "estimatedChunks": 5,
+          "notes": "Visual diagnostic for 7 foliar diseases"
+        },
+        {
+          "url": "https://cropprotectionnetwork.org/publications/an-overview-of-soybean-seedling-diseases",
+          "title": "An Overview of Soybean Seedling Diseases",
+          "type": "html",
+          "crops": ["soybeans"],
+          "topics": ["disease"],
+          "estimatedChunks": 20,
+          "notes": "Fusarium, Rhizoctonia, Phytophthora, Pythium"
+        },
+        {
+          "url": "https://cropprotectionnetwork.org/publications/scouting-for-soybean-stem-diseases",
+          "title": "Scouting for Soybean Stem Diseases",
+          "type": "html",
+          "crops": ["soybeans"],
+          "topics": ["disease"],
+          "estimatedChunks": 30,
+          "notes": "Comprehensive stem disease scouting guide"
+        },
+        {
+          "url": "https://cropprotectionnetwork.org/publications/scouting-for-soybean-seedling-diseases",
+          "title": "Scouting for Soybean Seedling Diseases",
+          "type": "html",
+          "crops": ["soybeans"],
+          "topics": ["disease"],
+          "estimatedChunks": 15,
+          "notes": "Seedling diseases vs abiotic disorders"
+        },
+        {
+          "url": "https://cropprotectionnetwork.org/publications/scouting-for-sudden-death-syndrome-in-soybean",
+          "title": "Scouting for Sudden Death Syndrome in Soybean",
+          "type": "html",
+          "crops": ["soybeans"],
+          "topics": ["disease"],
+          "estimatedChunks": 15,
+          "notes": "SDS scouting and differentiation"
+        },
+        {
+          "url": "https://cropprotectionnetwork.org/publications/scouting-for-white-mold-in-soybean",
+          "title": "Scouting for White Mold in Soybean",
+          "type": "html",
+          "crops": ["soybeans"],
+          "topics": ["disease"],
+          "estimatedChunks": 18,
+          "notes": "White mold/Sclerotinia identification"
+        },
+        {
+          "url": "https://cropprotectionnetwork.org/publications/an-overview-of-soybean-cyst-nematode",
+          "title": "An Overview of Soybean Cyst Nematode",
+          "type": "html",
+          "crops": ["soybeans"],
+          "topics": ["disease", "pest"],
+          "estimatedChunks": 22,
+          "notes": "SCN symptoms, resistance management"
+        },
+        {
+          "url": "https://cropprotectionnetwork.org/publications/an-overview-of-frogeye-leaf-spot",
+          "title": "An Overview of Frogeye Leaf Spot",
+          "type": "html",
+          "crops": ["soybeans"],
+          "topics": ["disease"],
+          "estimatedChunks": 18,
+          "notes": "Frogeye leaf spot, fungicide resistance"
+        },
+        {
+          "url": "https://cropprotectionnetwork.org/publications/an-overview-of-cercospora-leaf-blight-of-soybean",
+          "title": "An Overview of Cercospora Leaf Blight",
+          "type": "html",
+          "crops": ["soybeans"],
+          "topics": ["disease"],
+          "estimatedChunks": 18,
+          "notes": "CLB identification, fungicide resistance"
+        },
+        {
+          "url": "https://cropprotectionnetwork.org/publications/an-overview-of-charcoal-rot-of-soybean",
+          "title": "An Overview of Charcoal Rot of Soybean",
+          "type": "html",
+          "crops": ["soybeans"],
+          "topics": ["disease"],
+          "estimatedChunks": 15,
+          "notes": "Charcoal rot microsclerotia identification"
+        },
+        {
+          "url": "https://cropprotectionnetwork.org/publications/diagnosing-interveinal-chlorosis-in-soybeans-its-not-just-sds",
+          "title": "Diagnosing Interveinal Chlorosis in Soybeans",
+          "type": "html",
+          "crops": ["soybeans"],
+          "topics": ["disease"],
+          "estimatedChunks": 20,
+          "notes": "Diagnostic guide for SDS lookalikes"
+        },
+        {
+          "url": "https://cropprotectionnetwork.org/encyclopedia/frogeye-leaf-spot-of-soybean",
+          "title": "Frogeye Leaf Spot of Soybean",
+          "type": "html",
+          "crops": ["soybeans"],
+          "topics": ["disease"],
+          "estimatedChunks": 10,
+          "notes": "Disease cycle and resistance management"
+        },
+        {
+          "url": "https://cropprotectionnetwork.org/publications/an-overview-of-stripe-rust-of-wheat",
+          "title": "An Overview of Stripe Rust of Wheat",
+          "type": "html",
+          "crops": ["wheat"],
+          "topics": ["disease"],
+          "estimatedChunks": 22,
+          "notes": "Stripe rust symptoms, variety resistance"
+        },
+        {
+          "url": "https://cropprotectionnetwork.org/encyclopedia/fusarium-head-blight-of-wheat",
+          "title": "Fusarium Head Blight of Wheat",
+          "type": "html",
+          "crops": ["wheat"],
+          "topics": ["disease"],
+          "estimatedChunks": 12,
+          "notes": "FHB/scab, DON management, fungicide timing"
+        },
+        {
+          "url": "https://cropprotectionnetwork.org/encyclopedia/powdery-mildew-of-wheat",
+          "title": "Powdery Mildew of Wheat",
+          "type": "html",
+          "crops": ["wheat"],
+          "topics": ["disease"],
+          "estimatedChunks": 10,
+          "notes": "Identification and variety resistance"
+        },
+        {
+          "url": "https://cropprotectionnetwork.org/publications/an-overview-of-stagonospora-nodorum-leaf-and-glume-blotch",
+          "title": "Stagonospora Nodorum Leaf and Glume Blotch",
+          "type": "html",
+          "crops": ["wheat"],
+          "topics": ["disease"],
+          "estimatedChunks": 22,
+          "notes": "SNB guide for leaf and glume symptoms"
+        },
+        {
+          "url": "https://cropprotectionnetwork.org/publications/fungicide-efficacy-for-control-of-wheat-diseases",
+          "title": "Fungicide Efficacy for Control of Wheat Diseases",
+          "type": "pdf",
+          "crops": ["wheat"],
+          "topics": ["disease"],
+          "estimatedChunks": 12,
+          "notes": "Annual fungicide efficacy table"
+        },
+        {
+          "url": "https://cropprotectionnetwork.org/encyclopedia/tan-spot-of-wheat",
+          "title": "Tan Spot of Wheat",
+          "type": "html",
+          "crops": ["wheat"],
+          "topics": ["disease"],
+          "estimatedChunks": 10,
+          "notes": "Tan spot identification and management"
+        },
+        {
+          "url": "https://cropprotectionnetwork.org/encyclopedia/leaf-rust-of-wheat",
+          "title": "Leaf Rust of Wheat",
+          "type": "html",
+          "crops": ["wheat"],
+          "topics": ["disease"],
+          "estimatedChunks": 10,
+          "notes": "Leaf rust identification and management"
+        }
+      ]
+    },
+    {
+      "name": "Texas A&M AgriLife Extension",
+      "institution": "Texas A&M University",
+      "baseUrl": "https://agrilifeextension.tamu.edu",
+      "priority": "high",
+      "focus": ["cotton", "sorghum", "wheat", "vegetables"],
+      "estimatedChunks": 280,
+      "urls": [
+        {
+          "url": "https://agrilifeextension.tamu.edu/asset-external/fusarium-wilt-race-4-cotton-disease-in-texas/",
+          "title": "Fusarium Wilt Race 4 Cotton Disease In Texas",
+          "type": "html",
+          "crops": ["cotton"],
+          "topics": ["disease"],
+          "estimatedChunks": 8,
+          "notes": "FOV4 fusarium wilt symptoms and control"
+        },
+        {
+          "url": "https://agrilifeextension.tamu.edu/asset-external/cotton-root-rot-phymatotrichopsis-root-rot-and-its-management/",
+          "title": "Cotton Root Rot and its Management",
+          "type": "html",
+          "crops": ["cotton"],
+          "topics": ["disease"],
+          "estimatedChunks": 10,
+          "notes": "Major fungal disease in Texas"
+        },
+        {
+          "url": "https://agrilifeextension.tamu.edu/asset-external/cotton-aphid/",
+          "title": "Cotton Aphid",
+          "type": "html",
+          "crops": ["cotton"],
+          "topics": ["pest"],
+          "estimatedChunks": 15,
+          "notes": "Aphid species, scouting, control thresholds"
+        },
+        {
+          "url": "https://agrilifeextension.tamu.edu/asset-external/bt-cotton/",
+          "title": "Bt Cotton",
+          "type": "html",
+          "crops": ["cotton"],
+          "topics": ["pest"],
+          "estimatedChunks": 8,
+          "notes": "Bt traits, resistance management"
+        },
+        {
+          "url": "https://agrilifeextension.tamu.edu/asset-external/weed-management-in-texas-cotton/",
+          "title": "Weed Management in Texas Cotton",
+          "type": "html",
+          "crops": ["cotton"],
+          "topics": ["pest"],
+          "estimatedChunks": 25,
+          "notes": "Comprehensive herbicide guide"
+        },
+        {
+          "url": "https://agrilifeextension.tamu.edu/asset-external/using-petiole-analysis-for-nitrogen-management-in-cotton/",
+          "title": "Petiole Analysis for Nitrogen Management",
+          "type": "html",
+          "crops": ["cotton"],
+          "topics": ["fertility"],
+          "estimatedChunks": 10,
+          "notes": "N management via petiole analysis"
+        },
+        {
+          "url": "https://agrilifeextension.tamu.edu/asset-external/scouting-cotton-for-insect-pests/",
+          "title": "Scouting Cotton for Insect Pests",
+          "type": "html",
+          "crops": ["cotton"],
+          "topics": ["pest"],
+          "estimatedChunks": 20,
+          "notes": "Thrips, aphids, bollworms identification"
+        },
+        {
+          "url": "https://agrilifeextension.tamu.edu/asset-external/sorghum-ergot-new-disease-threat-to-the-sorghum-industry/",
+          "title": "Sorghum Ergot Disease",
+          "type": "html",
+          "crops": ["sorghum"],
+          "topics": ["disease"],
+          "estimatedChunks": 6,
+          "notes": "Sorghum ergot symptoms and management"
+        },
+        {
+          "url": "https://agrilifeextension.tamu.edu/asset-external/scouting-sugarcane-aphids-in-south-central-and-west-texas/",
+          "title": "Scouting Sugarcane Aphids in Texas",
+          "type": "html",
+          "crops": ["sorghum"],
+          "topics": ["pest"],
+          "estimatedChunks": 6,
+          "notes": "Sampling protocol and thresholds"
+        },
+        {
+          "url": "https://agrilifeextension.tamu.edu/asset-external/irrigated-and-dryland-sorghum-production-in-south-and-southwest-texas/",
+          "title": "Sorghum Production in South Texas",
+          "type": "html",
+          "crops": ["sorghum"],
+          "topics": ["production", "fertility"],
+          "estimatedChunks": 20,
+          "notes": "Comprehensive production guide"
+        },
+        {
+          "url": "https://agrilifeextension.tamu.edu/asset-external/correcting-iron-deficiencies-in-grain-sorghum/",
+          "title": "Correcting Iron Deficiencies in Sorghum",
+          "type": "html",
+          "crops": ["sorghum"],
+          "topics": ["fertility"],
+          "estimatedChunks": 6,
+          "notes": "Iron deficiency chlorosis correction"
+        },
+        {
+          "url": "https://agrilifeextension.tamu.edu/asset-external/crop-nutrient-needs-in-south-and-southwest-texas/",
+          "title": "Crop Nutrient Needs in South Texas",
+          "type": "html",
+          "crops": ["sorghum", "cotton"],
+          "topics": ["fertility"],
+          "estimatedChunks": 12,
+          "notes": "Nutrient needs for multiple crops"
+        },
+        {
+          "url": "https://agrilifeextension.tamu.edu/asset-external/fusarium-head-blight-in-texas-wheat-and-small-grains/",
+          "title": "Fusarium Head Blight in Texas Wheat",
+          "type": "pdf",
+          "crops": ["wheat"],
+          "topics": ["disease"],
+          "estimatedChunks": 10,
+          "notes": "FHB disease cycle, mycotoxins"
+        },
+        {
+          "url": "https://agrilifeextension.tamu.edu/asset-external/wheat-curl-mite-wheat-seeds-as-source-of-infestation/",
+          "title": "Wheat Curl Mite",
+          "type": "pdf",
+          "crops": ["wheat"],
+          "topics": ["pest"],
+          "estimatedChunks": 8,
+          "notes": "Wheat curl mite, WSM vector"
+        },
+        {
+          "url": "https://agrilifeextension.tamu.edu/asset-external/winter-wheat-management-calendar-for-the-rolling-plains-and-high-plains-of-texas/",
+          "title": "Winter Wheat Management Calendar",
+          "type": "pdf",
+          "crops": ["wheat"],
+          "topics": ["production"],
+          "estimatedChunks": 18,
+          "notes": "Calendar-format production guide"
+        },
+        {
+          "url": "https://agrilifeextension.tamu.edu/asset-external/managing-insect-and-mite-pests-in-vegetable-gardens/",
+          "title": "Managing Insect Pests in Vegetables",
+          "type": "html",
+          "crops": ["vegetables"],
+          "topics": ["pest"],
+          "estimatedChunks": 28,
+          "notes": "Comprehensive insect/mite guide"
+        },
+        {
+          "url": "https://agrilifeextension.tamu.edu/asset-external/organic-vegetable-production-guide/",
+          "title": "Organic Vegetable Production Guide",
+          "type": "html",
+          "crops": ["vegetables"],
+          "topics": ["production"],
+          "estimatedChunks": 32,
+          "notes": "Organic production and certification"
+        }
+      ]
+    },
+    {
+      "name": "University of Georgia Extension",
+      "institution": "University of Georgia",
+      "baseUrl": "https://extension.uga.edu",
+      "priority": "high",
+      "focus": ["cotton", "peanuts", "vegetables"],
+      "estimatedChunks": 420,
+      "urls": [
+        {
+          "url": "https://site.extension.uga.edu/bullochag/2022/08/target-spot-in-cotton/",
+          "title": "Target Spot in Cotton",
+          "type": "html",
+          "crops": ["cotton"],
+          "topics": ["disease"],
+          "estimatedChunks": 12,
+          "notes": "Target spot and areolate mildew management"
+        },
+        {
+          "url": "https://site.extension.uga.edu/benhillcoag/2019/05/seedling-diseases-and-management-in-cotton/",
+          "title": "Seedling Diseases in Cotton",
+          "type": "html",
+          "crops": ["cotton"],
+          "topics": ["disease"],
+          "estimatedChunks": 15,
+          "notes": "Rhizoctonia, Pythium, seed treatments"
+        },
+        {
+          "url": "https://site.extension.uga.edu/colquittag/2023/04/a-pre-season-checklist-for-diseases-and-nematodes-of-cotton-bob-kemerait/",
+          "title": "Pre-season Checklist for Cotton Diseases",
+          "type": "html",
+          "crops": ["cotton"],
+          "topics": ["disease", "pest"],
+          "estimatedChunks": 12,
+          "notes": "Nematodes, fusarium wilt checklist"
+        },
+        {
+          "url": "https://extension.uga.edu/content/dam/extension/programs-and-services/integrated-pest-management/documents/handbooks/2021-pmh-comm-chapters/Cotton.pdf",
+          "title": "Georgia Pest Management Handbook - Cotton",
+          "type": "pdf",
+          "crops": ["cotton"],
+          "topics": ["pest", "disease"],
+          "estimatedChunks": 40,
+          "notes": "Comprehensive pest management"
+        },
+        {
+          "url": "https://site.extension.uga.edu/plowpoints/2022/07/tarnished-plant-bug-management-in-cotton/",
+          "title": "Tarnished Plant Bug Management",
+          "type": "html",
+          "crops": ["cotton"],
+          "topics": ["pest"],
+          "estimatedChunks": 15,
+          "notes": "Plant bug identification, sweep net sampling"
+        },
+        {
+          "url": "https://site.extension.uga.edu/worthag/2021/04/cotton-early-season-disease-and-nematode-management/",
+          "title": "Cotton Early Season Disease Management",
+          "type": "html",
+          "crops": ["cotton"],
+          "topics": ["disease", "pest"],
+          "estimatedChunks": 12,
+          "notes": "Pre-planting nematode decisions"
+        },
+        {
+          "url": "https://site.extension.uga.edu/colquittag/files/2021/03/2021-Cotton-Production-Guide-final.pdf",
+          "title": "Georgia Cotton Production Guide",
+          "type": "pdf",
+          "crops": ["cotton"],
+          "topics": ["production", "fertility"],
+          "estimatedChunks": 50,
+          "notes": "Comprehensive production guide"
+        },
+        {
+          "url": "https://site.extension.uga.edu/tattnall/2021/06/nitrogen-fertilization-on-cotton/",
+          "title": "Nitrogen Fertilization on Cotton",
+          "type": "html",
+          "crops": ["cotton"],
+          "topics": ["fertility"],
+          "estimatedChunks": 10,
+          "notes": "UGA N recommendations by yield goal"
+        },
+        {
+          "url": "https://extension.uga.edu/content/dam/extension/programs-and-services/integrated-pest-management/documents/handbooks/2020-pmh-chapters/Peanut.pdf",
+          "title": "Peanut Insect and Disease Control",
+          "type": "pdf",
+          "crops": ["peanuts"],
+          "topics": ["disease", "pest"],
+          "estimatedChunks": 42,
+          "notes": "Comprehensive fungicide/insecticide recs"
+        },
+        {
+          "url": "https://extension.uga.edu/publications/detail.html?number=B1146&title=peanut-production-field-guide",
+          "title": "Peanut Production Field Guide",
+          "type": "html",
+          "crops": ["peanuts"],
+          "topics": ["production"],
+          "estimatedChunks": 38,
+          "notes": "Complete production guide"
+        },
+        {
+          "url": "https://site.extension.uga.edu/colquittag/2017/05/the-uga-peanut-fertilization-strategy-in-a-nutshell/",
+          "title": "UGA Peanut Fertilization Strategy",
+          "type": "html",
+          "crops": ["peanuts"],
+          "topics": ["fertility"],
+          "estimatedChunks": 10,
+          "notes": "Calcium, gypsum, Ca:K ratio"
+        },
+        {
+          "url": "https://site.extension.uga.edu/worthag/2021/05/early-season-diseases-and-nematodes-in-cotton-and-peanuts/",
+          "title": "Early-season Diseases in Peanuts",
+          "type": "html",
+          "crops": ["peanuts"],
+          "topics": ["disease", "pest"],
+          "estimatedChunks": 12,
+          "notes": "Rhizoctonia, CBR, root-knot, TSWV"
+        },
+        {
+          "url": "https://site.extension.uga.edu/benhillcoag/2021/08/disease-management-of-peanuts-at-60-days-and-beyond-kemerait/",
+          "title": "Disease Management of Peanuts at 60 Days",
+          "type": "html",
+          "crops": ["peanuts"],
+          "topics": ["disease"],
+          "estimatedChunks": 12,
+          "notes": "Mid-season white mold, leaf spot"
+        },
+        {
+          "url": "https://extension.uga.edu/publications/detail.html?number=B1285&title=common-tomato-diseases-in-georgia",
+          "title": "Common Tomato Diseases in Georgia",
+          "type": "html",
+          "crops": ["tomato"],
+          "topics": ["disease"],
+          "estimatedChunks": 28,
+          "notes": "Early blight, bacterial spot, nematodes"
+        },
+        {
+          "url": "https://extension.uga.edu/publications/detail.html?number=B1312&title=commercial-tomato-production-handbook",
+          "title": "Commercial Tomato Production Handbook",
+          "type": "html",
+          "crops": ["tomato"],
+          "topics": ["production"],
+          "estimatedChunks": 40,
+          "notes": "Comprehensive commercial production"
+        },
+        {
+          "url": "https://extension.uga.edu/publications/detail.html?number=C938&title=Blossom-End+Rot+and+Calcium+Nutrition+of+Pepper+and+Tomato",
+          "title": "Blossom-End Rot and Calcium Nutrition",
+          "type": "html",
+          "crops": ["pepper", "tomato"],
+          "topics": ["fertility"],
+          "estimatedChunks": 12,
+          "notes": "BER diagnosis, calcium fertigation"
+        },
+        {
+          "url": "https://extension.uga.edu/publications/detail.html?number=C1126&title=initial-steps-for-detecting-plant-parasitic-nematode-problems-in-vegetables",
+          "title": "Detecting Nematodes in Vegetables",
+          "type": "html",
+          "crops": ["vegetables"],
+          "topics": ["pest"],
+          "estimatedChunks": 15,
+          "notes": "Nematode sampling procedures"
+        }
+      ]
+    },
+    {
+      "name": "Kansas State Research & Extension",
+      "institution": "Kansas State University",
+      "baseUrl": "https://bookstore.ksre.ksu.edu",
+      "priority": "high",
+      "focus": ["wheat", "sorghum"],
+      "estimatedChunks": 320,
+      "urls": [
+        {
+          "url": "https://bookstore.ksre.ksu.edu/pubs/wheat-insect-pest-management-2025_MF745.pdf",
+          "title": "Wheat Insect Pest Management 2025",
+          "type": "pdf",
+          "crops": ["wheat"],
+          "topics": ["pest"],
+          "estimatedChunks": 28,
+          "notes": "Greenbugs, Hessian fly, armyworms"
+        },
+        {
+          "url": "https://bookstore.ksre.ksu.edu/pubs/hessian-fly-kansas-crop-pests_MF2866.pdf",
+          "title": "Hessian Fly - Kansas Crop Pests",
+          "type": "pdf",
+          "crops": ["wheat"],
+          "topics": ["pest"],
+          "estimatedChunks": 10,
+          "notes": "Biology, fly-free planting dates"
+        },
+        {
+          "url": "https://bookstore.ksre.ksu.edu/pubs/barley-yellow-dwarf_EP165.pdf",
+          "title": "Barley Yellow Dwarf",
+          "type": "pdf",
+          "crops": ["wheat"],
+          "topics": ["disease"],
+          "estimatedChunks": 8,
+          "notes": "Aphid-transmitted virus, resistance"
+        },
+        {
+          "url": "https://bookstore.ksre.ksu.edu/pubs/russian-wheat-aphid_MF2666.pdf",
+          "title": "Russian Wheat Aphid",
+          "type": "pdf",
+          "crops": ["wheat"],
+          "topics": ["pest"],
+          "estimatedChunks": 10,
+          "notes": "Biology, biological/chemical control"
+        },
+        {
+          "url": "https://bookstore.ksre.ksu.edu/pubs/kansas-wheat-variety-guide-2025_MF991.pdf",
+          "title": "Kansas Wheat Variety Guide 2025",
+          "type": "pdf",
+          "crops": ["wheat"],
+          "topics": ["disease", "production"],
+          "estimatedChunks": 40,
+          "notes": "Disease/insect resistance ratings"
+        },
+        {
+          "url": "https://bookstore.ksre.ksu.edu/pubs/wheat-production-handbook_C529.pdf",
+          "title": "Wheat Production Handbook",
+          "type": "pdf",
+          "crops": ["wheat"],
+          "topics": ["production", "fertility"],
+          "estimatedChunks": 50,
+          "notes": "Comprehensive Kansas production guide"
+        },
+        {
+          "url": "https://bookstore.ksre.ksu.edu/pubs/grain-sorghum-production-handbook_C687.pdf",
+          "title": "Grain Sorghum Production Handbook",
+          "type": "pdf",
+          "crops": ["sorghum"],
+          "topics": ["production", "fertility"],
+          "estimatedChunks": 45,
+          "notes": "32-page comprehensive guide"
+        },
+        {
+          "url": "https://bookstore.ksre.ksu.edu/pubs/how-a-sorghum-plant-develops_S3.pdf",
+          "title": "How a Sorghum Plant Develops",
+          "type": "pdf",
+          "crops": ["sorghum"],
+          "topics": ["production"],
+          "estimatedChunks": 25,
+          "notes": "Growth stages and nutrient accumulation"
+        },
+        {
+          "url": "https://bookstore.ksre.ksu.edu/pubs/MF3234.pdf",
+          "title": "Sorghum Growth and Development Poster",
+          "type": "pdf",
+          "crops": ["sorghum"],
+          "topics": ["production"],
+          "estimatedChunks": 8,
+          "notes": "Visual growth stage guide"
+        },
+        {
+          "url": "https://bookstore.ksre.ksu.edu/pubs/mf742.pdf",
+          "title": "Sorghum Insect Pest Management 2025",
+          "type": "pdf",
+          "crops": ["sorghum"],
+          "topics": ["pest"],
+          "estimatedChunks": 18,
+          "notes": "Sugarcane aphid, greenbugs, sorghum midge"
+        },
+        {
+          "url": "https://bookstore.ksre.ksu.edu/pubs/diagnosing-sorghum-production-problems-in-kansas_S125.pdf",
+          "title": "Diagnosing Sorghum Production Problems",
+          "type": "pdf",
+          "crops": ["sorghum"],
+          "topics": ["disease", "pest"],
+          "estimatedChunks": 35,
+          "notes": "Comprehensive diagnostic guide"
+        },
+        {
+          "url": "https://bookstore.ksre.ksu.edu/pubs/kansas-sorghum-management-2022_MF3046.pdf",
+          "title": "Kansas Sorghum Management",
+          "type": "pdf",
+          "crops": ["sorghum"],
+          "topics": ["production", "pest"],
+          "estimatedChunks": 10,
+          "notes": "Annual management guide"
+        },
+        {
+          "url": "https://bookstore.ksre.ksu.edu/pubs/MF3107.pdf",
+          "title": "Chinch Bug",
+          "type": "pdf",
+          "crops": ["sorghum"],
+          "topics": ["pest"],
+          "estimatedChunks": 6,
+          "notes": "Chinch bug identification and management"
+        }
+      ]
+    },
+    {
+      "name": "Oklahoma State Extension",
+      "institution": "Oklahoma State University",
+      "baseUrl": "https://extension.okstate.edu",
+      "priority": "high",
+      "focus": ["wheat"],
+      "estimatedChunks": 100,
+      "urls": [
+        {
+          "url": "https://extension.okstate.edu/fact-sheets/effect-of-planting-date-and-seed-treatment-on-diseases-and-insect-pests-of-wheat.html",
+          "title": "Planting Date and Seed Treatment Effects on Wheat",
+          "type": "html",
+          "crops": ["wheat"],
+          "topics": ["disease", "pest"],
+          "estimatedChunks": 15,
+          "notes": "WSM, BYD, Hessian fly, seed treatment"
+        },
+        {
+          "url": "https://extension.okstate.edu/fact-sheets/major-foliar-fungal-diseases-of-wheat-in-oklahoma.html",
+          "title": "Major Foliar Diseases of Wheat in Oklahoma",
+          "type": "html",
+          "crops": ["wheat"],
+          "topics": ["disease"],
+          "estimatedChunks": 14,
+          "notes": "Rust types, Septoria, tan spot"
+        },
+        {
+          "url": "https://extension.okstate.edu/fact-sheets/identifying-rust-diseases-of-wheat-and-barley.html",
+          "title": "Identifying Rust Diseases of Wheat",
+          "type": "html",
+          "crops": ["wheat"],
+          "topics": ["disease"],
+          "estimatedChunks": 12,
+          "notes": "Leaf, stem, stripe rust identification"
+        },
+        {
+          "url": "https://extension.okstate.edu/fact-sheets/hessian-fly-management-in-oklahoma-winter-wheat.html",
+          "title": "Hessian Fly Management in Oklahoma",
+          "type": "html",
+          "crops": ["wheat"],
+          "topics": ["pest"],
+          "estimatedChunks": 12,
+          "notes": "Lifecycle, resistant varieties"
+        },
+        {
+          "url": "https://extension.okstate.edu/fact-sheets/management-of-insect-and-mite-pests-in-small-grains.html",
+          "title": "Management of Insect Pests in Small Grains",
+          "type": "html",
+          "crops": ["wheat"],
+          "topics": ["pest"],
+          "estimatedChunks": 22,
+          "notes": "Comprehensive insecticide guide"
+        },
+        {
+          "url": "https://extension.okstate.edu/fact-sheets/dual-purpose-wheat-management-for-forage-and-grain-production.html",
+          "title": "Dual Purpose Wheat Management",
+          "type": "html",
+          "crops": ["wheat"],
+          "topics": ["production", "fertility"],
+          "estimatedChunks": 16,
+          "notes": "Seeding rates, N and P fertility"
+        },
+        {
+          "url": "https://extension.okstate.edu/fact-sheets/print-publications/pss/methods-for-applying-topdress-nitrogen-to-wheat-pss-2261.pdf",
+          "title": "Methods for Applying Topdress Nitrogen",
+          "type": "pdf",
+          "crops": ["wheat"],
+          "topics": ["fertility"],
+          "estimatedChunks": 10,
+          "notes": "Broadcast, banded, foliar N methods"
+        },
+        {
+          "url": "https://extension.okstate.edu/fact-sheets/applying-nitrogen-rich-strips.html",
+          "title": "Applying Nitrogen-Rich Strips",
+          "type": "html",
+          "crops": ["wheat"],
+          "topics": ["fertility"],
+          "estimatedChunks": 12,
+          "notes": "N-rich strips for precision management"
+        }
+      ]
+    },
+    {
+      "name": "Mississippi State Extension",
+      "institution": "Mississippi State University",
+      "baseUrl": "https://extension.msstate.edu",
+      "priority": "high",
+      "focus": ["cotton"],
+      "estimatedChunks": 90,
+      "urls": [
+        {
+          "url": "https://extension.msstate.edu/publications/evaluating-insecticide-efficacy-against-tarnished-plant-bugs-cotton",
+          "title": "Insecticide Efficacy Against Tarnished Plant Bugs",
+          "type": "html",
+          "crops": ["cotton"],
+          "topics": ["pest"],
+          "estimatedChunks": 15,
+          "notes": "TPB insecticide efficacy data"
+        },
+        {
+          "url": "https://extension.msstate.edu/publications/biology-control-thrips-seedling-cotton",
+          "title": "Biology & Control of Thrips on Cotton",
+          "type": "html",
+          "crops": ["cotton"],
+          "topics": ["pest"],
+          "estimatedChunks": 20,
+          "notes": "Thrips biology, seed treatments"
+        },
+        {
+          "url": "https://extension.msstate.edu/publications/nematode-sampling-for-crops",
+          "title": "Nematode Sampling for Crops",
+          "type": "html",
+          "crops": ["cotton"],
+          "topics": ["pest"],
+          "estimatedChunks": 15,
+          "notes": "Reniform and root-knot sampling"
+        },
+        {
+          "url": "https://extension.msstate.edu/publications/alternate-postemergence-strategies-for-weed-control-cotton",
+          "title": "Postemergence Weed Control Strategies",
+          "type": "html",
+          "crops": ["cotton"],
+          "topics": ["pest"],
+          "estimatedChunks": 12,
+          "notes": "Herbicide alternatives for resistant weeds"
+        },
+        {
+          "url": "https://extension.msstate.edu/agriculture/crops/cotton/defoliation-general-discussion",
+          "title": "Cotton Defoliation Discussion",
+          "type": "html",
+          "crops": ["cotton"],
+          "topics": ["production"],
+          "estimatedChunks": 15,
+          "notes": "Timing, temperature requirements"
+        },
+        {
+          "url": "https://extension.msstate.edu/publications/plant-growth-regulators-mississippi-cotton",
+          "title": "Plant Growth Regulators in Mississippi Cotton",
+          "type": "html",
+          "crops": ["cotton"],
+          "topics": ["production"],
+          "estimatedChunks": 12,
+          "notes": "PGR strategy, mepiquat chloride"
+        }
+      ]
+    },
+    {
+      "name": "Alabama Cooperative Extension",
+      "institution": "Auburn University",
+      "baseUrl": "https://www.aces.edu",
+      "priority": "high",
+      "focus": ["cotton", "peanuts"],
+      "estimatedChunks": 180,
+      "urls": [
+        {
+          "url": "https://www.aces.edu/blog/topics/crop-production/cotton-ipm-guide/",
+          "title": "Cotton IPM Guide",
+          "type": "html",
+          "crops": ["cotton"],
+          "topics": ["pest", "disease"],
+          "estimatedChunks": 50,
+          "notes": "Comprehensive IPM guide, 2025"
+        },
+        {
+          "url": "https://www.aces.edu/blog/topics/crop-production/target-spot-of-cotton/",
+          "title": "Target Spot of Cotton",
+          "type": "html",
+          "crops": ["cotton"],
+          "topics": ["disease"],
+          "estimatedChunks": 15,
+          "notes": "Corynespora cassiicola, fungicides"
+        },
+        {
+          "url": "https://www.aces.edu/blog/topics/crop-production/nematodes-in-alabama-cotton/",
+          "title": "Nematodes in Alabama Cotton",
+          "type": "html",
+          "crops": ["cotton"],
+          "topics": ["pest"],
+          "estimatedChunks": 15,
+          "notes": "Root-knot and reniform nematodes"
+        },
+        {
+          "url": "https://www.aces.edu/blog/topics/crop-production/application-of-cotton-defoliation-aids-in-alabama/",
+          "title": "Cotton Defoliation Aids in Alabama",
+          "type": "html",
+          "crops": ["cotton"],
+          "topics": ["production"],
+          "estimatedChunks": 20,
+          "notes": "Timing, temperature, product selection"
+        },
+        {
+          "url": "https://www.aces.edu/blog/topics/crop-production/peanut-ipm-guide/",
+          "title": "Peanut IPM Guide",
+          "type": "html",
+          "crops": ["peanuts"],
+          "topics": ["disease", "pest"],
+          "estimatedChunks": 50,
+          "notes": "Comprehensive IPM with AU-PNUT"
+        },
+        {
+          "url": "https://www.aces.edu/blog/topics/crop-production/foliar-diseases-of-peanuts/",
+          "title": "Foliar Diseases of Peanuts",
+          "type": "html",
+          "crops": ["peanuts"],
+          "topics": ["disease"],
+          "estimatedChunks": 15,
+          "notes": "Early/late leaf spot, rust"
+        },
+        {
+          "url": "https://www.aces.edu/blog/topics/crop-production/tomato-spotted-wilt-virus-on-peanuts/",
+          "title": "Tomato Spotted Wilt Virus on Peanuts",
+          "type": "html",
+          "crops": ["peanuts"],
+          "topics": ["disease", "pest"],
+          "estimatedChunks": 12,
+          "notes": "TSWV, thrips, Peanut Rx"
+        },
+        {
+          "url": "https://www.aces.edu/blog/topics/crop-production/peanut-insect-pest-management-in-2022/",
+          "title": "Peanut Insect Pest Management",
+          "type": "html",
+          "crops": ["peanuts"],
+          "topics": ["pest"],
+          "estimatedChunks": 10,
+          "notes": "Thrips, caterpillars, LCB"
+        }
+      ]
+    },
+    {
+      "name": "North Carolina State Extension",
+      "institution": "NC State University",
+      "baseUrl": "https://content.ces.ncsu.edu",
+      "priority": "high",
+      "focus": ["peanuts", "vegetables"],
+      "estimatedChunks": 380,
+      "urls": [
+        {
+          "url": "https://content.ces.ncsu.edu/peanut-information/peanut-disease-management",
+          "title": "Peanut Disease Management 2025",
+          "type": "html",
+          "crops": ["peanuts"],
+          "topics": ["disease"],
+          "estimatedChunks": 42,
+          "notes": "Leaf spot, Sclerotinia, CBR"
+        },
+        {
+          "url": "https://content.ces.ncsu.edu/early-leaf-spot-of-peanut-1",
+          "title": "Peanut Leaf Spots",
+          "type": "html",
+          "crops": ["peanuts"],
+          "topics": ["disease"],
+          "estimatedChunks": 12,
+          "notes": "Early and late leaf spot"
+        },
+        {
+          "url": "https://content.ces.ncsu.edu/peanut-information/peanut-nematode-management",
+          "title": "Peanut Nematode Management 2025",
+          "type": "html",
+          "crops": ["peanuts"],
+          "topics": ["pest"],
+          "estimatedChunks": 18,
+          "notes": "Root-knot, lesion, sting nematodes"
+        },
+        {
+          "url": "https://content.ces.ncsu.edu/peanut-information/planting-harvesting-and-curing-peanuts",
+          "title": "Planting, Harvesting, and Curing Peanuts",
+          "type": "html",
+          "crops": ["peanuts"],
+          "topics": ["production"],
+          "estimatedChunks": 30,
+          "notes": "Planter setup, digger, curing"
+        },
+        {
+          "url": "https://content.ces.ncsu.edu/early-blight-of-tomato",
+          "title": "Early Blight of Tomato",
+          "type": "html",
+          "crops": ["tomato"],
+          "topics": ["disease"],
+          "estimatedChunks": 12,
+          "notes": "Identification, fungicide recs"
+        },
+        {
+          "url": "https://content.ces.ncsu.edu/tomato-late-blight",
+          "title": "Tomato Late Blight",
+          "type": "html",
+          "crops": ["tomato"],
+          "topics": ["disease"],
+          "estimatedChunks": 15,
+          "notes": "Phytophthora infestans"
+        },
+        {
+          "url": "https://content.ces.ncsu.edu/fusarium-wilt-of-tomato",
+          "title": "Fusarium Wilt of Tomato",
+          "type": "html",
+          "crops": ["tomato"],
+          "topics": ["disease"],
+          "estimatedChunks": 12,
+          "notes": "Resistant varieties, grafting"
+        },
+        {
+          "url": "https://content.ces.ncsu.edu/tomato-spotted-wilt-virus-on-tomato-and-pepper",
+          "title": "Tomato Spotted Wilt Virus",
+          "type": "html",
+          "crops": ["tomato", "pepper"],
+          "topics": ["disease"],
+          "estimatedChunks": 15,
+          "notes": "TSWV, Sw-5 gene, thrips"
+        },
+        {
+          "url": "https://content.ces.ncsu.edu/tomato-yellow-leaf-curl-virus",
+          "title": "Tomato Yellow Leaf Curl Virus",
+          "type": "html",
+          "crops": ["tomato"],
+          "topics": ["disease"],
+          "estimatedChunks": 12,
+          "notes": "Begomovirus, whitefly vector"
+        },
+        {
+          "url": "https://content.ces.ncsu.edu/insect-and-related-pests-of-vegetables/pests-of-tomato",
+          "title": "Pests of Tomato",
+          "type": "html",
+          "crops": ["tomato"],
+          "topics": ["pest"],
+          "estimatedChunks": 20,
+          "notes": "Hornworms, flea beetles, aphids"
+        },
+        {
+          "url": "https://content.ces.ncsu.edu/phytophthora-blight-of-peppers",
+          "title": "Phytophthora Blight of Peppers",
+          "type": "html",
+          "crops": ["pepper"],
+          "topics": ["disease"],
+          "estimatedChunks": 15,
+          "notes": "P. capsici crown rot, fruit rot"
+        },
+        {
+          "url": "https://content.ces.ncsu.edu/bacterial-spot-of-pepper-and-tomato",
+          "title": "Bacterial Spot of Pepper and Tomato",
+          "type": "html",
+          "crops": ["pepper", "tomato"],
+          "topics": ["disease"],
+          "estimatedChunks": 15,
+          "notes": "Xanthomonas, copper programs"
+        },
+        {
+          "url": "https://content.ces.ncsu.edu/anthracnose-of-pepper",
+          "title": "Anthracnose of Pepper",
+          "type": "html",
+          "crops": ["pepper"],
+          "topics": ["disease"],
+          "estimatedChunks": 12,
+          "notes": "Colletotrichum fruit rot"
+        },
+        {
+          "url": "https://content.ces.ncsu.edu/southern-blight-of-vegetable-crops",
+          "title": "Southern Blight of Vegetables",
+          "type": "html",
+          "crops": ["pepper", "tomato"],
+          "topics": ["disease"],
+          "estimatedChunks": 12,
+          "notes": "Sclerotium rolfsii stem rot"
+        },
+        {
+          "url": "https://content.ces.ncsu.edu/insect-and-related-pests-of-vegetables/pests-of-potato",
+          "title": "Pests of Potato",
+          "type": "html",
+          "crops": ["potato"],
+          "topics": ["pest"],
+          "estimatedChunks": 20,
+          "notes": "CPB, flea beetles, wireworms"
+        },
+        {
+          "url": "https://content.ces.ncsu.edu/potato-late-blight",
+          "title": "Potato Late Blight",
+          "type": "html",
+          "crops": ["potato"],
+          "topics": ["disease"],
+          "estimatedChunks": 15,
+          "notes": "Phytophthora infestans in potato"
+        },
+        {
+          "url": "https://content.ces.ncsu.edu/commercial-potato-production-in-eastern-north-carolina",
+          "title": "Commercial Potato Production in Eastern NC",
+          "type": "html",
+          "crops": ["potato"],
+          "topics": ["production"],
+          "estimatedChunks": 20,
+          "notes": "Production guide, disease management"
+        }
+      ]
+    },
+    {
+      "name": "Purdue Extension",
+      "institution": "Purdue University",
+      "baseUrl": "https://extension.purdue.edu",
+      "priority": "high",
+      "focus": ["corn", "soybeans", "vegetables"],
+      "estimatedChunks": 200,
+      "urls": [
+        {
+          "url": "https://www.extension.purdue.edu/extmedia/bp/bp-84-w.pdf",
+          "title": "Northern Corn Leaf Blight",
+          "type": "pdf",
+          "crops": ["corn"],
+          "topics": ["disease"],
+          "estimatedChunks": 10,
+          "notes": "NCLB fact sheet, hybrid resistance"
+        },
+        {
+          "url": "https://www.extension.purdue.edu/extmedia/bp/bp-56-w.pdf",
+          "title": "Gray Leaf Spot",
+          "type": "pdf",
+          "crops": ["corn"],
+          "topics": ["disease"],
+          "estimatedChunks": 10,
+          "notes": "GLS disease cycle, fungicide timing"
+        },
+        {
+          "url": "https://extension.purdue.edu/fieldcroppathology/corn.html",
+          "title": "Tar Spot of Corn",
+          "type": "html",
+          "crops": ["corn"],
+          "topics": ["disease"],
+          "estimatedChunks": 15,
+          "notes": "Tar spot resource, fungicide timing"
+        },
+        {
+          "url": "https://www.extension.purdue.edu/extmedia/BP/BP-89-W.pdf",
+          "title": "Diseases of Corn: Stalk Rots",
+          "type": "pdf",
+          "crops": ["corn"],
+          "topics": ["disease"],
+          "estimatedChunks": 12,
+          "notes": "Anthracnose, Gibberella, Fusarium"
+        },
+        {
+          "url": "https://www.extension.purdue.edu/extmedia/bp/bp-131-w.pdf",
+          "title": "Frogeye Leaf Spot of Soybean",
+          "type": "pdf",
+          "crops": ["soybeans"],
+          "topics": ["disease"],
+          "estimatedChunks": 9,
+          "notes": "Cercospora sojina, fungicide timing"
+        },
+        {
+          "url": "https://www.extension.purdue.edu/extmedia/BP/BP-43-W.pdf",
+          "title": "White Mold of Soybean",
+          "type": "pdf",
+          "crops": ["soybeans"],
+          "topics": ["disease"],
+          "estimatedChunks": 11,
+          "notes": "Sclerotinia, fungicide at flowering"
+        },
+        {
+          "url": "https://www.extension.purdue.edu/extmedia/BP/BP-41-W.pdf",
+          "title": "Brown Stem Rot of Soybean",
+          "type": "pdf",
+          "crops": ["soybeans"],
+          "topics": ["disease"],
+          "estimatedChunks": 9,
+          "notes": "BSR identification, differentiation from SDS"
+        },
+        {
+          "url": "https://extension.purdue.edu/extmedia/ID/ID-56.pdf",
+          "title": "Midwest Vegetable Production Guide",
+          "type": "pdf",
+          "crops": ["vegetables"],
+          "topics": ["production", "pest", "disease"],
+          "estimatedChunks": 120,
+          "notes": "Annual commercial production guide"
+        },
+        {
+          "url": "https://www.extension.purdue.edu/extmedia/bp/bp-184-w.pdf",
+          "title": "Steps for Healthy Tomatoes",
+          "type": "pdf",
+          "crops": ["tomato"],
+          "topics": ["disease"],
+          "estimatedChunks": 10,
+          "notes": "Early blight, Septoria management"
+        },
+        {
+          "url": "https://www.extension.purdue.edu/extmedia/bp/bp-13-w.html",
+          "title": "Blossom End Rot of Tomato",
+          "type": "html",
+          "crops": ["tomato"],
+          "topics": ["fertility"],
+          "estimatedChunks": 6,
+          "notes": "Calcium deficiency management"
+        }
+      ]
+    },
+    {
+      "name": "University of Illinois Extension",
+      "institution": "University of Illinois",
+      "baseUrl": "https://extension.illinois.edu",
+      "priority": "high",
+      "focus": ["corn", "soybeans"],
+      "estimatedChunks": 150,
+      "urls": [
+        {
+          "url": "https://extension.illinois.edu/plant-problems/helminthosporium-leaf-blights-sweet-corn",
+          "title": "Helminthosporium Leaf Blights of Corn",
+          "type": "html",
+          "crops": ["corn"],
+          "topics": ["disease"],
+          "estimatedChunks": 10,
+          "notes": "SCLB, NCLB, northern corn leaf spot"
+        },
+        {
+          "url": "https://extension.illinois.edu/blogs/hill-and-furrow/2022-07-11-corn-tar-spot-disease-monitoring-illinois",
+          "title": "Corn Tar Spot Disease Monitoring",
+          "type": "html",
+          "crops": ["corn"],
+          "topics": ["disease"],
+          "estimatedChunks": 9,
+          "notes": "Tar spot identification, monitoring"
+        },
+        {
+          "url": "https://extension.illinois.edu/crops/field-crop-disease-and-insect-management-applied-research-report",
+          "title": "Field Crop Disease Applied Research Report",
+          "type": "html",
+          "crops": ["corn", "soybeans"],
+          "topics": ["disease", "pest"],
+          "estimatedChunks": 40,
+          "notes": "Annual fungicide efficacy data"
+        },
+        {
+          "url": "https://extension.illinois.edu/sites/default/files/iah_-_nitrogen_management_for_corn_v4.pdf",
+          "title": "Nitrogen Management for Corn",
+          "type": "pdf",
+          "crops": ["corn"],
+          "topics": ["fertility"],
+          "estimatedChunks": 42,
+          "notes": "Comprehensive N management guide"
+        },
+        {
+          "url": "https://extension.illinois.edu/sites/default/files/2025-03/illinois-soybean-management.pdf",
+          "title": "Illinois Soybean Management 2025",
+          "type": "pdf",
+          "crops": ["soybeans"],
+          "topics": ["fertility", "production"],
+          "estimatedChunks": 32,
+          "notes": "Complete soybean production guide"
+        }
+      ]
+    },
+    {
+      "name": "Ohio State Extension",
+      "institution": "Ohio State University",
+      "baseUrl": "https://ohioline.osu.edu",
+      "priority": "medium",
+      "focus": ["corn", "soybeans", "vegetables"],
+      "estimatedChunks": 120,
+      "urls": [
+        {
+          "url": "https://ohioline.osu.edu/factsheet/plpath-cer-10",
+          "title": "Northern Corn Leaf Blight",
+          "type": "html",
+          "crops": ["corn"],
+          "topics": ["disease"],
+          "estimatedChunks": 11,
+          "notes": "NCLB in Ohio, Ht gene resistance"
+        },
+        {
+          "url": "https://ohioline.osu.edu/factsheet/plpath-cer-05",
+          "title": "Gray Leaf Spot of Corn",
+          "type": "html",
+          "crops": ["corn"],
+          "topics": ["disease"],
+          "estimatedChunks": 11,
+          "notes": "GLS in Ohio, fungicide timing"
+        },
+        {
+          "url": "https://ohioline.osu.edu/factsheet/ENT-16",
+          "title": "Corn Rootworm Management",
+          "type": "html",
+          "crops": ["corn"],
+          "topics": ["pest"],
+          "estimatedChunks": 14,
+          "notes": "Rootworm biology, Bt traits"
+        },
+        {
+          "url": "https://ohioline.osu.edu/factsheet/plpath-soy-5",
+          "title": "Soybean Cyst Nematode",
+          "type": "html",
+          "crops": ["soybeans"],
+          "topics": ["disease", "pest"],
+          "estimatedChunks": 14,
+          "notes": "SCN lifecycle, sampling"
+        },
+        {
+          "url": "https://ohioline.osu.edu/factsheet/AC-44",
+          "title": "Sudden Death Syndrome of Soybean",
+          "type": "html",
+          "crops": ["soybeans"],
+          "topics": ["disease"],
+          "estimatedChunks": 9,
+          "notes": "SDS identification, SCN interaction"
+        },
+        {
+          "url": "https://ohioline.osu.edu/factsheet/ENT-37",
+          "title": "Soybean Aphid",
+          "type": "html",
+          "crops": ["soybeans"],
+          "topics": ["pest"],
+          "estimatedChunks": 11,
+          "notes": "250 aphid/plant threshold"
+        },
+        {
+          "url": "https://ohioline.osu.edu/factsheet/hyg-3314",
+          "title": "Soilborne Diseases of Tomato",
+          "type": "html",
+          "crops": ["tomato"],
+          "topics": ["disease"],
+          "estimatedChunks": 15,
+          "notes": "Verticillium, Fusarium, nematodes"
+        }
+      ]
+    },
+    {
+      "name": "Missouri Extension",
+      "institution": "University of Missouri",
+      "baseUrl": "https://extension.missouri.edu",
+      "priority": "medium",
+      "focus": ["corn", "soybeans"],
+      "estimatedChunks": 80,
+      "urls": [
+        {
+          "url": "https://extension.missouri.edu/publications/g4156",
+          "title": "Tar Spot of Corn",
+          "type": "html",
+          "crops": ["corn"],
+          "topics": ["disease"],
+          "estimatedChunks": 11,
+          "notes": "Tar spot in Missouri, fungicide timing"
+        },
+        {
+          "url": "https://extension.missouri.edu/media/wysiwyg/Extensiondata/Pub/pdf/agguides/pests/ipm1002.pdf",
+          "title": "Integrated Pest Management - Soybean Diseases",
+          "type": "pdf",
+          "crops": ["soybeans"],
+          "topics": ["disease"],
+          "estimatedChunks": 30,
+          "notes": "Comprehensive IPM guide for Missouri"
+        }
+      ]
+    },
+    {
+      "name": "North Dakota State University",
+      "institution": "North Dakota State University",
+      "baseUrl": "https://www.ndsu.edu/agriculture",
+      "priority": "medium",
+      "focus": ["wheat"],
+      "estimatedChunks": 60,
+      "urls": [
+        {
+          "url": "https://www.ndsu.edu/agriculture/extension/publications/fusarium-head-blight-scab-small-grains",
+          "title": "Fusarium Head Blight of Small Grains",
+          "type": "html",
+          "crops": ["wheat"],
+          "topics": ["disease"],
+          "estimatedChunks": 21,
+          "notes": "FHB, DON mycotoxin, forecasting"
+        },
+        {
+          "url": "https://www.ndsu.edu/agriculture/extension/publications/fungal-leaf-spot-diseases-wheat-tan-spot-septoria/stagonospora-nodorum",
+          "title": "Fungal Leaf Spot Diseases of Wheat",
+          "type": "html",
+          "crops": ["wheat"],
+          "topics": ["disease"],
+          "estimatedChunks": 17,
+          "notes": "Tan spot, Septoria identification"
+        },
+        {
+          "url": "https://www.ndsu.edu/agriculture/extension/publications/fertilizing-hard-red-spring-wheat-and-durum",
+          "title": "Fertilizing Hard Red Spring Wheat",
+          "type": "html",
+          "crops": ["wheat"],
+          "topics": ["fertility"],
+          "estimatedChunks": 22,
+          "notes": "N management for spring wheat"
+        }
+      ]
+    }
+  ]
+}

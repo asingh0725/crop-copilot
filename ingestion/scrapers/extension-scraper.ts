@@ -1,20 +1,93 @@
+import { detectContentType } from "../parsers/content-type-detector";
 import { BaseScraper } from "./base-scraper";
 import type { ScrapedDocument, SourceUrlConfig } from "./types";
 import { SourceType } from "@prisma/client";
 
 export class ExtensionScraper extends BaseScraper {
-  /**
-   * Scrape a single document from URL
-   */
+  // Update the scrape method in lib/ingestion/scrapers/extension-scraper.ts
   async scrape(url: string): Promise<ScrapedDocument> {
-    // Detect content type
-    const isPDF = url.toLowerCase().endsWith(".pdf") || url.includes("/pdf/");
+    try {
+      const buffer = await this.fetchPDF(url);
+      const actualType = detectContentType(buffer, url);
 
-    if (isPDF) {
-      return await this.scrapePDF(url);
-    } else {
-      return await this.scrapeHTML(url);
+      if (actualType === "pdf") {
+        return this.processPDFBuffer(buffer, url);
+      }
+
+      // If we hit an HTML page instead of a PDF (e.g., MSU landing pages)
+      if (actualType === "html") {
+        const html = buffer.toString("utf8");
+
+        // Look for PDF links in the page content (Landing Page Pattern)
+        const pdfMatch = html.match(/href="([^"]+\.pdf)"/i);
+        if (pdfMatch) {
+          const absolutePdfUrl = new URL(pdfMatch[1], url).href;
+          console.log(`Found PDF link on landing page: ${absolutePdfUrl}`);
+          const pdfBuffer = await this.fetchPDF(absolutePdfUrl);
+          return this.processPDFBuffer(pdfBuffer, absolutePdfUrl);
+        }
+
+        return this.processHTMLBuffer(buffer, url);
+      }
+
+      throw new Error("Unknown content type");
+    } catch (error) {
+      console.error(`Scrape failed for ${url}:`, error);
+      throw error;
     }
+  }
+
+  /**
+   * Process a buffer identified as PDF
+   */
+  private processPDFBuffer(buffer: Buffer, url: string): ScrapedDocument {
+    const filename = url.split("/").pop() || "document.pdf";
+    const title = filename.replace(".pdf", "").replace(/[-_]/g, " ");
+
+    return {
+      url,
+      title,
+      content: buffer.toString("base64"),
+      contentType: "pdf",
+      sourceType: this.detectSourceType(url),
+      metadata: {
+        institution: this.detectInstitution(url),
+        crops: [],
+        topics: [],
+        region: this.detectRegion(url),
+      },
+    };
+  }
+
+  /**
+   * Process a buffer identified as HTML (even if URL suggested PDF)
+   */
+  private processHTMLBuffer(buffer: Buffer, url: string): ScrapedDocument {
+    const html = buffer.toString("utf8");
+    const titleMatch = html.match(/<title[^>]*>([^<]+)</i);
+    let title = titleMatch ? titleMatch[1].trim() : "Untitled";
+
+    // Detect if this is a "hidden" 404 page
+    if (
+      title.toLowerCase().includes("not found") ||
+      title.toLowerCase().includes("404")
+    ) {
+      console.warn(`   ⚠️  Detected 404/Error Page for: ${url}`);
+    }
+
+    return {
+      url,
+      title,
+      content: html,
+      contentType: "html",
+      sourceType: this.detectSourceType(url),
+      metadata: {
+        institution: this.detectInstitution(url),
+        crops: [],
+        topics: [],
+        region: this.detectRegion(url),
+      },
+    };
   }
 
   /**

@@ -1,0 +1,3275 @@
+{
+  "phase": 1,
+  "description": "Core Corn Belt row crops foundation",
+  "totalUrls": 187,
+  "estimatedChunks": 4500,
+  "sources": {
+    "iowa_state": {
+      "institution": "Iowa State University Extension",
+      "baseUrl": "https://crops.extension.iastate.edu/",
+      "priority": "critical",
+      "urlCount": 45,
+      "urls": [
+        {
+          "url": "https://crops.extension.iastate.edu/cropnews/2017/05/new-late-spring-soil-nitrate-test-publication-now-available",
+          "title": "New Late-Spring Soil Nitrate Test Publication (CROP 3140)",
+          "publicationId": "CROP 3140",
+          "crops": [
+            "corn"
+          ],
+          "topics": [
+            "nutrients",
+            "nitrogen"
+          ],
+          "type": "html",
+          "publishYear": "2017",
+          "estimatedChunks": 7,
+          "priority": "critical",
+          "notes": "CROP 3140 replacement for PM 1714."
+        },
+        {
+          "url": "https://shop.iastate.edu/extension/farm-environment/crops-and-soils/soil-fertility-and-management/pm2015.html",
+          "title": "Concepts and Rationale for Regional Nitrogen Rate Guidelines for Corn",
+          "publicationId": "PM 2015",
+          "crops": [
+            "corn"
+          ],
+          "topics": [
+            "nutrients",
+            "nitrogen"
+          ],
+          "type": "pdf",
+          "publishYear": "2006/updated",
+          "estimatedChunks": 35,
+          "priority": "critical",
+          "notes": "Regional nitrogen rate guidelines."
+        },
+        {
+          "url": "https://www.agronext.iastate.edu/soilfertility/info/NitrogenManagementCornProduction2020b.pdf",
+          "title": "Nitrogen Management for Corn Production",
+          "publicationId": "N/A",
+          "crops": [
+            "corn"
+          ],
+          "topics": [
+            "nutrients",
+            "nitrogen"
+          ],
+          "type": "pdf",
+          "publishYear": "2020",
+          "estimatedChunks": 45,
+          "priority": "high",
+          "notes": "Comprehensive nitrogen management guide."
+        },
+        {
+          "url": "https://crops.extension.iastate.edu/encyclopedia/post-plant-nitrogen-applications-corn",
+          "title": "Post-plant Nitrogen Applications on Corn",
+          "publicationId": "N/A",
+          "crops": [
+            "corn"
+          ],
+          "topics": [
+            "nutrients",
+            "nitrogen"
+          ],
+          "type": "html",
+          "publishYear": "2001/updated",
+          "estimatedChunks": 9,
+          "priority": "high",
+          "notes": "Post-plant nitrogen application guidance."
+        },
+        {
+          "url": "https://store.extension.iastate.edu/Product/2418.pdf",
+          "title": "Nutrient Deficiencies and Application Injuries in Field Crops",
+          "publicationId": "IPM",
+          "crops": [
+            "corn",
+            "soybeans",
+            "wheat"
+          ],
+          "topics": [
+            "nutrients",
+            "deficiency"
+          ],
+          "type": "pdf",
+          "publishYear": "Current",
+          "estimatedChunks": 25,
+          "priority": "critical",
+          "notes": "Photo guide for nutrient deficiencies and injuries."
+        },
+        {
+          "url": "https://crops.extension.iastate.edu/cropnews/2021/06/what-causes-striped-corn-leaves",
+          "title": "What Causes Striped Corn Leaves?",
+          "publicationId": "N/A",
+          "crops": [
+            "corn"
+          ],
+          "topics": [
+            "nutrients",
+            "Zn",
+            "S",
+            "Mg",
+            "Mn"
+          ],
+          "type": "html",
+          "publishYear": "2021",
+          "estimatedChunks": 11,
+          "priority": "high",
+          "notes": "Micronutrient deficiency diagnosis."
+        },
+        {
+          "url": "https://crops.extension.iastate.edu/files/article/nutrientdeficiency.pdf",
+          "title": "Nutrient Deficiencies and Application Injuries in Corn",
+          "publicationId": "N/A",
+          "crops": [
+            "corn"
+          ],
+          "topics": [
+            "nutrients",
+            "micronutrients"
+          ],
+          "type": "pdf",
+          "publishYear": "Current",
+          "estimatedChunks": 18,
+          "priority": "high",
+          "notes": "Corn-specific nutrient deficiency guide."
+        },
+        {
+          "url": "https://crops.extension.iastate.edu/cropnews/2023/02/newly-updated-phosphorus-and-potassium-guidelines",
+          "title": "Newly Updated Phosphorus and Potassium Guidelines",
+          "publicationId": "PM 1688 ref",
+          "crops": [
+            "corn",
+            "soybeans"
+          ],
+          "topics": [
+            "nutrients",
+            "P",
+            "K"
+          ],
+          "type": "html",
+          "publishYear": "2023",
+          "estimatedChunks": 11,
+          "priority": "high",
+          "notes": "Updates to P and K recommendations."
+        },
+        {
+          "url": "https://crops.extension.iastate.edu/encyclopedia/phosphorus-basics",
+          "title": "Phosphorus Basics",
+          "publicationId": "N/A",
+          "crops": [
+            "corn",
+            "soybeans"
+          ],
+          "topics": [
+            "nutrients",
+            "phosphorus"
+          ],
+          "type": "html",
+          "publishYear": "Current",
+          "estimatedChunks": 13,
+          "priority": "medium",
+          "notes": "Fundamentals of phosphorus management."
+        },
+        {
+          "url": "https://store.extension.iastate.edu/product/Corn-Diseases",
+          "title": "Corn Diseases",
+          "publicationId": "IPM 0005",
+          "crops": [
+            "corn"
+          ],
+          "topics": [
+            "disease",
+            "identification"
+          ],
+          "type": "pdf/print",
+          "publishYear": "2017",
+          "estimatedChunks": 90,
+          "priority": "critical",
+          "notes": "Comprehensive corn disease guide with photos."
+        },
+        {
+          "url": "https://crops.extension.iastate.edu/corn-diseases-symptoms-scouting-and-management",
+          "title": "Corn Diseases: Symptoms, Scouting, and Management",
+          "publicationId": "N/A",
+          "crops": [
+            "corn"
+          ],
+          "topics": [
+            "disease",
+            "management"
+          ],
+          "type": "html",
+          "publishYear": "Current",
+          "estimatedChunks": 7,
+          "priority": "high",
+          "notes": "Corn disease symptom overview and management."
+        },
+        {
+          "url": "https://store.extension.iastate.edu/product/Tar-Spot-Corn-Disease-Management",
+          "title": "Tar Spot -- Corn Disease Management",
+          "publicationId": "CPN",
+          "crops": [
+            "corn"
+          ],
+          "topics": [
+            "disease",
+            "tar spot"
+          ],
+          "type": "pdf",
+          "publishYear": "Current",
+          "estimatedChunks": 9,
+          "priority": "critical",
+          "notes": "Tar spot management guide."
+        },
+        {
+          "url": "https://crops.extension.iastate.edu/blog/alison-robertson/how-far-has-tar-spot-spread-iowa-2019",
+          "title": "How Far Has Tar Spot Spread in Iowa in 2019?",
+          "publicationId": "N/A",
+          "crops": [
+            "corn"
+          ],
+          "topics": [
+            "disease",
+            "tar spot"
+          ],
+          "type": "html",
+          "publishYear": "2019",
+          "estimatedChunks": 9,
+          "priority": "high",
+          "notes": "Tar spot spread update."
+        },
+        {
+          "url": "https://crops.extension.iastate.edu/cropnews/2010/08/common-weird-and-unusual-spots-showing-corn",
+          "title": "Common, Weird and Unusual Spots Showing up on Corn",
+          "publicationId": "N/A",
+          "crops": [
+            "corn"
+          ],
+          "topics": [
+            "disease",
+            "GLS",
+            "NCLB"
+          ],
+          "type": "html",
+          "publishYear": "2010",
+          "estimatedChunks": 9,
+          "priority": "high",
+          "notes": "Field scouting for unusual leaf spots."
+        },
+        {
+          "url": "https://crops.extension.iastate.edu/cropnews/2018/07/identifying-scouting-and-management-bacterial-leaf-streak",
+          "title": "Identifying, Scouting and Management of Bacterial Leaf Streak",
+          "publicationId": "N/A",
+          "crops": [
+            "corn"
+          ],
+          "topics": [
+            "disease",
+            "bacterial",
+            "Goss's wilt"
+          ],
+          "type": "html",
+          "publishYear": "2018",
+          "estimatedChunks": 11,
+          "priority": "high",
+          "notes": "Bacterial leaf streak identification and management."
+        },
+        {
+          "url": "https://crops.extension.iastate.edu/encyclopedia/potential-disease-problems-corn-following-corn",
+          "title": "Potential Disease Problems in Corn Following Corn",
+          "publicationId": "N/A",
+          "crops": [
+            "corn"
+          ],
+          "topics": [
+            "disease",
+            "stalk rot",
+            "ear rot"
+          ],
+          "type": "html",
+          "publishYear": "2007",
+          "estimatedChunks": 14,
+          "priority": "high",
+          "notes": "Rotation-related disease risks."
+        },
+        {
+          "url": "https://store.extension.iastate.edu/product/Southern-Rust-Corn-Disease-Management",
+          "title": "Southern Rust -- Corn Disease Management",
+          "publicationId": "CPN",
+          "crops": [
+            "corn"
+          ],
+          "topics": [
+            "disease",
+            "southern rust"
+          ],
+          "type": "pdf",
+          "publishYear": "Current",
+          "estimatedChunks": 9,
+          "priority": "high",
+          "notes": "Southern rust management."
+        },
+        {
+          "url": "https://crops.extension.iastate.edu/post/southern-rust-continues-develop-across-iowa",
+          "title": "Southern Rust Continues to Develop Across Iowa",
+          "publicationId": "N/A",
+          "crops": [
+            "corn"
+          ],
+          "topics": [
+            "disease",
+            "southern rust"
+          ],
+          "type": "html",
+          "publishYear": "2024",
+          "estimatedChunks": 9,
+          "priority": "high",
+          "notes": "Update on southern rust spread."
+        },
+        {
+          "url": "https://cornrootworm.extension.iastate.edu/basics/identification",
+          "title": "Corn Rootworm Identification",
+          "publicationId": "N/A",
+          "crops": [
+            "corn"
+          ],
+          "topics": [
+            "pest",
+            "corn rootworm"
+          ],
+          "type": "html",
+          "publishYear": "Current",
+          "estimatedChunks": 13,
+          "priority": "critical",
+          "notes": "Corn rootworm identification basics."
+        },
+        {
+          "url": "https://cornrootworm.extension.iastate.edu/biological-cultural-control",
+          "title": "Biological & Cultural Control of Corn Rootworm",
+          "publicationId": "N/A",
+          "crops": [
+            "corn"
+          ],
+          "topics": [
+            "pest",
+            "corn rootworm"
+          ],
+          "type": "html",
+          "publishYear": "Current",
+          "estimatedChunks": 11,
+          "priority": "high",
+          "notes": "Non-chemical control options."
+        },
+        {
+          "url": "https://cornrootworm.extension.iastate.edu/control-chemicals-traits",
+          "title": "Control with Chemicals & Traits - Corn Rootworm",
+          "publicationId": "N/A",
+          "crops": [
+            "corn"
+          ],
+          "topics": [
+            "pest",
+            "Bt traits",
+            "insecticides"
+          ],
+          "type": "html",
+          "publishYear": "Current",
+          "estimatedChunks": 17,
+          "priority": "high",
+          "notes": "Chemical and trait-based control."
+        },
+        {
+          "url": "https://crops.extension.iastate.edu/post/assess-roots-now-evaluate-corn-rootworm-management-strategies",
+          "title": "Assess Roots Now to Evaluate Corn Rootworm Management Strategies",
+          "publicationId": "N/A",
+          "crops": [
+            "corn"
+          ],
+          "topics": [
+            "pest",
+            "corn rootworm",
+            "scouting"
+          ],
+          "type": "html",
+          "publishYear": "2022",
+          "estimatedChunks": 9,
+          "priority": "high",
+          "notes": "Root rating and scouting guidance."
+        },
+        {
+          "url": "https://crops.extension.iastate.edu/encyclopedia/corn-growth-stages",
+          "title": "Corn Growth Stages",
+          "publicationId": "N/A",
+          "crops": [
+            "corn"
+          ],
+          "topics": [
+            "growth-stages"
+          ],
+          "type": "html",
+          "publishYear": "Current",
+          "estimatedChunks": 11,
+          "priority": "critical",
+          "notes": "Corn growth stage reference."
+        },
+        {
+          "url": "https://store.extension.iastate.edu/product/Corn-Growth-and-Development-Key-Growth-Stages",
+          "title": "Corn Growth and Development - Key Growth Stages",
+          "publicationId": "N/A",
+          "crops": [
+            "corn"
+          ],
+          "topics": [
+            "growth-stages"
+          ],
+          "type": "pdf",
+          "publishYear": "Current",
+          "estimatedChunks": 9,
+          "priority": "high",
+          "notes": "Growth stages quick guide."
+        },
+        {
+          "url": "https://store.extension.iastate.edu/product/Corn-vegetative-and-reproductive-development-stages-table",
+          "title": "Corn Vegetative and Reproductive Development Stages",
+          "publicationId": "N/A",
+          "crops": [
+            "corn"
+          ],
+          "topics": [
+            "growth-stages"
+          ],
+          "type": "pdf",
+          "publishYear": "Current",
+          "estimatedChunks": 4,
+          "priority": "medium",
+          "notes": "Growth stages table."
+        },
+        {
+          "url": "https://store.extension.iastate.edu/product/Soybean-Cyst-Nematode-Field-Guide",
+          "title": "Soybean Cyst Nematode Field Guide",
+          "publicationId": "N/A",
+          "crops": [
+            "soybeans"
+          ],
+          "topics": [
+            "pest",
+            "SCN"
+          ],
+          "type": "pdf/print",
+          "publishYear": "Current",
+          "estimatedChunks": 110,
+          "priority": "critical",
+          "notes": "Comprehensive SCN field guide."
+        },
+        {
+          "url": "https://crops.extension.iastate.edu/encyclopedia/soybean-cyst-nematode",
+          "title": "Soybean Cyst Nematode (SCN)",
+          "publicationId": "N/A",
+          "crops": [
+            "soybeans"
+          ],
+          "topics": [
+            "pest",
+            "SCN"
+          ],
+          "type": "html",
+          "publishYear": "Current",
+          "estimatedChunks": 17,
+          "priority": "critical",
+          "notes": "SCN overview and management."
+        },
+        {
+          "url": "https://crops.extension.iastate.edu/files/icm/PM1649_0.pdf",
+          "title": "SCN-Resistant Soybean Varieties",
+          "publicationId": "PM 1649",
+          "crops": [
+            "soybeans"
+          ],
+          "topics": [
+            "variety-selection",
+            "SCN"
+          ],
+          "type": "pdf",
+          "publishYear": "2014",
+          "estimatedChunks": 23,
+          "priority": "high",
+          "notes": "Variety resistance guidance."
+        },
+        {
+          "url": "https://crops.extension.iastate.edu/files/inline-files/SCN_000.pdf",
+          "title": "Managing Soybean Cyst Nematode",
+          "publicationId": "N/A",
+          "crops": [
+            "soybeans"
+          ],
+          "topics": [
+            "pest",
+            "SCN"
+          ],
+          "type": "pdf",
+          "publishYear": "Current",
+          "estimatedChunks": 18,
+          "priority": "high",
+          "notes": "SCN management practices."
+        },
+        {
+          "url": "https://crops.extension.iastate.edu/sudden-death-syndrome-sds",
+          "title": "Sudden Death Syndrome (SDS)",
+          "publicationId": "CPN",
+          "crops": [
+            "soybeans"
+          ],
+          "topics": [
+            "disease",
+            "SDS"
+          ],
+          "type": "html",
+          "publishYear": "Current",
+          "estimatedChunks": 11,
+          "priority": "critical",
+          "notes": "SDS identification and management."
+        },
+        {
+          "url": "https://crops.extension.iastate.edu/cropnews/2011/07/begin-scouting-sudden-death-syndrome-soybean",
+          "title": "Begin Scouting for Sudden Death Syndrome in Soybean",
+          "publicationId": "N/A",
+          "crops": [
+            "soybeans"
+          ],
+          "topics": [
+            "disease",
+            "SDS"
+          ],
+          "type": "html",
+          "publishYear": "2011",
+          "estimatedChunks": 9,
+          "priority": "high",
+          "notes": "Scouting guidance for SDS."
+        },
+        {
+          "url": "https://crops.extension.iastate.edu/cropnews/2014/07/managing-white-mold-soybean",
+          "title": "Managing White Mold in Soybean",
+          "publicationId": "N/A",
+          "crops": [
+            "soybeans"
+          ],
+          "topics": [
+            "disease",
+            "white mold"
+          ],
+          "type": "html",
+          "publishYear": "2014",
+          "estimatedChunks": 11,
+          "priority": "critical",
+          "notes": "White mold management."
+        },
+        {
+          "url": "https://store.extension.iastate.edu/product/Pesticide-Impact-on-White-Mold-Sclerotinia-Stem-Rot-and-Soybean-Yield",
+          "title": "Pesticide Impact on White Mold and Soybean Yield",
+          "publicationId": "CPN",
+          "crops": [
+            "soybeans"
+          ],
+          "topics": [
+            "disease",
+            "white mold",
+            "fungicide"
+          ],
+          "type": "pdf",
+          "publishYear": "Current",
+          "estimatedChunks": 9,
+          "priority": "high",
+          "notes": "Fungicide impact on white mold."
+        },
+        {
+          "url": "https://crops.extension.iastate.edu/cropnews/2018/08/frogeye-leaf-spot-making-appearance-across-iowa-soybeans",
+          "title": "Frogeye Leaf Spot Making an Appearance Across Iowa Soybeans",
+          "publicationId": "N/A",
+          "crops": [
+            "soybeans"
+          ],
+          "topics": [
+            "disease",
+            "frogeye leaf spot"
+          ],
+          "type": "html",
+          "publishYear": "2018",
+          "estimatedChunks": 11,
+          "priority": "high",
+          "notes": "Frogeye leaf spot update."
+        },
+        {
+          "url": "https://crops.extension.iastate.edu/cropnews/2018/02/frogeye-leaf-spot-fungicide-resistance-confirmed-iowa-soybean",
+          "title": "Frogeye Leaf Spot Fungicide Resistance Confirmed in Iowa Soybean",
+          "publicationId": "N/A",
+          "crops": [
+            "soybeans"
+          ],
+          "topics": [
+            "disease",
+            "frogeye",
+            "resistance"
+          ],
+          "type": "html",
+          "publishYear": "2018",
+          "estimatedChunks": 7,
+          "priority": "high",
+          "notes": "Resistance confirmation and management."
+        },
+        {
+          "url": "https://store.extension.iastate.edu/product/Soybean-Brown-Stem-Rot",
+          "title": "Soybean Brown Stem Rot",
+          "publicationId": "N/A",
+          "crops": [
+            "soybeans"
+          ],
+          "topics": [
+            "disease",
+            "brown stem rot"
+          ],
+          "type": "pdf",
+          "publishYear": "Current",
+          "estimatedChunks": 11,
+          "priority": "high",
+          "notes": "Brown stem rot guide."
+        },
+        {
+          "url": "https://crops.extension.iastate.edu/cropnews/2014/08/be-lookout-brown-stem-rot-soybean",
+          "title": "Be on the Lookout for Brown Stem Rot in Soybean",
+          "publicationId": "N/A",
+          "crops": [
+            "soybeans"
+          ],
+          "topics": [
+            "disease",
+            "brown stem rot"
+          ],
+          "type": "html",
+          "publishYear": "2014",
+          "estimatedChunks": 9,
+          "priority": "high",
+          "notes": "Scouting guidance for brown stem rot."
+        },
+        {
+          "url": "https://store.extension.iastate.edu/product/Phytophthora-Root-and-Stem-Rot-of-Soybean",
+          "title": "Phytophthora Root and Stem Rot of Soybean",
+          "publicationId": "N/A",
+          "crops": [
+            "soybeans"
+          ],
+          "topics": [
+            "disease",
+            "Phytophthora"
+          ],
+          "type": "pdf",
+          "publishYear": "Current",
+          "estimatedChunks": 11,
+          "priority": "high",
+          "notes": "Phytophthora root and stem rot guide."
+        },
+        {
+          "url": "https://crops.extension.iastate.edu/phytophthora-root-and-stem-rot",
+          "title": "Phytophthora Root and Stem Rot - CPN",
+          "publicationId": "CPN",
+          "crops": [
+            "soybeans"
+          ],
+          "topics": [
+            "disease",
+            "Phytophthora"
+          ],
+          "type": "html",
+          "publishYear": "Current",
+          "estimatedChunks": 11,
+          "priority": "high",
+          "notes": "CPN overview for Phytophthora."
+        },
+        {
+          "url": "https://crops.extension.iastate.edu/soybean-diseases-symptoms-scouting-and-management",
+          "title": "Soybean Diseases: Symptoms, Scouting and Management",
+          "publicationId": "N/A",
+          "crops": [
+            "soybeans"
+          ],
+          "topics": [
+            "disease",
+            "management"
+          ],
+          "type": "html",
+          "publishYear": "Current",
+          "estimatedChunks": 7,
+          "priority": "critical",
+          "notes": "Soybean disease management overview."
+        },
+        {
+          "url": "https://crops.extension.iastate.edu/fusarium-wilt-and-root-rot",
+          "title": "Fusarium Wilt and Root Rot - CPN",
+          "publicationId": "CPN",
+          "crops": [
+            "soybeans"
+          ],
+          "topics": [
+            "disease",
+            "Fusarium"
+          ],
+          "type": "html",
+          "publishYear": "Current",
+          "estimatedChunks": 9,
+          "priority": "medium",
+          "notes": "Fusarium wilt and root rot overview."
+        },
+        {
+          "url": "https://crops.extension.iastate.edu/encyclopedia/soybean-aphid",
+          "title": "Soybean Aphid",
+          "publicationId": "N/A",
+          "crops": [
+            "soybeans"
+          ],
+          "topics": [
+            "pest",
+            "soybean aphid"
+          ],
+          "type": "html",
+          "publishYear": "Current",
+          "estimatedChunks": 17,
+          "priority": "critical",
+          "notes": "Aphid identification and thresholds."
+        },
+        {
+          "url": "https://crops.extension.iastate.edu/encyclopedia/nutrient-requirements-soybean",
+          "title": "Nutrient Requirements - Soybean",
+          "publicationId": "N/A",
+          "crops": [
+            "soybeans"
+          ],
+          "topics": [
+            "nutrients",
+            "N",
+            "P",
+            "K"
+          ],
+          "type": "html",
+          "publishYear": "Current",
+          "estimatedChunks": 14,
+          "priority": "high",
+          "notes": "Soybean nutrient requirements."
+        },
+        {
+          "url": "https://crops.extension.iastate.edu/blog/ethan-stoetzer/foliar-fungicide-decisions-late-planted-crops",
+          "title": "Foliar Fungicide Decisions for Late-Planted Crops",
+          "publicationId": "N/A",
+          "crops": [
+            "corn",
+            "soybeans"
+          ],
+          "topics": [
+            "disease",
+            "fungicide"
+          ],
+          "type": "html",
+          "publishYear": "2019",
+          "estimatedChunks": 14,
+          "priority": "high",
+          "notes": "Fungicide decision guidance."
+        },
+        {
+          "url": "https://crops.extension.iastate.edu/post/fungicide-efficacy-tables-corn-soybean-and-soybean-seedling-diseases",
+          "title": "Fungicide Efficacy Tables for Corn, Soybean",
+          "publicationId": "CPN refs",
+          "crops": [
+            "corn",
+            "soybeans"
+          ],
+          "topics": [
+            "disease",
+            "fungicide efficacy"
+          ],
+          "type": "html",
+          "publishYear": "2019",
+          "estimatedChunks": 7,
+          "priority": "high",
+          "notes": "Fungicide efficacy tables."
+        }
+      ]
+    },
+    "purdue": {
+      "institution": "Purdue Extension",
+      "baseUrl": "https://www.extension.purdue.edu/extmedia/",
+      "priority": "critical",
+      "urlCount": 46,
+      "urls": [
+        {
+          "url": "https://mdc.itap.purdue.edu/item.asp?Item_Number=ID-179",
+          "title": "2025 Corn & Soybean Field Guide",
+          "publicationId": "ID-179",
+          "crops": [
+            "corn",
+            "soybeans"
+          ],
+          "topics": [
+            "disease",
+            "pest",
+            "nutrients",
+            "growth-stages"
+          ],
+          "type": "print/app",
+          "publishYear": "2025",
+          "estimatedChunks": 120,
+          "priority": "critical",
+          "notes": "Field guide product page."
+        },
+        {
+          "url": "https://edustore.purdue.edu/id-179.html",
+          "title": "2025 Corn & Soybean Field Guide (Education Store)",
+          "publicationId": "ID-179",
+          "crops": [
+            "corn",
+            "soybeans"
+          ],
+          "topics": [
+            "disease",
+            "pest",
+            "nutrients",
+            "growth-stages"
+          ],
+          "type": "html",
+          "publishYear": "2025",
+          "estimatedChunks": 120,
+          "priority": "critical",
+          "notes": "Education store listing."
+        },
+        {
+          "url": "https://www.extension.purdue.edu/extmedia/bp/bp-160-w.pdf",
+          "title": "Fungicide Efficacy for Control of Corn Diseases",
+          "publicationId": "BP-160-W",
+          "crops": [
+            "corn"
+          ],
+          "topics": [
+            "disease",
+            "fungicide"
+          ],
+          "type": "pdf",
+          "publishYear": "2021",
+          "estimatedChunks": 10,
+          "priority": "critical",
+          "notes": "Corn fungicide efficacy guide."
+        },
+        {
+          "url": "https://www.extension.purdue.edu/extmedia/BP/BP-90-W.pdf",
+          "title": "Tar Spot of Corn",
+          "publicationId": "BP-90-W",
+          "crops": [
+            "corn"
+          ],
+          "topics": [
+            "disease",
+            "tar spot"
+          ],
+          "type": "pdf",
+          "publishYear": "2019+",
+          "estimatedChunks": 8,
+          "priority": "critical",
+          "notes": "Tar spot identification and management."
+        },
+        {
+          "url": "https://www.extension.purdue.edu/extmedia/bp/bp-56-w.pdf",
+          "title": "Gray Leaf Spot of Corn",
+          "publicationId": "BP-56-W",
+          "crops": [
+            "corn"
+          ],
+          "topics": [
+            "disease",
+            "GLS"
+          ],
+          "type": "pdf",
+          "publishYear": "2015+",
+          "estimatedChunks": 7,
+          "priority": "high",
+          "notes": "Gray leaf spot guide."
+        },
+        {
+          "url": "https://www.extension.purdue.edu/extmedia/bp/bp-84-w.pdf",
+          "title": "Northern Corn Leaf Blight",
+          "publicationId": "BP-84-W",
+          "crops": [
+            "corn"
+          ],
+          "topics": [
+            "disease",
+            "NCLB"
+          ],
+          "type": "pdf",
+          "publishYear": "2015+",
+          "estimatedChunks": 7,
+          "priority": "high",
+          "notes": "Northern corn leaf blight guide."
+        },
+        {
+          "url": "https://www.extension.purdue.edu/extmedia/BP/BP-81-W.pdf",
+          "title": "Goss's Bacterial Wilt and Leaf Blight",
+          "publicationId": "BP-81-W",
+          "crops": [
+            "corn"
+          ],
+          "topics": [
+            "disease",
+            "Goss's wilt"
+          ],
+          "type": "pdf",
+          "publishYear": "2010+",
+          "estimatedChunks": 7,
+          "priority": "high",
+          "notes": "Goss's wilt identification and management."
+        },
+        {
+          "url": "https://www.extension.purdue.edu/extmedia/BP/BP-82-W.pdf",
+          "title": "Common and Southern Rusts - Distinguishing Between Rust Diseases",
+          "publicationId": "BP-82-W",
+          "crops": [
+            "corn"
+          ],
+          "topics": [
+            "disease",
+            "rust"
+          ],
+          "type": "pdf",
+          "publishYear": "2015+",
+          "estimatedChunks": 7,
+          "priority": "high",
+          "notes": "Rust disease comparison."
+        },
+        {
+          "url": "https://extension.purdue.edu/fieldcroppathology/corn.html",
+          "title": "Corn Diseases - Field Crop Pathology Hub",
+          "publicationId": "N/A",
+          "crops": [
+            "corn"
+          ],
+          "topics": [
+            "disease"
+          ],
+          "type": "html",
+          "publishYear": "2024",
+          "estimatedChunks": 25,
+          "priority": "high",
+          "notes": "Corn pathology hub."
+        },
+        {
+          "url": "https://extension.purdue.edu/news/fieldcroppathology/2022/01/management-considerations-for-tar-spot-in-indiana.html",
+          "title": "Management Considerations for Tar Spot in Indiana",
+          "publicationId": "N/A",
+          "crops": [
+            "corn"
+          ],
+          "topics": [
+            "disease",
+            "tar spot"
+          ],
+          "type": "html",
+          "publishYear": "2022",
+          "estimatedChunks": 11,
+          "priority": "high",
+          "notes": "Tar spot management considerations."
+        },
+        {
+          "url": "https://extension.purdue.edu/news/fieldcroppathology/2022/07/time_to_scout_for_diseases_in_field_crops.html",
+          "title": "Time to Scout for Diseases in Field Crops: What to Look for in Corn",
+          "publicationId": "N/A",
+          "crops": [
+            "corn"
+          ],
+          "topics": [
+            "disease",
+            "scouting"
+          ],
+          "type": "html",
+          "publishYear": "2022",
+          "estimatedChunks": 13,
+          "priority": "high",
+          "notes": "Corn disease scouting guidance."
+        },
+        {
+          "url": "https://www.extension.purdue.edu/extmedia/AY/AY-364-W.pdf",
+          "title": "The Effects of Late-season Nitrogen Applications in Corn",
+          "publicationId": "AY-364-W",
+          "crops": [
+            "corn"
+          ],
+          "topics": [
+            "nutrients",
+            "nitrogen"
+          ],
+          "type": "pdf",
+          "publishYear": "2017",
+          "estimatedChunks": 10,
+          "priority": "high",
+          "notes": "Late-season N application effects."
+        },
+        {
+          "url": "https://www.extension.purdue.edu/extmedia/ay/ay-9-32.pdf",
+          "title": "Tri-State Fertilizer Recommendations for Corn, Soybeans, Wheat & Alfalfa",
+          "publicationId": "AY-9-32",
+          "crops": [
+            "corn",
+            "soybeans",
+            "wheat"
+          ],
+          "topics": [
+            "nutrients",
+            "N",
+            "P",
+            "K"
+          ],
+          "type": "pdf",
+          "publishYear": "2020",
+          "estimatedChunks": 65,
+          "priority": "critical",
+          "notes": "Tri-state fertilizer recommendations."
+        },
+        {
+          "url": "https://www.extension.purdue.edu/extmedia/AY/AY-239.html",
+          "title": "Micronutrient Needs of Indiana Crops",
+          "publicationId": "AY-239",
+          "crops": [
+            "corn",
+            "soybeans",
+            "wheat"
+          ],
+          "topics": [
+            "nutrients",
+            "micronutrients"
+          ],
+          "type": "html",
+          "publishYear": "2015+",
+          "estimatedChunks": 18,
+          "priority": "high",
+          "notes": "Micronutrient guidance."
+        },
+        {
+          "url": "https://www.extension.purdue.edu/extmedia/AY/AY-379-W.pdf",
+          "title": "Sulfur Deficiency in Corn, Soybeans, and Wheat",
+          "publicationId": "AY-379-W",
+          "crops": [
+            "corn",
+            "soybeans",
+            "wheat"
+          ],
+          "topics": [
+            "nutrients",
+            "sulfur"
+          ],
+          "type": "pdf",
+          "publishYear": "2022",
+          "estimatedChunks": 13,
+          "priority": "high",
+          "notes": "Sulfur deficiency diagnostic guide."
+        },
+        {
+          "url": "https://www.extension.purdue.edu/extmedia/AY/AY-204.html",
+          "title": "Types and Uses of Nitrogen Fertilizers for Crop Production",
+          "publicationId": "AY-204",
+          "crops": [
+            "corn",
+            "soybeans",
+            "wheat"
+          ],
+          "topics": [
+            "nutrients",
+            "nitrogen"
+          ],
+          "type": "html",
+          "publishYear": "2015+",
+          "estimatedChunks": 13,
+          "priority": "medium",
+          "notes": "Nitrogen fertilizer types and use."
+        },
+        {
+          "url": "https://www.extension.purdue.edu/extmedia/nch/nch-40.html",
+          "title": "Corn Growth and Development (GDD System)",
+          "publicationId": "NCH-40",
+          "crops": [
+            "corn"
+          ],
+          "topics": [
+            "growth-stages"
+          ],
+          "type": "html",
+          "publishYear": "2015+",
+          "estimatedChunks": 23,
+          "priority": "high",
+          "notes": "Growing degree day system for growth stages."
+        },
+        {
+          "url": "https://www.extension.purdue.edu/extmedia/nch/nch-18.html",
+          "title": "Weather Stress in the Corn Crop",
+          "publicationId": "NCH-18",
+          "crops": [
+            "corn"
+          ],
+          "topics": [
+            "management"
+          ],
+          "type": "html",
+          "publishYear": "2015+",
+          "estimatedChunks": 18,
+          "priority": "medium",
+          "notes": "Weather stress impacts."
+        },
+        {
+          "url": "https://www.extension.purdue.edu/extmedia/nch/nch-58.html",
+          "title": "Drought Stress and Corn Production",
+          "publicationId": "NCH-58",
+          "crops": [
+            "corn"
+          ],
+          "topics": [
+            "management"
+          ],
+          "type": "html",
+          "publishYear": "2015+",
+          "estimatedChunks": 13,
+          "priority": "medium",
+          "notes": "Drought stress management."
+        },
+        {
+          "url": "https://www.extension.purdue.edu/extmedia/nch/nch-36.html",
+          "title": "Effects of Uneven Seedling Emergence in Corn",
+          "publicationId": "NCH-36",
+          "crops": [
+            "corn"
+          ],
+          "topics": [
+            "management",
+            "growth-stages"
+          ],
+          "type": "html",
+          "publishYear": "2015+",
+          "estimatedChunks": 11,
+          "priority": "medium",
+          "notes": "Uneven emergence impacts."
+        },
+        {
+          "url": "https://www.extension.purdue.edu/extmedia/ay/ay-262.html",
+          "title": "Stalk Lodging in Corn: Guidelines for Preventive Management",
+          "publicationId": "AY-262",
+          "crops": [
+            "corn"
+          ],
+          "topics": [
+            "pest",
+            "disease",
+            "management"
+          ],
+          "type": "html",
+          "publishYear": "2015+",
+          "estimatedChunks": 18,
+          "priority": "high",
+          "notes": "Preventive management for stalk lodging."
+        },
+        {
+          "url": "https://extension.purdue.edu/article/5212",
+          "title": "Armyworm Showing Up in Specific, At-Risk Cornfields",
+          "publicationId": "N/A",
+          "crops": [
+            "corn"
+          ],
+          "topics": [
+            "pest",
+            "armyworm"
+          ],
+          "type": "html",
+          "publishYear": "2015+",
+          "estimatedChunks": 7,
+          "priority": "medium",
+          "notes": "Armyworm scouting alert."
+        },
+        {
+          "url": "https://www.extension.purdue.edu/extmedia/BP/BP-41-W.pdf",
+          "title": "Diseases of Soybean: Brown Stem Rot",
+          "publicationId": "BP-41-W",
+          "crops": [
+            "soybeans"
+          ],
+          "topics": [
+            "disease",
+            "brown stem rot"
+          ],
+          "type": "pdf",
+          "publishYear": "2015+",
+          "estimatedChunks": 7,
+          "priority": "high",
+          "notes": "Brown stem rot disease guide."
+        },
+        {
+          "url": "https://www.extension.purdue.edu/extmedia/BP/BP-43-W.pdf",
+          "title": "Diseases of Soybean: White Mold (Sclerotinia Stem Rot)",
+          "publicationId": "BP-43-W",
+          "crops": [
+            "soybeans"
+          ],
+          "topics": [
+            "disease",
+            "white mold"
+          ],
+          "type": "pdf",
+          "publishYear": "2015+",
+          "estimatedChunks": 8,
+          "priority": "high",
+          "notes": "White mold disease guide."
+        },
+        {
+          "url": "https://www.extension.purdue.edu/extmedia/bp/bp-131-w.pdf",
+          "title": "Diseases of Soybean: Frogeye Leaf Spot",
+          "publicationId": "BP-131-W",
+          "crops": [
+            "soybeans"
+          ],
+          "topics": [
+            "disease",
+            "frogeye"
+          ],
+          "type": "pdf",
+          "publishYear": "2015+",
+          "estimatedChunks": 7,
+          "priority": "high",
+          "notes": "Frogeye leaf spot disease guide."
+        },
+        {
+          "url": "https://extension.purdue.edu/news/fieldcroppathology/2019/01/fungal-diseases-that-can-impact-soybean-pod-and-seed-quality.html",
+          "title": "Fungal Diseases that Can Impact Soybean Pod and Seed Quality",
+          "publicationId": "N/A",
+          "crops": [
+            "soybeans"
+          ],
+          "topics": [
+            "disease"
+          ],
+          "type": "html",
+          "publishYear": "2019",
+          "estimatedChunks": 11,
+          "priority": "high",
+          "notes": "Soybean pod and seed quality diseases."
+        },
+        {
+          "url": "https://extension.purdue.edu/news/2024/09/new-to-indiana-soybean-disease-may-plague-hoosier-farmers.html",
+          "title": "Red Crown Rot - New Disease in Indiana Soybeans",
+          "publicationId": "N/A",
+          "crops": [
+            "soybeans"
+          ],
+          "topics": [
+            "disease"
+          ],
+          "type": "html",
+          "publishYear": "2024",
+          "estimatedChunks": 7,
+          "priority": "high",
+          "notes": "Red crown rot update."
+        },
+        {
+          "url": "https://extension.purdue.edu/fieldcroppathology/2020/08/13/field-crop-update-for-indiana-august-13-2020/",
+          "title": "Field Crop Disease Update - SDS and Brown Stem Rot Comparison",
+          "publicationId": "N/A",
+          "crops": [
+            "soybeans"
+          ],
+          "topics": [
+            "disease",
+            "SDS",
+            "BSR"
+          ],
+          "type": "html",
+          "publishYear": "2020",
+          "estimatedChunks": 13,
+          "priority": "high",
+          "notes": "SDS vs BSR comparison."
+        },
+        {
+          "url": "https://extension.purdue.edu/fieldcroppathology/category/soybean/",
+          "title": "Soybean Disease Hub - Field Crop Pathology",
+          "publicationId": "N/A",
+          "crops": [
+            "soybeans"
+          ],
+          "topics": [
+            "disease"
+          ],
+          "type": "html",
+          "publishYear": "2024",
+          "estimatedChunks": 30,
+          "priority": "high",
+          "notes": "Soybean disease hub."
+        },
+        {
+          "url": "https://www.extension.purdue.edu/extmedia/BP/BP-163-W.pdf",
+          "title": "Fungicide Efficacy for Control of Soybean Seedling Diseases",
+          "publicationId": "BP-163-W",
+          "crops": [
+            "soybeans"
+          ],
+          "topics": [
+            "disease",
+            "fungicide"
+          ],
+          "type": "pdf",
+          "publishYear": "2020+",
+          "estimatedChunks": 10,
+          "priority": "high",
+          "notes": "Fungicide efficacy for soybean seedlings."
+        },
+        {
+          "url": "https://www.extension.purdue.edu/extmedia/sps/sps-103-w.pdf",
+          "title": "Managing Fungicide Applications in Soybean",
+          "publicationId": "SPS-103-W",
+          "crops": [
+            "soybeans"
+          ],
+          "topics": [
+            "disease",
+            "fungicide"
+          ],
+          "type": "pdf",
+          "publishYear": "2018+",
+          "estimatedChunks": 10,
+          "priority": "high",
+          "notes": "Fungicide application management."
+        },
+        {
+          "url": "https://extension.purdue.edu/news/county/white/2020/07/Japanese-Beetle-Season-Beginning.html",
+          "title": "Japanese Beetle Season Beginning",
+          "publicationId": "N/A",
+          "crops": [
+            "soybeans"
+          ],
+          "topics": [
+            "pest",
+            "Japanese beetle"
+          ],
+          "type": "html",
+          "publishYear": "2020",
+          "estimatedChunks": 8,
+          "priority": "medium",
+          "notes": "Japanese beetle alert."
+        },
+        {
+          "url": "https://extension.purdue.edu/news/2019/08/Japanese-Beetlemania-Continues.html",
+          "title": "Japanese Beetlemania Continues",
+          "publicationId": "N/A",
+          "crops": [
+            "soybeans"
+          ],
+          "topics": [
+            "pest",
+            "Japanese beetle"
+          ],
+          "type": "html",
+          "publishYear": "2019",
+          "estimatedChunks": 9,
+          "priority": "medium",
+          "notes": "Japanese beetle update."
+        },
+        {
+          "url": "https://www.extension.purdue.edu/extmedia/nch/nch-46.html",
+          "title": "Plant Analysis as a Diagnostic Tool for Corn and Soybeans",
+          "publicationId": "NCH-46",
+          "crops": [
+            "corn",
+            "soybeans"
+          ],
+          "topics": [
+            "nutrients"
+          ],
+          "type": "html",
+          "publishYear": "2015+",
+          "estimatedChunks": 23,
+          "priority": "high",
+          "notes": "Plant analysis diagnostic tool."
+        },
+        {
+          "url": "https://www.extension.purdue.edu/extmedia/AY/AY-277-W.html",
+          "title": "Manure as a Nutrient Resource for Crop Production",
+          "publicationId": "AY-277-W",
+          "crops": [
+            "corn",
+            "soybeans",
+            "wheat"
+          ],
+          "topics": [
+            "nutrients"
+          ],
+          "type": "html",
+          "publishYear": "2015+",
+          "estimatedChunks": 13,
+          "priority": "medium",
+          "notes": "Manure nutrient management."
+        },
+        {
+          "url": "https://www.extension.purdue.edu/extmedia/ws/ws-36.pdf",
+          "title": "Winter Annual Weeds and Soybean Cyst Nematode",
+          "publicationId": "WS-36",
+          "crops": [
+            "soybeans"
+          ],
+          "topics": [
+            "pest",
+            "SCN"
+          ],
+          "type": "pdf",
+          "publishYear": "2015+",
+          "estimatedChunks": 7,
+          "priority": "medium",
+          "notes": "Weed-SCN interactions."
+        },
+        {
+          "url": "https://www.extension.purdue.edu/extmedia/BP/BP-33-W.pdf",
+          "title": "Diseases of Wheat: Fusarium Head Blight (Head Scab)",
+          "publicationId": "BP-33-W",
+          "crops": [
+            "wheat"
+          ],
+          "topics": [
+            "disease",
+            "FHB"
+          ],
+          "type": "pdf",
+          "publishYear": "2015+",
+          "estimatedChunks": 10,
+          "priority": "critical",
+          "notes": "FHB guide."
+        },
+        {
+          "url": "https://extension.purdue.edu/extmedia/BP/BP-145-W.pdf",
+          "title": "Revised Fungicide Spray Recommendations for Fusarium Head Blight",
+          "publicationId": "BP-145-W",
+          "crops": [
+            "wheat"
+          ],
+          "topics": [
+            "disease",
+            "FHB",
+            "fungicide"
+          ],
+          "type": "pdf",
+          "publishYear": "2015+",
+          "estimatedChunks": 8,
+          "priority": "high",
+          "notes": "FHB fungicide recommendations."
+        },
+        {
+          "url": "https://extension.purdue.edu/news/fieldcroppathology/2020/05/foliar-diseases-of-wheat-and-fusarium-head-blight-scab-management.html",
+          "title": "Foliar Diseases of Wheat and Fusarium Head Blight (Scab) Management",
+          "publicationId": "N/A",
+          "crops": [
+            "wheat"
+          ],
+          "topics": [
+            "disease",
+            "FHB"
+          ],
+          "type": "html",
+          "publishYear": "2020",
+          "estimatedChunks": 13,
+          "priority": "high",
+          "notes": "Wheat foliar disease update."
+        },
+        {
+          "url": "https://extension.purdue.edu/news/fieldcroppathology/2019/07/fusarium-head-blight-scab-of-wheat-things-to-consider-when-harvesting.html",
+          "title": "Fusarium Head Blight (Scab) of Wheat: Harvest Considerations",
+          "publicationId": "N/A",
+          "crops": [
+            "wheat"
+          ],
+          "topics": [
+            "disease",
+            "FHB",
+            "DON"
+          ],
+          "type": "html",
+          "publishYear": "2019",
+          "estimatedChunks": 10,
+          "priority": "high",
+          "notes": "Harvest considerations for FHB."
+        },
+        {
+          "url": "https://extension.purdue.edu/news/fieldcroppathology/2019/05/fusarium-head-blight-update-in-wheat.html",
+          "title": "Fusarium Head Blight Update in Wheat",
+          "publicationId": "N/A",
+          "crops": [
+            "wheat"
+          ],
+          "topics": [
+            "disease",
+            "FHB"
+          ],
+          "type": "html",
+          "publishYear": "2019",
+          "estimatedChunks": 7,
+          "priority": "medium",
+          "notes": "FHB update."
+        },
+        {
+          "url": "https://extension.purdue.edu/news/fieldcroppathology/2020/05/field-crop-disease-update-2020-wheat-accurate-diagnosis-of-potential-injury-viruses-or-other-issues-in-wheat.html",
+          "title": "Wheat Virus Diagnosis - WSMV and BYDV",
+          "publicationId": "N/A",
+          "crops": [
+            "wheat"
+          ],
+          "topics": [
+            "disease",
+            "virus"
+          ],
+          "type": "html",
+          "publishYear": "2020",
+          "estimatedChunks": 10,
+          "priority": "medium",
+          "notes": "Virus diagnosis for wheat."
+        },
+        {
+          "url": "https://www.extension.purdue.edu/extmedia/id/id-422.pdf",
+          "title": "Managing Wheat by Growth Stage",
+          "publicationId": "ID-422-W",
+          "crops": [
+            "wheat"
+          ],
+          "topics": [
+            "growth-stages",
+            "management"
+          ],
+          "type": "pdf",
+          "publishYear": "2015+",
+          "estimatedChunks": 18,
+          "priority": "critical",
+          "notes": "Wheat growth stage management."
+        },
+        {
+          "url": "https://www.extension.purdue.edu/extmedia/AY/AY-244-W.html",
+          "title": "Wheat Production and Fertilization in Indiana",
+          "publicationId": "AY-244-W",
+          "crops": [
+            "wheat"
+          ],
+          "topics": [
+            "nutrients",
+            "variety-selection"
+          ],
+          "type": "html",
+          "publishYear": "2015+",
+          "estimatedChunks": 23,
+          "priority": "high",
+          "notes": "Wheat production and fertilization guidance."
+        },
+        {
+          "url": "https://www.extension.purdue.edu/extmedia/AY/AY-244.html",
+          "title": "Wheat Production and Fertilization in Indiana (alternate)",
+          "publicationId": "AY-244",
+          "crops": [
+            "wheat"
+          ],
+          "topics": [
+            "nutrients",
+            "variety-selection"
+          ],
+          "type": "html",
+          "publishYear": "2015+",
+          "estimatedChunks": 23,
+          "priority": "high",
+          "notes": "Alternate HTML version."
+        },
+        {
+          "url": "https://extension.purdue.edu/fieldcroppathology/",
+          "title": "Purdue Field Crop Pathology Homepage",
+          "publicationId": "N/A",
+          "crops": [
+            "corn",
+            "soybeans",
+            "wheat"
+          ],
+          "topics": [
+            "disease"
+          ],
+          "type": "html",
+          "publishYear": "2024",
+          "estimatedChunks": 18,
+          "priority": "high",
+          "notes": "Pathology hub homepage."
+        }
+      ]
+    },
+    "illinois": {
+      "institution": "University of Illinois Extension",
+      "baseUrl": "https://extension.illinois.edu/",
+      "priority": "high",
+      "urlCount": 45,
+      "urls": [
+        {
+          "url": "https://ipm.illinois.edu/diseases/rpds/200.pdf",
+          "title": "Corn Stalk Rots",
+          "publicationId": "RPD-200",
+          "crops": [
+            "corn"
+          ],
+          "topics": [
+            "disease",
+            "stalk rot"
+          ],
+          "type": "pdf",
+          "publishYear": "~2000s",
+          "estimatedChunks": 18,
+          "priority": "critical",
+          "notes": "RPD corn stalk rots guide."
+        },
+        {
+          "url": "https://ipm.illinois.edu/diseases/rpds/202.pdf",
+          "title": "Common Leaf Blights and Spots of Corn",
+          "publicationId": "RPD-202",
+          "crops": [
+            "corn"
+          ],
+          "topics": [
+            "disease",
+            "GLS",
+            "NCLB"
+          ],
+          "type": "pdf",
+          "publishYear": "~2000s",
+          "estimatedChunks": 23,
+          "priority": "critical",
+          "notes": "Corn leaf blights and spots."
+        },
+        {
+          "url": "https://ipm.illinois.edu/diseases/rpds/205.pdf",
+          "title": "Corn Ear and Kernel Rots",
+          "publicationId": "RPD-205",
+          "crops": [
+            "corn"
+          ],
+          "topics": [
+            "disease",
+            "ear rot"
+          ],
+          "type": "pdf",
+          "publishYear": "~2000s",
+          "estimatedChunks": 18,
+          "priority": "critical",
+          "notes": "Ear and kernel rots."
+        },
+        {
+          "url": "https://ipm.illinois.edu/diseases/rpds/210.pdf",
+          "title": "Physoderma Brown Spot of Corn",
+          "publicationId": "RPD-210",
+          "crops": [
+            "corn"
+          ],
+          "topics": [
+            "disease"
+          ],
+          "type": "pdf",
+          "publishYear": "~2000s",
+          "estimatedChunks": 11,
+          "priority": "medium",
+          "notes": "Physoderma brown spot guide."
+        },
+        {
+          "url": "http://ipm.illinois.edu/diseases/series200/rpd212/",
+          "title": "Illinois Corn Disease Management Program",
+          "publicationId": "RPD-212",
+          "crops": [
+            "corn"
+          ],
+          "topics": [
+            "disease",
+            "management"
+          ],
+          "type": "html",
+          "publishYear": "~2000s",
+          "estimatedChunks": 23,
+          "priority": "critical",
+          "notes": "Corn disease management program."
+        },
+        {
+          "url": "http://extension.cropsciences.illinois.edu/handbook/pdfs/chapter02.pdf",
+          "title": "Illinois Agronomy Handbook - Corn Chapter",
+          "publicationId": "IAH-Ch2",
+          "crops": [
+            "corn"
+          ],
+          "topics": [
+            "management",
+            "growth-stages"
+          ],
+          "type": "pdf",
+          "publishYear": "2021",
+          "estimatedChunks": 55,
+          "priority": "critical",
+          "notes": "Corn chapter of Illinois Agronomy Handbook."
+        },
+        {
+          "url": "https://extension.illinois.edu/sites/default/files/iah_-_nitrogen_management_for_corn_v4.pdf",
+          "title": "Nitrogen Management for Corn",
+          "publicationId": "IAH-Ch9",
+          "crops": [
+            "corn"
+          ],
+          "topics": [
+            "nutrients",
+            "nitrogen"
+          ],
+          "type": "pdf",
+          "publishYear": "2021",
+          "estimatedChunks": 45,
+          "priority": "critical",
+          "notes": "Nitrogen management chapter."
+        },
+        {
+          "url": "http://extension.cropsciences.illinois.edu/handbook/pdfs/chapter08.pdf",
+          "title": "Managing Soil pH and Crop Nutrients",
+          "publicationId": "IAH-Ch8",
+          "crops": [
+            "corn",
+            "soybeans",
+            "wheat"
+          ],
+          "topics": [
+            "nutrients",
+            "P",
+            "K"
+          ],
+          "type": "pdf",
+          "publishYear": "~2015",
+          "estimatedChunks": 55,
+          "priority": "critical",
+          "notes": "Soil pH and nutrient management."
+        },
+        {
+          "url": "https://extension.illinois.edu/sites/default/files/managing_insect_pests_2022web.pdf",
+          "title": "Managing Insect Pests - Illinois Agronomy Handbook",
+          "publicationId": "IAH-Insects",
+          "crops": [
+            "corn",
+            "soybeans",
+            "wheat"
+          ],
+          "topics": [
+            "pest"
+          ],
+          "type": "pdf",
+          "publishYear": "2022",
+          "estimatedChunks": 45,
+          "priority": "critical",
+          "notes": "Insect pest management handbook."
+        },
+        {
+          "url": "http://extension.cropsciences.illinois.edu/fieldcrops/diseases/gray_leaf_spot/",
+          "title": "Gray Leaf Spot",
+          "publicationId": "N/A",
+          "crops": [
+            "corn"
+          ],
+          "topics": [
+            "disease"
+          ],
+          "type": "html",
+          "publishYear": "~2020",
+          "estimatedChunks": 9,
+          "priority": "high",
+          "notes": "Gray leaf spot overview."
+        },
+        {
+          "url": "https://farmdocdaily.illinois.edu/2025/07/tar-spot-on-the-move-tracking-and-managing-an-established-corn-threat-in-illinois.html",
+          "title": "Tar Spot on the Move: Tracking and Managing an Established Corn Threat",
+          "publicationId": "N/A",
+          "crops": [
+            "corn"
+          ],
+          "topics": [
+            "disease",
+            "tar spot"
+          ],
+          "type": "html",
+          "publishYear": "2025",
+          "estimatedChunks": 14,
+          "priority": "critical",
+          "notes": "Tar spot management in Illinois."
+        },
+        {
+          "url": "http://cropdisease.cropsciences.illinois.edu/?p=822",
+          "title": "Tar Spot on Corn: Setting the Record Straight",
+          "publicationId": "N/A",
+          "crops": [
+            "corn"
+          ],
+          "topics": [
+            "disease",
+            "tar spot"
+          ],
+          "type": "html",
+          "publishYear": "2018",
+          "estimatedChunks": 11,
+          "priority": "high",
+          "notes": "Tar spot clarifications."
+        },
+        {
+          "url": "https://extension.illinois.edu/blogs/farm-focus/2025-07-17-whats-lurking-leaves-july-corn-diseases-scout-illinois",
+          "title": "Corn Diseases to Scout for in Illinois",
+          "publicationId": "N/A",
+          "crops": [
+            "corn"
+          ],
+          "topics": [
+            "disease",
+            "scouting"
+          ],
+          "type": "html",
+          "publishYear": "2025",
+          "estimatedChunks": 14,
+          "priority": "high",
+          "notes": "Scouting focus for corn diseases."
+        },
+        {
+          "url": "http://extension.cropsciences.illinois.edu/fieldcrops/insects/corn_rootworm/",
+          "title": "Corn Rootworm Beetles",
+          "publicationId": "N/A",
+          "crops": [
+            "corn"
+          ],
+          "topics": [
+            "pest",
+            "corn rootworm"
+          ],
+          "type": "html",
+          "publishYear": "~2020",
+          "estimatedChunks": 17,
+          "priority": "critical",
+          "notes": "Corn rootworm beetles overview."
+        },
+        {
+          "url": "https://extension.illinois.edu/blogs/pesticide-news/2025-02-12-managing-western-corn-rootworm-while-maintaining-bt-efficacy",
+          "title": "Managing Western Corn Rootworm While Maintaining Bt Efficacy",
+          "publicationId": "N/A",
+          "crops": [
+            "corn"
+          ],
+          "topics": [
+            "pest",
+            "corn rootworm",
+            "Bt"
+          ],
+          "type": "html",
+          "publishYear": "2025",
+          "estimatedChunks": 14,
+          "priority": "high",
+          "notes": "Bt efficacy management for rootworm."
+        },
+        {
+          "url": "https://extension.illinois.edu/insects/corn-rootworm",
+          "title": "Corn Rootworm",
+          "publicationId": "N/A",
+          "crops": [
+            "corn"
+          ],
+          "topics": [
+            "pest"
+          ],
+          "type": "html",
+          "publishYear": "~2022",
+          "estimatedChunks": 9,
+          "priority": "high",
+          "notes": "Corn rootworm overview."
+        },
+        {
+          "url": "https://cropphysiology.cropsci.illinois.edu/nutrient-uptake-and-partitioning/",
+          "title": "Corn Nutrient Uptake and Partitioning",
+          "publicationId": "N/A",
+          "crops": [
+            "corn"
+          ],
+          "topics": [
+            "nutrients"
+          ],
+          "type": "html",
+          "publishYear": "~2020",
+          "estimatedChunks": 17,
+          "priority": "high",
+          "notes": "Nutrient uptake and partitioning."
+        },
+        {
+          "url": "https://ipm.illinois.edu/diseases/rpds/501.pdf",
+          "title": "The Soybean Cyst Nematode Problem",
+          "publicationId": "RPD-501",
+          "crops": [
+            "soybeans"
+          ],
+          "topics": [
+            "pest",
+            "SCN"
+          ],
+          "type": "pdf",
+          "publishYear": "~2000s",
+          "estimatedChunks": 23,
+          "priority": "critical",
+          "notes": "SCN problem overview."
+        },
+        {
+          "url": "https://ipm.illinois.edu/diseases/rpds/503.pdf",
+          "title": "Fungus Foliage Diseases of Soybeans",
+          "publicationId": "RPD-503",
+          "crops": [
+            "soybeans"
+          ],
+          "topics": [
+            "disease",
+            "frogeye",
+            "brown spot"
+          ],
+          "type": "pdf",
+          "publishYear": "~2000s",
+          "estimatedChunks": 23,
+          "priority": "critical",
+          "notes": "Soybean foliar diseases."
+        },
+        {
+          "url": "https://ipm.illinois.edu/diseases/rpds/504.pdf",
+          "title": "Root and Stem Diseases of Soybeans",
+          "publicationId": "RPD-504",
+          "crops": [
+            "soybeans"
+          ],
+          "topics": [
+            "disease",
+            "Phytophthora"
+          ],
+          "type": "pdf",
+          "publishYear": "~2000s",
+          "estimatedChunks": 23,
+          "priority": "critical",
+          "notes": "Root and stem diseases."
+        },
+        {
+          "url": "https://ipm.illinois.edu/diseases/rpds/510.pdf",
+          "title": "Management of Phytophthora Root and Stem Rot of Soybeans",
+          "publicationId": "RPD-510",
+          "crops": [
+            "soybeans"
+          ],
+          "topics": [
+            "disease",
+            "Phytophthora"
+          ],
+          "type": "pdf",
+          "publishYear": "~2000s",
+          "estimatedChunks": 17,
+          "priority": "high",
+          "notes": "Phytophthora management."
+        },
+        {
+          "url": "https://ipm.illinois.edu/diseases/rpds/512.pdf",
+          "title": "Sudden Death Syndrome of Soybeans",
+          "publicationId": "RPD-512",
+          "crops": [
+            "soybeans"
+          ],
+          "topics": [
+            "disease",
+            "SDS"
+          ],
+          "type": "pdf",
+          "publishYear": "~2000s",
+          "estimatedChunks": 17,
+          "priority": "critical",
+          "notes": "SDS management guide."
+        },
+        {
+          "url": "http://extension.cropsciences.illinois.edu/fieldcrops/diseases/frogeye_leaf_spot/",
+          "title": "Frogeye Leaf Spot",
+          "publicationId": "N/A",
+          "crops": [
+            "soybeans"
+          ],
+          "topics": [
+            "disease"
+          ],
+          "type": "html",
+          "publishYear": "~2020",
+          "estimatedChunks": 9,
+          "priority": "high",
+          "notes": "Frogeye leaf spot overview."
+        },
+        {
+          "url": "http://extension.cropsciences.illinois.edu/fieldcrops/soybeans/sclerotinia_stem_rot/",
+          "title": "Sclerotinia Stem Rot (White Mold)",
+          "publicationId": "N/A",
+          "crops": [
+            "soybeans"
+          ],
+          "topics": [
+            "disease",
+            "white mold"
+          ],
+          "type": "html",
+          "publishYear": "~2020",
+          "estimatedChunks": 11,
+          "priority": "high",
+          "notes": "White mold overview."
+        },
+        {
+          "url": "https://extension.illinois.edu/blogs/farm-focus/2025-07-18-whats-lurking-leaves-july-soybean-diseases-scout-illinois",
+          "title": "Soybean Diseases to Scout for in Illinois",
+          "publicationId": "N/A",
+          "crops": [
+            "soybeans"
+          ],
+          "topics": [
+            "disease",
+            "scouting"
+          ],
+          "type": "html",
+          "publishYear": "2025",
+          "estimatedChunks": 14,
+          "priority": "high",
+          "notes": "Soybean disease scouting."
+        },
+        {
+          "url": "https://extension.illinois.edu/blogs/hill-and-furrow/2022-05-24-soybean-disease-management-back-basics",
+          "title": "Soybean Disease Management: Back to Basics",
+          "publicationId": "N/A",
+          "crops": [
+            "soybeans"
+          ],
+          "topics": [
+            "disease",
+            "management"
+          ],
+          "type": "html",
+          "publishYear": "2022",
+          "estimatedChunks": 11,
+          "priority": "high",
+          "notes": "Soybean disease management basics."
+        },
+        {
+          "url": "http://cropdisease.cropsciences.illinois.edu/?p=1019",
+          "title": "Soybean Cyst Nematode HG Types in Illinois",
+          "publicationId": "N/A",
+          "crops": [
+            "soybeans"
+          ],
+          "topics": [
+            "pest",
+            "SCN"
+          ],
+          "type": "html",
+          "publishYear": "2020",
+          "estimatedChunks": 14,
+          "priority": "critical",
+          "notes": "SCN HG type update."
+        },
+        {
+          "url": "http://extension.cropsciences.illinois.edu/fieldcrops/diseases/soybean_cyst_nematode/",
+          "title": "Soybean Cyst Nematode",
+          "publicationId": "N/A",
+          "crops": [
+            "soybeans"
+          ],
+          "topics": [
+            "pest",
+            "SCN"
+          ],
+          "type": "html",
+          "publishYear": "~2020",
+          "estimatedChunks": 9,
+          "priority": "high",
+          "notes": "SCN overview."
+        },
+        {
+          "url": "https://farmdoc.illinois.edu/field-crop-production/new-research-on-soybean-cyst-nematode-shows-widespread-prevalence-of-populations-with-elevated-reproduction-on-pi88788-derived-resistance-what-are-the-implications.html",
+          "title": "New Research on Soybean Cyst Nematode - PI88788 Resistance",
+          "publicationId": "N/A",
+          "crops": [
+            "soybeans"
+          ],
+          "topics": [
+            "pest",
+            "SCN"
+          ],
+          "type": "html",
+          "publishYear": "2022",
+          "estimatedChunks": 17,
+          "priority": "critical",
+          "notes": "Research on SCN resistance."
+        },
+        {
+          "url": "http://extension.cropsciences.illinois.edu/fieldcrops/insects/soybean_aphid/",
+          "title": "Soybean Aphid",
+          "publicationId": "N/A",
+          "crops": [
+            "soybeans"
+          ],
+          "topics": [
+            "pest",
+            "soybean aphid"
+          ],
+          "type": "html",
+          "publishYear": "~2020",
+          "estimatedChunks": 11,
+          "priority": "high",
+          "notes": "Soybean aphid overview."
+        },
+        {
+          "url": "http://extension.cropsciences.illinois.edu/handbook/pdfs/chapter03.pdf",
+          "title": "Illinois Agronomy Handbook - Soybean Chapter",
+          "publicationId": "IAH-Ch3",
+          "crops": [
+            "soybeans"
+          ],
+          "topics": [
+            "management",
+            "growth-stages"
+          ],
+          "type": "pdf",
+          "publishYear": "~2015",
+          "estimatedChunks": 55,
+          "priority": "critical",
+          "notes": "Soybean chapter of Illinois Agronomy Handbook."
+        },
+        {
+          "url": "https://extension.illinois.edu/global/field-crop-insect-and-disease-applied-research",
+          "title": "Field Crop Insect and Disease Applied Research",
+          "publicationId": "N/A",
+          "crops": [
+            "corn",
+            "soybeans",
+            "wheat"
+          ],
+          "topics": [
+            "disease",
+            "pest"
+          ],
+          "type": "html",
+          "publishYear": "2022-23",
+          "estimatedChunks": 11,
+          "priority": "critical",
+          "notes": "Applied research summaries."
+        },
+        {
+          "url": "https://ipm.illinois.edu/diseases/rpds/103.pdf",
+          "title": "Scab of Cereals (Fusarium Head Blight)",
+          "publicationId": "RPD-103",
+          "crops": [
+            "wheat"
+          ],
+          "topics": [
+            "disease",
+            "FHB"
+          ],
+          "type": "pdf",
+          "publishYear": "~2000s",
+          "estimatedChunks": 20,
+          "priority": "critical",
+          "notes": "FHB guide for cereals."
+        },
+        {
+          "url": "https://ipm.illinois.edu/diseases/rpds/104.pdf",
+          "title": "Foliar Diseases of Wheat",
+          "publicationId": "RPD-104",
+          "crops": [
+            "wheat"
+          ],
+          "topics": [
+            "disease",
+            "rust",
+            "Septoria",
+            "tan spot"
+          ],
+          "type": "pdf",
+          "publishYear": "~2000s",
+          "estimatedChunks": 20,
+          "priority": "critical",
+          "notes": "Wheat foliar diseases."
+        },
+        {
+          "url": "https://ipm.illinois.edu/diseases/rpds/108.pdf",
+          "title": "Stem Rust of Small Grains and Grasses",
+          "publicationId": "RPD-108",
+          "crops": [
+            "wheat"
+          ],
+          "topics": [
+            "disease",
+            "stem rust"
+          ],
+          "type": "pdf",
+          "publishYear": "~2000s",
+          "estimatedChunks": 17,
+          "priority": "high",
+          "notes": "Stem rust of small grains."
+        },
+        {
+          "url": "https://ipm.illinois.edu/diseases/rpds/113.pdf",
+          "title": "Root and Crown Rots of Small Grains",
+          "publicationId": "RPD-113",
+          "crops": [
+            "wheat"
+          ],
+          "topics": [
+            "disease",
+            "root rot"
+          ],
+          "type": "pdf",
+          "publishYear": "~2000s",
+          "estimatedChunks": 23,
+          "priority": "high",
+          "notes": "Root and crown rots guide."
+        },
+        {
+          "url": "https://ipm.illinois.edu/diseases/rpds/123.pdf",
+          "title": "Winter Wheat Disease Management Program",
+          "publicationId": "RPD-123",
+          "crops": [
+            "wheat"
+          ],
+          "topics": [
+            "disease",
+            "management"
+          ],
+          "type": "pdf",
+          "publishYear": "~2000s",
+          "estimatedChunks": 23,
+          "priority": "critical",
+          "notes": "Winter wheat disease management program."
+        },
+        {
+          "url": "http://cropdisease.cropsciences.illinois.edu/?p=522",
+          "title": "Stripe Rust of Wheat on the Move",
+          "publicationId": "N/A",
+          "crops": [
+            "wheat"
+          ],
+          "topics": [
+            "disease",
+            "stripe rust"
+          ],
+          "type": "html",
+          "publishYear": "~2020",
+          "estimatedChunks": 11,
+          "priority": "high",
+          "notes": "Stripe rust update."
+        },
+        {
+          "url": "https://extension.illinois.edu/blogs/hill-and-furrow/2015-06-12-symptoms-and-signs-fusarium-head-blight-scab-wheat",
+          "title": "Symptoms and Signs of Fusarium Head Blight (Scab) on Wheat",
+          "publicationId": "N/A",
+          "crops": [
+            "wheat"
+          ],
+          "topics": [
+            "disease",
+            "FHB"
+          ],
+          "type": "html",
+          "publishYear": "2015",
+          "estimatedChunks": 11,
+          "priority": "high",
+          "notes": "FHB symptoms and signs."
+        },
+        {
+          "url": "http://cropdisease.cropsciences.illinois.edu/?p=908",
+          "title": "Assessing Fields for Fusarium Head Blight and Harvest Considerations",
+          "publicationId": "N/A",
+          "crops": [
+            "wheat"
+          ],
+          "topics": [
+            "disease",
+            "FHB"
+          ],
+          "type": "html",
+          "publishYear": "~2020",
+          "estimatedChunks": 14,
+          "priority": "high",
+          "notes": "FHB assessment and harvest considerations."
+        },
+        {
+          "url": "http://cropdisease.cropsciences.illinois.edu/?p=681",
+          "title": "Glume Blotch in Wheat (Stagonospora)",
+          "publicationId": "N/A",
+          "crops": [
+            "wheat"
+          ],
+          "topics": [
+            "disease",
+            "Stagonospora"
+          ],
+          "type": "html",
+          "publishYear": "~2020",
+          "estimatedChunks": 11,
+          "priority": "medium",
+          "notes": "Glume blotch overview."
+        },
+        {
+          "url": "https://extension.illinois.edu/sites/default/files/2023-10/small_grains_and_sorghum.pdf",
+          "title": "Small Grains and Grain Sorghum - Illinois Agronomy Handbook",
+          "publicationId": "IAH",
+          "crops": [
+            "wheat"
+          ],
+          "topics": [
+            "management",
+            "variety-selection"
+          ],
+          "type": "pdf",
+          "publishYear": "2023",
+          "estimatedChunks": 45,
+          "priority": "critical",
+          "notes": "Small grains chapter."
+        },
+        {
+          "url": "https://extension.illinois.edu/sites/default/files/managing_diseases_2022web.pdf",
+          "title": "Managing Diseases - Illinois Agronomy Handbook",
+          "publicationId": "IAH-Diseases",
+          "crops": [
+            "corn",
+            "soybeans",
+            "wheat"
+          ],
+          "topics": [
+            "disease",
+            "management"
+          ],
+          "type": "pdf",
+          "publishYear": "2022",
+          "estimatedChunks": 45,
+          "priority": "critical",
+          "notes": "Disease management handbook."
+        },
+        {
+          "url": "https://extension.illinois.edu/sites/default/files/nematodes_2022web.pdf",
+          "title": "Nematodes - Illinois Agronomy Handbook",
+          "publicationId": "IAH-Nematodes",
+          "crops": [
+            "corn",
+            "soybeans",
+            "wheat"
+          ],
+          "topics": [
+            "pest",
+            "SCN"
+          ],
+          "type": "pdf",
+          "publishYear": "2022",
+          "estimatedChunks": 28,
+          "priority": "high",
+          "notes": "Nematode management handbook."
+        },
+        {
+          "url": "http://ipm.illinois.edu/diseases/index.html",
+          "title": "Reports on Plant Diseases - Complete Index",
+          "publicationId": "RPD Index",
+          "crops": [
+            "corn",
+            "soybeans",
+            "wheat"
+          ],
+          "topics": [
+            "disease"
+          ],
+          "type": "html",
+          "publishYear": "ongoing",
+          "estimatedChunks": 7,
+          "priority": "high",
+          "notes": "RPD complete index."
+        }
+      ]
+    },
+    "kansas_state": {
+      "institution": "Kansas State Research & Extension",
+      "baseUrl": "https://bookstore.ksre.ksu.edu/",
+      "priority": "high",
+      "urlCount": 31,
+      "urls": [
+        {
+          "url": "https://bookstore.ksre.ksu.edu/pubs/corn-production-handbook_C560.pdf",
+          "title": "Corn Production Handbook",
+          "publicationId": "C-560",
+          "crops": [
+            "corn"
+          ],
+          "topics": [
+            "management",
+            "nutrients",
+            "disease",
+            "pest",
+            "growth-stages"
+          ],
+          "type": "pdf",
+          "publishYear": "2007",
+          "estimatedChunks": 90,
+          "priority": "critical",
+          "notes": "Corn production handbook."
+        },
+        {
+          "url": "https://bookstore.ksre.ksu.edu/download/kansas-corn-management-2025_MF3208",
+          "title": "Kansas Corn Management 2025",
+          "publicationId": "MF3208",
+          "crops": [
+            "corn"
+          ],
+          "topics": [
+            "management",
+            "nutrients",
+            "disease"
+          ],
+          "type": "pdf",
+          "publishYear": "2025",
+          "estimatedChunks": 25,
+          "priority": "critical",
+          "notes": "Annual corn management guide."
+        },
+        {
+          "url": "https://bookstore.ksre.ksu.edu/pubs/MF3305.pdf",
+          "title": "Corn Growth and Development (Poster)",
+          "publicationId": "MF3305",
+          "crops": [
+            "corn"
+          ],
+          "topics": [
+            "growth-stages"
+          ],
+          "type": "pdf",
+          "publishYear": "2016",
+          "estimatedChunks": 8,
+          "priority": "high",
+          "notes": "Corn growth stages poster."
+        },
+        {
+          "url": "https://bookstore.ksre.ksu.edu/item/corn-insect-pest-management-2025_MF810",
+          "title": "Corn Insect Pest Management 2025",
+          "publicationId": "MF810",
+          "crops": [
+            "corn"
+          ],
+          "topics": [
+            "pest"
+          ],
+          "type": "pdf",
+          "publishYear": "2025",
+          "estimatedChunks": 50,
+          "priority": "high",
+          "notes": "Corn insect pest management."
+        },
+        {
+          "url": "https://bookstore.ksre.ksu.edu/download/gray-leaf-spot-of-corn_MF2341",
+          "title": "Gray Leaf Spot of Corn",
+          "publicationId": "MF2341",
+          "crops": [
+            "corn"
+          ],
+          "topics": [
+            "disease",
+            "GLS"
+          ],
+          "type": "pdf",
+          "publishYear": "2019",
+          "estimatedChunks": 12,
+          "priority": "high",
+          "notes": "Gray leaf spot guide."
+        },
+        {
+          "url": "https://bookstore.ksre.ksu.edu/item/predicting-corn-yield-based-on-soil-nitrogen-supply_MF3572",
+          "title": "Predicting Corn Yield Based on Soil Nitrogen Supply",
+          "publicationId": "MF3572",
+          "crops": [
+            "corn"
+          ],
+          "topics": [
+            "nutrients",
+            "nitrogen"
+          ],
+          "type": "pdf",
+          "publishYear": "2021",
+          "estimatedChunks": 7,
+          "priority": "high",
+          "notes": "Nitrogen supply and yield prediction."
+        },
+        {
+          "url": "https://bookstore.ksre.ksu.edu/item/2024-kansas-performance-tests-with-corn-soybean-and-sunflower-varieties_SRP1187",
+          "title": "2024 Kansas Performance Tests with Corn, Soybean, and Sunflower",
+          "publicationId": "SRP1187",
+          "crops": [
+            "corn",
+            "soybeans"
+          ],
+          "topics": [
+            "variety-selection"
+          ],
+          "type": "pdf",
+          "publishYear": "2025",
+          "estimatedChunks": 65,
+          "priority": "high",
+          "notes": "Performance tests with varietal data."
+        },
+        {
+          "url": "https://bookstore.ksre.ksu.edu/item/corn-planting-dates-and-frost-risk-in-central-and-eastern-kansas_MF3610",
+          "title": "Corn Planting Dates and Frost Risk",
+          "publicationId": "MF3610",
+          "crops": [
+            "corn"
+          ],
+          "topics": [
+            "management"
+          ],
+          "type": "pdf",
+          "publishYear": "2022",
+          "estimatedChunks": 7,
+          "priority": "medium",
+          "notes": "Planting date guidance."
+        },
+        {
+          "url": "https://bookstore.ksre.ksu.edu/item/abnormal-corn-ears-portuguese-anormalidades-em-espigas-de-milho_EP169BP",
+          "title": "Abnormal Corn Ears",
+          "publicationId": "EP169",
+          "crops": [
+            "corn"
+          ],
+          "topics": [
+            "management",
+            "disease"
+          ],
+          "type": "pdf",
+          "publishYear": "2018",
+          "estimatedChunks": 38,
+          "priority": "medium",
+          "notes": "Abnormal ear diagnostics."
+        },
+        {
+          "url": "https://eupdate.agronomy.ksu.edu/article/starter-fertilizer-for-corn-nitrogen-placement-and-rate-586-2",
+          "title": "Starter fertilizer for corn - Nitrogen placement and rate",
+          "publicationId": "eUpdate",
+          "crops": [
+            "corn"
+          ],
+          "topics": [
+            "nutrients"
+          ],
+          "type": "html",
+          "publishYear": "2023",
+          "estimatedChunks": 11,
+          "priority": "medium",
+          "notes": "Starter fertilizer placement guidance."
+        },
+        {
+          "url": "https://eupdate.agronomy.ksu.edu/article/diagnosing-early-season-growth-problems-in-corn-385-2",
+          "title": "Diagnosing early-season growth problems in corn",
+          "publicationId": "eUpdate",
+          "crops": [
+            "corn"
+          ],
+          "topics": [
+            "nutrients",
+            "disease",
+            "pest"
+          ],
+          "type": "html",
+          "publishYear": "2020",
+          "estimatedChunks": 13,
+          "priority": "medium",
+          "notes": "Early-season growth problem diagnosis."
+        },
+        {
+          "url": "https://bookstore.ksre.ksu.edu/item/tillering-impacts-on-corn-yields_MF3571",
+          "title": "Tillering Impacts on Corn Yields",
+          "publicationId": "MF3571",
+          "crops": [
+            "corn"
+          ],
+          "topics": [
+            "management"
+          ],
+          "type": "pdf",
+          "publishYear": "2021",
+          "estimatedChunks": 7,
+          "priority": "medium",
+          "notes": "Tillering impacts on yield."
+        },
+        {
+          "url": "https://bookstore.ksre.ksu.edu/pubs/soybean-production-handbook_C449.pdf",
+          "title": "Soybean Production Handbook",
+          "publicationId": "C-449",
+          "crops": [
+            "soybeans"
+          ],
+          "topics": [
+            "management",
+            "nutrients",
+            "disease",
+            "pest"
+          ],
+          "type": "pdf",
+          "publishYear": "2016",
+          "estimatedChunks": 90,
+          "priority": "critical",
+          "notes": "Soybean production handbook."
+        },
+        {
+          "url": "https://bookstore.ksre.ksu.edu/item/kansas-soybean-management-2025_MF3154",
+          "title": "Kansas Soybean Management 2025",
+          "publicationId": "MF3154",
+          "crops": [
+            "soybeans"
+          ],
+          "topics": [
+            "management",
+            "nutrients",
+            "disease"
+          ],
+          "type": "pdf",
+          "publishYear": "2024",
+          "estimatedChunks": 25,
+          "priority": "high",
+          "notes": "Annual soybean management guide."
+        },
+        {
+          "url": "https://bookstore.ksre.ksu.edu/download/soybean-growth-and-development-poster_MF3339",
+          "title": "Soybean Growth and Development Poster",
+          "publicationId": "MF3339",
+          "crops": [
+            "soybeans"
+          ],
+          "topics": [
+            "growth-stages"
+          ],
+          "type": "pdf",
+          "publishYear": "2017",
+          "estimatedChunks": 8,
+          "priority": "high",
+          "notes": "Soybean growth stages poster."
+        },
+        {
+          "url": "https://bookstore.ksre.ksu.edu/item/soybean-insect-pest-management-2025_MF743",
+          "title": "Soybean Insect Pest Management 2025",
+          "publicationId": "MF743",
+          "crops": [
+            "soybeans"
+          ],
+          "topics": [
+            "pest"
+          ],
+          "type": "pdf",
+          "publishYear": "2025",
+          "estimatedChunks": 30,
+          "priority": "high",
+          "notes": "Soybean insect pest management."
+        },
+        {
+          "url": "https://eupdate.agronomy.ksu.edu/article/management-options-for-sudden-death-syndrome-in-soybeans-403-1",
+          "title": "Management options for Sudden Death Syndrome in soybeans",
+          "publicationId": "eUpdate",
+          "crops": [
+            "soybeans"
+          ],
+          "topics": [
+            "disease",
+            "SDS"
+          ],
+          "type": "html",
+          "publishYear": "2023",
+          "estimatedChunks": 15,
+          "priority": "high",
+          "notes": "SDS management options."
+        },
+        {
+          "url": "https://eupdate.agronomy.ksu.edu/article/protect-your-soybeans-next-year-test-for-soybean-cyst-nematode-after-harvest-671-3",
+          "title": "Protect Your Soybeans: Test for Soybean Cyst Nematode",
+          "publicationId": "eUpdate",
+          "crops": [
+            "soybeans"
+          ],
+          "topics": [
+            "pest",
+            "SCN"
+          ],
+          "type": "html",
+          "publishYear": "2025",
+          "estimatedChunks": 13,
+          "priority": "high",
+          "notes": "SCN testing guidance."
+        },
+        {
+          "url": "https://bookstore.ksre.ksu.edu/pubs/soybean-seeding-rates-and-optimal-plant-densities_MF3460.pdf",
+          "title": "Soybean Seeding Rates and Optimal Plant Densities",
+          "publicationId": "MF3460",
+          "crops": [
+            "soybeans"
+          ],
+          "topics": [
+            "management"
+          ],
+          "type": "pdf",
+          "publishYear": "2019",
+          "estimatedChunks": 7,
+          "priority": "medium",
+          "notes": "Seeding rate guidance."
+        },
+        {
+          "url": "https://bookstore.ksre.ksu.edu/pubs/biological-nitrogen-fixation-and-soybean-productivity-in-the-midwest_MF3462.pdf",
+          "title": "Biological Nitrogen Fixation and Soybean Productivity",
+          "publicationId": "MF3462",
+          "crops": [
+            "soybeans"
+          ],
+          "topics": [
+            "nutrients"
+          ],
+          "type": "pdf",
+          "publishYear": "2019",
+          "estimatedChunks": 7,
+          "priority": "medium",
+          "notes": "Nitrogen fixation overview."
+        },
+        {
+          "url": "https://bookstore.ksre.ksu.edu/item/double-crop-soybeans-after-wheat-a-review_MF3461",
+          "title": "Double-crop Soybeans After Wheat: A Review",
+          "publicationId": "MF3461",
+          "crops": [
+            "soybeans"
+          ],
+          "topics": [
+            "management"
+          ],
+          "type": "pdf",
+          "publishYear": "2019",
+          "estimatedChunks": 7,
+          "priority": "medium",
+          "notes": "Double-crop soybean review."
+        },
+        {
+          "url": "https://eupdate.agronomy.ksu.edu/article/sudden-death-syndrome-and-soybean-planting-date-k-state-research-690-5",
+          "title": "Sudden Death Syndrome and soybean planting date",
+          "publicationId": "eUpdate",
+          "crops": [
+            "soybeans"
+          ],
+          "topics": [
+            "disease",
+            "SDS"
+          ],
+          "type": "html",
+          "publishYear": "2018",
+          "estimatedChunks": 18,
+          "priority": "medium",
+          "notes": "Planting date and SDS."
+        },
+        {
+          "url": "https://bookstore.ksre.ksu.edu/pubs/wheat-production-handbook_C529.pdf",
+          "title": "Wheat Production Handbook",
+          "publicationId": "C-529",
+          "crops": [
+            "wheat"
+          ],
+          "topics": [
+            "management",
+            "nutrients",
+            "disease",
+            "pest",
+            "growth-stages"
+          ],
+          "type": "pdf",
+          "publishYear": "~2000",
+          "estimatedChunks": 90,
+          "priority": "critical",
+          "notes": "Wheat production handbook."
+        },
+        {
+          "url": "https://bookstore.ksre.ksu.edu/pubs/kansas-wheat-variety-guide-2025_MF991.pdf",
+          "title": "Kansas Wheat Variety Guide 2025",
+          "publicationId": "MF991",
+          "crops": [
+            "wheat"
+          ],
+          "topics": [
+            "variety-selection",
+            "disease"
+          ],
+          "type": "pdf",
+          "publishYear": "2025",
+          "estimatedChunks": 50,
+          "priority": "critical",
+          "notes": "Wheat variety guide."
+        },
+        {
+          "url": "https://bookstore.ksre.ksu.edu/pubs/wheat-growth-and-development-poster-20x30_MF3300.pdf",
+          "title": "Wheat Growth and Development (Poster)",
+          "publicationId": "MF3300",
+          "crops": [
+            "wheat"
+          ],
+          "topics": [
+            "growth-stages"
+          ],
+          "type": "pdf",
+          "publishYear": "~2018",
+          "estimatedChunks": 8,
+          "priority": "high",
+          "notes": "Wheat growth stages poster."
+        },
+        {
+          "url": "https://bookstore.ksre.ksu.edu/pubs/fusarium-head-blight_MF3458.pdf",
+          "title": "Fusarium Head Blight (Wheat Disease)",
+          "publicationId": "MF3458",
+          "crops": [
+            "wheat"
+          ],
+          "topics": [
+            "disease",
+            "FHB"
+          ],
+          "type": "pdf",
+          "publishYear": "~2019",
+          "estimatedChunks": 10,
+          "priority": "high",
+          "notes": "FHB guide."
+        },
+        {
+          "url": "https://bookstore.ksre.ksu.edu/item/wheat-insect-pest-management-2025_MF745",
+          "title": "Wheat Insect Pest Management 2025",
+          "publicationId": "MF745",
+          "crops": [
+            "wheat"
+          ],
+          "topics": [
+            "pest"
+          ],
+          "type": "pdf",
+          "publishYear": "2025",
+          "estimatedChunks": 25,
+          "priority": "high",
+          "notes": "Wheat insect pest management."
+        },
+        {
+          "url": "https://bookstore.ksre.ksu.edu/pubs/seed-treatment-fungicides-for-wheat-disease-management_MF2955.pdf",
+          "title": "Seed Treatment Fungicides for Wheat Disease Management",
+          "publicationId": "MF2955",
+          "crops": [
+            "wheat"
+          ],
+          "topics": [
+            "disease"
+          ],
+          "type": "pdf",
+          "publishYear": "~2015",
+          "estimatedChunks": 13,
+          "priority": "medium",
+          "notes": "Seed treatment fungicide guide."
+        },
+        {
+          "url": "https://bookstore.ksre.ksu.edu/download/identifying-wheat-diseases-affecting-heads-and-grain_MF3198",
+          "title": "Identifying Wheat Diseases Affecting Heads and Grain",
+          "publicationId": "MF3198",
+          "crops": [
+            "wheat"
+          ],
+          "topics": [
+            "disease"
+          ],
+          "type": "pdf",
+          "publishYear": "~2016",
+          "estimatedChunks": 13,
+          "priority": "medium",
+          "notes": "Disease identification for wheat heads."
+        },
+        {
+          "url": "https://bookstore.ksre.ksu.edu/download/wheats-versatility-in-farming-systems_MF3680",
+          "title": "Wheat's Versatility in Farming Systems (Wheat Rx)",
+          "publicationId": "MF3680",
+          "crops": [
+            "wheat"
+          ],
+          "topics": [
+            "management"
+          ],
+          "type": "pdf",
+          "publishYear": "~2023",
+          "estimatedChunks": 10,
+          "priority": "medium",
+          "notes": "Wheat systems management."
+        },
+        {
+          "url": "https://bookstore.ksre.ksu.edu/item/soil-test-interpretations-and-fertilizer-recommendations_MF2586",
+          "title": "Soil Test Interpretations and Fertilizer Recommendations",
+          "publicationId": "MF2586",
+          "crops": [
+            "corn",
+            "soybeans",
+            "wheat"
+          ],
+          "topics": [
+            "nutrients"
+          ],
+          "type": "pdf",
+          "publishYear": "current",
+          "estimatedChunks": 70,
+          "priority": "high",
+          "notes": "Soil test interpretation guide."
+        }
+      ]
+    },
+    "ndsu": {
+      "institution": "NDSU Extension",
+      "baseUrl": "https://www.ndsu.edu/agriculture/extension/publications",
+      "priority": "medium",
+      "urlCount": 20,
+      "urls": [
+        {
+          "url": "https://www.ndsu.edu/agriculture/extension/publications/fusarium-head-blight-scab-small-grains",
+          "title": "Fusarium Head Blight (Scab) of Small Grains",
+          "publicationId": "PP-804",
+          "crops": [
+            "wheat"
+          ],
+          "topics": [
+            "disease",
+            "FHB",
+            "DON"
+          ],
+          "type": "html",
+          "publishYear": "2022-24",
+          "estimatedChunks": 28,
+          "priority": "critical",
+          "notes": "NDSU FHB guide."
+        },
+        {
+          "url": "https://www.ndsu.edu/agriculture/extension/publications/fungal-leaf-spot-diseases-wheat-tan-spot-septoria/stagonospora-nodorum",
+          "title": "Fungal Leaf Spot Diseases of Wheat",
+          "publicationId": "PP-1249",
+          "crops": [
+            "wheat"
+          ],
+          "topics": [
+            "disease",
+            "tan spot",
+            "Septoria"
+          ],
+          "type": "html",
+          "publishYear": "2020-24",
+          "estimatedChunks": 23,
+          "priority": "high",
+          "notes": "Fungal leaf spots guide."
+        },
+        {
+          "url": "https://www.ndsu.edu/agriculture/extension/publications/rust-diseases-wheat-north-dakota",
+          "title": "Rust Diseases of Wheat in North Dakota",
+          "publicationId": "PP-1361",
+          "crops": [
+            "wheat"
+          ],
+          "topics": [
+            "disease",
+            "rust"
+          ],
+          "type": "html",
+          "publishYear": "2019-24",
+          "estimatedChunks": 18,
+          "priority": "high",
+          "notes": "Rust diseases guide."
+        },
+        {
+          "url": "https://www.ndsu.edu/agriculture/extension/publications/fertilizing-hard-red-spring-wheat-and-durum",
+          "title": "Fertilizing Hard Red Spring Wheat and Durum",
+          "publicationId": "SF-712",
+          "crops": [
+            "wheat"
+          ],
+          "topics": [
+            "nutrients",
+            "N",
+            "P",
+            "S"
+          ],
+          "type": "html",
+          "publishYear": "2019-22",
+          "estimatedChunks": 35,
+          "priority": "high",
+          "notes": "Nutrient management for spring wheat/durum."
+        },
+        {
+          "url": "https://www.ndsu.edu/agriculture/extension/publications/bacterial-leaf-streak-and-black-chaff-wheat",
+          "title": "Bacterial Leaf Streak and Black Chaff of Wheat",
+          "publicationId": "PP-1566",
+          "crops": [
+            "wheat"
+          ],
+          "topics": [
+            "disease",
+            "bacterial"
+          ],
+          "type": "html",
+          "publishYear": "2019-24",
+          "estimatedChunks": 13,
+          "priority": "medium",
+          "notes": "Bacterial leaf streak guide."
+        },
+        {
+          "url": "https://www.ndsu.edu/agriculture/extension/publications/soil-fertility-recommendations-corn",
+          "title": "Soil Fertility Recommendations for Corn",
+          "publicationId": "SF-722",
+          "crops": [
+            "corn"
+          ],
+          "topics": [
+            "nutrients",
+            "N",
+            "P",
+            "K"
+          ],
+          "type": "html",
+          "publishYear": "2021-24",
+          "estimatedChunks": 55,
+          "priority": "critical",
+          "notes": "Corn soil fertility recommendations."
+        },
+        {
+          "url": "https://www.ndsu.edu/agriculture/extension/publications/corn-growth-and-management-quick-guide",
+          "title": "Corn Growth and Management Quick Guide",
+          "publicationId": "A-1173",
+          "crops": [
+            "corn"
+          ],
+          "topics": [
+            "growth-stages",
+            "management"
+          ],
+          "type": "html",
+          "publishYear": "2020-24",
+          "estimatedChunks": 35,
+          "priority": "critical",
+          "notes": "Corn growth and management quick guide."
+        },
+        {
+          "url": "https://www.ndsu.edu/agriculture/extension/publications/nitrogen-extenders-and-additives-field-crops",
+          "title": "Nitrogen Extenders and Additives for Field Crops",
+          "publicationId": "SF-1581",
+          "crops": [
+            "corn",
+            "wheat"
+          ],
+          "topics": [
+            "nutrients",
+            "nitrogen"
+          ],
+          "type": "html",
+          "publishYear": "2019-24",
+          "estimatedChunks": 28,
+          "priority": "high",
+          "notes": "Nitrogen extenders and additives."
+        },
+        {
+          "url": "https://www.ndsu.edu/agriculture/ag-hub/ag-topics/crop-production/diseases-pests-and-weeds/plant-diseases/scouting-corn-stalk-rot",
+          "title": "Scouting for Corn Stalk Rot",
+          "publicationId": "N/A",
+          "crops": [
+            "corn"
+          ],
+          "topics": [
+            "disease",
+            "stalk rot"
+          ],
+          "type": "html",
+          "publishYear": "2020-24",
+          "estimatedChunks": 7,
+          "priority": "high",
+          "notes": "Corn stalk rot scouting."
+        },
+        {
+          "url": "https://www.ndsu.edu/agriculture/ag-hub/ag-topics/crop-production/diseases-pests-and-weeds/plant-diseases/leaf-discolorations-corn",
+          "title": "Leaf Discolorations in Corn",
+          "publicationId": "N/A",
+          "crops": [
+            "corn"
+          ],
+          "topics": [
+            "disease",
+            "rust",
+            "NCLB"
+          ],
+          "type": "html",
+          "publishYear": "2020",
+          "estimatedChunks": 9,
+          "priority": "medium",
+          "notes": "Corn leaf discoloration diagnosis."
+        },
+        {
+          "url": "https://www.ndsu.edu/agriculture/extension/publications/effectiveness-using-low-rates-plant-nutrients",
+          "title": "Effectiveness of Using Low Rates of Plant Nutrients",
+          "publicationId": "SF-1176",
+          "crops": [
+            "corn",
+            "soybeans",
+            "wheat"
+          ],
+          "topics": [
+            "nutrients",
+            "phosphorus"
+          ],
+          "type": "html",
+          "publishYear": "2019-24",
+          "estimatedChunks": 23,
+          "priority": "medium",
+          "notes": "Low-rate nutrient effectiveness."
+        },
+        {
+          "url": "https://www.ndsu.edu/agriculture/extension/publications/soybean-disease-diagnostic-series",
+          "title": "Soybean Disease Diagnostic Series",
+          "publicationId": "PP-1867",
+          "crops": [
+            "soybeans"
+          ],
+          "topics": [
+            "disease",
+            "diagnostics"
+          ],
+          "type": "html/pdf",
+          "publishYear": "2024",
+          "estimatedChunks": 90,
+          "priority": "critical",
+          "notes": "Soybean diagnostic series."
+        },
+        {
+          "url": "https://www.ndsu.edu/agriculture/extension/publications/soybean-cyst-nematode",
+          "title": "Soybean Cyst Nematode",
+          "publicationId": "PP-1870",
+          "crops": [
+            "soybeans"
+          ],
+          "topics": [
+            "pest",
+            "SCN"
+          ],
+          "type": "html",
+          "publishYear": "2021-24",
+          "estimatedChunks": 23,
+          "priority": "critical",
+          "notes": "SCN management guide."
+        },
+        {
+          "url": "https://www.ndsu.edu/agriculture/extension/publications/sudden-death-syndrome-soybean",
+          "title": "Sudden Death Syndrome of Soybean",
+          "publicationId": "PP-2036",
+          "crops": [
+            "soybeans"
+          ],
+          "topics": [
+            "disease",
+            "SDS"
+          ],
+          "type": "html",
+          "publishYear": "2024",
+          "estimatedChunks": 13,
+          "priority": "high",
+          "notes": "SDS guide."
+        },
+        {
+          "url": "https://www.ndsu.edu/agriculture/extension/publications/white-mold-soybean",
+          "title": "White Mold of Soybean",
+          "publicationId": "PP-2259",
+          "crops": [
+            "soybeans"
+          ],
+          "topics": [
+            "disease",
+            "white mold"
+          ],
+          "type": "html/pdf",
+          "publishYear": "2024-25",
+          "estimatedChunks": 18,
+          "priority": "high",
+          "notes": "White mold guide."
+        },
+        {
+          "url": "https://www.ndsu.edu/agriculture/extension/publications/phytophthora-root-and-stem-rot-soybean",
+          "title": "Phytophthora Root and Stem Rot of Soybean",
+          "publicationId": "PP-2073",
+          "crops": [
+            "soybeans"
+          ],
+          "topics": [
+            "disease",
+            "Phytophthora"
+          ],
+          "type": "html",
+          "publishYear": "2024",
+          "estimatedChunks": 13,
+          "priority": "high",
+          "notes": "Phytophthora root and stem rot."
+        },
+        {
+          "url": "https://www.ndsu.edu/agriculture/extension/publications/soybean-growth-and-management-quick-guide",
+          "title": "Soybean Growth and Management Quick Guide",
+          "publicationId": "A-1174",
+          "crops": [
+            "soybeans"
+          ],
+          "topics": [
+            "growth-stages"
+          ],
+          "type": "html",
+          "publishYear": "2020-24",
+          "estimatedChunks": 28,
+          "priority": "critical",
+          "notes": "Soybean growth and management quick guide."
+        },
+        {
+          "url": "https://www.ndsu.edu/agriculture/extension/publications/soybean-soil-fertility",
+          "title": "Soybean Soil Fertility",
+          "publicationId": "SF-1164",
+          "crops": [
+            "soybeans"
+          ],
+          "topics": [
+            "nutrients",
+            "IDC"
+          ],
+          "type": "html/pdf",
+          "publishYear": "2019-24",
+          "estimatedChunks": 28,
+          "priority": "critical",
+          "notes": "Soybean soil fertility guide."
+        },
+        {
+          "url": "https://www.ndsu.edu/agriculture/extension/publications/soybean-production-field-guide-north-dakota",
+          "title": "Soybean Production Field Guide for North Dakota",
+          "publicationId": "A-1172",
+          "crops": [
+            "soybeans"
+          ],
+          "topics": [
+            "management",
+            "variety-selection"
+          ],
+          "type": "html/pdf",
+          "publishYear": "2023",
+          "estimatedChunks": 90,
+          "priority": "critical",
+          "notes": "Soybean production field guide."
+        },
+        {
+          "url": "https://www.ndsu.edu/agriculture/extension/publications/frogeye-leaf-spot-soybean",
+          "title": "Frogeye Leaf Spot of Soybean",
+          "publicationId": "PP-2076",
+          "crops": [
+            "soybeans"
+          ],
+          "topics": [
+            "disease",
+            "frogeye"
+          ],
+          "type": "html/pdf",
+          "publishYear": "2024-25",
+          "estimatedChunks": 11,
+          "priority": "medium",
+          "notes": "Frogeye leaf spot guide."
+        }
+      ]
+    }
+  }
+}
