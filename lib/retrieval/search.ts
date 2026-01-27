@@ -1,8 +1,9 @@
 import { prisma } from "@/lib/prisma";
 import { generateEmbedding } from "@/lib/embeddings/generate";
 
-const TEXT_EMBEDDING_DIMENSIONS = 1536
-const IMAGE_EMBEDDING_DIMENSIONS = 512
+const TEXT_EMBEDDING_DIMENSIONS = 1536;
+const IMAGE_EMBEDDING_DIMENSIONS = 512;
+
 export interface SearchResult {
   id: string;
   content: string;

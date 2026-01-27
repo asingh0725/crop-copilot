@@ -23,16 +23,8 @@ export async function upsertSources(
 
   for (const doc of documents) {
     try {
-      // Prepare metadata
-      const metadata = {
-        institution: doc.metadata.institution,
-        publishDate: doc.metadata.publishDate,
-        crops: doc.metadata.crops || [],
-        topics: doc.metadata.topics || [],
-        region: doc.metadata.region,
-      };
-
       // Upsert source (unique by URL)
+      // Note: Metadata is stored in chunk-level metadata fields instead of Source model
       const source = await prisma.source.upsert({
         where: { url: doc.url },
         create: {
@@ -42,13 +34,11 @@ export async function upsertSources(
           institution: doc.metadata.institution,
           status: "processed",
           chunksCount: 0, // Will be updated when chunks are added
-          metadata,
         },
         update: {
           title: doc.title,
           institution: doc.metadata.institution,
           status: "processed",
-          metadata,
         },
       });
 
@@ -94,8 +84,8 @@ export async function upsertTextChunks(
         const embeddingString = `[${chunk.embedding.join(",")}]`;
 
         try {
-          // Check if exists
-          const existing = await prisma.textChunk.findUnique({
+          // Check if exists (using findFirst since contentHash is nullable)
+          const existing = await prisma.textChunk.findFirst({
             where: { contentHash: hash },
           });
 

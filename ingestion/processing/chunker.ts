@@ -45,16 +45,12 @@ export function chunkDocument(
   const chunks: ChunkData[] = [];
   let globalChunkIndex = 0;
 
-  // Extract metadata from source
-  const sourceMetadata =
-    typeof source.metadata === "object" && source.metadata !== null
-      ? (source.metadata as Record<string, any>)
-      : {};
-
+  // Base metadata for chunks
+  // Note: Source metadata would come from a separate metadata field if added to schema
   const baseMeta = {
-    crops: sourceMetadata.crops || [],
-    topics: sourceMetadata.topics || [],
-    region: sourceMetadata.region,
+    crops: [],
+    topics: [],
+    region: undefined,
   };
 
   // Process each section

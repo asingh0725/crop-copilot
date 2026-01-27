@@ -12,7 +12,7 @@ export function parseHTML(html: string, sourceUrl: string): ParsedContent {
   const reader = new Readability(dom.window.document);
   const article = reader.parse();
 
-  if (!article) {
+  if (!article || !article.content) {
     // Fallback to basic parsing if Readability fails
     return parseHTMLBasic(html, sourceUrl);
   }
@@ -144,7 +144,7 @@ function parseHTMLBasic(html: string, sourceUrl: string): ParsedContent {
   for (const selector of mainSelectors) {
     const $elem = $(selector);
     if ($elem.length > 0) {
-      $main = $elem.first();
+      $main = $elem.first() as cheerio.Cheerio<any>;
       break;
     }
   }

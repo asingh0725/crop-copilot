@@ -54,7 +54,7 @@ async function runPhase1Ingestion(options: RunOptions) {
     await fs.readFile(urlFile, "utf-8")
   );
 
-  let totalUrls = urlList.totalUrls;
+  let totalUrls = urlList.totalUrls || 0;
   if (options.limit) {
     totalUrls = Math.min(totalUrls, options.limit);
     console.log(`⚠️  Limiting to first ${options.limit} URLs\n`);

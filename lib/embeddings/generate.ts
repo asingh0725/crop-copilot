@@ -1,8 +1,16 @@
 import OpenAI from "openai";
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+// Lazy initialization to avoid issues during build
+let openai: OpenAI | null = null;
+
+function getOpenAI(): OpenAI {
+  if (!openai) {
+    openai = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
+    });
+  }
+  return openai;
+}
 
 /**
  * Generate embedding vector using OpenAI's text-embedding-3-small model
@@ -10,7 +18,8 @@ const openai = new OpenAI({
  */
 export async function generateEmbedding(text: string, vector_dimension: 1536 | 512): Promise<number[]> {
   try {
-    const response = await openai.embeddings.create({
+    const client = getOpenAI();
+    const response = await client.embeddings.create({
       model: "text-embedding-3-small",
       input: text,
       encoding_format: "float",

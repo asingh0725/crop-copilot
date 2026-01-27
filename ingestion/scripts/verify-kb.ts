@@ -39,13 +39,14 @@ async function verifyKnowledgeBase() {
   totalChecks++;
 
   try {
-    const nullTextEmbeddings = await prisma.textChunk.count({
-      where: { embedding: null },
-    });
+    // Use raw queries since embedding field is Unsupported type
+    const nullTextEmbeddings = await prisma.$queryRaw<[{ count: bigint }]>`
+      SELECT COUNT(*) as count FROM "TextChunk" WHERE embedding IS NULL
+    `.then(res => Number(res[0].count));
 
-    const nullImageEmbeddings = await prisma.imageChunk.count({
-      where: { embedding: null },
-    });
+    const nullImageEmbeddings = await prisma.$queryRaw<[{ count: bigint }]>`
+      SELECT COUNT(*) as count FROM "ImageChunk" WHERE embedding IS NULL
+    `.then(res => Number(res[0].count));
 
     console.log(`   Text chunks with null embeddings: ${nullTextEmbeddings}`);
     console.log(`   Image chunks with null embeddings: ${nullImageEmbeddings}`);

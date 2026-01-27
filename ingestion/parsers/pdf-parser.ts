@@ -1,5 +1,7 @@
-import pdf from "pdf-parse";
+import * as pdfParse from "pdf-parse";
 import type { ParsedContent } from "../scrapers/types";
+
+const pdf = (pdfParse as any).default || pdfParse;
 
 /**
  * Parse PDF content and extract structured information
@@ -20,7 +22,7 @@ export async function parsePDF(
   };
 
   // Process each page
-  pages.forEach((pageText, pageIndex) => {
+  pages.forEach((pageText: string, pageIndex: number) => {
     const lines = pageText.split("\n");
     let pageContent = "";
 
