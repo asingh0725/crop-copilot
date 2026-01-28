@@ -1,7 +1,21 @@
-export default function MarketingPage() {
+import { HeroSection } from "@/components/landing/hero";
+import { TrustBar } from "@/components/landing/trust-bar";
+import { ProblemSection } from "@/components/landing/problem-section";
+import { SolutionSection } from "@/components/landing/solution-section";
+import { FeaturesSection } from "@/components/landing/features-section";
+import { TestimonialsSection } from "@/components/landing/testimonials-section";
+import { PricingSection } from "@/components/landing/pricing-section";
+
+export default function LandingPage() {
   return (
-    <div className="flex min-h-screen items-center justify-center">
-      <h1 className="text-4xl font-bold">AI Agronomist Advisor</h1>
-    </div>
+    <>
+      <HeroSection />
+      <TrustBar />
+      <ProblemSection />
+      <SolutionSection />
+      <FeaturesSection />
+      <TestimonialsSection />
+      <PricingSection />
+    </>
   );
 }

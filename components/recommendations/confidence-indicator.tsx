@@ -11,12 +11,14 @@ interface ConfidenceIndicatorProps {
   confidence: number;
   size?: "sm" | "md" | "lg";
   showLabel?: boolean;
+  className?: string;
 }
 
 export function ConfidenceIndicator({
   confidence,
   size = "md",
   showLabel = true,
+  className,
 }: ConfidenceIndicatorProps) {
   const level = getConfidenceLevel(confidence);
   const colorClass = getConfidenceColor(confidence);
@@ -41,13 +43,13 @@ export function ConfidenceIndicator({
         : HelpCircle;
 
   return (
-    <div className={`inline-flex items-center gap-2 ${sizeClasses[size]}`}>
+    <div className={`inline-flex items-center gap-2 ${sizeClasses[size]} ${className || ''}`}>
       <div
-        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full font-medium ${colorClass}`}
+        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full font-medium whitespace-nowrap ${colorClass}`}
       >
-        <Icon size={iconSizes[size]} />
+        <Icon size={iconSizes[size]} className="shrink-0" />
         <span>{formatConfidence(confidence)}</span>
-        {showLabel && <span className="capitalize">{level} confidence</span>}
+        {showLabel && <span className="capitalize">{level} Confidence</span>}
       </div>
     </div>
   );

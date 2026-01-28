@@ -1,0 +1,9 @@
+export { LandingHeader } from "./header";
+export { HeroSection } from "./hero";
+export { TrustBar } from "./trust-bar";
+export { ProblemSection } from "./problem-section";
+export { SolutionSection } from "./solution-section";
+export { FeaturesSection } from "./features-section";
+export { TestimonialsSection } from "./testimonials-section";
+export { PricingSection } from "./pricing-section";
+export { Footer } from "./footer";

@@ -29,9 +29,10 @@ export function DiagnosisDisplay({
   return (
     <Card className="border-2">
       <CardHeader className="pb-4">
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex-1">
-            <CardTitle className="text-2xl font-bold mb-3">
+        {/* Mobile: Stack vertically, Desktop: Side by side */}
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4">
+          <div className="flex-1 min-w-0">
+            <CardTitle className="text-xl sm:text-2xl font-bold mb-3 break-words">
               {diagnosis.condition}
             </CardTitle>
             <Badge
@@ -42,7 +43,11 @@ export function DiagnosisDisplay({
               {getConditionTypeLabel(diagnosis.conditionType)}
             </Badge>
           </div>
-          <ConfidenceIndicator confidence={confidence} size="lg" />
+          {/* On mobile, confidence is smaller and inline */}
+          <div className="sm:shrink-0">
+            <ConfidenceIndicator confidence={confidence} size="md" showLabel={false} className="sm:hidden" />
+            <ConfidenceIndicator confidence={confidence} size="lg" className="hidden sm:flex" />
+          </div>
         </div>
       </CardHeader>
       <CardContent className="space-y-6">
