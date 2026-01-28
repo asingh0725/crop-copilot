@@ -1,0 +1,53 @@
+{
+  "phase": 4,
+  "description": "Alberta agriculture and crop production sources",
+  "province": "Alberta",
+  "totalUrls": 3,
+  "estimatedChunks": 15,
+  "sources": {
+    "alberta_agriculture": {
+      "institution": "Government of Alberta - Agriculture",
+      "baseUrl": "https://www.alberta.ca/",
+      "priority": "high",
+      "urlCount": 3,
+      "urls": [
+        {
+          "url": "https://www.alberta.ca/crop-production.aspx",
+          "title": "Crop Production",
+          "publicationId": "AB-CROP-PROD",
+          "crops": ["wheat", "canola", "barley"],
+          "topics": ["production", "management", "rotation"],
+          "type": "html",
+          "publishYear": "2023",
+          "estimatedChunks": 5,
+          "priority": "high",
+          "notes": "Overview of crop production resources for Alberta."
+        },
+        {
+          "url": "https://www.alberta.ca/crop-protection.aspx",
+          "title": "Crop Protection",
+          "publicationId": "AB-CROP-PROTECT",
+          "crops": ["wheat", "canola", "barley"],
+          "topics": ["pest", "disease", "weed"],
+          "type": "html",
+          "publishYear": "2023",
+          "estimatedChunks": 5,
+          "priority": "high",
+          "notes": "Crop protection programs and guidance."
+        },
+        {
+          "url": "https://www.alberta.ca/soil-fertility-management.aspx",
+          "title": "Soil Fertility Management",
+          "publicationId": "AB-SOIL-FERT",
+          "crops": ["wheat", "canola", "forage"],
+          "topics": ["soil", "fertility", "nutrients"],
+          "type": "html",
+          "publishYear": "2022",
+          "estimatedChunks": 5,
+          "priority": "medium",
+          "notes": "Soil fertility and nutrient management resources."
+        }
+      ]
+    }
+  }
+}

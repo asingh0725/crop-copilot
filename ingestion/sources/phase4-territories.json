@@ -1,0 +1,69 @@
+{
+  "phase": 4,
+  "description": "Canadian territories agriculture and crop production sources",
+  "territories": ["YT", "NT", "NU"],
+  "totalUrls": 3,
+  "estimatedChunks": 12,
+  "sources": {
+    "yukon_agriculture": {
+      "institution": "Government of Yukon - Agriculture",
+      "baseUrl": "https://yukon.ca/",
+      "priority": "medium",
+      "urlCount": 1,
+      "urls": [
+        {
+          "url": "https://yukon.ca/en/agriculture",
+          "title": "Yukon Agriculture",
+          "publicationId": "YT-AGRI",
+          "crops": ["forage", "vegetables"],
+          "topics": ["production", "programs", "soil"],
+          "type": "html",
+          "publishYear": "2023",
+          "estimatedChunks": 4,
+          "priority": "medium",
+          "notes": "Yukon agriculture program overview."
+        }
+      ]
+    },
+    "nwt_agriculture": {
+      "institution": "Government of Northwest Territories - Agriculture",
+      "baseUrl": "https://www.gov.nt.ca/",
+      "priority": "medium",
+      "urlCount": 1,
+      "urls": [
+        {
+          "url": "https://www.gov.nt.ca/industry-tourism-investment/en/agriculture",
+          "title": "Northwest Territories Agriculture",
+          "publicationId": "NT-AGRI",
+          "crops": ["forage", "vegetables"],
+          "topics": ["production", "programs", "food security"],
+          "type": "html",
+          "publishYear": "2023",
+          "estimatedChunks": 4,
+          "priority": "medium",
+          "notes": "NWT agriculture programs and support."
+        }
+      ]
+    },
+    "nunavut_agriculture": {
+      "institution": "Government of Nunavut - Agriculture and Food",
+      "baseUrl": "https://www.gov.nu.ca/",
+      "priority": "medium",
+      "urlCount": 1,
+      "urls": [
+        {
+          "url": "https://www.gov.nu.ca/environment/information/agriculture-and-food",
+          "title": "Nunavut Agriculture and Food",
+          "publicationId": "NU-AGRI",
+          "crops": ["forage", "greenhouse"],
+          "topics": ["production", "food security", "programs"],
+          "type": "html",
+          "publishYear": "2023",
+          "estimatedChunks": 4,
+          "priority": "medium",
+          "notes": "Nunavut agriculture and food programs."
+        }
+      ]
+    }
+  }
+}

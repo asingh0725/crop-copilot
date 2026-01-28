@@ -1,0 +1,53 @@
+{
+  "phase": 4,
+  "description": "Saskatchewan agriculture and crop production sources",
+  "province": "Saskatchewan",
+  "totalUrls": 3,
+  "estimatedChunks": 15,
+  "sources": {
+    "sask_agriculture": {
+      "institution": "Government of Saskatchewan - Agriculture",
+      "baseUrl": "https://www.saskatchewan.ca/",
+      "priority": "high",
+      "urlCount": 3,
+      "urls": [
+        {
+          "url": "https://www.saskatchewan.ca/business/agriculture-natural-resources-and-industry/agribusiness-farmers-and-ranchers/crops",
+          "title": "Saskatchewan Crops",
+          "publicationId": "SK-CROPS",
+          "crops": ["wheat", "canola", "lentils"],
+          "topics": ["production", "management", "markets"],
+          "type": "html",
+          "publishYear": "2023",
+          "estimatedChunks": 5,
+          "priority": "high",
+          "notes": "Crop production programs and resources."
+        },
+        {
+          "url": "https://www.saskatchewan.ca/business/agriculture-natural-resources-and-industry/agribusiness-farmers-and-ranchers/crops/crop-protection",
+          "title": "Crop Protection",
+          "publicationId": "SK-CROP-PROTECT",
+          "crops": ["wheat", "canola", "lentils"],
+          "topics": ["pest", "disease", "weed"],
+          "type": "html",
+          "publishYear": "2022",
+          "estimatedChunks": 5,
+          "priority": "medium",
+          "notes": "Saskatchewan crop protection information."
+        },
+        {
+          "url": "https://www.saskatchewan.ca/business/agriculture-natural-resources-and-industry/agribusiness-farmers-and-ranchers/crops/soil-fertility",
+          "title": "Soil Fertility",
+          "publicationId": "SK-SOIL-FERT",
+          "crops": ["wheat", "canola", "barley"],
+          "topics": ["soil", "fertility", "nutrients"],
+          "type": "html",
+          "publishYear": "2022",
+          "estimatedChunks": 5,
+          "priority": "medium",
+          "notes": "Soil fertility and nutrient management guidance."
+        }
+      ]
+    }
+  }
+}

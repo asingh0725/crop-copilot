@@ -1,0 +1,53 @@
+{
+  "phase": 4,
+  "description": "Manitoba agriculture and crop production sources",
+  "province": "Manitoba",
+  "totalUrls": 3,
+  "estimatedChunks": 15,
+  "sources": {
+    "manitoba_agriculture": {
+      "institution": "Manitoba Agriculture",
+      "baseUrl": "https://www.gov.mb.ca/agriculture/",
+      "priority": "high",
+      "urlCount": 3,
+      "urls": [
+        {
+          "url": "https://www.gov.mb.ca/agriculture/crops/",
+          "title": "Manitoba Crops",
+          "publicationId": "MB-CROPS",
+          "crops": ["wheat", "canola", "soybeans"],
+          "topics": ["production", "management", "markets"],
+          "type": "html",
+          "publishYear": "2023",
+          "estimatedChunks": 5,
+          "priority": "high",
+          "notes": "Manitoba crop production resources."
+        },
+        {
+          "url": "https://www.gov.mb.ca/agriculture/crops/crop-management/",
+          "title": "Crop Management",
+          "publicationId": "MB-CROP-MGMT",
+          "crops": ["wheat", "canola", "soybeans"],
+          "topics": ["management", "fertility", "rotation"],
+          "type": "html",
+          "publishYear": "2022",
+          "estimatedChunks": 5,
+          "priority": "medium",
+          "notes": "Crop management guidance and resources."
+        },
+        {
+          "url": "https://www.gov.mb.ca/agriculture/crops/crop-production/",
+          "title": "Crop Production",
+          "publicationId": "MB-CROP-PROD",
+          "crops": ["wheat", "canola", "soybeans"],
+          "topics": ["production", "seeding", "harvest"],
+          "type": "html",
+          "publishYear": "2022",
+          "estimatedChunks": 5,
+          "priority": "medium",
+          "notes": "Production resources for Manitoba crops."
+        }
+      ]
+    }
+  }
+}

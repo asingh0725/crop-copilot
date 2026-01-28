@@ -1,0 +1,53 @@
+{
+  "phase": 4,
+  "description": "British Columbia agriculture and crop production sources",
+  "province": "British Columbia",
+  "totalUrls": 3,
+  "estimatedChunks": 15,
+  "sources": {
+    "bc_agriculture": {
+      "institution": "Government of British Columbia - Agriculture",
+      "baseUrl": "https://www2.gov.bc.ca/",
+      "priority": "high",
+      "urlCount": 3,
+      "urls": [
+        {
+          "url": "https://www2.gov.bc.ca/gov/content/industry/agriculture-seafood/crops",
+          "title": "BC Crops",
+          "publicationId": "BC-CROPS",
+          "crops": ["berries", "grains", "forage"],
+          "topics": ["production", "markets", "management"],
+          "type": "html",
+          "publishYear": "2023",
+          "estimatedChunks": 5,
+          "priority": "high",
+          "notes": "BC crops overview and production resources."
+        },
+        {
+          "url": "https://www2.gov.bc.ca/gov/content/industry/agriculture-seafood/crops/berries",
+          "title": "BC Berry Crops",
+          "publicationId": "BC-BERRIES",
+          "crops": ["berries"],
+          "topics": ["production", "pest", "management"],
+          "type": "html",
+          "publishYear": "2023",
+          "estimatedChunks": 5,
+          "priority": "medium",
+          "notes": "Berry crop production resources."
+        },
+        {
+          "url": "https://www2.gov.bc.ca/gov/content/industry/agriculture-seafood/crops/grains-oilseeds",
+          "title": "BC Grains and Oilseeds",
+          "publicationId": "BC-GRAINS",
+          "crops": ["wheat", "barley", "canola"],
+          "topics": ["production", "rotation", "markets"],
+          "type": "html",
+          "publishYear": "2022",
+          "estimatedChunks": 5,
+          "priority": "medium",
+          "notes": "Grains and oilseeds production information."
+        }
+      ]
+    }
+  }
+}

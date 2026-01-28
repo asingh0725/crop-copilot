@@ -1,0 +1,53 @@
+{
+  "phase": 4,
+  "description": "New Brunswick agriculture and crop production sources",
+  "province": "New Brunswick",
+  "totalUrls": 3,
+  "estimatedChunks": 12,
+  "sources": {
+    "new_brunswick_agriculture": {
+      "institution": "Government of New Brunswick - Agriculture",
+      "baseUrl": "https://www2.gnb.ca/",
+      "priority": "medium",
+      "urlCount": 3,
+      "urls": [
+        {
+          "url": "https://www2.gnb.ca/content/gnb/en/departments/10/agriculture.html",
+          "title": "New Brunswick Agriculture",
+          "publicationId": "NB-AGRI",
+          "crops": ["potatoes", "forage", "grains"],
+          "topics": ["production", "programs", "markets"],
+          "type": "html",
+          "publishYear": "2023",
+          "estimatedChunks": 4,
+          "priority": "medium",
+          "notes": "Department of Agriculture, Aquaculture and Fisheries overview."
+        },
+        {
+          "url": "https://www2.gnb.ca/content/gnb/en/departments/10/agriculture/content/crops.html",
+          "title": "Crop Production",
+          "publicationId": "NB-CROPS",
+          "crops": ["potatoes", "grains", "forage"],
+          "topics": ["production", "management", "pest"],
+          "type": "html",
+          "publishYear": "2022",
+          "estimatedChunks": 4,
+          "priority": "medium",
+          "notes": "Crop production programs and information."
+        },
+        {
+          "url": "https://www2.gnb.ca/content/gnb/en/departments/10/agriculture/content/plant_health.html",
+          "title": "Plant Health",
+          "publicationId": "NB-PLANT-HEALTH",
+          "crops": ["potatoes", "grains", "forage"],
+          "topics": ["pest", "disease", "biosecurity"],
+          "type": "html",
+          "publishYear": "2022",
+          "estimatedChunks": 4,
+          "priority": "medium",
+          "notes": "Plant health and crop protection resources."
+        }
+      ]
+    }
+  }
+}

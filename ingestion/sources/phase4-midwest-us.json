@@ -1,0 +1,98 @@
+{
+  "phase": 4,
+  "description": "Midwest US row crops and agronomy extension sources",
+  "region": "Midwest US",
+  "states": ["IA", "IL", "IN", "MN", "MO", "WI", "MI", "OH"],
+  "totalUrls": 6,
+  "estimatedChunks": 42,
+  "sources": {
+    "iowa_state_extension": {
+      "institution": "Iowa State University Extension and Outreach",
+      "baseUrl": "https://crops.extension.iastate.edu/",
+      "priority": "critical",
+      "urlCount": 3,
+      "urls": [
+        {
+          "url": "https://crops.extension.iastate.edu/cropnews/2017/05/new-late-spring-soil-nitrate-test-publication-now-available",
+          "title": "New Late-Spring Soil Nitrate Test Publication (CROP 3140)",
+          "publicationId": "CROP-3140",
+          "crops": ["corn"],
+          "topics": ["nutrients", "nitrogen", "soil testing"],
+          "type": "html",
+          "publishYear": "2017",
+          "estimatedChunks": 6,
+          "priority": "critical",
+          "notes": "ISU extension crop news on soil nitrate test."
+        },
+        {
+          "url": "https://crops.extension.iastate.edu/encyclopedia/post-plant-nitrogen-applications-corn",
+          "title": "Post-plant Nitrogen Applications for Corn",
+          "publicationId": "ISU-N-CORN",
+          "crops": ["corn"],
+          "topics": ["nitrogen", "fertility", "management"],
+          "type": "html",
+          "publishYear": "2022",
+          "estimatedChunks": 6,
+          "priority": "high",
+          "notes": "Nitrogen management guidance for corn."
+        },
+        {
+          "url": "https://store.extension.iastate.edu/Product/2418.pdf",
+          "title": "Corn Production - Iowa State Extension",
+          "publicationId": "PM-2418",
+          "crops": ["corn"],
+          "topics": ["production", "planting", "hybrids"],
+          "type": "pdf",
+          "publishYear": "2016",
+          "estimatedChunks": 12,
+          "priority": "high",
+          "notes": "ISU corn production guide PDF."
+        }
+      ]
+    },
+    "minnesota_extension": {
+      "institution": "University of Minnesota Extension",
+      "baseUrl": "https://extension.umn.edu/",
+      "priority": "high",
+      "urlCount": 3,
+      "urls": [
+        {
+          "url": "https://extension.umn.edu/corn",
+          "title": "Corn Production",
+          "publicationId": "UMN-CORN",
+          "crops": ["corn"],
+          "topics": ["production", "management", "nutrition"],
+          "type": "html",
+          "publishYear": "2023",
+          "estimatedChunks": 6,
+          "priority": "high",
+          "notes": "UMN extension corn production resources."
+        },
+        {
+          "url": "https://extension.umn.edu/soybean",
+          "title": "Soybean Production",
+          "publicationId": "UMN-SOY",
+          "crops": ["soybeans"],
+          "topics": ["production", "pest", "management"],
+          "type": "html",
+          "publishYear": "2023",
+          "estimatedChunks": 6,
+          "priority": "high",
+          "notes": "UMN soybean management and production resources."
+        },
+        {
+          "url": "https://extension.umn.edu/small-grains",
+          "title": "Small Grains Production",
+          "publicationId": "UMN-SMALL-GRAINS",
+          "crops": ["wheat", "barley", "oats"],
+          "topics": ["production", "disease", "varieties"],
+          "type": "html",
+          "publishYear": "2022",
+          "estimatedChunks": 6,
+          "priority": "medium",
+          "notes": "Small grains production guides."
+        }
+      ]
+    }
+  }
+}

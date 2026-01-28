@@ -1,0 +1,98 @@
+{
+  "phase": 4,
+  "description": "Great Plains US agronomy and field crop extension sources",
+  "region": "Great Plains US",
+  "states": ["KS", "NE", "ND", "SD", "OK"],
+  "totalUrls": 6,
+  "estimatedChunks": 54,
+  "sources": {
+    "nebraska_cropwatch": {
+      "institution": "University of Nebraska-Lincoln CropWatch",
+      "baseUrl": "https://cropwatch.unl.edu/",
+      "priority": "critical",
+      "urlCount": 3,
+      "urls": [
+        {
+          "url": "https://cropwatch.unl.edu/corn",
+          "title": "CropWatch Corn Management",
+          "publicationId": "UNL-CROPWATCH-CORN",
+          "crops": ["corn"],
+          "topics": ["management", "production", "stress"],
+          "type": "html",
+          "publishYear": "2023",
+          "estimatedChunks": 6,
+          "priority": "high",
+          "notes": "CropWatch corn management resources."
+        },
+        {
+          "url": "https://cropwatch.unl.edu/soybean",
+          "title": "CropWatch Soybean Management",
+          "publicationId": "UNL-CROPWATCH-SOY",
+          "crops": ["soybeans"],
+          "topics": ["management", "pest", "production"],
+          "type": "html",
+          "publishYear": "2023",
+          "estimatedChunks": 6,
+          "priority": "high",
+          "notes": "CropWatch soybean management resources."
+        },
+        {
+          "url": "https://cropwatch.unl.edu/wheat",
+          "title": "CropWatch Wheat Management",
+          "publicationId": "UNL-CROPWATCH-WHEAT",
+          "crops": ["wheat"],
+          "topics": ["production", "disease", "nutrition"],
+          "type": "html",
+          "publishYear": "2022",
+          "estimatedChunks": 6,
+          "priority": "high",
+          "notes": "CropWatch wheat management resources."
+        }
+      ]
+    },
+    "kansas_state_extension": {
+      "institution": "Kansas State Research and Extension",
+      "baseUrl": "https://bookstore.ksre.ksu.edu/",
+      "priority": "high",
+      "urlCount": 3,
+      "urls": [
+        {
+          "url": "https://bookstore.ksre.ksu.edu/pubs/MF3066.pdf",
+          "title": "Nitrogen Fertilizer Recommendations for Corn",
+          "publicationId": "KSRE-MF3066",
+          "crops": ["corn"],
+          "topics": ["nutrients", "fertility", "soil"],
+          "type": "pdf",
+          "publishYear": "2015",
+          "estimatedChunks": 12,
+          "priority": "high",
+          "notes": "K-State nitrogen fertilizer guidance for corn."
+        },
+        {
+          "url": "https://bookstore.ksre.ksu.edu/pubs/MF3106.pdf",
+          "title": "Soybean Production Handbook",
+          "publicationId": "KSRE-MF3106",
+          "crops": ["soybeans"],
+          "topics": ["production", "varieties", "planting"],
+          "type": "pdf",
+          "publishYear": "2016",
+          "estimatedChunks": 12,
+          "priority": "medium",
+          "notes": "K-State soybean production guide."
+        },
+        {
+          "url": "https://bookstore.ksre.ksu.edu/pubs/MF3281.pdf",
+          "title": "Wheat Growth and Development",
+          "publicationId": "KSRE-MF3281",
+          "crops": ["wheat"],
+          "topics": ["growth stages", "management", "production"],
+          "type": "pdf",
+          "publishYear": "2017",
+          "estimatedChunks": 12,
+          "priority": "medium",
+          "notes": "K-State wheat growth and development reference."
+        }
+      ]
+    }
+  }
+}

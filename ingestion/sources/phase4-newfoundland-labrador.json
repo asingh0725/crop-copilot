@@ -1,0 +1,53 @@
+{
+  "phase": 4,
+  "description": "Newfoundland and Labrador agriculture and crop production sources",
+  "province": "Newfoundland and Labrador",
+  "totalUrls": 3,
+  "estimatedChunks": 12,
+  "sources": {
+    "nl_agriculture": {
+      "institution": "Government of Newfoundland and Labrador - Fisheries, Forestry and Agriculture",
+      "baseUrl": "https://www.gov.nl.ca/ffa/",
+      "priority": "medium",
+      "urlCount": 3,
+      "urls": [
+        {
+          "url": "https://www.gov.nl.ca/ffa/",
+          "title": "NL Agriculture Overview",
+          "publicationId": "NL-AGRI",
+          "crops": ["forage", "vegetables", "berries"],
+          "topics": ["programs", "production", "markets"],
+          "type": "html",
+          "publishYear": "2023",
+          "estimatedChunks": 4,
+          "priority": "medium",
+          "notes": "Department overview for agriculture programs."
+        },
+        {
+          "url": "https://www.gov.nl.ca/ffa/agricultureservices/crops/",
+          "title": "Crop Services",
+          "publicationId": "NL-CROP-SERVICES",
+          "crops": ["forage", "vegetables", "berries"],
+          "topics": ["production", "management", "soil"],
+          "type": "html",
+          "publishYear": "2022",
+          "estimatedChunks": 4,
+          "priority": "medium",
+          "notes": "Crop services and production resources."
+        },
+        {
+          "url": "https://www.gov.nl.ca/ffa/agricultureservices/soils/",
+          "title": "Soil and Nutrient Management",
+          "publicationId": "NL-SOILS",
+          "crops": ["forage", "vegetables"],
+          "topics": ["soil", "fertility", "nutrients"],
+          "type": "html",
+          "publishYear": "2022",
+          "estimatedChunks": 4,
+          "priority": "medium",
+          "notes": "Soils and nutrient management guidance."
+        }
+      ]
+    }
+  }
+}

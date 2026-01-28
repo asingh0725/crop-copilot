@@ -127,8 +127,12 @@ export interface CostTracker {
 }
 
 export interface SourceUrlConfig {
-  phase: 1 | 2 | 3;
+  phase: number;
   description: string;
+  region?: string;
+  province?: string;
+  states?: string[];
+  territories?: string[];
   totalUrls?: number;
   estimatedChunks?: number;
   sources: Record<
@@ -136,13 +140,21 @@ export interface SourceUrlConfig {
     {
       institution: string;
       baseUrl: string;
-      priority: "critical" | "high" | "medium";
+      priority: "critical" | "high" | "medium" | "low";
+      urlCount?: number;
+      focus?: string[];
       urls: Array<{
         url: string;
         title: string;
+        publicationId?: string;
         crops: string[];
         topics: string[];
-        expectedChunks: number;
+        type?: "html" | "pdf";
+        publishYear?: string;
+        expectedChunks?: number;
+        estimatedChunks?: number;
+        priority?: "critical" | "high" | "medium" | "low";
+        notes?: string;
       }>;
     }
   >;

@@ -1,0 +1,98 @@
+{
+  "phase": 4,
+  "description": "Southern US agronomy and field crop extension sources",
+  "region": "South US",
+  "states": ["TX", "GA", "AL", "MS", "LA", "AR", "NC", "SC", "FL", "TN", "KY"],
+  "totalUrls": 6,
+  "estimatedChunks": 36,
+  "sources": {
+    "texas_agrlife_extension": {
+      "institution": "Texas A&M AgriLife Extension",
+      "baseUrl": "https://agrilifeextension.tamu.edu/",
+      "priority": "critical",
+      "urlCount": 3,
+      "urls": [
+        {
+          "url": "https://agrilifeextension.tamu.edu/library/field-crops/",
+          "title": "AgriLife Extension Field Crops",
+          "publicationId": "TX-AGRILIFE-FIELD-CROPS",
+          "crops": ["corn", "cotton", "sorghum"],
+          "topics": ["production", "management", "pest"],
+          "type": "html",
+          "publishYear": "2023",
+          "estimatedChunks": 6,
+          "priority": "critical",
+          "notes": "Field crop production resources for Texas."
+        },
+        {
+          "url": "https://agrilifeextension.tamu.edu/library/forages/",
+          "title": "AgriLife Extension Forages",
+          "publicationId": "TX-AGRILIFE-FORAGES",
+          "crops": ["alfalfa", "hay", "pasture"],
+          "topics": ["forage", "production", "management"],
+          "type": "html",
+          "publishYear": "2022",
+          "estimatedChunks": 6,
+          "priority": "high",
+          "notes": "Forage and pasture management resources."
+        },
+        {
+          "url": "https://agrilifeextension.tamu.edu/library/crops/",
+          "title": "AgriLife Extension Crops",
+          "publicationId": "TX-AGRILIFE-CROPS",
+          "crops": ["corn", "cotton", "wheat"],
+          "topics": ["production", "nutrients", "pest"],
+          "type": "html",
+          "publishYear": "2022",
+          "estimatedChunks": 6,
+          "priority": "high",
+          "notes": "Crop production and management resources."
+        }
+      ]
+    },
+    "uga_extension": {
+      "institution": "University of Georgia Extension",
+      "baseUrl": "https://extension.uga.edu/",
+      "priority": "high",
+      "urlCount": 3,
+      "urls": [
+        {
+          "url": "https://extension.uga.edu/programs-services/extension-agriculture-and-natural-resources/crops-and-soils.html",
+          "title": "UGA Extension Crops and Soils",
+          "publicationId": "UGA-CROPS-SOILS",
+          "crops": ["corn", "cotton", "peanuts"],
+          "topics": ["production", "soil", "management"],
+          "type": "html",
+          "publishYear": "2023",
+          "estimatedChunks": 6,
+          "priority": "high",
+          "notes": "Program overview for crops and soils extension."
+        },
+        {
+          "url": "https://extension.uga.edu/publications/detail.html?number=B1362",
+          "title": "Corn Production Guide",
+          "publicationId": "UGA-B1362",
+          "crops": ["corn"],
+          "topics": ["production", "nutrients", "planting"],
+          "type": "html",
+          "publishYear": "2019",
+          "estimatedChunks": 6,
+          "priority": "high",
+          "notes": "UGA extension corn production bulletin."
+        },
+        {
+          "url": "https://extension.uga.edu/publications/detail.html?number=B1251",
+          "title": "Peanut Production Guide",
+          "publicationId": "UGA-B1251",
+          "crops": ["peanuts"],
+          "topics": ["production", "disease", "pest"],
+          "type": "html",
+          "publishYear": "2018",
+          "estimatedChunks": 6,
+          "priority": "medium",
+          "notes": "UGA extension peanut production bulletin."
+        }
+      ]
+    }
+  }
+}

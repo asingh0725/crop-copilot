@@ -25,6 +25,7 @@ interface RunOptions {
   skipScrape: boolean;
   skipImages: boolean;
   dryRun: boolean;
+  file?: string;
 }
 
 /**
@@ -83,27 +84,206 @@ function estimateChunks(urlList: SourceUrlConfig): number {
   return total;
 }
 
+function slugifyKey(value: string): string {
+  const slug = value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "");
+  return slug || "source";
+}
+
+function normalizeToSourceUrlConfig(raw: unknown): SourceUrlConfig {
+  if (!raw || typeof raw !== "object") {
+    throw new Error("Config must be a JSON object.");
+  }
+
+  const config = raw as {
+    phase?: number;
+    description?: string;
+    region?: string;
+    province?: string;
+    states?: string[];
+    territories?: string[];
+    totalUrls?: number;
+    estimatedChunks?: number;
+    sources?: Record<string, unknown> | Array<Record<string, unknown>>;
+  };
+
+  if (!config.sources) {
+    throw new Error("Config must include a sources field.");
+  }
+
+  let sources: SourceUrlConfig["sources"];
+
+  if (Array.isArray(config.sources)) {
+    sources = {};
+    config.sources.forEach((source, index) => {
+      const sourceRecord = source as {
+        sourceKey?: string;
+        institution?: string;
+        name?: string;
+        baseUrl?: string;
+        priority?: "critical" | "high" | "medium" | "low";
+        urls?: Array<Record<string, unknown>>;
+        urlCount?: number;
+        focus?: string[];
+      };
+      const rawKey =
+        sourceRecord.sourceKey ||
+        sourceRecord.institution ||
+        sourceRecord.name ||
+        `source-${index}`;
+      const baseKey = slugifyKey(rawKey);
+      const uniqueKey = sources[baseKey] ? `${baseKey}-${index}` : baseKey;
+      sources[uniqueKey] = {
+        institution: sourceRecord.institution || sourceRecord.name || rawKey,
+        baseUrl: sourceRecord.baseUrl || "",
+        priority: sourceRecord.priority || "medium",
+        urlCount: sourceRecord.urlCount,
+        focus: sourceRecord.focus,
+        urls: (sourceRecord.urls || []).map((url) => {
+          const record = url as {
+            url?: string;
+            title?: string;
+            publicationId?: string;
+            crops?: string[];
+            topics?: string[];
+            expectedChunks?: number;
+            estimatedChunks?: number;
+            type?: "html" | "pdf";
+            publishYear?: string;
+            priority?: "critical" | "high" | "medium" | "low";
+            notes?: string;
+          };
+
+          return {
+            url: record.url || "",
+            title: record.title || "Untitled",
+            publicationId: record.publicationId,
+            crops: record.crops || [],
+            topics: record.topics || [],
+            expectedChunks:
+              record.expectedChunks ??
+              record.estimatedChunks ??
+              25,
+            type: record.type,
+            publishYear: record.publishYear,
+            priority: record.priority,
+            notes: record.notes,
+          };
+        }),
+      };
+    });
+  } else {
+    sources = {} as SourceUrlConfig["sources"];
+    Object.entries(config.sources).forEach(([key, source]) => {
+      const sourceRecord = source as {
+        institution?: string;
+        name?: string;
+        baseUrl?: string;
+        priority?: "critical" | "high" | "medium" | "low";
+        urls?: Array<Record<string, unknown>>;
+        urlCount?: number;
+        focus?: string[];
+      };
+      sources[key] = {
+        institution: sourceRecord.institution || sourceRecord.name || key,
+        baseUrl: sourceRecord.baseUrl || "",
+        priority: sourceRecord.priority || "medium",
+        urlCount: sourceRecord.urlCount,
+        focus: sourceRecord.focus,
+        urls: (sourceRecord.urls || []).map((url) => {
+          const record = url as {
+            url?: string;
+            title?: string;
+            publicationId?: string;
+            crops?: string[];
+            topics?: string[];
+            expectedChunks?: number;
+            estimatedChunks?: number;
+            type?: "html" | "pdf";
+            publishYear?: string;
+            priority?: "critical" | "high" | "medium" | "low";
+            notes?: string;
+          };
+
+          return {
+            url: record.url || "",
+            title: record.title || "Untitled",
+            publicationId: record.publicationId,
+            crops: record.crops || [],
+            topics: record.topics || [],
+            expectedChunks:
+              record.expectedChunks ??
+              record.estimatedChunks ??
+              25,
+            type: record.type,
+            publishYear: record.publishYear,
+            priority: record.priority,
+            notes: record.notes,
+          };
+        }),
+      };
+    });
+  }
+
+  if (!Object.keys(sources).length) {
+    throw new Error("Config must include at least one source.");
+  }
+
+  return {
+    phase: config.phase ?? 1,
+    description: config.description ?? "Extension ingestion",
+    region: config.region,
+    province: config.province,
+    states: config.states,
+    territories: config.territories,
+    totalUrls: config.totalUrls,
+    estimatedChunks: config.estimatedChunks,
+    sources,
+  };
+}
+
+async function loadUrlConfig(options: RunOptions): Promise<{
+  urlList: SourceUrlConfig;
+  urlFile: string;
+}> {
+  const urlFile = options.file
+    ? options.file
+    : options.test
+    ? "ingestion/sources/test-urls.json"
+    : "ingestion/sources/phase3-urls.json";
+
+  let raw: unknown;
+  try {
+    const content = await fs.readFile(urlFile, "utf-8");
+    raw = JSON.parse(content);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    throw new Error(`Failed to read or parse ${urlFile}: ${message}`);
+  }
+
+  return { urlList: normalizeToSourceUrlConfig(raw), urlFile };
+}
+
 async function runPhase1Ingestion(options: RunOptions) {
   const startTime = Date.now();
 
   console.log("🌱 AI Agronomist Knowledge Base Ingestion - Phase 1");
   console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-  console.log(
-    `Mode: ${options.test ? "TEST (10 URLs)" : "FULL (187 URLs)"}`
-  );
+  const modeLabel = options.file
+    ? `CUSTOM FILE (${options.file})`
+    : options.test
+    ? "TEST (10 URLs)"
+    : "FULL (phase3-urls.json)";
+  console.log(`Mode: ${modeLabel}`);
   console.log(`Dry Run: ${options.dryRun ? "YES (no DB writes)" : "NO"}`);
   console.log(`Skip Scrape: ${options.skipScrape ? "YES" : "NO"}`);
   console.log(`Skip Images: ${options.skipImages ? "YES" : "NO"}`);
   console.log("");
 
   // Load URL list
-  const urlFile = options.test
-    ? "ingestion/sources/test-urls.json"
-    : "ingestion/sources/phase3-urls.json";
-
-  const urlList: SourceUrlConfig = JSON.parse(
-    await fs.readFile(urlFile, "utf-8")
-  );
+  const { urlList, urlFile } = await loadUrlConfig(options);
 
   let totalUrls = countTotalUrls(urlList) || 0;
   const estimatedChunks = estimateChunks(urlList);
@@ -116,6 +296,7 @@ async function runPhase1Ingestion(options: RunOptions) {
   console.log(`📦 Target: ${totalUrls} URLs`);
   console.log(`📚 Sources: ${Object.keys(urlList.sources).length}`);
   console.log(`📊 Estimated chunks: ${estimatedChunks}\n`);
+  console.log(`📄 Config file: ${urlFile}\n`);
 
   // Initialize trackers
   const tracker: ProgressTracker = {
@@ -507,6 +688,7 @@ program
   .name("run-phase1")
   .description("Run Phase 1 knowledge base ingestion")
   .option("--test", "Use test-urls.json (10 URLs) instead of full phase1", false)
+  .option("--file <path>", "Use a custom JSON source config file")
   .option("--limit <number>", "Limit number of URLs to process", parseInt)
   .option("--skip-scrape", "Skip scraping, use cached documents", false)
   .option("--skip-images", "Skip image processing", false)

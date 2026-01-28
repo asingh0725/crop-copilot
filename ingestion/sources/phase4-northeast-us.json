@@ -1,0 +1,98 @@
+{
+  "phase": 4,
+  "description": "Northeast US field crops and agronomy extension sources",
+  "region": "Northeast US",
+  "states": ["NY", "PA", "NJ", "CT", "MA", "VT", "NH", "ME", "RI"],
+  "totalUrls": 6,
+  "estimatedChunks": 36,
+  "sources": {
+    "cornell_fieldcrops": {
+      "institution": "Cornell University Field Crops",
+      "baseUrl": "https://fieldcrops.cals.cornell.edu/",
+      "priority": "critical",
+      "urlCount": 3,
+      "urls": [
+        {
+          "url": "https://fieldcrops.cals.cornell.edu/corn/",
+          "title": "Cornell Field Crops - Corn",
+          "publicationId": "CU-FC-CORN",
+          "crops": ["corn"],
+          "topics": ["production", "management", "nutrition"],
+          "type": "html",
+          "publishYear": "2023",
+          "estimatedChunks": 6,
+          "priority": "critical",
+          "notes": "Cornell field crops corn management overview and resources."
+        },
+        {
+          "url": "https://fieldcrops.cals.cornell.edu/soybeans/",
+          "title": "Cornell Field Crops - Soybeans",
+          "publicationId": "CU-FC-SOY",
+          "crops": ["soybeans"],
+          "topics": ["production", "management", "varieties"],
+          "type": "html",
+          "publishYear": "2023",
+          "estimatedChunks": 6,
+          "priority": "high",
+          "notes": "Soybean production guidance and management references."
+        },
+        {
+          "url": "https://fieldcrops.cals.cornell.edu/small-grains/",
+          "title": "Cornell Field Crops - Small Grains",
+          "publicationId": "CU-FC-SG",
+          "crops": ["wheat", "barley", "oats"],
+          "topics": ["production", "disease", "management"],
+          "type": "html",
+          "publishYear": "2022",
+          "estimatedChunks": 6,
+          "priority": "high",
+          "notes": "Small grains agronomy resources and updates."
+        }
+      ]
+    },
+    "penn_state_extension": {
+      "institution": "Penn State Extension",
+      "baseUrl": "https://extension.psu.edu/",
+      "priority": "critical",
+      "urlCount": 3,
+      "urls": [
+        {
+          "url": "https://extension.psu.edu/corn-production",
+          "title": "Corn Production",
+          "publicationId": "PSU-CORN-PROD",
+          "crops": ["corn"],
+          "topics": ["production", "nutrients", "hybrids"],
+          "type": "html",
+          "publishYear": "2021",
+          "estimatedChunks": 6,
+          "priority": "critical",
+          "notes": "Penn State corn production guide."
+        },
+        {
+          "url": "https://extension.psu.edu/soybean-production",
+          "title": "Soybean Production",
+          "publicationId": "PSU-SOY-PROD",
+          "crops": ["soybeans"],
+          "topics": ["production", "planting", "pest"],
+          "type": "html",
+          "publishYear": "2021",
+          "estimatedChunks": 6,
+          "priority": "high",
+          "notes": "Penn State soybean production guide."
+        },
+        {
+          "url": "https://extension.psu.edu/alfalfa-production",
+          "title": "Alfalfa Production",
+          "publicationId": "PSU-ALFALFA",
+          "crops": ["alfalfa"],
+          "topics": ["production", "forage", "harvest"],
+          "type": "html",
+          "publishYear": "2020",
+          "estimatedChunks": 6,
+          "priority": "medium",
+          "notes": "Alfalfa production and harvest management."
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,53 @@
+{
+  "phase": 4,
+  "description": "Quebec agriculture and crop production sources",
+  "province": "Quebec",
+  "totalUrls": 3,
+  "estimatedChunks": 15,
+  "sources": {
+    "mapaq": {
+      "institution": "Ministère de l'Agriculture, des Pêcheries et de l'Alimentation du Québec (MAPAQ)",
+      "baseUrl": "https://www.quebec.ca/",
+      "priority": "high",
+      "urlCount": 3,
+      "urls": [
+        {
+          "url": "https://www.quebec.ca/en/agriculture-environment-and-natural-resources/agriculture",
+          "title": "Quebec Agriculture",
+          "publicationId": "QC-AGRI",
+          "crops": ["corn", "soybeans", "forage"],
+          "topics": ["production", "management", "markets"],
+          "type": "html",
+          "publishYear": "2023",
+          "estimatedChunks": 5,
+          "priority": "high",
+          "notes": "Quebec agriculture program overview."
+        },
+        {
+          "url": "https://www.quebec.ca/en/agriculture-environment-and-natural-resources/agriculture/plant-production",
+          "title": "Plant Production",
+          "publicationId": "QC-PLANT-PROD",
+          "crops": ["corn", "soybeans", "wheat"],
+          "topics": ["production", "crop management", "plant health"],
+          "type": "html",
+          "publishYear": "2022",
+          "estimatedChunks": 5,
+          "priority": "medium",
+          "notes": "Plant production resources and guidance."
+        },
+        {
+          "url": "https://www.quebec.ca/en/agriculture-environment-and-natural-resources/agriculture/plant-production/crop-protection",
+          "title": "Crop Protection",
+          "publicationId": "QC-CROP-PROTECT",
+          "crops": ["corn", "soybeans", "wheat"],
+          "topics": ["pest", "disease", "weed"],
+          "type": "html",
+          "publishYear": "2022",
+          "estimatedChunks": 5,
+          "priority": "medium",
+          "notes": "Crop protection information for Quebec producers."
+        }
+      ]
+    }
+  }
+}

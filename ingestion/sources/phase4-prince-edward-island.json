@@ -1,0 +1,53 @@
+{
+  "phase": 4,
+  "description": "Prince Edward Island agriculture and crop production sources",
+  "province": "Prince Edward Island",
+  "totalUrls": 3,
+  "estimatedChunks": 12,
+  "sources": {
+    "pei_agriculture": {
+      "institution": "Government of Prince Edward Island - Agriculture",
+      "baseUrl": "https://www.princeedwardisland.ca/",
+      "priority": "medium",
+      "urlCount": 3,
+      "urls": [
+        {
+          "url": "https://www.princeedwardisland.ca/en/topic/agriculture",
+          "title": "PEI Agriculture",
+          "publicationId": "PEI-AGRI",
+          "crops": ["potatoes", "forage", "grains"],
+          "topics": ["programs", "production", "markets"],
+          "type": "html",
+          "publishYear": "2023",
+          "estimatedChunks": 4,
+          "priority": "medium",
+          "notes": "PEI agriculture department overview."
+        },
+        {
+          "url": "https://www.princeedwardisland.ca/en/topic/potatoes",
+          "title": "PEI Potatoes",
+          "publicationId": "PEI-POTATO",
+          "crops": ["potatoes"],
+          "topics": ["production", "disease", "management"],
+          "type": "html",
+          "publishYear": "2022",
+          "estimatedChunks": 4,
+          "priority": "medium",
+          "notes": "Potato production resources for PEI."
+        },
+        {
+          "url": "https://www.princeedwardisland.ca/en/topic/field-crops",
+          "title": "PEI Field Crops",
+          "publicationId": "PEI-FIELD-CROPS",
+          "crops": ["grains", "forage"],
+          "topics": ["production", "management", "rotation"],
+          "type": "html",
+          "publishYear": "2022",
+          "estimatedChunks": 4,
+          "priority": "low",
+          "notes": "Field crop production and management information."
+        }
+      ]
+    }
+  }
+}

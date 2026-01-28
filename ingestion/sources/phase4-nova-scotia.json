@@ -1,0 +1,53 @@
+{
+  "phase": 4,
+  "description": "Nova Scotia agriculture and crop production sources",
+  "province": "Nova Scotia",
+  "totalUrls": 3,
+  "estimatedChunks": 12,
+  "sources": {
+    "nova_scotia_agriculture": {
+      "institution": "Government of Nova Scotia - Agriculture",
+      "baseUrl": "https://novascotia.ca/agri/",
+      "priority": "medium",
+      "urlCount": 3,
+      "urls": [
+        {
+          "url": "https://novascotia.ca/agri/",
+          "title": "Nova Scotia Agriculture",
+          "publicationId": "NS-AGRI",
+          "crops": ["potatoes", "forage", "grains"],
+          "topics": ["programs", "production", "markets"],
+          "type": "html",
+          "publishYear": "2023",
+          "estimatedChunks": 4,
+          "priority": "medium",
+          "notes": "Nova Scotia agriculture department overview."
+        },
+        {
+          "url": "https://novascotia.ca/agri/topics/field-crops/",
+          "title": "Field Crops",
+          "publicationId": "NS-FIELD-CROPS",
+          "crops": ["forage", "grains"],
+          "topics": ["production", "management", "pest"],
+          "type": "html",
+          "publishYear": "2022",
+          "estimatedChunks": 4,
+          "priority": "medium",
+          "notes": "Field crop production and management resources."
+        },
+        {
+          "url": "https://novascotia.ca/agri/topics/soils/",
+          "title": "Soils and Nutrient Management",
+          "publicationId": "NS-SOILS",
+          "crops": ["forage", "grains"],
+          "topics": ["soil", "fertility", "nutrients"],
+          "type": "html",
+          "publishYear": "2022",
+          "estimatedChunks": 4,
+          "priority": "medium",
+          "notes": "Soils and nutrient management guidance."
+        }
+      ]
+    }
+  }
+}

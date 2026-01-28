@@ -1,0 +1,53 @@
+{
+  "phase": 4,
+  "description": "Ontario field crop and agronomy sources",
+  "province": "Ontario",
+  "totalUrls": 3,
+  "estimatedChunks": 15,
+  "sources": {
+    "omafra": {
+      "institution": "Ontario Ministry of Agriculture, Food and Rural Affairs (OMAFRA)",
+      "baseUrl": "https://www.ontario.ca/",
+      "priority": "high",
+      "urlCount": 3,
+      "urls": [
+        {
+          "url": "https://www.ontario.ca/page/field-crop-production",
+          "title": "Field Crop Production",
+          "publicationId": "ON-FIELD-CROP",
+          "crops": ["corn", "soybeans", "wheat"],
+          "topics": ["production", "management", "rotation"],
+          "type": "html",
+          "publishYear": "2023",
+          "estimatedChunks": 5,
+          "priority": "high",
+          "notes": "Ontario field crop production resources."
+        },
+        {
+          "url": "https://www.ontario.ca/page/crop-protection",
+          "title": "Crop Protection",
+          "publicationId": "ON-CROP-PROTECT",
+          "crops": ["corn", "soybeans", "wheat"],
+          "topics": ["pest", "disease", "weed"],
+          "type": "html",
+          "publishYear": "2022",
+          "estimatedChunks": 5,
+          "priority": "medium",
+          "notes": "Crop protection guidance and programs."
+        },
+        {
+          "url": "https://www.ontario.ca/page/nutrient-management",
+          "title": "Nutrient Management",
+          "publicationId": "ON-NUTRIENT",
+          "crops": ["corn", "soybeans", "forage"],
+          "topics": ["nutrients", "fertility", "soil"],
+          "type": "html",
+          "publishYear": "2022",
+          "estimatedChunks": 5,
+          "priority": "medium",
+          "notes": "Nutrient management policies and resources."
+        }
+      ]
+    }
+  }
+}

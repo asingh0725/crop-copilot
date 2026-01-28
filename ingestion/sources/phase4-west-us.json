@@ -1,0 +1,98 @@
+{
+  "phase": 4,
+  "description": "Western US agronomy and specialty crop extension sources",
+  "region": "West US",
+  "states": ["CA", "OR", "WA", "ID", "NV", "AZ", "NM", "CO", "UT", "WY", "MT"],
+  "totalUrls": 6,
+  "estimatedChunks": 64,
+  "sources": {
+    "uc_ipm": {
+      "institution": "University of California IPM",
+      "baseUrl": "https://ipm.ucanr.edu/",
+      "priority": "critical",
+      "urlCount": 3,
+      "urls": [
+        {
+          "url": "https://ipm.ucanr.edu/PDF/PMG/pmgalmond.pdf",
+          "title": "Almond: UC IPM Pest Management Guidelines",
+          "publicationId": "UCIPM-ALM",
+          "crops": ["almonds"],
+          "topics": ["IPM", "pest", "disease", "weed"],
+          "type": "pdf",
+          "publishYear": "2022",
+          "estimatedChunks": 16,
+          "priority": "critical",
+          "notes": "UC IPM almond pest management guidelines PDF."
+        },
+        {
+          "url": "https://ipm.ucanr.edu/PDF/PMG/pmgapple.pdf",
+          "title": "Apple: UC IPM Pest Management Guidelines",
+          "publicationId": "UCIPM-APPLE",
+          "crops": ["apples"],
+          "topics": ["IPM", "pest", "disease", "weed"],
+          "type": "pdf",
+          "publishYear": "2021",
+          "estimatedChunks": 16,
+          "priority": "high",
+          "notes": "UC IPM apple pest management guidelines PDF."
+        },
+        {
+          "url": "https://www.ipm.ucanr.edu/PDF/PMG/pmgapricot.pdf",
+          "title": "Apricot: UC IPM Pest Management Guidelines",
+          "publicationId": "UCIPM-APRICOT",
+          "crops": ["apricots"],
+          "topics": ["IPM", "pest", "disease", "weed"],
+          "type": "pdf",
+          "publishYear": "2021",
+          "estimatedChunks": 16,
+          "priority": "high",
+          "notes": "UC IPM apricot pest management guidelines PDF."
+        }
+      ]
+    },
+    "oregon_state_extension": {
+      "institution": "Oregon State University Extension Service",
+      "baseUrl": "https://extension.oregonstate.edu/",
+      "priority": "high",
+      "urlCount": 3,
+      "urls": [
+        {
+          "url": "https://extension.oregonstate.edu/crop-production",
+          "title": "OSU Extension Crop Production",
+          "publicationId": "OSU-CROP-PROD",
+          "crops": ["wheat", "barley", "hay"],
+          "topics": ["production", "management", "soil"],
+          "type": "html",
+          "publishYear": "2023",
+          "estimatedChunks": 6,
+          "priority": "high",
+          "notes": "OSU Extension crop production resources."
+        },
+        {
+          "url": "https://extension.oregonstate.edu/forages",
+          "title": "OSU Extension Forages",
+          "publicationId": "OSU-FORAGES",
+          "crops": ["alfalfa", "hay", "pasture"],
+          "topics": ["forage", "management", "production"],
+          "type": "html",
+          "publishYear": "2022",
+          "estimatedChunks": 5,
+          "priority": "medium",
+          "notes": "Forage and pasture management resources."
+        },
+        {
+          "url": "https://extension.oregonstate.edu/grains",
+          "title": "OSU Extension Grains",
+          "publicationId": "OSU-GRAINS",
+          "crops": ["wheat", "barley", "oats"],
+          "topics": ["production", "disease", "varieties"],
+          "type": "html",
+          "publishYear": "2022",
+          "estimatedChunks": 5,
+          "priority": "medium",
+          "notes": "Small grain management resources."
+        }
+      ]
+    }
+  }
+}
