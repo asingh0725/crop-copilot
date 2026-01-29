@@ -4,49 +4,49 @@
   "region": "Great Plains US",
   "states": ["KS", "NE", "ND", "SD", "OK"],
   "totalUrls": 6,
-  "estimatedChunks": 54,
+  "estimatedChunks": 60,
   "sources": {
-    "nebraska_cropwatch": {
-      "institution": "University of Nebraska-Lincoln CropWatch",
-      "baseUrl": "https://cropwatch.unl.edu/",
+    "ndsu_extension": {
+      "institution": "North Dakota State University Extension",
+      "baseUrl": "https://www.ndsu.edu/agriculture/extension/publications",
       "priority": "critical",
       "urlCount": 3,
       "urls": [
         {
-          "url": "https://cropwatch.unl.edu/corn",
-          "title": "CropWatch Corn Management",
-          "publicationId": "UNL-CROPWATCH-CORN",
+          "url": "https://www.ndsu.edu/agriculture/extension/publications/soil-fertility-recommendations-corn",
+          "title": "Soil Fertility Recommendations for Corn",
+          "publicationId": "NDSU-SF-CORN",
           "crops": ["corn"],
-          "topics": ["management", "production", "stress"],
+          "topics": ["soil", "fertility", "nutrients"],
           "type": "html",
-          "publishYear": "2023",
-          "estimatedChunks": 6,
+          "publishYear": "2020",
+          "estimatedChunks": 8,
           "priority": "high",
-          "notes": "CropWatch corn management resources."
+          "notes": "NDSU extension guidance on corn fertility."
         },
         {
-          "url": "https://cropwatch.unl.edu/soybean",
-          "title": "CropWatch Soybean Management",
-          "publicationId": "UNL-CROPWATCH-SOY",
+          "url": "https://www.ndsu.edu/agriculture/extension/publications/fertilizing-hard-red-spring-wheat-and-durum",
+          "title": "Fertilizing Hard Red Spring Wheat and Durum",
+          "publicationId": "NDSU-WHEAT-FERT",
+          "crops": ["wheat", "durum"],
+          "topics": ["fertility", "nutrients", "management"],
+          "type": "html",
+          "publishYear": "2020",
+          "estimatedChunks": 8,
+          "priority": "high",
+          "notes": "NDSU wheat fertility recommendations."
+        },
+        {
+          "url": "https://www.ndsu.edu/agriculture/extension/publications/soybean-production-field-guide-north-dakota",
+          "title": "Soybean Production Field Guide for North Dakota",
+          "publicationId": "NDSU-SOY-FIELD-GUIDE",
           "crops": ["soybeans"],
-          "topics": ["management", "pest", "production"],
+          "topics": ["production", "management", "planting"],
           "type": "html",
-          "publishYear": "2023",
-          "estimatedChunks": 6,
-          "priority": "high",
-          "notes": "CropWatch soybean management resources."
-        },
-        {
-          "url": "https://cropwatch.unl.edu/wheat",
-          "title": "CropWatch Wheat Management",
-          "publicationId": "UNL-CROPWATCH-WHEAT",
-          "crops": ["wheat"],
-          "topics": ["production", "disease", "nutrition"],
-          "type": "html",
-          "publishYear": "2022",
-          "estimatedChunks": 6,
-          "priority": "high",
-          "notes": "CropWatch wheat management resources."
+          "publishYear": "2018",
+          "estimatedChunks": 8,
+          "priority": "medium",
+          "notes": "NDSU soybean production field guide."
         }
       ]
     },
@@ -57,40 +57,40 @@
       "urlCount": 3,
       "urls": [
         {
-          "url": "https://bookstore.ksre.ksu.edu/pubs/MF3066.pdf",
-          "title": "Nitrogen Fertilizer Recommendations for Corn",
-          "publicationId": "KSRE-MF3066",
+          "url": "https://bookstore.ksre.ksu.edu/pubs/corn-production-handbook_C560.pdf",
+          "title": "Corn Production Handbook",
+          "publicationId": "KSRE-C560",
           "crops": ["corn"],
-          "topics": ["nutrients", "fertility", "soil"],
+          "topics": ["production", "management", "hybrids"],
           "type": "pdf",
-          "publishYear": "2015",
+          "publishYear": "2020",
           "estimatedChunks": 12,
           "priority": "high",
-          "notes": "K-State nitrogen fertilizer guidance for corn."
+          "notes": "K-State corn production handbook."
         },
         {
-          "url": "https://bookstore.ksre.ksu.edu/pubs/MF3106.pdf",
+          "url": "https://bookstore.ksre.ksu.edu/pubs/soybean-production-handbook_C449.pdf",
           "title": "Soybean Production Handbook",
-          "publicationId": "KSRE-MF3106",
+          "publicationId": "KSRE-C449",
           "crops": ["soybeans"],
-          "topics": ["production", "varieties", "planting"],
+          "topics": ["production", "management", "planting"],
           "type": "pdf",
-          "publishYear": "2016",
+          "publishYear": "2019",
           "estimatedChunks": 12,
-          "priority": "medium",
-          "notes": "K-State soybean production guide."
+          "priority": "high",
+          "notes": "K-State soybean production handbook."
         },
         {
-          "url": "https://bookstore.ksre.ksu.edu/pubs/MF3281.pdf",
-          "title": "Wheat Growth and Development",
-          "publicationId": "KSRE-MF3281",
+          "url": "https://bookstore.ksre.ksu.edu/pubs/wheat-production-handbook_C529.pdf",
+          "title": "Wheat Production Handbook",
+          "publicationId": "KSRE-C529",
           "crops": ["wheat"],
-          "topics": ["growth stages", "management", "production"],
+          "topics": ["production", "management", "disease"],
           "type": "pdf",
-          "publishYear": "2017",
+          "publishYear": "2018",
           "estimatedChunks": 12,
-          "priority": "medium",
-          "notes": "K-State wheat growth and development reference."
+          "priority": "high",
+          "notes": "K-State wheat production handbook."
         }
       ]
     }

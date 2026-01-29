@@ -4,7 +4,7 @@
   "region": "Northeast US",
   "states": ["NY", "PA", "NJ", "CT", "MA", "VT", "NH", "ME", "RI"],
   "totalUrls": 6,
-  "estimatedChunks": 36,
+  "estimatedChunks": 48,
   "sources": {
     "cornell_fieldcrops": {
       "institution": "Cornell University Field Crops",
@@ -52,45 +52,45 @@
     },
     "penn_state_extension": {
       "institution": "Penn State Extension",
-      "baseUrl": "https://extension.psu.edu/",
+      "baseUrl": "https://agsci.psu.edu/research/centers-facilities/extension/frec/resources",
       "priority": "critical",
       "urlCount": 3,
       "urls": [
         {
-          "url": "https://extension.psu.edu/corn-production",
-          "title": "Corn Production",
-          "publicationId": "PSU-CORN-PROD",
-          "crops": ["corn"],
-          "topics": ["production", "nutrients", "hybrids"],
-          "type": "html",
-          "publishYear": "2021",
-          "estimatedChunks": 6,
-          "priority": "critical",
-          "notes": "Penn State corn production guide."
-        },
-        {
-          "url": "https://extension.psu.edu/soybean-production",
-          "title": "Soybean Production",
-          "publicationId": "PSU-SOY-PROD",
-          "crops": ["soybeans"],
-          "topics": ["production", "planting", "pest"],
-          "type": "html",
-          "publishYear": "2021",
-          "estimatedChunks": 6,
-          "priority": "high",
-          "notes": "Penn State soybean production guide."
-        },
-        {
-          "url": "https://extension.psu.edu/alfalfa-production",
-          "title": "Alfalfa Production",
-          "publicationId": "PSU-ALFALFA",
-          "crops": ["alfalfa"],
-          "topics": ["production", "forage", "harvest"],
-          "type": "html",
+          "url": "https://agsci.psu.edu/research/centers-facilities/extension/frec/resources/treefruit_booklet_plaincommunity_optimized.pdf",
+          "title": "Penn State Tree Fruit Production Guide (Plain Communities)",
+          "publicationId": "PSU-FREC-TREEFRUIT",
+          "crops": ["tree fruit"],
+          "topics": ["production", "management", "orchards"],
+          "type": "pdf",
           "publishYear": "2020",
-          "estimatedChunks": 6,
+          "estimatedChunks": 10,
+          "priority": "high",
+          "notes": "Penn State fruit research and extension guide."
+        },
+        {
+          "url": "https://agsci.psu.edu/research/centers-facilities/extension/frec/resources/tree-fruit-program-summary-report-2019-2020.pdf",
+          "title": "Tree Fruit Program Summary Report 2019-2020",
+          "publicationId": "PSU-FREC-TREEFRUIT-REPORT",
+          "crops": ["tree fruit"],
+          "topics": ["production", "research", "management"],
+          "type": "pdf",
+          "publishYear": "2020",
+          "estimatedChunks": 10,
           "priority": "medium",
-          "notes": "Alfalfa production and harvest management."
+          "notes": "Penn State fruit research summary report."
+        },
+        {
+          "url": "https://agsci.psu.edu/research/centers-facilities/extension/frec/resources/workshop-presentations/2018-commercial-tree-fruit-school/pruning-by-the-numbers-jim-schupp.pdf",
+          "title": "Pruning by the Numbers",
+          "publicationId": "PSU-FREC-PRUNING",
+          "crops": ["tree fruit"],
+          "topics": ["pruning", "canopy management", "orchards"],
+          "type": "pdf",
+          "publishYear": "2018",
+          "estimatedChunks": 10,
+          "priority": "medium",
+          "notes": "Penn State tree fruit pruning workshop presentation."
         }
       ]
     }

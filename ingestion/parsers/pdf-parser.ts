@@ -1,7 +1,24 @@
 import * as pdfParse from "pdf-parse";
 import type { ParsedContent } from "../scrapers/types";
 
-const pdf = (pdfParse as any).default || pdfParse;
+const resolvedPdfParse = (() => {
+  if (typeof pdfParse === "function") {
+    return pdfParse;
+  }
+
+  const moduleDefault = (pdfParse as unknown as { default?: unknown }).default;
+  if (typeof moduleDefault === "function") {
+    return moduleDefault;
+  }
+
+  const nestedDefault = (moduleDefault as { default?: unknown } | undefined)
+    ?.default;
+  if (typeof nestedDefault === "function") {
+    return nestedDefault;
+  }
+
+  return null;
+})();
 
 // Custom error class for invalid PDF
 class InvalidPDFException extends Error {
@@ -26,8 +43,14 @@ export async function parsePDF(
   }
 
   try {
+    if (!resolvedPdfParse) {
+      throw new Error(
+        "pdf-parse did not resolve to a callable function. Check the pdf-parse module export format."
+      );
+    }
+
     // Extract text from PDF using pdf-parse
-    const data = await pdf(buffer);
+    const data = await resolvedPdfParse(buffer);
 
     // Validate we got text
     if (!data || !data.text) {
