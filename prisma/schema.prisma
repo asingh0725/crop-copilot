@@ -49,18 +49,19 @@ model Input {
 }
 
 model Recommendation {
-  id         String                 @id @default(cuid())
+  id         String                  @id @default(cuid())
   userId     String
-  inputId    String                 @unique
+  inputId    String                  @unique
   diagnosis  Json
   confidence Float
   modelUsed  String
   tokensUsed Int?
-  createdAt  DateTime               @default(now())
+  createdAt  DateTime                @default(now())
   feedback   Feedback[]
-  input      Input                  @relation(fields: [inputId], references: [id], onDelete: Cascade)
-  user       User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  input      Input                   @relation(fields: [inputId], references: [id], onDelete: Cascade)
+  user       User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
   sources    RecommendationSource[]
+  products   ProductRecommendation[]
 }
 
 model Feedback {
@@ -138,28 +139,51 @@ model RecommendationSource {
 }
 
 model Product {
-  id              String         @id @default(cuid())
+  id              String                  @id @default(cuid())
   name            String
-  brand           String
-  type            String
-  description     String?
+  brand           String?
+  type            ProductType
+  analysis        Json?
   applicationRate String?
-  targetCrops     String[]
-  retailerLinks   Json?
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
-  prices          ProductPrice[]
+  crops           String[]
+  description     String?                 @db.Text
+  metadata        Json?
+  createdAt       DateTime                @default(now())
+  updatedAt       DateTime                @updatedAt
+  recommendations ProductRecommendation[]
+
+  @@index([type])
+  @@index([name])
 }
 
-model ProductPrice {
-  id        String   @id @default(cuid())
-  productId String
-  retailer  String
-  price     Float
-  unit      String
-  url       String?
-  fetchedAt DateTime @default(now())
-  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+model ProductRecommendation {
+  id               String         @id @default(cuid())
+  recommendationId String
+  recommendation   Recommendation @relation(fields: [recommendationId], references: [id], onDelete: Cascade)
+  productId        String
+  product          Product        @relation(fields: [productId], references: [id], onDelete: Cascade)
+  reason           String         @db.Text
+  applicationRate  String?
+  priority         Int            @default(1)
+  searchQuery      String?
+  searchTimestamp  DateTime       @default(now())
+  createdAt        DateTime       @default(now())
+
+  @@unique([recommendationId, productId])
+  @@index([recommendationId])
+  @@index([productId])
+}
+
+enum ProductType {
+  FERTILIZER
+  AMENDMENT
+  PESTICIDE
+  HERBICIDE
+  FUNGICIDE
+  INSECTICIDE
+  SEED_TREATMENT
+  BIOLOGICAL
+  OTHER
 }
 
 enum SourceType {

@@ -14,6 +14,7 @@ import {
   ChevronRight,
   Leaf,
   User,
+  Package,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -46,6 +47,11 @@ const mainNavItems: NavItem[] = [
     title: "Recommendations",
     href: "/recommendations",
     icon: ClipboardList,
+  },
+  {
+    title: "Products",
+    href: "/products",
+    icon: Package,
   },
   {
     title: "History",
@@ -81,7 +87,7 @@ export function Sidebar({ userName, userEmail, collapsed, onCollapsedChange }: S
   const handleSignOut = async () => {
     const supabase = createClient();
     await supabase.auth.signOut();
-    router.push("/login");
+    router.push("/");
     router.refresh();
   };
 

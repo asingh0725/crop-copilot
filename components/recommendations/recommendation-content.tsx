@@ -5,6 +5,7 @@ import { ActionItemsDisplay } from "./action-items-display";
 import { SourcesPanel } from "./sources-panel";
 import { SourcesDisplay } from "./sources-display";
 import { ProductSuggestions } from "./product-suggestions";
+import { ProductRecommendations } from "./product-recommendations";
 import { Button } from "@/components/ui/button";
 import { BookOpen } from "lucide-react";
 import type { ActionItem, ProductSuggestion } from "@/lib/utils/format-diagnosis";
@@ -30,12 +31,14 @@ interface RecommendationContentProps {
   actionItems: ActionItem[];
   sources: Source[];
   products: ProductSuggestion[];
+  recommendationId?: string;
 }
 
 export function RecommendationContent({
   actionItems,
   sources,
   products,
+  recommendationId,
 }: RecommendationContentProps) {
   const [isSourcesPanelOpen, setIsSourcesPanelOpen] = useState(false);
   const [highlightedSourceNumber, setHighlightedSourceNumber] = useState<number | null>(null);
@@ -118,9 +121,14 @@ export function RecommendationContent({
         </div>
       )}
 
-      {/* Product Suggestions */}
+      {/* Product Suggestions from diagnosis */}
       {products && products.length > 0 && (
         <ProductSuggestions products={products} />
+      )}
+
+      {/* Dynamic Product Recommendations with live pricing */}
+      {recommendationId && (
+        <ProductRecommendations recommendationId={recommendationId} />
       )}
 
       {/* Sources Panel (Sheet/Sidebar) */}

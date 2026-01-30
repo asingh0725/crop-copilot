@@ -14,6 +14,7 @@ import {
   LogOut,
   X,
   Leaf,
+  Package,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -52,6 +53,11 @@ const primaryNavItems: NavItem[] = [
 
 const moreNavItems: NavItem[] = [
   {
+    title: "Products",
+    href: "/products",
+    icon: Package,
+  },
+  {
     title: "History",
     href: "/history",
     icon: History,
@@ -82,7 +88,7 @@ export function MobileNav({ userName, userEmail }: MobileNavProps) {
     const supabase = createClient();
     await supabase.auth.signOut();
     setOpen(false);
-    router.push("/login");
+    router.push("/");
     router.refresh();
   };
 

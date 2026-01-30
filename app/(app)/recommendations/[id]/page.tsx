@@ -199,6 +199,7 @@ export default async function RecommendationPage({
           actionItems={actionItems}
           sources={recommendation.sources}
           products={products}
+          recommendationId={recommendation.id}
         />
 
         {recommendation.input && (
