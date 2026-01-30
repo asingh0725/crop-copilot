@@ -10,6 +10,7 @@ import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import type { FullRecommendation } from "@/lib/utils/format-diagnosis";
+import { FeedbackModalTrigger } from "@/components/feedback";
 
 interface RecommendationPageProps {
   params: {
@@ -296,6 +297,12 @@ export default async function RecommendationPage({
           Model: {recommendation.modelUsed || "Unknown"}
         </div>
       </div>
+
+      {/* Feedback Modal - iOS-like popup */}
+      <FeedbackModalTrigger
+        recommendationId={recommendation.id}
+        recommendationDate={recommendation.createdAt}
+      />
     </div>
   );
 }
