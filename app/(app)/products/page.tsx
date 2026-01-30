@@ -3,8 +3,14 @@
 import { useState, useEffect, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { PageHeader } from "@/components/shared/page-header";
-import { ProductCard, ProductCardSkeleton } from "@/components/products/product-card";
-import { ProductFilters, FilterState } from "@/components/products/product-filters";
+import {
+  ProductCard,
+  ProductCardSkeleton,
+} from "@/components/products/product-card";
+import {
+  ProductFilters,
+  FilterState,
+} from "@/components/products/product-filters";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/shared/empty-state";
 import { Package, Scale, ChevronLeft, ChevronRight } from "lucide-react";
@@ -37,7 +43,9 @@ export default function ProductsPage() {
   const [loading, setLoading] = useState(true);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
-  const [selectedProducts, setSelectedProducts] = useState<Set<string>>(new Set());
+  const [selectedProducts, setSelectedProducts] = useState<Set<string>>(
+    new Set()
+  );
   const [filters, setFilters] = useState<FilterState>({
     search: searchParams.get("search") || "",
     types: [],
@@ -51,7 +59,9 @@ export default function ProductsPage() {
     try {
       const params = new URLSearchParams();
       if (filters.search) params.set("search", filters.search);
-      if (filters.types.length === 1) params.set("type", filters.types[0]);
+      if (filters.types.length > 0) {
+        params.set("types", filters.types.join(","));
+      }
       if (filters.crop) params.set("crop", filters.crop);
       params.set("sortBy", filters.sortBy);
       params.set("sortOrder", filters.sortOrder);
@@ -63,15 +73,7 @@ export default function ProductsPage() {
 
       const data: ProductsResponse = await response.json();
 
-      // Filter by multiple types client-side if needed
-      let filteredProducts = data.products;
-      if (filters.types.length > 1) {
-        filteredProducts = data.products.filter((p) =>
-          filters.types.includes(p.type)
-        );
-      }
-
-      setProducts(filteredProducts);
+      setProducts(data.products);
       setTotal(data.total);
     } catch (error) {
       console.error("Error fetching products:", error);
@@ -109,14 +111,14 @@ export default function ProductsPage() {
   const totalPages = Math.ceil(total / ITEMS_PER_PAGE);
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">
+    <div className="mx-auto max-w-7xl p-4 sm:p-6 lg:p-8">
       <PageHeader
         title="Product Browser"
         description="Browse fertilizers, pesticides, and agricultural products. Click on any product to view details and live pricing."
       />
 
       {/* Filters */}
-      <div className="bg-white rounded-lg border p-4 mb-6">
+      <div className="mb-6 rounded-lg border bg-white p-4">
         <ProductFilters
           onFiltersChange={handleFiltersChange}
           initialFilters={filters}
@@ -125,20 +127,21 @@ export default function ProductsPage() {
 
       {/* Compare bar */}
       {selectedProducts.size > 0 && (
-        <div className="bg-[#2C5F2D] text-white rounded-lg p-4 mb-6 flex items-center justify-between">
+        <div className="mb-6 flex items-center justify-between rounded-lg bg-[#2C5F2D] p-4 text-white">
           <div className="flex items-center gap-2">
             <Scale className="h-5 w-5" />
             <span>
-              {selectedProducts.size} product{selectedProducts.size > 1 ? "s" : ""} selected
+              {selectedProducts.size} product
+              {selectedProducts.size > 1 ? "s" : ""} selected
             </span>
-            <span className="text-white/60 text-sm">(max 6)</span>
+            <span className="text-sm text-white/60">(max 6)</span>
           </div>
           <div className="flex gap-2">
             <Button
               variant="outline"
               size="sm"
               onClick={() => setSelectedProducts(new Set())}
-              className="bg-transparent border-white/30 text-white hover:bg-white/10"
+              className="border-white/30 bg-transparent text-white hover:bg-white/10"
             >
               Clear
             </Button>
@@ -155,20 +158,18 @@ export default function ProductsPage() {
       )}
 
       {/* Results count */}
-      <div className="flex items-center justify-between mb-4">
+      <div className="mb-4 flex items-center justify-between">
         <p className="text-sm text-gray-500">
           {loading ? "Loading..." : `${total} products found`}
         </p>
         {selectedProducts.size === 0 && (
-          <p className="text-sm text-gray-400">
-            Select products to compare
-          </p>
+          <p className="text-sm text-gray-400">Select products to compare</p>
         )}
       </div>
 
       {/* Product grid */}
       {loading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {Array.from({ length: 8 }).map((_, i) => (
             <ProductCardSkeleton key={i} />
           ))}
@@ -180,7 +181,7 @@ export default function ProductsPage() {
           description="Try adjusting your search or filters to find what you're looking for."
         />
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {products.map((product) => (
             <ProductCard
               key={product.id}
@@ -195,7 +196,7 @@ export default function ProductsPage() {
 
       {/* Pagination */}
       {totalPages > 1 && (
-        <div className="flex items-center justify-center gap-2 mt-8">
+        <div className="mt-8 flex items-center justify-center gap-2">
           <Button
             variant="outline"
             size="sm"
@@ -205,7 +206,7 @@ export default function ProductsPage() {
             <ChevronLeft className="h-4 w-4" />
             Previous
           </Button>
-          <span className="text-sm text-gray-600 px-4">
+          <span className="px-4 text-sm text-gray-600">
             Page {page} of {totalPages}
           </span>
           <Button

@@ -8,7 +8,11 @@ export async function GET(request: NextRequest) {
 
     // Parse query parameters
     const search = searchParams.get("search") || "";
-    const type = searchParams.get("type") as ProductType | null;
+    const typesParam = searchParams.get("types");
+    const types = typesParam ? (typesParam.split(",") as ProductType[]) : [];
+    const validTypes = types.filter((t) =>
+      Object.values(ProductType).includes(t)
+    );
     const crop = searchParams.get("crop") || "";
     const limit = Math.min(parseInt(searchParams.get("limit") || "20"), 100);
     const offset = parseInt(searchParams.get("offset") || "0");
@@ -28,8 +32,8 @@ export async function GET(request: NextRequest) {
     }
 
     // Filter by product type
-    if (type && Object.values(ProductType).includes(type)) {
-      where.type = type;
+    if (validTypes.length > 0) {
+      where.type = { in: validTypes };
     }
 
     // Filter by crop compatibility

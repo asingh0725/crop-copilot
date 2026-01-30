@@ -43,7 +43,12 @@ function isRateLimitError(status: number): boolean {
 export async function searchProductPricing(
   options: PricingSearchOptions
 ): Promise<ProductPricing[]> {
-  const { productName, brand, region = "United States", maxResults = 5 } = options;
+  const {
+    productName,
+    brand,
+    region = "United States",
+    maxResults = 5,
+  } = options;
 
   const apiKey = process.env.GOOGLE_AI_API_KEY;
   if (!apiKey) {
@@ -54,12 +59,35 @@ export async function searchProductPricing(
   const searchTerm = brand ? `${brand} ${productName}` : productName;
 
   // Determine country/region context for better retailer targeting
-  const isCanada = region.toLowerCase().includes('canada') ||
-    ['british columbia', 'alberta', 'ontario', 'quebec', 'manitoba', 'saskatchewan',
-     'nova scotia', 'new brunswick', 'newfoundland', 'pei', 'yukon', 'nunavut', 'northwest territories',
-     'bc', 'ab', 'on', 'qc', 'mb', 'sk', 'ns', 'nb', 'nl', 'nt', 'yt', 'nu'].some(
-      prov => region.toLowerCase().includes(prov)
-    );
+  const isCanada =
+    region.toLowerCase().includes("canada") ||
+    [
+      "british columbia",
+      "alberta",
+      "ontario",
+      "quebec",
+      "manitoba",
+      "saskatchewan",
+      "nova scotia",
+      "new brunswick",
+      "newfoundland",
+      "pei",
+      "yukon",
+      "nunavut",
+      "northwest territories",
+      "bc",
+      "ab",
+      "on",
+      "qc",
+      "mb",
+      "sk",
+      "ns",
+      "nb",
+      "nl",
+      "nt",
+      "yt",
+      "nu",
+    ].some((prov) => region.toLowerCase().includes(prov));
 
   const regionContext = isCanada
     ? `Canadian retailers only. Use .ca domains (e.g., homedepot.ca, amazon.ca, canadiantire.ca). Do NOT use .com domains for US retailers.`
@@ -77,9 +105,9 @@ ${regionContext}
 Search for prices ONLY from ${retailerExamples}.
 
 Requirements:
-- Prices must be in local currency (${isCanada ? 'CAD' : 'local currency'})
+- Prices must be in local currency (${isCanada ? "CAD" : "local currency"})
 - URLs must be for retailers that ship to ${region}
-- ${isCanada ? 'ONLY use Canadian websites (.ca domains). Never use American .com sites.' : 'Use regionally appropriate websites.'}
+- ${isCanada ? "ONLY use Canadian websites (.ca domains). Never use American .com sites." : "Use regionally appropriate websites."}
 
 Return ONLY a valid JSON array with up to ${maxResults} pricing results. Format:
 [
@@ -87,7 +115,7 @@ Return ONLY a valid JSON array with up to ${maxResults} pricing results. Format:
     "price": 45.99,
     "unit": "50 lb bag",
     "retailer": "Retailer Name",
-    "url": "https://example${isCanada ? '.ca' : '.com'}/product",
+    "url": "https://example${isCanada ? ".ca" : ".com"}/product",
     "region": "${region}"
   }
 ]
@@ -134,7 +162,9 @@ Important: Only include real prices from retailers that actually serve ${region}
           await sleep(backoffMs);
           continue;
         }
-        throw new Error(`Gemini API error: ${response.status} ${response.statusText}`);
+        throw new Error(
+          `Gemini API error: ${response.status} ${response.statusText}`
+        );
       }
 
       const data = await response.json();
@@ -163,7 +193,10 @@ Important: Only include real prices from retailers that actually serve ${region}
 /**
  * Parse pricing information from Gemini response
  */
-function parsePricingFromResponse(text: string, region: string): ProductPricing[] {
+function parsePricingFromResponse(
+  text: string,
+  region: string
+): ProductPricing[] {
   try {
     // Find JSON array in response
     const jsonMatch = text.match(/\[[\s\S]*?\]/);
@@ -177,20 +210,30 @@ function parsePricingFromResponse(text: string, region: string): ProductPricing[
     }
 
     return parsed
-      .filter((item: Record<string, unknown>) => item.price !== null && item.price !== undefined)
-      .map((item: Record<string, unknown>): ProductPricing => ({
-        price:
+      .filter((item) => {
+        const p =
           typeof item.price === "number"
             ? item.price
-            : item.price
-              ? parseFloat(String(item.price))
-              : null,
-        unit: String(item.unit || "each"),
-        retailer: String(item.retailer || "Unknown"),
-        url: item.url ? String(item.url) : null,
-        region: String(item.region || region),
-        lastUpdated: new Date(),
-      }))
+            : parseFloat(String(item.price));
+        return Number.isFinite(p);
+      })
+      .map((item: Record<string, unknown>) => {
+        const parsedPrice =
+          typeof item.price === "number"
+            ? item.price
+            : typeof item.price === "string"
+              ? parseFloat(item.price.replace(/[^0-9.]/g, ""))
+              : NaN;
+
+        return {
+          price: Number.isFinite(parsedPrice) ? parsedPrice : null,
+          unit: String(item.unit || "each"),
+          retailer: String(item.retailer || "Unknown"),
+          url: item.url ? String(item.url) : null,
+          region: String(item.region || region),
+          lastUpdated: new Date(),
+        };
+      })
       .slice(0, 5); // Ensure max 5 results
   } catch (error) {
     console.error("[Pricing] Failed to parse response:", error);
