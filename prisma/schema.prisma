@@ -66,15 +66,136 @@ model Recommendation {
 
 model Feedback {
   id               String         @id @default(cuid())
-  userId           String
-  recommendationId String
-  helpful          Boolean?
-  accuracyRating   Int?
-  outcome          String?
-  comments         String?
-  createdAt        DateTime       @default(now())
+  recommendationId String         @unique
   recommendation   Recommendation @relation(fields: [recommendationId], references: [id], onDelete: Cascade)
-  user             User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId           String?
+  user             User?          @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  // === IMMEDIATE FEEDBACK ===
+
+  // Quick feedback (thumbs up/down)
+  helpful Boolean? // true = helpful, false = not helpful
+
+  // Detailed ratings
+  rating   Int? // Overall rating 1-5 stars
+  accuracy Int? // Diagnosis accuracy 1-5 stars
+
+  // Legacy columns (kept for backward compatibility)
+  accuracyRating Int?    // @deprecated - use accuracy instead
+  outcome        String? // @deprecated - use outcomeNotes instead
+
+  // Free-text feedback
+  comments String? @db.Text
+
+  // Specific issues (stored as JSON array)
+  // ["diagnosis_wrong", "not_practical", "products_unavailable", "timing_off", "missing_info"]
+  issues Json?
+
+  // === OUTCOME FEEDBACK (collected 2-4 weeks later) ===
+
+  outcomeReported  Boolean   @default(false)
+  outcomeApplied   Boolean? // Did they apply the recommendation?
+  outcomeSuccess   Boolean? // Did it work? true=yes, false=no, null=partially
+  outcomeNotes     String?   @db.Text
+  outcomeImages    String[] // Array of image URLs (follow-up photos)
+  outcomeTimestamp DateTime?
+
+  // === METADATA FOR IMPROVEMENT ===
+
+  // Which prompt version was used (for A/B testing)
+  promptVersion String?
+
+  // Which knowledge base chunks were used
+  retrievedChunks Json? // Array of chunk IDs
+
+  // Which products were suggested
+  suggestedProducts Json? // Array of product IDs
+
+  // System metadata
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  @@index([recommendationId])
+  @@index([userId])
+  @@index([helpful])
+  @@index([rating])
+  @@index([outcomeReported])
+  @@index([outcomeSuccess])
+  @@index([promptVersion])
+  @@index([createdAt])
+}
+
+model PromptTemplate {
+  id           String @id @default(cuid())
+  version      String @unique // "v1", "v2", "v2.1", etc.
+  name         String // "Recommendation Agent v2"
+  templateText String @db.Text // The actual prompt template
+
+  // Performance metrics (updated weekly)
+  averageRating Float?
+  usageCount    Int    @default(0)
+
+  // Learnings incorporated (JSON array of strings)
+  learnings Json? // ["Always mention soil testing for Fe deficiency", ...]
+
+  // A/B testing
+  isActive       Boolean @default(false) // Currently in use
+  trafficPercent Int     @default(0) // % of traffic (0-100)
+
+  // Metadata
+  createdAt DateTime @default(now())
+  createdBy String? // "auto" or admin user ID
+  notes     String?  @db.Text
+
+  @@index([version])
+  @@index([isActive])
+}
+
+model ChunkFeedbackScore {
+  id      String @id @default(cuid())
+  chunkId String @unique
+
+  // Feedback aggregation
+  positiveCount Int @default(0) // Used in 4-5 star recommendations
+  negativeCount Int @default(0) // Used in 1-2 star recommendations
+  neutralCount  Int @default(0) // Used in 3 star recommendations
+
+  // Calculated score (0.0 - 1.0)
+  feedbackScore Float @default(0.5)
+
+  // Usage stats
+  timesRetrieved Int       @default(0)
+  lastUsed       DateTime?
+  lastUpdated    DateTime  @updatedAt
+
+  @@index([feedbackScore])
+  @@index([timesRetrieved])
+}
+
+model ProductFeedbackScore {
+  id        String  @id @default(cuid())
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  // Context-specific success rates
+  diagnosisType String // "nitrogen_deficiency"
+  cropType      String // "corn"
+
+  // Outcome tracking
+  successCount Int @default(0) // "It worked" outcomes
+  failureCount Int @default(0) // "Didn't work" outcomes
+  partialCount Int @default(0) // "Partially worked" outcomes
+
+  // Calculated success rate (0.0 - 1.0)
+  successRate Float @default(0.5)
+
+  // Metadata
+  lastUpdated DateTime @updatedAt
+
+  @@unique([productId, diagnosisType, cropType])
+  @@index([successRate])
+  @@index([diagnosisType])
+  @@index([cropType])
 }
 
 model Source {
@@ -151,6 +272,7 @@ model Product {
   createdAt       DateTime                @default(now())
   updatedAt       DateTime                @updatedAt
   recommendations ProductRecommendation[]
+  feedbackScores  ProductFeedbackScore[]
 
   @@index([type])
   @@index([name])

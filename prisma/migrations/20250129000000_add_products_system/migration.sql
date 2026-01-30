@@ -37,15 +37,17 @@ EXCEPTION
     NULL;
 END $$;
 
--- AlterTable ProductPrice - Add new columns only (no deletions)
-ALTER TABLE "ProductPrice" ADD COLUMN IF NOT EXISTS "inStock" BOOLEAN DEFAULT true;
-ALTER TABLE "ProductPrice" ADD COLUMN IF NOT EXISTS "lastUpdated" TIMESTAMP(3) DEFAULT CURRENT_TIMESTAMP;
-
--- Copy data from fetchedAt to lastUpdated if fetchedAt exists
+-- AlterTable ProductPrice - Add new columns only if table exists (no deletions)
 DO $$
 BEGIN
-  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'ProductPrice' AND column_name = 'fetchedAt') THEN
-    UPDATE "ProductPrice" SET "lastUpdated" = "fetchedAt" WHERE "lastUpdated" IS NULL;
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'ProductPrice') THEN
+    ALTER TABLE "ProductPrice" ADD COLUMN IF NOT EXISTS "inStock" BOOLEAN DEFAULT true;
+    ALTER TABLE "ProductPrice" ADD COLUMN IF NOT EXISTS "lastUpdated" TIMESTAMP(3) DEFAULT CURRENT_TIMESTAMP;
+
+    -- Copy data from fetchedAt to lastUpdated if fetchedAt exists
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'ProductPrice' AND column_name = 'fetchedAt') THEN
+      UPDATE "ProductPrice" SET "lastUpdated" = "fetchedAt" WHERE "lastUpdated" IS NULL;
+    END IF;
   END IF;
 END $$;
 
@@ -65,20 +67,22 @@ CREATE TABLE IF NOT EXISTS "ProductRecommendation" (
 CREATE INDEX IF NOT EXISTS "Product_type_idx" ON "Product"("type");
 CREATE INDEX IF NOT EXISTS "Product_brand_idx" ON "Product"("brand");
 
--- CreateIndex for ProductPrice (safe - checks for existing constraint)
+-- CreateIndex for ProductPrice (safe - only if table exists)
 DO $$
 BEGIN
-  IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'ProductPrice_productId_retailer_key') THEN
-    -- Only create unique index if no duplicates exist
-    IF NOT EXISTS (
-      SELECT "productId", "retailer" FROM "ProductPrice"
-      GROUP BY "productId", "retailer" HAVING COUNT(*) > 1
-    ) THEN
-      CREATE UNIQUE INDEX "ProductPrice_productId_retailer_key" ON "ProductPrice"("productId", "retailer");
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'ProductPrice') THEN
+    IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'ProductPrice_productId_retailer_key') THEN
+      -- Only create unique index if no duplicates exist
+      IF NOT EXISTS (
+        SELECT "productId", "retailer" FROM "ProductPrice"
+        GROUP BY "productId", "retailer" HAVING COUNT(*) > 1
+      ) THEN
+        CREATE UNIQUE INDEX "ProductPrice_productId_retailer_key" ON "ProductPrice"("productId", "retailer");
+      END IF;
     END IF;
+    CREATE INDEX IF NOT EXISTS "ProductPrice_productId_idx" ON "ProductPrice"("productId");
   END IF;
 END $$;
-CREATE INDEX IF NOT EXISTS "ProductPrice_productId_idx" ON "ProductPrice"("productId");
 
 -- CreateIndex for ProductRecommendation (safe - IF NOT EXISTS)
 CREATE UNIQUE INDEX IF NOT EXISTS "ProductRecommendation_recommendationId_productId_key" ON "ProductRecommendation"("recommendationId", "productId");
