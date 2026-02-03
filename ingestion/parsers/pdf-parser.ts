@@ -1,7 +1,23 @@
-import * as pdfParse from "pdf-parse";
+import type { PDFParse as PDFParseType } from "pdf-parse";
 import type { ParsedContent } from "../scrapers/types";
 
-const pdf = (pdfParse as any).default || pdfParse;
+let PDFParseClass: typeof PDFParseType | null = null;
+let pdfParseFn: ((buffer: Buffer) => Promise<{ text: string }>) | null = null;
+
+function getPdfParser() {
+  if (PDFParseClass || pdfParseFn) {
+    return { PDFParseClass, pdfParseFn };
+  }
+
+  // pdf-parse v2 exposes PDFParse class; v1 exposes a default function
+  // Use dynamic require to avoid ESM/CJS interop issues.
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const mod = require("pdf-parse");
+  PDFParseClass = mod.PDFParse || mod.default?.PDFParse || null;
+  pdfParseFn = mod.default || (typeof mod === "function" ? mod : null);
+
+  return { PDFParseClass, pdfParseFn };
+}
 
 // Custom error class for invalid PDF
 class InvalidPDFException extends Error {
@@ -26,8 +42,19 @@ export async function parsePDF(
   }
 
   try {
-    // Extract text from PDF using pdf-parse
-    const data = await pdf(buffer);
+    const { PDFParseClass, pdfParseFn } = getPdfParser();
+    let data: { text: string };
+
+    if (PDFParseClass) {
+      const parser = new PDFParseClass({ data: buffer });
+      const result = await parser.getText();
+      await parser.destroy();
+      data = { text: result.text || "" };
+    } else if (pdfParseFn) {
+      data = await pdfParseFn(buffer);
+    } else {
+      throw new Error("pdf-parse parser not available");
+    }
 
     // Validate we got text
     if (!data || !data.text) {

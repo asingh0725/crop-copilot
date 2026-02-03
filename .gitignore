@@ -42,3 +42,7 @@ next-env.d.ts
 /ingestion/.cache/
 /ingestion/logs/
 ingestion/state/scraped-documents.json
+ingestion/sources/agronomy/*.json
+ingestion/state/agronomy-scraped-documents.json
+ingestion/state/agronomy-scraped-documents.json
+ingestion/state/agronomy-scraped-documents.json

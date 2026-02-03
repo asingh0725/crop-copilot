@@ -1,0 +1,18 @@
+{
+  "phase": 1,
+  "completedAt": "2026-02-03T09:46:35.742Z",
+  "tracker": {
+    "documentsScraped": 1485,
+    "documentsParsed": 1468,
+    "chunksCreated": 6640,
+    "chunksEmbedded": 6640,
+    "imagesProcessed": 3035,
+    "imagesEmbedded": 3035,
+    "costs": {
+      "text": 0,
+      "images": 0,
+      "total": 0
+    }
+  },
+  "elapsed": 1195854
+}

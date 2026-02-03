@@ -7,7 +7,8 @@ import { v4 as uuidv4 } from "uuid";
 
 export function extractImages(
   parsedContent: ParsedContent,
-  sourceId: string
+  sourceId: string,
+  extraMeta: Partial<ImageData["metadata"]> = {}
 ): ImageData[] {
   const images: ImageData[] = [];
   
@@ -30,6 +31,7 @@ export function extractImages(
           tags: extractTags(img.alt, img.caption, img.contextText),
           crop: extractCrop(img.alt, img.caption, img.contextText),
           subject: (img.alt || img.caption)?.slice(0, 60).trim(),
+          ...extraMeta,
           position: position++,
         },
       });

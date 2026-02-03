@@ -1,0 +1,346 @@
+[
+  {
+    "file": "ingestion/sources/agronomy/solanaceae-us-pacific-northwest-disease.json",
+    "urls": 20
+  },
+  {
+    "file": "ingestion/sources/agronomy/pome_stone-us-pacific-northwest-disease.json",
+    "urls": 0
+  },
+  {
+    "file": "ingestion/sources/agronomy/solanaceae-us-pacific-northwest-pest.json",
+    "urls": 8
+  },
+  {
+    "file": "ingestion/sources/agronomy/pome_stone-us-pacific-northwest-pest.json",
+    "urls": 0
+  },
+  {
+    "file": "ingestion/sources/agronomy/solanaceae-us-pacific-northwest-nutrients.json",
+    "urls": 3
+  },
+  {
+    "file": "ingestion/sources/agronomy/pome_stone-us-pacific-northwest-nutrients.json",
+    "urls": 0
+  },
+  {
+    "file": "ingestion/sources/agronomy/solanaceae-us-pacific-northwest-growth-stages.json",
+    "urls": 1
+  },
+  {
+    "file": "ingestion/sources/agronomy/pome_stone-us-pacific-northwest-growth-stages.json",
+    "urls": 0
+  },
+  {
+    "file": "ingestion/sources/agronomy/solanaceae-us-pacific-northwest-management.json",
+    "urls": 5
+  },
+  {
+    "file": "ingestion/sources/agronomy/pome_stone-us-pacific-northwest-management.json",
+    "urls": 0
+  },
+  {
+    "file": "ingestion/sources/agronomy/vine_smallfruit-us-california-disease.json",
+    "urls": 6
+  },
+  {
+    "file": "ingestion/sources/agronomy/cucurbits-us-california-disease.json",
+    "urls": 0
+  },
+  {
+    "file": "ingestion/sources/agronomy/vine_smallfruit-us-california-pest.json",
+    "urls": 0
+  },
+  {
+    "file": "ingestion/sources/agronomy/cucurbits-us-california-pest.json",
+    "urls": 0
+  },
+  {
+    "file": "ingestion/sources/agronomy/vine_smallfruit-us-california-nutrients.json",
+    "urls": 1
+  },
+  {
+    "file": "ingestion/sources/agronomy/cucurbits-us-california-nutrients.json",
+    "urls": 0
+  },
+  {
+    "file": "ingestion/sources/agronomy/vine_smallfruit-us-california-growth-stages.json",
+    "urls": 0
+  },
+  {
+    "file": "ingestion/sources/agronomy/cucurbits-us-california-growth-stages.json",
+    "urls": 0
+  },
+  {
+    "file": "ingestion/sources/agronomy/vine_smallfruit-us-california-management.json",
+    "urls": 0
+  },
+  {
+    "file": "ingestion/sources/agronomy/cucurbits-us-california-management.json",
+    "urls": 0
+  },
+  {
+    "file": "ingestion/sources/agronomy/other_fiber-us-southwest-disease.json",
+    "urls": 6
+  },
+  {
+    "file": "ingestion/sources/agronomy/cucurbits-us-southwest-disease.json",
+    "urls": 0
+  },
+  {
+    "file": "ingestion/sources/agronomy/other_fiber-us-southwest-pest.json",
+    "urls": 0
+  },
+  {
+    "file": "ingestion/sources/agronomy/cucurbits-us-southwest-pest.json",
+    "urls": 0
+  },
+  {
+    "file": "ingestion/sources/agronomy/other_fiber-us-southwest-nutrients.json",
+    "urls": 0
+  },
+  {
+    "file": "ingestion/sources/agronomy/cucurbits-us-southwest-nutrients.json",
+    "urls": 0
+  },
+  {
+    "file": "ingestion/sources/agronomy/other_fiber-us-southwest-growth-stages.json",
+    "urls": 0
+  },
+  {
+    "file": "ingestion/sources/agronomy/cucurbits-us-southwest-growth-stages.json",
+    "urls": 0
+  },
+  {
+    "file": "ingestion/sources/agronomy/other_fiber-us-southwest-management.json",
+    "urls": 0
+  },
+  {
+    "file": "ingestion/sources/agronomy/cucurbits-us-southwest-management.json",
+    "urls": 0
+  },
+  {
+    "file": "ingestion/sources/agronomy/cereals-us-midwest-nutrients.json",
+    "urls": 1
+  },
+  {
+    "file": "ingestion/sources/agronomy/legumes-us-midwest-nutrients.json",
+    "urls": 0
+  },
+  {
+    "file": "ingestion/sources/agronomy/cereals-us-midwest-growth-stages.json",
+    "urls": 0
+  },
+  {
+    "file": "ingestion/sources/agronomy/legumes-us-midwest-growth-stages.json",
+    "urls": 0
+  },
+  {
+    "file": "ingestion/sources/agronomy/legumes-us-southeast-disease.json",
+    "urls": 2
+  },
+  {
+    "file": "ingestion/sources/agronomy/other_fiber-us-southeast-disease.json",
+    "urls": 0
+  },
+  {
+    "file": "ingestion/sources/agronomy/legumes-us-southeast-pest.json",
+    "urls": 0
+  },
+  {
+    "file": "ingestion/sources/agronomy/other_fiber-us-southeast-pest.json",
+    "urls": 0
+  },
+  {
+    "file": "ingestion/sources/agronomy/legumes-us-southeast-nutrients.json",
+    "urls": 0
+  },
+  {
+    "file": "ingestion/sources/agronomy/other_fiber-us-southeast-nutrients.json",
+    "urls": 0
+  },
+  {
+    "file": "ingestion/sources/agronomy/legumes-us-southeast-growth-stages.json",
+    "urls": 0
+  },
+  {
+    "file": "ingestion/sources/agronomy/other_fiber-us-southeast-growth-stages.json",
+    "urls": 0
+  },
+  {
+    "file": "ingestion/sources/agronomy/legumes-us-southeast-management.json",
+    "urls": 7
+  },
+  {
+    "file": "ingestion/sources/agronomy/other_fiber-us-southeast-management.json",
+    "urls": 0
+  },
+  {
+    "file": "ingestion/sources/agronomy/cereals-ca-prairies-disease.json",
+    "urls": 3
+  },
+  {
+    "file": "ingestion/sources/agronomy/other_oil-ca-prairies-disease.json",
+    "urls": 0
+  },
+  {
+    "file": "ingestion/sources/agronomy/cereals-ca-prairies-pest.json",
+    "urls": 0
+  },
+  {
+    "file": "ingestion/sources/agronomy/other_oil-ca-prairies-pest.json",
+    "urls": 0
+  },
+  {
+    "file": "ingestion/sources/agronomy/cereals-ca-prairies-nutrients.json",
+    "urls": 1
+  },
+  {
+    "file": "ingestion/sources/agronomy/other_oil-ca-prairies-nutrients.json",
+    "urls": 0
+  },
+  {
+    "file": "ingestion/sources/agronomy/cereals-ca-prairies-growth-stages.json",
+    "urls": 1
+  },
+  {
+    "file": "ingestion/sources/agronomy/other_oil-ca-prairies-growth-stages.json",
+    "urls": 0
+  },
+  {
+    "file": "ingestion/sources/agronomy/cereals-ca-prairies-management.json",
+    "urls": 6
+  },
+  {
+    "file": "ingestion/sources/agronomy/other_oil-ca-prairies-management.json",
+    "urls": 0
+  },
+  {
+    "file": "ingestion/sources/agronomy/solanaceae-ca-ontario+quebec-disease.json",
+    "urls": 2
+  },
+  {
+    "file": "ingestion/sources/agronomy/leafy-ca-ontario+quebec-disease.json",
+    "urls": 0
+  },
+  {
+    "file": "ingestion/sources/agronomy/solanaceae-ca-ontario+quebec-pest.json",
+    "urls": 1
+  },
+  {
+    "file": "ingestion/sources/agronomy/leafy-ca-ontario+quebec-pest.json",
+    "urls": 0
+  },
+  {
+    "file": "ingestion/sources/agronomy/solanaceae-ca-ontario+quebec-nutrients.json",
+    "urls": 1
+  },
+  {
+    "file": "ingestion/sources/agronomy/leafy-ca-ontario+quebec-nutrients.json",
+    "urls": 0
+  },
+  {
+    "file": "ingestion/sources/agronomy/solanaceae-ca-ontario+quebec-growth-stages.json",
+    "urls": 0
+  },
+  {
+    "file": "ingestion/sources/agronomy/leafy-ca-ontario+quebec-growth-stages.json",
+    "urls": 0
+  },
+  {
+    "file": "ingestion/sources/agronomy/solanaceae-ca-ontario+quebec-management.json",
+    "urls": 7
+  },
+  {
+    "file": "ingestion/sources/agronomy/leafy-ca-ontario+quebec-management.json",
+    "urls": 0
+  },
+  {
+    "file": "ingestion/sources/agronomy/solanaceae-ca-atlantic-pest.json",
+    "urls": 18
+  },
+  {
+    "file": "ingestion/sources/agronomy/vine_smallfruit-ca-atlantic-pest.json",
+    "urls": 0
+  },
+  {
+    "file": "ingestion/sources/agronomy/solanaceae-ca-atlantic-nutrients.json",
+    "urls": 0
+  },
+  {
+    "file": "ingestion/sources/agronomy/vine_smallfruit-ca-atlantic-nutrients.json",
+    "urls": 0
+  },
+  {
+    "file": "ingestion/sources/agronomy/solanaceae-ca-atlantic-growth-stages.json",
+    "urls": 0
+  },
+  {
+    "file": "ingestion/sources/agronomy/vine_smallfruit-ca-atlantic-growth-stages.json",
+    "urls": 0
+  },
+  {
+    "file": "ingestion/sources/agronomy/solanaceae-ca-atlantic-management.json",
+    "urls": 3
+  },
+  {
+    "file": "ingestion/sources/agronomy/vine_smallfruit-ca-atlantic-management.json",
+    "urls": 0
+  },
+  {
+    "file": "ingestion/sources/agronomy/pome_stone-ca-british-columbia-nutrients.json",
+    "urls": 1
+  },
+  {
+    "file": "ingestion/sources/agronomy/vine_smallfruit-ca-british-columbia-nutrients.json",
+    "urls": 0
+  },
+  {
+    "file": "ingestion/sources/agronomy/pome_stone-ca-british-columbia-growth-stages.json",
+    "urls": 0
+  },
+  {
+    "file": "ingestion/sources/agronomy/vine_smallfruit-ca-british-columbia-growth-stages.json",
+    "urls": 0
+  },
+  {
+    "file": "ingestion/sources/agronomy/cereals-ca-north-disease.json",
+    "urls": 2
+  },
+  {
+    "file": "ingestion/sources/agronomy/legumes-ca-north-disease.json",
+    "urls": 0
+  },
+  {
+    "file": "ingestion/sources/agronomy/cereals-ca-north-pest.json",
+    "urls": 0
+  },
+  {
+    "file": "ingestion/sources/agronomy/legumes-ca-north-pest.json",
+    "urls": 0
+  },
+  {
+    "file": "ingestion/sources/agronomy/cereals-ca-north-nutrients.json",
+    "urls": 0
+  },
+  {
+    "file": "ingestion/sources/agronomy/legumes-ca-north-nutrients.json",
+    "urls": 0
+  },
+  {
+    "file": "ingestion/sources/agronomy/cereals-ca-north-growth-stages.json",
+    "urls": 0
+  },
+  {
+    "file": "ingestion/sources/agronomy/legumes-ca-north-growth-stages.json",
+    "urls": 0
+  },
+  {
+    "file": "ingestion/sources/agronomy/cereals-ca-north-management.json",
+    "urls": 1
+  },
+  {
+    "file": "ingestion/sources/agronomy/legumes-ca-north-management.json",
+    "urls": 0
+  }
+]

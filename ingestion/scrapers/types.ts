@@ -19,6 +19,17 @@ export interface ScrapedDocument {
     crops?: string[];
     topics?: string[];
     region?: string;
+    crop?: string;
+    cropAliases?: string[];
+    domain?: string;
+    problemName?: string;
+    problemScientificName?: string | null;
+    regionMacro?: string;
+    regionStates?: string[];
+    regionProvinces?: string[];
+    regulatoryAuthority?: string[];
+    sourcePublicationId?: string | null;
+    sourceAuthority?: "primary" | "supporting";
   };
 }
 
@@ -61,10 +72,26 @@ export interface ChunkData {
       | "background"
       | "procedure"
       | "product"
-      | "table";
+      | "table"
+      | "visual"
+      | "threshold"
+      | "narrative";
     crops?: string[];
     topics?: string[];
     region?: string;
+    crop?: string;
+    cropAliases?: string[];
+    regionMacro?: string;
+    regionStates?: string[];
+    regionProvinces?: string[];
+    domain?: string;
+    problemName?: string;
+    problemScientificName?: string | null;
+    chunkType?: "visual" | "threshold" | "table" | "narrative";
+    sourceInstitution?: string;
+    sourcePublicationId?: string | null;
+    sourceUrl?: string;
+    regulatoryAuthority?: string[];
   };
 }
 
@@ -84,6 +111,17 @@ export interface ImageData {
     subject?: string;
     pageNumber?: number;
     position: number;
+    cropAliases?: string[];
+    regionMacro?: string;
+    regionStates?: string[];
+    regionProvinces?: string[];
+    domain?: string;
+    problemName?: string;
+    problemScientificName?: string | null;
+    sourceInstitution?: string;
+    sourcePublicationId?: string | null;
+    sourceUrl?: string;
+    regulatoryAuthority?: string[];
   };
 }
 
