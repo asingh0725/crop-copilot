@@ -1,0 +1,137 @@
+{
+  "crop": "soybeans",
+  "cropAliases": [
+    "peas",
+    "beans",
+    "lentils",
+    "peanuts"
+  ],
+  "region": {
+    "macro": "Southeast",
+    "states": [
+      "Texas",
+      "Arkansas",
+      "Louisiana",
+      "Mississippi",
+      "Alabama",
+      "Georgia",
+      "Florida",
+      "South Carolina",
+      "North Carolina",
+      "Tennessee",
+      "Kentucky",
+      "Virginia"
+    ],
+    "provinces": [],
+    "regulatoryAuthority": [
+      "EPA"
+    ]
+  },
+  "domain": "management",
+  "problems": [
+    {
+      "name": "Integrated Crop Management",
+      "scientificName": null,
+      "severityClasses": [
+        "low",
+        "medium",
+        "high"
+      ],
+      "signals": {
+        "visual": {
+          "positiveIndicators": [
+            "Healthy stand and canopy"
+          ],
+          "negativeIndicators": [
+            "Poor emergence or uneven canopy"
+          ],
+          "imageSources": []
+        },
+        "contextual": {
+          "growthStages": [
+            "All stages"
+          ],
+          "weatherTriggers": [
+            "Seasonal variability"
+          ],
+          "rotationRisk": [
+            "Short rotations"
+          ]
+        }
+      },
+      "decisionLogic": {
+        "scoutingThresholds": [
+          {
+            "condition": "Risk factors present",
+            "action": "Adjust management practices"
+          }
+        ],
+        "preventativeActions": [
+          "Use IPM and crop rotation"
+        ],
+        "curativeActions": [
+          {
+            "type": "cultural",
+            "constraints": {
+              "requiresRotation": false,
+              "regulatoryCheck": false,
+              "phiRelevant": false
+            }
+          }
+        ]
+      },
+      "sources": [
+        {
+          "institution": "fieldreport.caes.uga.edu",
+          "publicationId": null,
+          "url": "https://fieldreport.caes.uga.edu/wp-content/uploads/2025/08/B-1146_2.pdf",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "edis.ifas.ufl.edu",
+          "publicationId": null,
+          "url": "https://edis.ifas.ufl.edu/publication/PI301",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "www.lsuagcenter.com",
+          "publicationId": null,
+          "url": "https://www.lsuagcenter.com/topics/crops",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.msstate.edu",
+          "publicationId": null,
+          "url": "https://extension.msstate.edu/sites/default/files/publications/P2471_2025_web.pdf",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "fieldreport.caes.uga.edu",
+          "publicationId": null,
+          "url": "https://fieldreport.caes.uga.edu/wp-content/uploads/2025/08/AP-124-4_2.pdf",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "site.extension.uga.edu",
+          "publicationId": null,
+          "url": "https://site.extension.uga.edu/plowpoints/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "www.uaex.uada.edu",
+          "publicationId": null,
+          "url": "https://www.uaex.uada.edu/farm-ranch/crops-commercial-horticulture/",
+          "year": null,
+          "authority": "supporting"
+        }
+      ]
+    }
+  ],
+  "lastValidated": "2026-02-03"
+}

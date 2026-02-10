@@ -1,0 +1,86 @@
+{
+  "crop": "apples",
+  "cropAliases": [
+    "peaches",
+    "cherries"
+  ],
+  "region": {
+    "macro": "Pacific Northwest",
+    "states": [
+      "Washington",
+      "Oregon",
+      "Idaho"
+    ],
+    "provinces": [],
+    "regulatoryAuthority": [
+      "EPA"
+    ]
+  },
+  "domain": "pest",
+  "problems": [
+    {
+      "name": "General Pest Identification and Thresholds",
+      "scientificName": null,
+      "severityClasses": [
+        "low",
+        "medium",
+        "high"
+      ],
+      "signals": {
+        "visual": {
+          "positiveIndicators": [
+            "Feeding damage, frass, or insect presence"
+          ],
+          "negativeIndicators": [
+            "Nutrient deficiency patterns without pest activity"
+          ],
+          "imageSources": []
+        },
+        "contextual": {
+          "growthStages": [
+            "Early vegetative",
+            "Reproductive"
+          ],
+          "weatherTriggers": [
+            "Warm temperatures"
+          ],
+          "rotationRisk": [
+            "Continuous host cropping"
+          ]
+        }
+      },
+      "decisionLogic": {
+        "scoutingThresholds": [
+          {
+            "condition": "Economic threshold exceeded",
+            "action": "Select appropriate control based on label"
+          }
+        ],
+        "preventativeActions": [
+          "Use resistant varieties",
+          "Encourage beneficials"
+        ],
+        "curativeActions": [
+          {
+            "type": "biological",
+            "constraints": {
+              "requiresRotation": false,
+              "regulatoryCheck": true,
+              "phiRelevant": false
+            }
+          },
+          {
+            "type": "chemical",
+            "constraints": {
+              "requiresRotation": true,
+              "regulatoryCheck": true,
+              "phiRelevant": true
+            }
+          }
+        ]
+      },
+      "sources": []
+    }
+  ],
+  "lastValidated": "2026-02-03"
+}

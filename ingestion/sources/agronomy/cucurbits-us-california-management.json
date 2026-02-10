@@ -1,0 +1,73 @@
+{
+  "crop": "cucumbers",
+  "cropAliases": [
+    "watermelon"
+  ],
+  "region": {
+    "macro": "California",
+    "states": [
+      "California"
+    ],
+    "provinces": [],
+    "regulatoryAuthority": [
+      "EPA"
+    ]
+  },
+  "domain": "management",
+  "problems": [
+    {
+      "name": "Integrated Crop Management",
+      "scientificName": null,
+      "severityClasses": [
+        "low",
+        "medium",
+        "high"
+      ],
+      "signals": {
+        "visual": {
+          "positiveIndicators": [
+            "Healthy stand and canopy"
+          ],
+          "negativeIndicators": [
+            "Poor emergence or uneven canopy"
+          ],
+          "imageSources": []
+        },
+        "contextual": {
+          "growthStages": [
+            "All stages"
+          ],
+          "weatherTriggers": [
+            "Seasonal variability"
+          ],
+          "rotationRisk": [
+            "Short rotations"
+          ]
+        }
+      },
+      "decisionLogic": {
+        "scoutingThresholds": [
+          {
+            "condition": "Risk factors present",
+            "action": "Adjust management practices"
+          }
+        ],
+        "preventativeActions": [
+          "Use IPM and crop rotation"
+        ],
+        "curativeActions": [
+          {
+            "type": "cultural",
+            "constraints": {
+              "requiresRotation": false,
+              "regulatoryCheck": false,
+              "phiRelevant": false
+            }
+          }
+        ]
+      },
+      "sources": []
+    }
+  ],
+  "lastValidated": "2026-02-03"
+}

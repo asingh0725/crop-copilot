@@ -1,0 +1,122 @@
+{
+  "crop": "cotton",
+  "cropAliases": [
+    "sugarcane",
+    "alfalfa"
+  ],
+  "region": {
+    "macro": "Southwest",
+    "states": [
+      "Arizona",
+      "New Mexico",
+      "Nevada",
+      "Utah"
+    ],
+    "provinces": [],
+    "regulatoryAuthority": [
+      "EPA"
+    ]
+  },
+  "domain": "disease",
+  "problems": [
+    {
+      "name": "General Disease Identification and Management",
+      "scientificName": null,
+      "severityClasses": [
+        "low",
+        "medium",
+        "high"
+      ],
+      "signals": {
+        "visual": {
+          "positiveIndicators": [
+            "Lesions, discoloration, blights, wilts, or rots"
+          ],
+          "negativeIndicators": [
+            "Uniform discoloration without lesions (possible abiotic)"
+          ],
+          "imageSources": []
+        },
+        "contextual": {
+          "growthStages": [
+            "All stages"
+          ],
+          "weatherTriggers": [
+            "Extended leaf wetness",
+            "High humidity"
+          ],
+          "rotationRisk": [
+            "Short rotations with host crops"
+          ]
+        }
+      },
+      "decisionLogic": {
+        "scoutingThresholds": [
+          {
+            "condition": "Symptoms increasing in field",
+            "action": "Intensify scouting and confirm diagnosis"
+          }
+        ],
+        "preventativeActions": [
+          "Use resistant varieties",
+          "Rotate crops"
+        ],
+        "curativeActions": [
+          {
+            "type": "chemical",
+            "constraints": {
+              "requiresRotation": true,
+              "regulatoryCheck": true,
+              "phiRelevant": true
+            }
+          }
+        ]
+      },
+      "sources": [
+        {
+          "institution": "aces.nmsu.edu",
+          "publicationId": null,
+          "url": "https://aces.nmsu.edu/pubs/index.html",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "agrilifeextension.tamu.edu",
+          "publicationId": null,
+          "url": "https://agrilifeextension.tamu.edu/library/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.arizona.edu",
+          "publicationId": null,
+          "url": "https://extension.arizona.edu/publications",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "agrilifeextension.tamu.edu",
+          "publicationId": null,
+          "url": "https://agrilifeextension.tamu.edu/library/?_sfm_post_type=publication",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.arizona.edu",
+          "publicationId": null,
+          "url": "https://extension.arizona.edu/publications?page=2",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "aces.nmsu.edu",
+          "publicationId": null,
+          "url": "https://aces.nmsu.edu/pubs/",
+          "year": null,
+          "authority": "supporting"
+        }
+      ]
+    }
+  ],
+  "lastValidated": "2026-02-03"
+}

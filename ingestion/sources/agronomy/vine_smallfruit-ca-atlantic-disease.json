@@ -1,0 +1,430 @@
+{
+  "crop": "grapes",
+  "cropAliases": [
+    "strawberries",
+    "blueberries"
+  ],
+  "region": {
+    "macro": "Atlantic Canada",
+    "states": [],
+    "provinces": [
+      "New Brunswick",
+      "Nova Scotia",
+      "Prince Edward Island",
+      "Newfoundland and Labrador"
+    ],
+    "regulatoryAuthority": [
+      "PMRA"
+    ]
+  },
+  "domain": "disease",
+  "problems": [
+    {
+      "name": "General Disease Identification and Management",
+      "scientificName": null,
+      "severityClasses": [
+        "low",
+        "medium",
+        "high"
+      ],
+      "signals": {
+        "visual": {
+          "positiveIndicators": [
+            "Lesions, discoloration, blights, wilts, or rots"
+          ],
+          "negativeIndicators": [
+            "Uniform discoloration without lesions (possible abiotic)"
+          ],
+          "imageSources": []
+        },
+        "contextual": {
+          "growthStages": [
+            "All stages"
+          ],
+          "weatherTriggers": [
+            "Extended leaf wetness",
+            "High humidity"
+          ],
+          "rotationRisk": [
+            "Short rotations with host crops"
+          ]
+        }
+      },
+      "decisionLogic": {
+        "scoutingThresholds": [
+          {
+            "condition": "Symptoms increasing in field",
+            "action": "Intensify scouting and confirm diagnosis"
+          }
+        ],
+        "preventativeActions": [
+          "Use resistant varieties",
+          "Rotate crops"
+        ],
+        "curativeActions": [
+          {
+            "type": "chemical",
+            "constraints": {
+              "requiresRotation": true,
+              "regulatoryCheck": true,
+              "phiRelevant": true
+            }
+          }
+        ]
+      },
+      "sources": [
+        {
+          "institution": "www.perennia.ca",
+          "publicationId": null,
+          "url": "https://www.perennia.ca/video/tree-fruit-webinar-tools-for-crop-load-management-learn-about-the-orchard-tools-app-for-ios-march-26-2021/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "www.perennia.ca",
+          "publicationId": null,
+          "url": "https://www.perennia.ca/product/the-dirt-on-cover-crops/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "www.perennia.ca",
+          "publicationId": null,
+          "url": "https://www.perennia.ca/eventer/ofcaf-field-day-adoption-and-agronomy-of-cover-cropping-for-all-systems/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "www.perennia.ca",
+          "publicationId": null,
+          "url": "https://www.perennia.ca/eventer/introducing-perennias-online-pest-management-guides/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "www.perennia.ca",
+          "publicationId": null,
+          "url": "https://www.perennia.ca/eventer/biobeds-for-managing-pesticide-rinsate/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "www.perennia.ca",
+          "publicationId": null,
+          "url": "https://www.perennia.ca/guide/guide-to-pest-management-in-chinese-vegetables-2022/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "www.perennia.ca",
+          "publicationId": null,
+          "url": "https://www.perennia.ca/video/using-cool-season-grasses-as-cover-crops/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "www.perennia.ca",
+          "publicationId": null,
+          "url": "https://www.perennia.ca/video/buckwheat-as-a-cover-crop/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "www.perennia.ca",
+          "publicationId": null,
+          "url": "https://www.perennia.ca/product/cover-crop-walk-and-talk-at-wright-family-farm/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "www.perennia.ca",
+          "publicationId": null,
+          "url": "https://www.perennia.ca/eventer/post-mortem-on-the-wheat-crop-that-is-2019-with-peter-johnson-stewiacke/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "www.perennia.ca",
+          "publicationId": null,
+          "url": "https://www.perennia.ca/video/getting-into-the-weeds-disease-management-in-irrigated-crops/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "www.perennia.ca",
+          "publicationId": null,
+          "url": "https://www.perennia.ca/linktree/freeze-drying-article-in-fruit-and-vegetable-magazine/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "www.perennia.ca",
+          "publicationId": null,
+          "url": "https://www.perennia.ca/eventer/can-cover-crops-be-profitable-for-your-cropping-system/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "www.perennia.ca",
+          "publicationId": null,
+          "url": "https://www.perennia.ca/eventer/in-field-integrated-pest-management-workshop/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "www.perennia.ca",
+          "publicationId": null,
+          "url": "https://www.perennia.ca/product/disease-and-virus-testing-services-disease/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "www.perennia.ca",
+          "publicationId": null,
+          "url": "https://www.perennia.ca/eventer/early-season-vineyard-pest-management/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "www.perennia.ca",
+          "publicationId": null,
+          "url": "https://www.perennia.ca/portfolio-items/recommended-cover-cropping-techniques-for-weed-management-in-squash/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "www.perennia.ca",
+          "publicationId": null,
+          "url": "https://www.perennia.ca/eventer/pest-control-more-than-just-killing-pests/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "www.perennia.ca",
+          "publicationId": null,
+          "url": "https://www.perennia.ca/portfolio_category/protected-crops/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "www.perennia.ca",
+          "publicationId": null,
+          "url": "https://www.perennia.ca/eventer/apple-replant-disease-and-local-trials/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "www.perennia.ca",
+          "publicationId": null,
+          "url": "https://www.perennia.ca/perennia-byline/harnessing-the-microbial-masses-by-vegetable-specialist-tim-morcom/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "www.perennia.ca",
+          "publicationId": null,
+          "url": "https://www.perennia.ca/guide/spray-guide-for-field-cucumber/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "www.perennia.ca",
+          "publicationId": null,
+          "url": "https://www.perennia.ca/eventer/cover-crops-and-split-nutrient-application-ask-us-anythingprotected-ag-edition/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "www.perennia.ca",
+          "publicationId": null,
+          "url": "https://www.perennia.ca/eventer/legumecovercrops/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "www.perennia.ca",
+          "publicationId": null,
+          "url": "https://www.perennia.ca/eventer/field-crops-field-day/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "www.perennia.ca",
+          "publicationId": null,
+          "url": "https://www.perennia.ca/video/from-grapes-to-wines-impact-of-sustainable-management-systems-on-growth-yield-and-fruit-quality-of-grapevines/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "www.perennia.ca",
+          "publicationId": null,
+          "url": "https://www.perennia.ca/product/christmas-tree-disease-analysis/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "www.perennia.ca",
+          "publicationId": null,
+          "url": "https://www.perennia.ca/video/introduction-to-the-cover-crop-demo/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "www.perennia.ca",
+          "publicationId": null,
+          "url": "https://www.perennia.ca/video/legumes-as-cover-crops/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "www.perennia.ca",
+          "publicationId": null,
+          "url": "https://www.perennia.ca/video/legume-cover-crops-through-the-fall-and-winter/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "www.perennia.ca",
+          "publicationId": null,
+          "url": "https://www.perennia.ca/eventer/understanding-the-infection-cycle-on-your-farm-targeting-effective-disease-management/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "www.perennia.ca",
+          "publicationId": null,
+          "url": "https://www.perennia.ca/perennia-byline/methods-of-crop-management-timing-in-wild-blueberries-by-wild-blueberry-specialist-hugh-lyu/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "www.perennia.ca",
+          "publicationId": null,
+          "url": "https://www.perennia.ca/eventer/year-in-review-a-disease-summary-of-2021-what-did-we-learn/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "www.perennia.ca",
+          "publicationId": null,
+          "url": "https://www.perennia.ca/product/cover-cropping-in-tunnel-spaces/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "www.perennia.ca",
+          "publicationId": null,
+          "url": "https://www.perennia.ca/video/brassica-cover-crops/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "www.perennia.ca",
+          "publicationId": null,
+          "url": "https://www.perennia.ca/eventer/pesticide-information-impacting-horticulture-and-field-crops/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "www.perennia.ca",
+          "publicationId": null,
+          "url": "https://www.perennia.ca/video/perennia-video-getting-into-the-weeds-farming-in-a-humid-year-session-two-year-in-review-a-disease-summary-of-2021/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "www.perennia.ca",
+          "publicationId": null,
+          "url": "https://www.perennia.ca/portfolio_category/field-crops/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "www.perennia.ca",
+          "publicationId": null,
+          "url": "https://www.perennia.ca/eventer/integrated-pest-management-field-day-crop-scouting/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "www.perennia.ca",
+          "publicationId": null,
+          "url": "https://www.perennia.ca/linktree/biobeds-for-managing-pesticide-rinsate/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "www.perennia.ca",
+          "publicationId": null,
+          "url": "https://www.perennia.ca/video/safe-food-for-canadians-regulations-good-agricultural-practices-guide/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "www.perennia.ca",
+          "publicationId": null,
+          "url": "https://www.perennia.ca/portfolio-items/tree-fruits/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "www.perennia.ca",
+          "publicationId": null,
+          "url": "https://www.perennia.ca/eventer/compost-and-cover-crops/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "www.perennia.ca",
+          "publicationId": null,
+          "url": "https://www.perennia.ca/eventer/cover-crop-ask-us-anything/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "www.perennia.ca",
+          "publicationId": null,
+          "url": "https://www.perennia.ca/product/getting-into-the-weeds-best-practices-for-effective-and-efficient-pesticide-application/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "www.perennia.ca",
+          "publicationId": null,
+          "url": "https://www.perennia.ca/eventer/nova-scotia-fencing-guidelines-a-re-introduction/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "www.perennia.ca",
+          "publicationId": null,
+          "url": "https://www.perennia.ca/perennia-byline/nova-scotias-long-cane-raspberry-pilot-program-by-protected-crop-specialist-talia-plaskett/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "www.perennia.ca",
+          "publicationId": null,
+          "url": "https://www.perennia.ca/eventer/getting-into-the-weeds-pesticide-re-evaluation-updates-and-nova-scotia-weed-survey/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "www.perennia.ca",
+          "publicationId": null,
+          "url": "https://www.perennia.ca/portfolio-items/chinese-vegetables/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "www.perennia.ca",
+          "publicationId": null,
+          "url": "https://www.perennia.ca/eventer/split-n-and-cover-crop-demonstrations-for-tunnel-spaces/",
+          "year": null,
+          "authority": "supporting"
+        }
+      ]
+    }
+  ],
+  "lastValidated": "2026-02-03"
+}

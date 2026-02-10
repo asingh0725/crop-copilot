@@ -1,0 +1,431 @@
+{
+  "crop": "sunflower",
+  "cropAliases": [
+    "canola"
+  ],
+  "region": {
+    "macro": "Great Plains",
+    "states": [
+      "Montana",
+      "Wyoming",
+      "Colorado",
+      "North Dakota",
+      "South Dakota",
+      "Nebraska",
+      "Kansas",
+      "Oklahoma"
+    ],
+    "provinces": [],
+    "regulatoryAuthority": [
+      "EPA"
+    ]
+  },
+  "domain": "management",
+  "problems": [
+    {
+      "name": "Integrated Crop Management",
+      "scientificName": null,
+      "severityClasses": [
+        "low",
+        "medium",
+        "high"
+      ],
+      "signals": {
+        "visual": {
+          "positiveIndicators": [
+            "Healthy stand and canopy"
+          ],
+          "negativeIndicators": [
+            "Poor emergence or uneven canopy"
+          ],
+          "imageSources": []
+        },
+        "contextual": {
+          "growthStages": [
+            "All stages"
+          ],
+          "weatherTriggers": [
+            "Seasonal variability"
+          ],
+          "rotationRisk": [
+            "Short rotations"
+          ]
+        }
+      },
+      "decisionLogic": {
+        "scoutingThresholds": [
+          {
+            "condition": "Risk factors present",
+            "action": "Adjust management practices"
+          }
+        ],
+        "preventativeActions": [
+          "Use IPM and crop rotation"
+        ],
+        "curativeActions": [
+          {
+            "type": "cultural",
+            "constraints": {
+              "requiresRotation": false,
+              "regulatoryCheck": false,
+              "phiRelevant": false
+            }
+          }
+        ]
+      },
+      "sources": [
+        {
+          "institution": "extension.okstate.edu",
+          "publicationId": null,
+          "url": "https://extension.okstate.edu/fact-sheets/print-publications/pss/meshing-soybean-weed-management-with-agronomic-practices-in-oklahoma-pss-2794.pdf",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.okstate.edu",
+          "publicationId": null,
+          "url": "https://extension.okstate.edu/e-pest-alerts/site-files/documents/2008/alfalfa-weevil-egg-populations-in-2008-january-17-2008.pdf",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.okstate.edu",
+          "publicationId": null,
+          "url": "https://extension.okstate.edu/fact-sheets/foliar-diseases-of-peanuts.html",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.okstate.edu",
+          "publicationId": null,
+          "url": "https://extension.okstate.edu/programs/farm-management-and-finance/budgets/sample-budgets/site-files/docs/2023/improved-pecans-2023-2-1-a.pdf",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.okstate.edu",
+          "publicationId": null,
+          "url": "https://extension.okstate.edu/programs/plant-id/plant-profiles/sand-plum/_props.html",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.okstate.edu",
+          "publicationId": null,
+          "url": "https://extension.okstate.edu/programs/poultry-waste-management/media/oklahoma-litter-market-november-2021.pdf",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.okstate.edu",
+          "publicationId": null,
+          "url": "https://extension.okstate.edu/programs/pesticide-safety-education/practical-workshop-and-re-certification-dates/site-files/documents/2022/november-15-2022-general-pest.pdf",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.okstate.edu",
+          "publicationId": null,
+          "url": "https://extension.okstate.edu/programs/pest-and-hazard-management/poison-ivy/responding-to-poison-ivy.html",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.okstate.edu",
+          "publicationId": null,
+          "url": "https://extension.okstate.edu/fact-sheets/economic-effect-of-bovine-respiratory-disease-on-feedlot-cattle-during-backgrounding-and-finishing-phases.html",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.okstate.edu",
+          "publicationId": null,
+          "url": "https://extension.okstate.edu/programs/beef-extension/symposiums/site-files/documents/implant-symposium/10-growth-stimulants-page-10.pdf",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.okstate.edu",
+          "publicationId": null,
+          "url": "https://extension.okstate.edu/e-pest-alerts/site-files/documents/2017/alfalfa-weevil-egg-populations-february-1-2017.pdf",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.okstate.edu",
+          "publicationId": null,
+          "url": "https://extension.okstate.edu/programs/agribusinessand-cooperative-management/site-files/docs/newsletters/a-strategic-approach-to-regulatory-changes.pdf",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.okstate.edu",
+          "publicationId": null,
+          "url": "https://extension.okstate.edu/county/blaine/agriculture.html",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.okstate.edu",
+          "publicationId": null,
+          "url": "https://extension.okstate.edu/programs/farm-management-and-finance/oklahoma-land-values/county-values-three-year-weighted-average/cotton-county-three-year-weighted-average.html",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.okstate.edu",
+          "publicationId": null,
+          "url": "https://extension.okstate.edu/e-pest-alerts/site-files/documents/2016/pecan-nut-casebearer-trapping-and-reporting-in-may-23-2016.pdf",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.okstate.edu",
+          "publicationId": null,
+          "url": "https://extension.okstate.edu/programs/farm-management-and-finance/oklahoma-land-values/county-values-three-year-weighted-average/site-files/docs/haskell-table-2020.pdf",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.okstate.edu",
+          "publicationId": null,
+          "url": "https://extension.okstate.edu/programs/pesticide-safety-education/site-files/documents/ceurequest2017.pdf",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.okstate.edu",
+          "publicationId": null,
+          "url": "https://extension.okstate.edu/programs/farm-management-and-finance/oklahoma-land-values/county-values-three-year-weighted-average/site-files/docs/jackson-table-2020.pdf",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.okstate.edu",
+          "publicationId": null,
+          "url": "https://extension.okstate.edu/e-pest-alerts/site-files/documents/2012/update-on-black-leg-disease-of-canola-october-18-2012.pdf",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.okstate.edu",
+          "publicationId": null,
+          "url": "https://extension.okstate.edu/topics/plants-and-animals/insects-pests-and-diseases/biosecurity-and-microbial-forensics/index.html",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.okstate.edu",
+          "publicationId": null,
+          "url": "https://extension.okstate.edu/fact-sheets/print-publications/e/nutrient-requirements-of-beef-cattle-e-974.pdf",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.okstate.edu",
+          "publicationId": null,
+          "url": "https://extension.okstate.edu/e-pest-alerts/2022/stink-bug-and-leaffooted-bug-in-pecan.html",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.okstate.edu",
+          "publicationId": null,
+          "url": "https://extension.okstate.edu/fact-sheets/diet-and-heart-disease.html",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.okstate.edu",
+          "publicationId": null,
+          "url": "https://extension.okstate.edu/fact-sheets/print-publications/epp-entomology-and-plant-pathologhy/managing-storm-damaged-trees-epp-7323.pdf",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.okstate.edu",
+          "publicationId": null,
+          "url": "https://extension.okstate.edu/programs/oklahoma-pecan-management/2022-course-lectures/site-files/documents/improving-native-pecans.pdf",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.okstate.edu",
+          "publicationId": null,
+          "url": "https://extension.okstate.edu/fact-sheets/waste-management-for-alligator-farming-and-ranching.html",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.okstate.edu",
+          "publicationId": null,
+          "url": "https://extension.okstate.edu/fact-sheets/print-publications/cr/impact-of-sensor-based-nitrogen-management-on-yield-and-soil-quality-cr-2270.pdf",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.okstate.edu",
+          "publicationId": null,
+          "url": "https://extension.okstate.edu/programs/plant-id/plant-profiles/snow-on-the-mountain/index.html",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.okstate.edu",
+          "publicationId": null,
+          "url": "https://extension.okstate.edu/fact-sheets/aphids-in-winter-canola-and-their-management.html",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.okstate.edu",
+          "publicationId": null,
+          "url": "https://extension.okstate.edu/programs/farm-management-and-finance/oklahoma-land-values/county-values-annual-averages/site-files/docs/2023/alfalfa-table-2000-23-a.pdf",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.okstate.edu",
+          "publicationId": null,
+          "url": "https://extension.okstate.edu/programs/farm-management-and-finance/ag-finance-newsletter-archives.html",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.okstate.edu",
+          "publicationId": null,
+          "url": "https://extension.okstate.edu/e-pest-alerts/site-files/documents/2020/pecan-phylloxera-treatment-time-march-31-2020.pdf",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.okstate.edu",
+          "publicationId": null,
+          "url": "https://extension.okstate.edu/programs/farm-management-and-finance/oklahoma-land-values/county-values-three-year-weighted-average/greer-county-three-year-weighted-average.html",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.okstate.edu",
+          "publicationId": null,
+          "url": "https://extension.okstate.edu/e-pest-alerts/site-files/documents/2016/fall-armyworm-notice-check-your-wheat-early-and-often-september-9-2016.pdf",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.okstate.edu",
+          "publicationId": null,
+          "url": "https://extension.okstate.edu/programs/plant-id/plant-profiles/splitbeard-bluestem/index.html",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.okstate.edu",
+          "publicationId": null,
+          "url": "https://extension.okstate.edu/programs/plant-id/plant-profiles/plains-wild-indigo/index.html",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.okstate.edu",
+          "publicationId": null,
+          "url": "https://extension.okstate.edu/e-pest-alerts/site-files/documents/2015/get-out-and-check-pastures-for-fall-armyworm-august-25-2015.pdf",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.okstate.edu",
+          "publicationId": null,
+          "url": "https://extension.okstate.edu/programs/poultry-waste-management/media/map-of-poultry-areas-and-inspectors.pdf",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.okstate.edu",
+          "publicationId": null,
+          "url": "https://extension.okstate.edu/programs/integrated-pest-management/school/site-files/docs/ipmschoolpolicy.pdf",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.okstate.edu",
+          "publicationId": null,
+          "url": "https://extension.okstate.edu/programs/oklahoma-pecan-management/2025-course-lectures/site-files/documents/july-2025/osu-native-improvement-2025-a.pdf",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.okstate.edu",
+          "publicationId": null,
+          "url": "https://extension.okstate.edu/programs/farm-management-and-finance/oklahoma-land-values/county-values-three-year-weighted-average/site-files/docs/mayes-table.pdf",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.okstate.edu",
+          "publicationId": null,
+          "url": "https://extension.okstate.edu/e-pest-alerts/site-files/documents/2015/prepare-for-spotted-wing-drosophila-education-on-an-invasive-insect-threatening-fruit-production-in-oklahoma-march-3-2015.pdf",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.okstate.edu",
+          "publicationId": null,
+          "url": "https://extension.okstate.edu/coronavirus/media/farm-and-ranch/crop-producers.pdf",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.okstate.edu",
+          "publicationId": null,
+          "url": "https://extension.okstate.edu/e-pest-alerts/site-files/documents/2017/wheat-disease-update-may-15-2017.pdf",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.okstate.edu",
+          "publicationId": null,
+          "url": "https://extension.okstate.edu/programs/gardening/site-files/docs/2022/september-18-pesticide-website.pdf",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.okstate.edu",
+          "publicationId": null,
+          "url": "https://extension.okstate.edu/programs/agribusinessand-cooperative-management/site-files/docs/newsletters/the-monitoring-dimension-of-cooperative-governance.pdf",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.okstate.edu",
+          "publicationId": null,
+          "url": "https://extension.okstate.edu/e-pest-alerts/site-files/documents/2003/bird-cherry-oat-aphids-in-wheat-to-control-or-not-to-control-april-8-2003.pdf",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.okstate.edu",
+          "publicationId": null,
+          "url": "https://extension.okstate.edu/county/tulsa/agriculture/animal-science.html",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.okstate.edu",
+          "publicationId": null,
+          "url": "https://extension.okstate.edu/e-pest-alerts/site-files/documents/2003/wheat-disease-update-november-11-2003.pdf",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.okstate.edu",
+          "publicationId": null,
+          "url": "https://extension.okstate.edu/e-pest-alerts/site-files/documents/2003/wheat-disease-update-oklahoma-april-16-2003.pdf",
+          "year": null,
+          "authority": "supporting"
+        }
+      ]
+    }
+  ],
+  "lastValidated": "2026-02-03"
+}

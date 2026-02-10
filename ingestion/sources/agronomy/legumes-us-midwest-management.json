@@ -1,0 +1,434 @@
+{
+  "crop": "soybeans",
+  "cropAliases": [
+    "peas",
+    "beans",
+    "lentils",
+    "peanuts"
+  ],
+  "region": {
+    "macro": "Midwest",
+    "states": [
+      "Minnesota",
+      "Iowa",
+      "Missouri",
+      "Wisconsin",
+      "Illinois",
+      "Indiana",
+      "Michigan",
+      "Ohio"
+    ],
+    "provinces": [],
+    "regulatoryAuthority": [
+      "EPA"
+    ]
+  },
+  "domain": "management",
+  "problems": [
+    {
+      "name": "Integrated Crop Management",
+      "scientificName": null,
+      "severityClasses": [
+        "low",
+        "medium",
+        "high"
+      ],
+      "signals": {
+        "visual": {
+          "positiveIndicators": [
+            "Healthy stand and canopy"
+          ],
+          "negativeIndicators": [
+            "Poor emergence or uneven canopy"
+          ],
+          "imageSources": []
+        },
+        "contextual": {
+          "growthStages": [
+            "All stages"
+          ],
+          "weatherTriggers": [
+            "Seasonal variability"
+          ],
+          "rotationRisk": [
+            "Short rotations"
+          ]
+        }
+      },
+      "decisionLogic": {
+        "scoutingThresholds": [
+          {
+            "condition": "Risk factors present",
+            "action": "Adjust management practices"
+          }
+        ],
+        "preventativeActions": [
+          "Use IPM and crop rotation"
+        ],
+        "curativeActions": [
+          {
+            "type": "cultural",
+            "constraints": {
+              "requiresRotation": false,
+              "regulatoryCheck": false,
+              "phiRelevant": false
+            }
+          }
+        ]
+      },
+      "sources": [
+        {
+          "institution": "extension.purdue.edu",
+          "publicationId": null,
+          "url": "https://extension.purdue.edu/uav/diversified-crops/popcorn-stand-counts.html",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "www.canr.msu.edu",
+          "publicationId": null,
+          "url": "https://www.canr.msu.edu/vegetables/resources/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.purdue.edu",
+          "publicationId": null,
+          "url": "https://extension.purdue.edu/news/county/white/2020/08/Purdue-Crops-Field-Day-Going-Virtual.html",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.purdue.edu",
+          "publicationId": null,
+          "url": "https://extension.purdue.edu/news/inprepared/2021/04/e101-cultivating-readiness-environmental-spills-and-emergencies-in-agriculture.html",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.purdue.edu",
+          "publicationId": null,
+          "url": "https://extension.purdue.edu/news/county/white/2021/04/The-Pros-and-Cons-of-Planting-Early.html",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.purdue.edu",
+          "publicationId": null,
+          "url": "https://extension.purdue.edu/county/stjoseph/4h/4h-docs/project-description-pdfs/sjc-crops-project-desc.1.pdf",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.purdue.edu",
+          "publicationId": null,
+          "url": "https://extension.purdue.edu/news/county/vanderburgh/2020/01/4-H-Plant-Science.html",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.purdue.edu",
+          "publicationId": null,
+          "url": "https://extension.purdue.edu/county/stjoseph/4h/county-project-pages/crops.html",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.purdue.edu",
+          "publicationId": null,
+          "url": "https://extension.purdue.edu/4-H/_docs/get-involved/state-programs/leadership-summit/2019-resources/recordbook.clubleader.club-management-help-guide.pdf",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.purdue.edu",
+          "publicationId": null,
+          "url": "https://extension.purdue.edu/uav/in-field-conservation/giant-ragweed-in-cover-crops.html",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.purdue.edu",
+          "publicationId": null,
+          "url": "https://extension.purdue.edu/news/inprepared/2020/12/_docs/emergency-animal-management-flyer1.pdf",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.purdue.edu",
+          "publicationId": null,
+          "url": "https://extension.purdue.edu/pondwildlife/county-pond-and-habitat-management-contacts/indiana-natural-resource-partners.html",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.purdue.edu",
+          "publicationId": null,
+          "url": "https://extension.purdue.edu/county/white/_docs/project-docs/crops-scorecard.pdf",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.purdue.edu",
+          "publicationId": null,
+          "url": "https://extension.purdue.edu/news/county/whitley/2022/04/select-an-appropriate-tree-to-plant-on-arbor-day.html",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.purdue.edu",
+          "publicationId": null,
+          "url": "https://extension.purdue.edu/4-H/_docs/volunteer/resources-and-development/volunteerin-4-h-toolkit/2009/time-management-daily-activity-chart.pdf",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.purdue.edu",
+          "publicationId": null,
+          "url": "https://extension.purdue.edu/uav/diversified-crops/strawberry-planting.html",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.purdue.edu",
+          "publicationId": null,
+          "url": "https://extension.purdue.edu/news/county/white/2021/07/Cloudy-Wet-Weather-May-Increase-Disease-Pressure.html",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.purdue.edu",
+          "publicationId": null,
+          "url": "https://extension.purdue.edu/news/inprepared/2020/04/its-time-to-plant-with-or-without-covid-19.html",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.purdue.edu",
+          "publicationId": null,
+          "url": "https://extension.purdue.edu/news/fieldcroppathology/2023/index.html",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.purdue.edu",
+          "publicationId": null,
+          "url": "https://extension.purdue.edu/4-H/_docs/get-involved/state-programs/CDE/crop-handbook-2021-2025/blank-state-grain-grading.pdf",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.purdue.edu",
+          "publicationId": null,
+          "url": "https://extension.purdue.edu/uav/corn-soybean-wheat/highlighter-green-soybeans-and-field-management.html",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.purdue.edu",
+          "publicationId": null,
+          "url": "https://extension.purdue.edu/news/county/carroll/2020/10/_docs/Floriculture-Level-B-Plant-Record-4-H967C.pdf",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.purdue.edu",
+          "publicationId": null,
+          "url": "https://extension.purdue.edu/news/county/whitley/2024/05/purdue-plant-doctor-website-equips-homeowners-and-professionals-to-manage-pests.html",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.purdue.edu",
+          "publicationId": null,
+          "url": "https://extension.purdue.edu/news/county/whitley/2024/06/purdue-extension-master-gardener-program-seeking-new-crop-of-volunteers.html",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.purdue.edu",
+          "publicationId": null,
+          "url": "https://extension.purdue.edu/uav/animal-agriculture/telescopic-zoom-to-read-eartags-example.html",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.purdue.edu",
+          "publicationId": null,
+          "url": "https://extension.purdue.edu/county/benton/_docs/crops-record-2025.pdf",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "shop.iastate.edu",
+          "publicationId": null,
+          "url": "https://shop.iastate.edu/extension/farm-environment/crops-and-soils/fg600.html",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "crops.extension.iastate.edu",
+          "publicationId": null,
+          "url": "https://crops.extension.iastate.edu/crops",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.purdue.edu",
+          "publicationId": null,
+          "url": "https://extension.purdue.edu/4-H/_docs/get-involved/state-programs/leadership-summit/2018-resources/risk_management_scenarios.pdf",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.purdue.edu",
+          "publicationId": null,
+          "url": "https://extension.purdue.edu/news/fieldcroppathology/2021/08/tar-spot-and-southern-corn-rust-update-in-indiana.html",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.purdue.edu",
+          "publicationId": null,
+          "url": "https://extension.purdue.edu/news/inprepared/2020/04/gearing-up-for-safety-production-agriculture-safety-training-for-youth.html",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.purdue.edu",
+          "publicationId": null,
+          "url": "https://extension.purdue.edu/news/county/whitley/2023/03/national-ag-day-and-whitley-county-agriculture.html",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.purdue.edu",
+          "publicationId": null,
+          "url": "https://extension.purdue.edu/news/county/whitley/2021/07/whats-eating-my-garden-plants.html",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.purdue.edu",
+          "publicationId": null,
+          "url": "https://extension.purdue.edu/news/county/whitley/2021/12/virtual-forest-management-for-the-private-woodland-owner-course.html",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.purdue.edu",
+          "publicationId": null,
+          "url": "https://extension.purdue.edu/news/county/whitley/2022/07/understanding-agriculture-swine.html",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.purdue.edu",
+          "publicationId": null,
+          "url": "https://extension.purdue.edu/pondwildlife/grassland-management.html",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.purdue.edu",
+          "publicationId": null,
+          "url": "https://extension.purdue.edu/county/boone/4-H-Youth-Development/crops.html",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.purdue.edu",
+          "publicationId": null,
+          "url": "https://extension.purdue.edu/news/county/fountain/_docs/Hay-and-foragesCROPS.pdf",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.purdue.edu",
+          "publicationId": null,
+          "url": "https://extension.purdue.edu/county/hendricks/4h-youth/_docs/crops-+-guidelines-20221.pdf",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.purdue.edu",
+          "publicationId": null,
+          "url": "https://extension.purdue.edu/county/hendricks/4h-youth/_docs/crops-record-sheet.pdf",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.purdue.edu",
+          "publicationId": null,
+          "url": "https://extension.purdue.edu/news/inprepared/2020/04/webinar-addressing-challenges-from-packing-plant-closures.html",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.purdue.edu",
+          "publicationId": null,
+          "url": "https://extension.purdue.edu/county/noble/4-h-youth-noble-county/4-h-project-record-sheets/cropsrecordintermediate.pdf",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.purdue.edu",
+          "publicationId": null,
+          "url": "https://extension.purdue.edu/anr/_teams/farm-management/resources/land-lease-resources.html",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.purdue.edu",
+          "publicationId": null,
+          "url": "https://extension.purdue.edu/uav/in-field-conservation/grassed-waterway-management.html",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.purdue.edu",
+          "publicationId": null,
+          "url": "https://extension.purdue.edu/county/allen/_docs/4h/mini-plants-and-fowers-manual.pdf",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.purdue.edu",
+          "publicationId": null,
+          "url": "https://extension.purdue.edu/4-H/_docs/get-involved/state-programs/CDE/4-h-991-w-developing-a-wildlife-habitat-management-plan.pdf",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.purdue.edu",
+          "publicationId": null,
+          "url": "https://extension.purdue.edu/news/county/whitley/2024/01/economic-tools-to-help-with-farm-management-decisions.html",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.purdue.edu",
+          "publicationId": null,
+          "url": "https://extension.purdue.edu/news/county/whitley/2022/11/purdue-specialist-announces-2023-crop-management-workshops.html",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.purdue.edu",
+          "publicationId": null,
+          "url": "https://extension.purdue.edu/county/scott/_media/area-2-pesticide-applicator-program-2023-flyer.pdf",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.purdue.edu",
+          "publicationId": null,
+          "url": "https://extension.purdue.edu/news/county/whitley/2022/06/understanding-agriculture-dairy.html",
+          "year": null,
+          "authority": "supporting"
+        }
+      ]
+    }
+  ],
+  "lastValidated": "2026-02-03"
+}

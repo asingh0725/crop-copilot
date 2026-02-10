@@ -1,0 +1,84 @@
+{
+  "crop": "tomatoes",
+  "cropAliases": [
+    "potatoes",
+    "peppers"
+  ],
+  "region": {
+    "macro": "Pacific Northwest",
+    "states": [
+      "Washington",
+      "Oregon",
+      "Idaho"
+    ],
+    "provinces": [],
+    "regulatoryAuthority": [
+      "EPA"
+    ]
+  },
+  "domain": "growth-stages",
+  "problems": [
+    {
+      "name": "Growth Stage Identification",
+      "scientificName": null,
+      "severityClasses": [
+        "low",
+        "medium",
+        "high"
+      ],
+      "signals": {
+        "visual": {
+          "positiveIndicators": [
+            "Stage-specific leaf, node, or reproductive markers"
+          ],
+          "negativeIndicators": [
+            "Non-uniform development due to stress"
+          ],
+          "imageSources": []
+        },
+        "contextual": {
+          "growthStages": [
+            "All stages"
+          ],
+          "weatherTriggers": [
+            "Accumulated heat units"
+          ],
+          "rotationRisk": [
+            "N/A"
+          ]
+        }
+      },
+      "decisionLogic": {
+        "scoutingThresholds": [
+          {
+            "condition": "Stage confirmed",
+            "action": "Time scouting and management windows"
+          }
+        ],
+        "preventativeActions": [
+          "Use stage-based planning"
+        ],
+        "curativeActions": [
+          {
+            "type": "cultural",
+            "constraints": {
+              "requiresRotation": false,
+              "regulatoryCheck": false,
+              "phiRelevant": false
+            }
+          }
+        ]
+      },
+      "sources": [
+        {
+          "institution": "treefruit.wsu.edu",
+          "publicationId": null,
+          "url": "https://treefruit.wsu.edu/crop-protection/",
+          "year": null,
+          "authority": "supporting"
+        }
+      ]
+    }
+  ],
+  "lastValidated": "2026-02-03"
+}

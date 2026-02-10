@@ -1,0 +1,86 @@
+{
+  "crop": "tomatoes",
+  "cropAliases": [
+    "potatoes",
+    "peppers"
+  ],
+  "region": {
+    "macro": "Ontario and Quebec",
+    "states": [],
+    "provinces": [
+      "Ontario",
+      "Quebec"
+    ],
+    "regulatoryAuthority": [
+      "PMRA"
+    ]
+  },
+  "domain": "nutrients",
+  "problems": [
+    {
+      "name": "General Nutrient Deficiency Diagnosis",
+      "scientificName": null,
+      "severityClasses": [
+        "low",
+        "medium",
+        "high"
+      ],
+      "signals": {
+        "visual": {
+          "positiveIndicators": [
+            "Interveinal chlorosis, stunting, marginal burn"
+          ],
+          "negativeIndicators": [
+            "Lesions with sporulation or pest presence"
+          ],
+          "imageSources": []
+        },
+        "contextual": {
+          "growthStages": [
+            "Vegetative",
+            "Reproductive"
+          ],
+          "weatherTriggers": [
+            "Excess rainfall",
+            "Drought stress"
+          ],
+          "rotationRisk": [
+            "Low organic matter soils"
+          ]
+        }
+      },
+      "decisionLogic": {
+        "scoutingThresholds": [
+          {
+            "condition": "Deficiency symptoms confirmed",
+            "action": "Verify with tissue/soil tests"
+          }
+        ],
+        "preventativeActions": [
+          "Balanced fertility program",
+          "Soil testing"
+        ],
+        "curativeActions": [
+          {
+            "type": "cultural",
+            "constraints": {
+              "requiresRotation": false,
+              "regulatoryCheck": false,
+              "phiRelevant": false
+            }
+          }
+        ]
+      },
+      "sources": [
+        {
+          "institution": "www.ontario.ca",
+          "publicationId": null,
+          "url": "https://www.ontario.ca/page/starting-commercial-nursery-ontario",
+          "year": null,
+          "authority": "supporting"
+        }
+      ]
+    }
+  ],
+  "lastValidated": "2026-02-03"
+}

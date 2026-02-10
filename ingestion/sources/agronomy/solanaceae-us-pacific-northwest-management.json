@@ -1,0 +1,112 @@
+{
+  "crop": "tomatoes",
+  "cropAliases": [
+    "potatoes",
+    "peppers"
+  ],
+  "region": {
+    "macro": "Pacific Northwest",
+    "states": [
+      "Washington",
+      "Oregon",
+      "Idaho"
+    ],
+    "provinces": [],
+    "regulatoryAuthority": [
+      "EPA"
+    ]
+  },
+  "domain": "management",
+  "problems": [
+    {
+      "name": "Integrated Crop Management",
+      "scientificName": null,
+      "severityClasses": [
+        "low",
+        "medium",
+        "high"
+      ],
+      "signals": {
+        "visual": {
+          "positiveIndicators": [
+            "Healthy stand and canopy"
+          ],
+          "negativeIndicators": [
+            "Poor emergence or uneven canopy"
+          ],
+          "imageSources": []
+        },
+        "contextual": {
+          "growthStages": [
+            "All stages"
+          ],
+          "weatherTriggers": [
+            "Seasonal variability"
+          ],
+          "rotationRisk": [
+            "Short rotations"
+          ]
+        }
+      },
+      "decisionLogic": {
+        "scoutingThresholds": [
+          {
+            "condition": "Risk factors present",
+            "action": "Adjust management practices"
+          }
+        ],
+        "preventativeActions": [
+          "Use IPM and crop rotation"
+        ],
+        "curativeActions": [
+          {
+            "type": "cultural",
+            "constraints": {
+              "requiresRotation": false,
+              "regulatoryCheck": false,
+              "phiRelevant": false
+            }
+          }
+        ]
+      },
+      "sources": [
+        {
+          "institution": "pnwhandbooks.org",
+          "publicationId": null,
+          "url": "https://pnwhandbooks.org/weed",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "pubs.extension.wsu.edu",
+          "publicationId": null,
+          "url": "https://pubs.extension.wsu.edu/product/2025-crop-protection-guide-for-tree-fruit",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "pnwhandbooks.org",
+          "publicationId": null,
+          "url": "https://pnwhandbooks.org/handbook/weed",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "cpg.treefruit.wsu.edu",
+          "publicationId": null,
+          "url": "https://cpg.treefruit.wsu.edu/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "pnwhandbooks.org",
+          "publicationId": null,
+          "url": "https://pnwhandbooks.org/weed",
+          "year": null,
+          "authority": "supporting"
+        }
+      ]
+    }
+  ],
+  "lastValidated": "2026-02-03"
+}

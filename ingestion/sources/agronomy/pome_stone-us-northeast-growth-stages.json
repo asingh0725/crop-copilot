@@ -1,0 +1,436 @@
+{
+  "crop": "apples",
+  "cropAliases": [
+    "peaches",
+    "cherries"
+  ],
+  "region": {
+    "macro": "Northeast",
+    "states": [
+      "West Virginia",
+      "Pennsylvania",
+      "New York",
+      "Vermont",
+      "New Hampshire",
+      "Maine",
+      "Massachusetts",
+      "Rhode Island",
+      "Connecticut",
+      "New Jersey",
+      "Delaware",
+      "Maryland"
+    ],
+    "provinces": [],
+    "regulatoryAuthority": [
+      "EPA"
+    ]
+  },
+  "domain": "growth-stages",
+  "problems": [
+    {
+      "name": "Growth Stage Identification",
+      "scientificName": null,
+      "severityClasses": [
+        "low",
+        "medium",
+        "high"
+      ],
+      "signals": {
+        "visual": {
+          "positiveIndicators": [
+            "Stage-specific leaf, node, or reproductive markers"
+          ],
+          "negativeIndicators": [
+            "Non-uniform development due to stress"
+          ],
+          "imageSources": []
+        },
+        "contextual": {
+          "growthStages": [
+            "All stages"
+          ],
+          "weatherTriggers": [
+            "Accumulated heat units"
+          ],
+          "rotationRisk": [
+            "N/A"
+          ]
+        }
+      },
+      "decisionLogic": {
+        "scoutingThresholds": [
+          {
+            "condition": "Stage confirmed",
+            "action": "Time scouting and management windows"
+          }
+        ],
+        "preventativeActions": [
+          "Use stage-based planning"
+        ],
+        "curativeActions": [
+          {
+            "type": "cultural",
+            "constraints": {
+              "requiresRotation": false,
+              "regulatoryCheck": false,
+              "phiRelevant": false
+            }
+          }
+        ]
+      },
+      "sources": [
+        {
+          "institution": "extension.psu.edu",
+          "publicationId": null,
+          "url": "https://extension.psu.edu/insects-pests-and-diseases/pollinators/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.psu.edu",
+          "publicationId": null,
+          "url": "https://extension.psu.edu/private-pesticide-applicator-short-course-workshop/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.psu.edu",
+          "publicationId": null,
+          "url": "https://extension.psu.edu/how-late-can-cool-season-perennial-forages-be-planted/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.psu.edu",
+          "publicationId": null,
+          "url": "https://extension.psu.edu/insects-pests-and-diseases/vectors/tick-identification-and-management/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.psu.edu",
+          "publicationId": null,
+          "url": "https://extension.psu.edu/spring-fruit-tree-planting-tips-for-the-home-garden/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.psu.edu",
+          "publicationId": null,
+          "url": "https://extension.psu.edu/business-and-operations/farm-markets/management/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.psu.edu",
+          "publicationId": null,
+          "url": "https://extension.psu.edu/grape-disease-downy-mildew/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.psu.edu",
+          "publicationId": null,
+          "url": "https://extension.psu.edu/landscape-management-common-mallow/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.psu.edu",
+          "publicationId": null,
+          "url": "https://extension.psu.edu/insects-pests-and-diseases/pollinators/featured-articles/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.psu.edu",
+          "publicationId": null,
+          "url": "https://extension.psu.edu/trouble-shooting-colostrum-management-colostrum-calculator/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.psu.edu",
+          "publicationId": null,
+          "url": "https://extension.psu.edu/plant-guide-sun-to-part-sun-dry-to-moist-soil/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.psu.edu",
+          "publicationId": null,
+          "url": "https://extension.psu.edu/an-overview-of-advanced-weed-management-technologies-for-orchards/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.psu.edu",
+          "publicationId": null,
+          "url": "https://extension.psu.edu/pennsylvania-department-of-agriculture-contacts/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.psu.edu",
+          "publicationId": null,
+          "url": "https://extension.psu.edu/trees-lawns-and-landscaping/aquatic-plants-and-algae/common-problems/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.psu.edu",
+          "publicationId": null,
+          "url": "https://extension.psu.edu/developing-an-integrated-turfgrass-pest-management-program/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.psu.edu",
+          "publicationId": null,
+          "url": "https://extension.psu.edu/water/watershed-protection-and-restoration/water-quality-and-management/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.psu.edu",
+          "publicationId": null,
+          "url": "https://extension.psu.edu/managing-invasive-plants/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.psu.edu",
+          "publicationId": null,
+          "url": "https://extension.psu.edu/forests-and-wildlife/urban-forestry/municipal-stormwater-management/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.psu.edu",
+          "publicationId": null,
+          "url": "https://extension.psu.edu/management-of-triazine-resistant-pigweed-and-lambsquarters/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.psu.edu",
+          "publicationId": null,
+          "url": "https://extension.psu.edu/planting-in-the-cold-the-magic-of-winter-sowing/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.psu.edu",
+          "publicationId": null,
+          "url": "https://extension.psu.edu/rain-garden-plants-red-maple/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.psu.edu",
+          "publicationId": null,
+          "url": "https://extension.psu.edu/plant-based-diet/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.psu.edu",
+          "publicationId": null,
+          "url": "https://extension.psu.edu/frontiers-in-forest-health-beech-leaf-disease-update/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.psu.edu",
+          "publicationId": null,
+          "url": "https://extension.psu.edu/schefflera-brassaia-diseases/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.psu.edu",
+          "publicationId": null,
+          "url": "https://extension.psu.edu/mushroom-pesticide-meeting/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.psu.edu",
+          "publicationId": null,
+          "url": "https://extension.psu.edu/insecto-de-encaje-en-plantas-deciduosas-ornamentales-lenosas/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.psu.edu",
+          "publicationId": null,
+          "url": "https://extension.psu.edu/tips-for-a-bug-free-houseplant-haven/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.psu.edu",
+          "publicationId": null,
+          "url": "https://extension.psu.edu/whats-new-in-agronomic-pest-control-2026/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.psu.edu",
+          "publicationId": null,
+          "url": "https://extension.psu.edu/plant-biology-taxonomy-and-morphology/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.psu.edu",
+          "publicationId": null,
+          "url": "https://extension.psu.edu/rain-garden-plants-great-blue-lobelia/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.psu.edu",
+          "publicationId": null,
+          "url": "https://extension.psu.edu/climate-smart-agriculture-and-conservation-practices/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.psu.edu",
+          "publicationId": null,
+          "url": "https://extension.psu.edu/ficus-diseases/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.psu.edu",
+          "publicationId": null,
+          "url": "https://extension.psu.edu/food-safety-modernization-act-pest-management-video/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.psu.edu",
+          "publicationId": null,
+          "url": "https://extension.psu.edu/rainy-conditions-and-botrytis-gray-mold-management/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.psu.edu",
+          "publicationId": null,
+          "url": "https://extension.psu.edu/aquatic-pesticide-management/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.psu.edu",
+          "publicationId": null,
+          "url": "https://extension.psu.edu/private-pesticide-applicator-exam-prep/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.psu.edu",
+          "publicationId": null,
+          "url": "https://extension.psu.edu/cyclamen-diseases/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.psu.edu",
+          "publicationId": null,
+          "url": "https://extension.psu.edu/making-the-most-of-mixtures-considerations-for-winter-cover-crops/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.psu.edu",
+          "publicationId": null,
+          "url": "https://extension.psu.edu/animals-and-livestock/llamas-and-alpacas/manure-and-nutrient-management/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.psu.edu",
+          "publicationId": null,
+          "url": "https://extension.psu.edu/pond-fisheries-management/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.psu.edu",
+          "publicationId": null,
+          "url": "https://extension.psu.edu/key-plants-and-key-diseases-indoors/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.psu.edu",
+          "publicationId": null,
+          "url": "https://extension.psu.edu/mid-season-crop-tissue-testing/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.psu.edu",
+          "publicationId": null,
+          "url": "https://extension.psu.edu/using-leaf-tissue-analysis-for-high-tunnel-tomato-nutrient-management/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.psu.edu",
+          "publicationId": null,
+          "url": "https://extension.psu.edu/forage-and-food-crops/vegetables/latest-research/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.psu.edu",
+          "publicationId": null,
+          "url": "https://extension.psu.edu/tree-fruit-insect-and-mite-control-toolbox-pesticide-resistance-management/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.psu.edu",
+          "publicationId": null,
+          "url": "https://extension.psu.edu/whats-in-your-new-crop-corn-silage/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.psu.edu",
+          "publicationId": null,
+          "url": "https://extension.psu.edu/pesticide-applicator-certification-study-materials-household-and-health-related-pest-control/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.psu.edu",
+          "publicationId": null,
+          "url": "https://extension.psu.edu/tree-fruit-mite-pest-european-red-mite/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.psu.edu",
+          "publicationId": null,
+          "url": "https://extension.psu.edu/pear-disease-leaf-blight-and-fruit-spot/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.psu.edu",
+          "publicationId": null,
+          "url": "https://extension.psu.edu/japanese-beetles-in-brambles-in-the-home-fruit-planting/",
+          "year": null,
+          "authority": "supporting"
+        }
+      ]
+    }
+  ],
+  "lastValidated": "2026-02-03"
+}

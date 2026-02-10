@@ -1,0 +1,439 @@
+{
+  "crop": "apples",
+  "cropAliases": [
+    "peaches",
+    "cherries"
+  ],
+  "region": {
+    "macro": "Northeast",
+    "states": [
+      "West Virginia",
+      "Pennsylvania",
+      "New York",
+      "Vermont",
+      "New Hampshire",
+      "Maine",
+      "Massachusetts",
+      "Rhode Island",
+      "Connecticut",
+      "New Jersey",
+      "Delaware",
+      "Maryland"
+    ],
+    "provinces": [],
+    "regulatoryAuthority": [
+      "EPA"
+    ]
+  },
+  "domain": "nutrients",
+  "problems": [
+    {
+      "name": "General Nutrient Deficiency Diagnosis",
+      "scientificName": null,
+      "severityClasses": [
+        "low",
+        "medium",
+        "high"
+      ],
+      "signals": {
+        "visual": {
+          "positiveIndicators": [
+            "Interveinal chlorosis, stunting, marginal burn"
+          ],
+          "negativeIndicators": [
+            "Lesions with sporulation or pest presence"
+          ],
+          "imageSources": []
+        },
+        "contextual": {
+          "growthStages": [
+            "Vegetative",
+            "Reproductive"
+          ],
+          "weatherTriggers": [
+            "Excess rainfall",
+            "Drought stress"
+          ],
+          "rotationRisk": [
+            "Low organic matter soils"
+          ]
+        }
+      },
+      "decisionLogic": {
+        "scoutingThresholds": [
+          {
+            "condition": "Deficiency symptoms confirmed",
+            "action": "Verify with tissue/soil tests"
+          }
+        ],
+        "preventativeActions": [
+          "Balanced fertility program",
+          "Soil testing"
+        ],
+        "curativeActions": [
+          {
+            "type": "cultural",
+            "constraints": {
+              "requiresRotation": false,
+              "regulatoryCheck": false,
+              "phiRelevant": false
+            }
+          }
+        ]
+      },
+      "sources": [
+        {
+          "institution": "extension.psu.edu",
+          "publicationId": null,
+          "url": "https://extension.psu.edu/petunia-diseases/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.psu.edu",
+          "publicationId": null,
+          "url": "https://extension.psu.edu/collaborative-school-planting-project-creates-lifelong-learners/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.psu.edu",
+          "publicationId": null,
+          "url": "https://extension.psu.edu/forage-and-food-crops/fruit/pests-and-diseases/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.psu.edu",
+          "publicationId": null,
+          "url": "https://extension.psu.edu/forage-and-food-crops/mushrooms/substrate-management/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.psu.edu",
+          "publicationId": null,
+          "url": "https://extension.psu.edu/vineyard-floor-and-weed-management-expert-forum-discussion/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.psu.edu",
+          "publicationId": null,
+          "url": "https://extension.psu.edu/spotted-lanternfly-past-present-and-future-impacts-and-management/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.psu.edu",
+          "publicationId": null,
+          "url": "https://extension.psu.edu/zebra-plant-as-a-houseplant/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.psu.edu",
+          "publicationId": null,
+          "url": "https://extension.psu.edu/insects-pests-and-diseases/pollinators/pesticides/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.psu.edu",
+          "publicationId": null,
+          "url": "https://extension.psu.edu/rain-garden-plants-virginia-bluebells/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.psu.edu",
+          "publicationId": null,
+          "url": "https://extension.psu.edu/home-orchards-fire-blight-management-in-apples-and-pears/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.psu.edu",
+          "publicationId": null,
+          "url": "https://extension.psu.edu/questions-about-your-pesticide-points/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.psu.edu",
+          "publicationId": null,
+          "url": "https://extension.psu.edu/nematode-caused-diseases-on-woody-ornamentals/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.psu.edu",
+          "publicationId": null,
+          "url": "https://extension.psu.edu/rain-garden-plants-smooth-aster/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.psu.edu",
+          "publicationId": null,
+          "url": "https://extension.psu.edu/forage-and-food-crops/forages/business-management/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.psu.edu",
+          "publicationId": null,
+          "url": "https://extension.psu.edu/transition-cow-management-much-more-than-just-diet/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.psu.edu",
+          "publicationId": null,
+          "url": "https://extension.psu.edu/forage-and-food-crops/forages/personal-safety/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.psu.edu",
+          "publicationId": null,
+          "url": "https://extension.psu.edu/know-your-risk-vector-borne-diseases/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.psu.edu",
+          "publicationId": null,
+          "url": "https://extension.psu.edu/its-time-to-plant/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.psu.edu",
+          "publicationId": null,
+          "url": "https://extension.psu.edu/water/pond-management/water-quality/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.psu.edu",
+          "publicationId": null,
+          "url": "https://extension.psu.edu/terminating-winter-cover-crops-in-organic-crops/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.psu.edu",
+          "publicationId": null,
+          "url": "https://extension.psu.edu/tarnished-plant-bug-on-strawberries-in-home-gardens/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.psu.edu",
+          "publicationId": null,
+          "url": "https://extension.psu.edu/forage-and-food-crops/fruit/featured-articles/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.psu.edu",
+          "publicationId": null,
+          "url": "https://extension.psu.edu/how-choices-made-at-planting-impact-barley-and-wheat-health/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.psu.edu",
+          "publicationId": null,
+          "url": "https://extension.psu.edu/lawn-and-turf-management-for-the-homeowner/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.psu.edu",
+          "publicationId": null,
+          "url": "https://extension.psu.edu/sdhi-fungicides-for-turfgrass-diseases/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.psu.edu",
+          "publicationId": null,
+          "url": "https://extension.psu.edu/spreadsheet-to-price-standing-hay-crop-forage/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.psu.edu",
+          "publicationId": null,
+          "url": "https://extension.psu.edu/make-your-herds-future-a-top-priority-practical-colostrum-management-for-the-small-dairy/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.psu.edu",
+          "publicationId": null,
+          "url": "https://extension.psu.edu/management-for-dairy-calves-in-automatic-feeding-group-housing-systems/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.psu.edu",
+          "publicationId": null,
+          "url": "https://extension.psu.edu/consider-adding-deer-resistant-forages-to-your-cropping-plan/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.psu.edu",
+          "publicationId": null,
+          "url": "https://extension.psu.edu/pa-lake-management-society-offers-directory-of-pond-and-lake-service-providers/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.psu.edu",
+          "publicationId": null,
+          "url": "https://extension.psu.edu/caring-for-houseplants/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.psu.edu",
+          "publicationId": null,
+          "url": "https://extension.psu.edu/rhizopus-rot-of-stone-fruit-in-home-fruit-plantings/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.psu.edu",
+          "publicationId": null,
+          "url": "https://extension.psu.edu/landscaping-and-gardening-around-walnuts-and-other-juglone-producing-plants/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.psu.edu",
+          "publicationId": null,
+          "url": "https://extension.psu.edu/pear-leaf-spot-in-the-home-fruit-planting/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.psu.edu",
+          "publicationId": null,
+          "url": "https://extension.psu.edu/smart-feeding-management-for-dairy-efficiency/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.psu.edu",
+          "publicationId": null,
+          "url": "https://extension.psu.edu/home-fruit-plantings-gooseberry-and-currant-variety-selection/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.psu.edu",
+          "publicationId": null,
+          "url": "https://extension.psu.edu/animals-and-livestock/sheep/business-management/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.psu.edu",
+          "publicationId": null,
+          "url": "https://extension.psu.edu/dairy-risk-management-education-using-milk-futures-to-lock-in-profitability/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.psu.edu",
+          "publicationId": null,
+          "url": "https://extension.psu.edu/harvesting-innovation-blockchain-basics-for-agriculture/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.psu.edu",
+          "publicationId": null,
+          "url": "https://extension.psu.edu/stone-fruit-disease-black-knot/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.psu.edu",
+          "publicationId": null,
+          "url": "https://extension.psu.edu/extension-seeks-agriculture-extension-educators/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.psu.edu",
+          "publicationId": null,
+          "url": "https://extension.psu.edu/business-and-operations/business-management/insurance/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.psu.edu",
+          "publicationId": null,
+          "url": "https://extension.psu.edu/emergency-phone-numbers-for-pesticide-spills/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.psu.edu",
+          "publicationId": null,
+          "url": "https://extension.psu.edu/keeping-plants-well-groomed/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.psu.edu",
+          "publicationId": null,
+          "url": "https://extension.psu.edu/turfgrass-diseases-microdochium-patch-causal-fungus-microdochium-nivale/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.psu.edu",
+          "publicationId": null,
+          "url": "https://extension.psu.edu/rain-garden-plants-black-gum/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.psu.edu",
+          "publicationId": null,
+          "url": "https://extension.psu.edu/nectria-twig-blight-of-apple-in-the-home-fruit-planting/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.psu.edu",
+          "publicationId": null,
+          "url": "https://extension.psu.edu/predators-control-pests-and-crop-damage-in-transition-to-organic/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.psu.edu",
+          "publicationId": null,
+          "url": "https://extension.psu.edu/plant-identification-and-usage-flowering-trees/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.psu.edu",
+          "publicationId": null,
+          "url": "https://extension.psu.edu/weed-management-in-crep-grasslands/",
+          "year": null,
+          "authority": "supporting"
+        }
+      ]
+    }
+  ],
+  "lastValidated": "2026-02-03"
+}
