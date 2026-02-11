@@ -6,9 +6,9 @@ import { Leaf } from "lucide-react";
 export function Footer() {
   const footerLinks = {
     product: [
-      { label: "Features", href: "#features" },
-      { label: "Pricing", href: "#pricing" },
-      { label: "How It Works", href: "#how-it-works" },
+      { label: "Features", href: "/#features" },
+      { label: "Pricing", href: "/#pricing" },
+      { label: "How It Works", href: "/#how-it-works" },
       { label: "API", href: "/api-docs" },
     ],
     company: [
@@ -40,7 +40,7 @@ export function Footer() {
               Ready to optimize your farm?
             </h2>
             <p className="text-gray-400 mb-8 max-w-xl mx-auto">
-              Join hundreds of farmers using AI-powered soil analysis to increase yields and reduce costs.
+              Start analyzing soil tests in minutes — no credit card required.
             </p>
             <Link
               href="/signup"

@@ -1,0 +1,379 @@
+{
+  "phase": 3,
+  "description": "Gap-fill v3: tomatoes, squash, sugar beets, peanuts, blueberries - verified extension PDFs",
+  "totalUrls": 28,
+  "estimatedChunks": null,
+  "sources": {
+    "purdue_tomato_disease": {
+      "institution": "Purdue University Extension",
+      "baseUrl": "https://www.extension.purdue.edu",
+      "priority": "high",
+      "urls": [
+        {
+          "url": "https://www.extension.purdue.edu/extmedia/bp/bp-197-w.pdf",
+          "title": "Tomato Disease Management in Greenhouses",
+          "crops": ["tomatoes"],
+          "topics": ["disease", "management"],
+          "expectedChunks": 12
+        },
+        {
+          "url": "https://www.extension.purdue.edu/extmedia/bp/bp-80-w.pdf",
+          "title": "Late Blight of Tomato and Potato",
+          "crops": ["tomatoes", "potatoes"],
+          "topics": ["disease", "management"],
+          "expectedChunks": 10
+        }
+      ]
+    },
+    "utenn_tomato_disease": {
+      "institution": "University of Tennessee Extension",
+      "baseUrl": "https://utia.tennessee.edu",
+      "priority": "high",
+      "urls": [
+        {
+          "url": "https://grainger.tennessee.edu/wp-content/uploads/sites/153/2020/07/Ag-VFP-Tomato-Disease-and-Insect-Control-Manual-2015.pdf",
+          "title": "Tomato Disease and Insect Control Manual",
+          "crops": ["tomatoes"],
+          "topics": ["disease", "pest", "management"],
+          "expectedChunks": 25
+        },
+        {
+          "url": "https://utia.tennessee.edu/publications/wp-content/uploads/sites/269/2023/10/SP277-W.pdf",
+          "title": "Foliar Diseases of Tomato",
+          "crops": ["tomatoes"],
+          "topics": ["disease", "management"],
+          "expectedChunks": 10
+        }
+      ]
+    },
+    "ksu_tomato_disease": {
+      "institution": "Kansas State University Extension",
+      "baseUrl": "https://bookstore.ksre.ksu.edu",
+      "priority": "high",
+      "urls": [
+        {
+          "url": "https://bookstore.ksre.ksu.edu/pubs/tomato-leaf-and-fruit-diseases-and-disorders_L721.pdf",
+          "title": "Tomato Leaf and Fruit Diseases and Disorders",
+          "crops": ["tomatoes"],
+          "topics": ["disease", "diagnosis"],
+          "expectedChunks": 15
+        }
+      ]
+    },
+    "arkansas_tomato_disease": {
+      "institution": "University of Arkansas Extension",
+      "baseUrl": "https://uaex.uada.edu",
+      "priority": "high",
+      "urls": [
+        {
+          "url": "https://uaex.uada.edu/publications/PDF/FSA-7568.pdf",
+          "title": "Managing Tomato Diseases in Arkansas",
+          "crops": ["tomatoes"],
+          "topics": ["disease", "management"],
+          "expectedChunks": 12
+        }
+      ]
+    },
+    "ucanr_tomato_production": {
+      "institution": "UC Agriculture and Natural Resources",
+      "baseUrl": "https://anrcatalog.ucanr.edu",
+      "priority": "high",
+      "urls": [
+        {
+          "url": "https://anrcatalog.ucanr.edu/pdf/8159.pdf",
+          "title": "Growing Tomatoes in the Home Garden",
+          "crops": ["tomatoes"],
+          "topics": ["production", "pest", "disease"],
+          "expectedChunks": 18
+        }
+      ]
+    },
+    "uga_tomato_production": {
+      "institution": "University of Georgia Extension",
+      "baseUrl": "https://openscholar.uga.edu",
+      "priority": "high",
+      "urls": [
+        {
+          "url": "https://openscholar.uga.edu/record/23019/files/B1312.pdf",
+          "title": "Commercial Tomato Production Handbook",
+          "crops": ["tomatoes"],
+          "topics": ["production", "disease", "pest", "management"],
+          "expectedChunks": 30
+        }
+      ]
+    },
+    "umd_tomato_nutrients": {
+      "institution": "University of Maryland Extension",
+      "baseUrl": "https://extension.umd.edu",
+      "priority": "high",
+      "urls": [
+        {
+          "url": "https://extension.umd.edu/sites/extension.umd.edu/files/2021-06/NutrientProblemsAndTheirMgtInTomatoes.pdf",
+          "title": "Nutrient Problems and Management in Tomatoes",
+          "crops": ["tomatoes"],
+          "topics": ["nutrients", "management"],
+          "expectedChunks": 15
+        }
+      ]
+    },
+    "cornell_vegetable_ipm": {
+      "institution": "Cornell University Extension",
+      "baseUrl": "https://cropandpestguides.cce.cornell.edu",
+      "priority": "high",
+      "urls": [
+        {
+          "url": "https://cropandpestguides.cce.cornell.edu/Preview/2025/2025_Veg_Guide_Preview.pdf",
+          "title": "2025 Cornell Vegetable Integrated Crop and Pest Management Guidelines",
+          "crops": ["tomatoes", "squash", "peppers", "onions"],
+          "topics": ["pest", "disease", "management", "ipm"],
+          "expectedChunks": 40
+        }
+      ]
+    },
+    "okstate_tomato_production": {
+      "institution": "Oklahoma State University Extension",
+      "baseUrl": "https://extension.okstate.edu",
+      "priority": "high",
+      "urls": [
+        {
+          "url": "https://extension.okstate.edu/fact-sheets/print-publications/hla/growing-tomatoes-in-the-home-garden-hla-6012.pdf",
+          "title": "Growing Tomatoes in the Home Garden",
+          "crops": ["tomatoes"],
+          "topics": ["production", "management"],
+          "expectedChunks": 12
+        }
+      ]
+    },
+    "okstate_squash_disease": {
+      "institution": "Oklahoma State University Extension",
+      "baseUrl": "https://extension.okstate.edu",
+      "priority": "high",
+      "urls": [
+        {
+          "url": "https://extension.okstate.edu/fact-sheets/print-publications/epp-entomology-and-plant-pathologhy/pumpkin-and-squash-diseases-epp-7336.pdf",
+          "title": "Pumpkin and Squash Diseases",
+          "crops": ["squash", "pumpkins"],
+          "topics": ["disease", "management"],
+          "expectedChunks": 15
+        },
+        {
+          "url": "https://extension.okstate.edu/fact-sheets/print-publications/e/guide-for-identification-and-management-of-diseases-of-cucurbit-vegetable-crops-e-929.pdf",
+          "title": "Identification and Management of Cucurbit Diseases",
+          "crops": ["squash", "pumpkins"],
+          "topics": ["disease", "diagnosis", "management"],
+          "expectedChunks": 20
+        }
+      ]
+    },
+    "uky_squash_disease": {
+      "institution": "University of Kentucky Extension",
+      "baseUrl": "https://plantpathology.mgcafe.uky.edu",
+      "priority": "high",
+      "urls": [
+        {
+          "url": "https://plantpathology.mgcafe.uky.edu/files/PPFS-VG-35.pdf",
+          "title": "Commercial Spray Schedule for Summer Squash",
+          "crops": ["squash"],
+          "topics": ["disease", "management"],
+          "expectedChunks": 10
+        }
+      ]
+    },
+    "purdue_cucurbit_pest": {
+      "institution": "Purdue University Extension",
+      "baseUrl": "https://extension.entm.purdue.edu",
+      "priority": "high",
+      "urls": [
+        {
+          "url": "https://extension.entm.purdue.edu/publications/E-30.pdf",
+          "title": "Cucurbit Insect Management",
+          "crops": ["squash", "pumpkins"],
+          "topics": ["pest", "management"],
+          "expectedChunks": 12
+        }
+      ]
+    },
+    "ucanr_squash_production": {
+      "institution": "UC Agriculture and Natural Resources",
+      "baseUrl": "https://anrcatalog.ucanr.edu",
+      "priority": "high",
+      "urls": [
+        {
+          "url": "https://anrcatalog.ucanr.edu/pdf/7245.pdf",
+          "title": "Summer Squash Production in California",
+          "crops": ["squash"],
+          "topics": ["production", "management"],
+          "expectedChunks": 18
+        }
+      ]
+    },
+    "msu_cucurbit_production": {
+      "institution": "Michigan State University Extension",
+      "baseUrl": "https://www.canr.msu.edu",
+      "priority": "medium",
+      "urls": [
+        {
+          "url": "https://www.canr.msu.edu/foodsystems/uploads/files/production-cucurbit_samp.pdf",
+          "title": "Organic Cucumber and Squash Production",
+          "crops": ["squash"],
+          "topics": ["production", "management"],
+          "expectedChunks": 15
+        }
+      ]
+    },
+    "arkansas_cucurbit_disease": {
+      "institution": "University of Arkansas Extension",
+      "baseUrl": "https://www.uaex.uada.edu",
+      "priority": "medium",
+      "urls": [
+        {
+          "url": "https://www.uaex.uada.edu/publications/pdf/MP558.pdf",
+          "title": "Arkansas Common Cucurbit Problems",
+          "crops": ["squash", "pumpkins"],
+          "topics": ["disease", "pest", "management"],
+          "expectedChunks": 12
+        }
+      ]
+    },
+    "unl_sugarbeet_disease": {
+      "institution": "University of Nebraska-Lincoln Extension",
+      "baseUrl": "https://extensionpubs.unl.edu",
+      "priority": "medium",
+      "urls": [
+        {
+          "url": "https://extensionpubs.unl.edu/publication/g1753/2013/pdf/view/g1753-2013.pdf",
+          "title": "Cercospora Leaf Spot of Sugar Beet",
+          "crops": ["sugar beets"],
+          "topics": ["disease", "management"],
+          "expectedChunks": 10
+        }
+      ]
+    },
+    "ndsu_sugarbeet_production": {
+      "institution": "North Dakota State University Extension",
+      "baseUrl": "https://www.ndsu.edu",
+      "priority": "medium",
+      "urls": [
+        {
+          "url": "https://www.ndsu.edu/agriculture/sites/default/files/2024-01/a1698-24.pdf",
+          "title": "2024 NDSU Sugarbeet Production Guide",
+          "crops": ["sugar beets"],
+          "topics": ["production", "disease", "pest", "management"],
+          "expectedChunks": 35
+        }
+      ]
+    },
+    "msu_sugarbeet_disease": {
+      "institution": "Michigan State University Extension",
+      "baseUrl": "https://www.canr.msu.edu",
+      "priority": "medium",
+      "urls": [
+        {
+          "url": "https://www.canr.msu.edu/saginawvalley/uploads/18%20SVREC%20Report%20Web%20Final.pdf",
+          "title": "Cercospora Leaf Spot Research Report",
+          "crops": ["sugar beets"],
+          "topics": ["disease", "management"],
+          "expectedChunks": 15
+        }
+      ]
+    },
+    "ufl_peanut_production": {
+      "institution": "University of Florida Extension",
+      "baseUrl": "https://nfrec.ifas.ufl.edu",
+      "priority": "medium",
+      "urls": [
+        {
+          "url": "https://nfrec.ifas.ufl.edu/media/nfrecifasufledu/docs/pdf/Peanut-Production-Guide-2020.pdf",
+          "title": "Peanut Production Guide 2020",
+          "crops": ["peanuts"],
+          "topics": ["production", "disease", "pest", "management"],
+          "expectedChunks": 30
+        }
+      ]
+    },
+    "clemson_peanut_production": {
+      "institution": "Clemson University Extension",
+      "baseUrl": "https://blogs.clemson.edu",
+      "priority": "medium",
+      "urls": [
+        {
+          "url": "https://blogs.clemson.edu/sccrops/files/2023/08/Peanut-Production-Guide-2023_web.pdf",
+          "title": "Peanut Production Guide 2023",
+          "crops": ["peanuts"],
+          "topics": ["production", "disease", "pest", "management"],
+          "expectedChunks": 28
+        }
+      ]
+    },
+    "uga_peanut_production": {
+      "institution": "University of Georgia Extension",
+      "baseUrl": "https://peanuts.caes.uga.edu",
+      "priority": "medium",
+      "urls": [
+        {
+          "url": "https://peanuts.caes.uga.edu/content/dam/caes-subsite/peanuts/docs/2020/UGA-Peanut-Quick-Reference-Guide-2020.pdf",
+          "title": "UGA Peanut Quick Reference Guide",
+          "crops": ["peanuts"],
+          "topics": ["production", "disease", "pest", "management"],
+          "expectedChunks": 20
+        }
+      ]
+    },
+    "tamu_peanut_production": {
+      "institution": "Texas A&M University Extension",
+      "baseUrl": "https://peanut.tamu.edu",
+      "priority": "medium",
+      "urls": [
+        {
+          "url": "https://peanut.tamu.edu/files/2012/04/D__peanut_pdfs_productionguide07_3_11.pdf",
+          "title": "Texas Peanut Production Guide",
+          "crops": ["peanuts"],
+          "topics": ["production", "disease", "management"],
+          "expectedChunks": 25
+        }
+      ]
+    },
+    "ucipm_blueberry_ipm": {
+      "institution": "UC IPM",
+      "baseUrl": "https://ipm.ucanr.edu",
+      "priority": "medium",
+      "urls": [
+        {
+          "url": "https://ipm.ucanr.edu/pdf/pmg/pmgblueberry.pdf",
+          "title": "UC IPM Pest Management Guidelines: Blueberry",
+          "crops": ["blueberries"],
+          "topics": ["pest", "disease", "ipm", "management"],
+          "expectedChunks": 25
+        }
+      ]
+    },
+    "uky_blueberry_disease": {
+      "institution": "University of Kentucky Extension",
+      "baseUrl": "https://plantpathology.mgcafe.uky.edu",
+      "priority": "medium",
+      "urls": [
+        {
+          "url": "https://plantpathology.mgcafe.uky.edu/files/ppfs-fr-s-19.pdf",
+          "title": "Blueberry Disease Management",
+          "crops": ["blueberries"],
+          "topics": ["disease", "management"],
+          "expectedChunks": 12
+        }
+      ]
+    },
+    "arkansas_blueberry_disease": {
+      "institution": "University of Arkansas Extension",
+      "baseUrl": "https://www.uaex.uada.edu",
+      "priority": "medium",
+      "urls": [
+        {
+          "url": "https://www.uaex.uada.edu/farm-ranch/crops-commercial-horticulture/horticulture/commercial-fruit-production/Blueberry%20Disease%20Management.pdf",
+          "title": "Blueberry Disease Management",
+          "crops": ["blueberries"],
+          "topics": ["disease", "management"],
+          "expectedChunks": 15
+        }
+      ]
+    }
+  }
+}

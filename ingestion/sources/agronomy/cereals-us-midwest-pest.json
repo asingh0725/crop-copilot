@@ -1,0 +1,445 @@
+{
+  "crop": "wheat",
+  "cropAliases": [
+    "corn",
+    "rice",
+    "barley",
+    "oats",
+    "sorghum"
+  ],
+  "region": {
+    "macro": "Midwest",
+    "states": [
+      "Minnesota",
+      "Iowa",
+      "Missouri",
+      "Wisconsin",
+      "Illinois",
+      "Indiana",
+      "Michigan",
+      "Ohio"
+    ],
+    "provinces": [],
+    "regulatoryAuthority": [
+      "EPA"
+    ]
+  },
+  "domain": "pest",
+  "problems": [
+    {
+      "name": "General Pest Identification and Thresholds",
+      "scientificName": null,
+      "severityClasses": [
+        "low",
+        "medium",
+        "high"
+      ],
+      "signals": {
+        "visual": {
+          "positiveIndicators": [
+            "Feeding damage, frass, or insect presence"
+          ],
+          "negativeIndicators": [
+            "Nutrient deficiency patterns without pest activity"
+          ],
+          "imageSources": []
+        },
+        "contextual": {
+          "growthStages": [
+            "Early vegetative",
+            "Reproductive"
+          ],
+          "weatherTriggers": [
+            "Warm temperatures"
+          ],
+          "rotationRisk": [
+            "Continuous host cropping"
+          ]
+        }
+      },
+      "decisionLogic": {
+        "scoutingThresholds": [
+          {
+            "condition": "Economic threshold exceeded",
+            "action": "Select appropriate control based on label"
+          }
+        ],
+        "preventativeActions": [
+          "Use resistant varieties",
+          "Encourage beneficials"
+        ],
+        "curativeActions": [
+          {
+            "type": "biological",
+            "constraints": {
+              "requiresRotation": false,
+              "regulatoryCheck": true,
+              "phiRelevant": false
+            }
+          },
+          {
+            "type": "chemical",
+            "constraints": {
+              "requiresRotation": true,
+              "regulatoryCheck": true,
+              "phiRelevant": true
+            }
+          }
+        ]
+      },
+      "sources": [
+        {
+          "institution": "extension.purdue.edu",
+          "publicationId": null,
+          "url": "https://extension.purdue.edu/news/county/whitley/2025/03/agriculture-affects-everyone-every-day.html",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.purdue.edu",
+          "publicationId": null,
+          "url": "https://extension.purdue.edu/pondwildlife/habitat-management-planning.html",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.purdue.edu",
+          "publicationId": null,
+          "url": "https://extension.purdue.edu/4-H/_docs/get-involved/state-programs/CDE/state-crops-exam-2016.pdf",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.purdue.edu",
+          "publicationId": null,
+          "url": "https://extension.purdue.edu/news/county/whitley/2022/04/be-patient-on-roads-during-planting-season.html",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.purdue.edu",
+          "publicationId": null,
+          "url": "https://extension.purdue.edu/news/county/whitley/2022/05/understanding-agriculture--growing-soybeans.html",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.purdue.edu",
+          "publicationId": null,
+          "url": "https://extension.purdue.edu/uav/animal-agriculture/aquaculture-example.html",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.purdue.edu",
+          "publicationId": null,
+          "url": "https://extension.purdue.edu/county/howard/agriculture-and-natural-resources/anr.html",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.purdue.edu",
+          "publicationId": null,
+          "url": "https://extension.purdue.edu/news/fieldcroppathology/2021/index.html",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.purdue.edu",
+          "publicationId": null,
+          "url": "https://extension.purdue.edu/uav/animal-agriculture/liquid-and-dry-manure-application-example.html",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.purdue.edu",
+          "publicationId": null,
+          "url": "https://extension.purdue.edu/news/cdext/2019/08/_docs/guidebook_urban-agriculture.pdf",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.purdue.edu",
+          "publicationId": null,
+          "url": "https://extension.purdue.edu/news/inprepared/2020/04/_docs/respiratory-protection-ppe-for-agriculture-during-covid-191.pdf",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.purdue.edu",
+          "publicationId": null,
+          "url": "https://extension.purdue.edu/4-H/_docs/get-involved/state-programs/CDE/crop-handbook-2021-2025/machinery-equipment-id-answer-sheet-2021-2025.pdf",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.purdue.edu",
+          "publicationId": null,
+          "url": "https://extension.purdue.edu/county/vermillion/agriculture--natural-resources.html",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.purdue.edu",
+          "publicationId": null,
+          "url": "https://extension.purdue.edu/category/agriculture/index.html",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.purdue.edu",
+          "publicationId": null,
+          "url": "https://extension.purdue.edu/uav/animal-agriculture/index.html",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.purdue.edu",
+          "publicationId": null,
+          "url": "https://extension.purdue.edu/events/county/lake/2026/06/natural-pests-solutions-for-the-garden.html",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.purdue.edu",
+          "publicationId": null,
+          "url": "https://extension.purdue.edu/news/county/whitley/2022/07/understanding-agriculture-sheep.html",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.purdue.edu",
+          "publicationId": null,
+          "url": "https://extension.purdue.edu/uav/diversified-crops/industrial-hemp-for-cbd-production.html",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.purdue.edu",
+          "publicationId": null,
+          "url": "https://extension.purdue.edu/uav/animal-agriculture/checking-water-system-example.html",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.purdue.edu",
+          "publicationId": null,
+          "url": "https://extension.purdue.edu/county/adams/_docs/4-h-project-information/mini-manuals/plants.flowers.pdf",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.purdue.edu",
+          "publicationId": null,
+          "url": "https://extension.purdue.edu/events/county/lake/2026/04/new-to-you-native-plants.html",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.purdue.edu",
+          "publicationId": null,
+          "url": "https://extension.purdue.edu/news/fieldcroppathology/2020/05/field-crop-disease-update-2020-wheat-accurate-diagnosis-of-potential-injury-viruses-or-other-issues-in-wheat.html",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.purdue.edu",
+          "publicationId": null,
+          "url": "https://extension.purdue.edu/county/boone/4-H-Youth-Development/_docs/floriculture-level-d-plant-record1.pdf",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.purdue.edu",
+          "publicationId": null,
+          "url": "https://extension.purdue.edu/county/steuben/_docs/4-h-project-record-sheets/crops-record-sheet-crops-u-21.pdf",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.purdue.edu",
+          "publicationId": null,
+          "url": "https://extension.purdue.edu/4-H/_docs/get-involved/state-programs/CDE/crop-handbook-2021-2025/grain-grading-area-electronic-answer-worksheet9.22.pdf",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.purdue.edu",
+          "publicationId": null,
+          "url": "https://extension.purdue.edu/uav/structural/irrigation-management.html",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.purdue.edu",
+          "publicationId": null,
+          "url": "https://extension.purdue.edu/news/fieldcroppathology/2019/04/resources-for-purdue-field-crop-diseases.html",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.purdue.edu",
+          "publicationId": null,
+          "url": "https://extension.purdue.edu/county/hamilton/4H/Projects-Hamilton-County-4H/Crops.html",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.purdue.edu",
+          "publicationId": null,
+          "url": "https://extension.purdue.edu/uav/in-field-conservation/drone-cover-crop-seeding.html",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.purdue.edu",
+          "publicationId": null,
+          "url": "https://extension.purdue.edu/uav/turf/football-field-management.html",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.purdue.edu",
+          "publicationId": null,
+          "url": "https://extension.purdue.edu/news/county/white/2021/08/Crops-Field-Day-Returning-to-ACRE.html",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.purdue.edu",
+          "publicationId": null,
+          "url": "https://extension.purdue.edu/news/fieldcroppathology/2020/07/time-to-scout-field-crops-what-to-look-for-in-corn.html",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.purdue.edu",
+          "publicationId": null,
+          "url": "https://extension.purdue.edu/news/county/whitley/2023/07/understanding-two-common-turfgrass-diseases.html",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.purdue.edu",
+          "publicationId": null,
+          "url": "https://extension.purdue.edu/county/lagrange/projects/crops-project1.html",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.purdue.edu",
+          "publicationId": null,
+          "url": "https://extension.purdue.edu/news/fieldcroppathology/2019/07/an-update-on-corn-tar-spot-what-to-do-if-you-suspect-it-is-in-your-field.html",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.purdue.edu",
+          "publicationId": null,
+          "url": "https://extension.purdue.edu/news/county/whitley/2023/08/forestry-tour-to-highlight-young-forest-management.html",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.purdue.edu",
+          "publicationId": null,
+          "url": "https://extension.purdue.edu/news/county/white/2020/07/Pesticide-Clean-Sweep-Project-Coming-to-White-County.html",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.purdue.edu",
+          "publicationId": null,
+          "url": "https://extension.purdue.edu/news/fieldcroppathology/2020/index.html",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.purdue.edu",
+          "publicationId": null,
+          "url": "https://extension.purdue.edu/news/county/whitley/2021/04/be-patient-with-slow-moving-equipment-during-planting-season.html",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.purdue.edu",
+          "publicationId": null,
+          "url": "https://extension.purdue.edu/news/fieldcroppathology/2019/01/fungal-diseases-that-can-impact-soybean-pod-and-seed-quality.html",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.purdue.edu",
+          "publicationId": null,
+          "url": "https://extension.purdue.edu/uav/in-field-conservation/prevent-plant-cover-crop-performance.html",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.purdue.edu",
+          "publicationId": null,
+          "url": "https://extension.purdue.edu/news/inprepared/2020/04/smart-technology-in-agriculture-the-home-what-is-it-and-what-is-its-impact-on-safety-and-efficiency.html",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.purdue.edu",
+          "publicationId": null,
+          "url": "https://extension.purdue.edu/4-H/_docs/volunteer/resources-and-development/4-h-council-handbook/risk-management.pdf",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.purdue.edu",
+          "publicationId": null,
+          "url": "https://extension.purdue.edu/county/montgomery/4-h/crops.html",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.purdue.edu",
+          "publicationId": null,
+          "url": "https://extension.purdue.edu/news/fieldcroppathology/2022/01/management-considerations-for-tar-spot-in-indiana.html",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.purdue.edu",
+          "publicationId": null,
+          "url": "https://extension.purdue.edu/county/sullivan/_docs/crops.pdf",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.purdue.edu",
+          "publicationId": null,
+          "url": "https://extension.purdue.edu/news/county/white/2020/09/Fall-Crop-Outlook.html",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.purdue.edu",
+          "publicationId": null,
+          "url": "https://extension.purdue.edu/news/county/newton/2022/10/womens-agriculture-enrichment.pdf",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.purdue.edu",
+          "publicationId": null,
+          "url": "https://extension.purdue.edu/4-H/_docs/volunteer/resources-and-development/stem/attack-of-the-garlic-mustard-printable-boardgame-on-invasive-plant-species.pdf",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.purdue.edu",
+          "publicationId": null,
+          "url": "https://extension.purdue.edu/news/fieldcroppathology/2020/05/foliar-diseases-of-wheat-and-fusarium-head-blight-scab-management.html",
+          "year": null,
+          "authority": "supporting"
+        }
+      ]
+    }
+  ],
+  "lastValidated": "2026-02-03"
+}

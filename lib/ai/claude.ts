@@ -1,9 +1,35 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { createClient } from "@/lib/supabase/server";
 
-export const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
-});
+let anthropicClient: Anthropic | null = null;
+let cachedApiKey: string | null = null;
+let cachedAuthToken: string | null = null;
+
+export function getAnthropicClient(): Anthropic {
+  const apiKey = process.env.ANTHROPIC_API_KEY ?? null;
+  const authToken = process.env.ANTHROPIC_AUTH_TOKEN ?? null;
+
+  if (!apiKey && !authToken) {
+    throw new Error(
+      "Anthropic credentials not set. Provide ANTHROPIC_API_KEY or ANTHROPIC_AUTH_TOKEN."
+    );
+  }
+
+  if (
+    !anthropicClient ||
+    cachedApiKey !== apiKey ||
+    cachedAuthToken !== authToken
+  ) {
+    anthropicClient = new Anthropic({
+      apiKey: apiKey ?? undefined,
+      authToken: authToken ?? undefined,
+    });
+    cachedApiKey = apiKey;
+    cachedAuthToken = authToken;
+  }
+
+  return anthropicClient;
+}
 
 export const CLAUDE_MODEL = "claude-sonnet-4-5-20250929";
 const MODEL = "claude-sonnet-4-5-20250929";
@@ -41,6 +67,7 @@ export async function analyzeText(
   systemPrompt: string,
   userPrompt: string
 ): Promise<ClaudeResponse> {
+  const anthropic = getAnthropicClient();
   const response = await anthropic.messages.create({
     model: MODEL,
     max_tokens: MAX_TOKENS,
@@ -69,6 +96,7 @@ export async function analyzeWithVision(
   imageBase64: string,
   mediaType: "image/jpeg" | "image/png" | "image/webp" = "image/jpeg"
 ): Promise<ClaudeResponse> {
+  const anthropic = getAnthropicClient();
   const response = await anthropic.messages.create({
     model: MODEL,
     max_tokens: MAX_TOKENS,

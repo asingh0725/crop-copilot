@@ -38,7 +38,14 @@ pnpm-debug.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# ingestion pipeline cache
+# ingestion pipeline cache & state
 /ingestion/.cache/
 /ingestion/logs/
-ingestion/state/scraped-documents.json
+/ingestion/state/
+
+# eval & testing output (generated data, not source code)
+/data/eval/
+/data/testing/
+
+# OS files
+.DS_Store

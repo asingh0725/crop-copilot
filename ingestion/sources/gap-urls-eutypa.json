@@ -1,0 +1,21 @@
+{
+  "phase": 3,
+  "description": "UC IPM Eutypa dieback",
+  "totalUrls": 1,
+  "sources": {
+    "ucipm_grape_eutypa": {
+      "institution": "UC IPM",
+      "baseUrl": "https://ipm.ucanr.edu",
+      "priority": "high",
+      "urls": [
+        {
+          "url": "https://ipm.ucanr.edu/agriculture/grape/eutypa-dieback",
+          "title": "Eutypa Dieback",
+          "type": "html",
+          "crops": ["grapes"],
+          "topics": ["disease", "trunk disease", "management"]
+        }
+      ]
+    }
+  }
+}

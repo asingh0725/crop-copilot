@@ -1,0 +1,302 @@
+{
+  "phase": 3,
+  "description": "Gap-fill ingestion for under-covered crops emphasizing Extension-grade agronomic data",
+  "totalUrls": 25,
+  "estimatedChunks": null,
+  "sources": {
+    "illinois_corn_nutrient": {
+      "institution": "University of Illinois Extension",
+      "baseUrl": "https://extension.illinois.edu",
+      "priority": "high",
+      "urls": [
+        {
+          "url": "https://extension.illinois.edu/sites/default/files/iah_-_nitrogen_management_for_corn_v4.pdf",
+          "title": "Nitrogen Management for Corn",
+          "crops": ["corn"],
+          "topics": ["nutrients", "management"],
+          "expectedChunks": 18
+        }
+      ]
+    },
+    "purdue_corn_disease": {
+      "institution": "Purdue University Extension",
+      "baseUrl": "https://extension.purdue.edu",
+      "priority": "high",
+      "urls": [
+        {
+          "url": "https://www.extension.purdue.edu/extmedia/id/id-405.pdf",
+          "title": "Corn & Soybean Field Guide - Insect Management",
+          "crops": ["corn"],
+          "topics": ["pest", "management"],
+          "expectedChunks": 24
+        },
+        {
+          "url": "https://www.extension.purdue.edu/extmedia/AY/AY-364-W.pdf",
+          "title": "The Effects of Late-season Nitrogen Applications in Corn",
+          "crops": ["corn"],
+          "topics": ["nutrients", "management"],
+          "expectedChunks": 10
+        }
+      ]
+    },
+    "sdsu_corn_pest": {
+      "institution": "South Dakota State University Extension",
+      "baseUrl": "https://extension.sdstate.edu",
+      "priority": "high",
+      "urls": [
+        {
+          "url": "https://extension.sdstate.edu/sites/default/files/2019-09/S-0003-05-Corn.pdf",
+          "title": "Corn Growth Stages and Development",
+          "crops": ["corn"],
+          "topics": ["growth-stages"],
+          "expectedChunks": 10
+        }
+      ]
+    },
+    "uidaho_potato_nutrient": {
+      "institution": "University of Idaho Extension",
+      "baseUrl": "https://objects.lib.uidaho.edu",
+      "priority": "high",
+      "urls": [
+        {
+          "url": "https://objects.lib.uidaho.edu/uiext/uiext25485.pdf",
+          "title": "Potato Nutrient Management",
+          "crops": ["potatoes"],
+          "topics": ["nutrients", "management"],
+          "expectedChunks": 20
+        }
+      ]
+    },
+    "ucipm_potato_pest": {
+      "institution": "University of California IPM",
+      "baseUrl": "https://ipm.ucanr.edu",
+      "priority": "high",
+      "urls": [
+        {
+          "url": "https://ipm.ucanr.edu/pdf/pmg/pmgpotato.pdf",
+          "title": "UC IPM Potato Pest Management Guidelines",
+          "crops": ["potatoes"],
+          "topics": ["pest", "disease", "ipm"],
+          "expectedChunks": 30
+        }
+      ]
+    },
+    "ndsu_potato_pest": {
+      "institution": "North Dakota State University Extension",
+      "baseUrl": "https://www.ag.ndsu.edu",
+      "priority": "high",
+      "urls": [
+        {
+          "url": "https://www.ag.ndsu.edu/potatoextension/2014PotatoInsects.pdf",
+          "title": "Potato Insect Management",
+          "crops": ["potatoes"],
+          "topics": ["pest", "management"],
+          "expectedChunks": 8
+        },
+        {
+          "url": "https://www.ag.ndsu.edu/potatoextension/Mgmtofpotatodiseasesinhomegarden.pdf",
+          "title": "Management of Potato Diseases",
+          "crops": ["potatoes"],
+          "topics": ["disease", "management"],
+          "expectedChunks": 10
+        }
+      ]
+    },
+    "ufl_pepper_pest": {
+      "institution": "University of Florida IFAS",
+      "baseUrl": "https://edis.ifas.ufl.edu",
+      "priority": "high",
+      "urls": [
+        {
+          "url": "https://edis.ifas.ufl.edu/publication/CV230",
+          "title": "Pepper Fertilization and Nutrient Management",
+          "crops": ["peppers"],
+          "topics": ["nutrients", "production"],
+          "expectedChunks": 12
+        },
+        {
+          "url": "https://ipm.ifas.ufl.edu/pdfs/Chapter5-Disease_Mgmt.pdf",
+          "title": "Pepper and Tomato Disease Management",
+          "crops": ["peppers", "potatoes"],
+          "topics": ["disease", "management"],
+          "expectedChunks": 15
+        },
+        {
+          "url": "https://entnemdept.ufl.edu/liburd/fruitnvegipm/Publications/2022Adeleye.pdf",
+          "title": "Pepper Weevil Management",
+          "crops": ["peppers"],
+          "topics": ["pest", "management"],
+          "expectedChunks": 8
+        }
+      ]
+    },
+    "arkansas_rice_disease": {
+      "institution": "University of Arkansas Extension",
+      "baseUrl": "https://www.uaex.uada.edu",
+      "priority": "medium",
+      "urls": [
+        {
+          "url": "https://www.uaex.uada.edu/publications/pdf/mp192/chapter-12.pdf",
+          "title": "Rice Insect Management",
+          "crops": ["rice"],
+          "topics": ["pest", "management"],
+          "expectedChunks": 10
+        },
+        {
+          "url": "https://www.uaex.uada.edu/farm-ranch/crops-commercial-horticulture/rice/Rice-Management-Guide.pdf",
+          "title": "2025 Rice Management Guide",
+          "crops": ["rice"],
+          "topics": ["management", "nutrients", "growth-stages"],
+          "expectedChunks": 30
+        }
+      ]
+    },
+    "lsu_rice_pest": {
+      "institution": "LSU AgCenter",
+      "baseUrl": "https://www.lsuagcenter.com",
+      "priority": "medium",
+      "urls": [
+        {
+          "url": "https://www.lsuagcenter.com/~/media/files/sheathblightmanagement.pdf",
+          "title": "Rice Sheath Blight Management",
+          "crops": ["rice"],
+          "topics": ["disease", "management"],
+          "expectedChunks": 8
+        }
+      ]
+    },
+    "lsu_sorghum_management": {
+      "institution": "LSU AgCenter",
+      "baseUrl": "https://www.lsuagcenter.com",
+      "priority": "medium",
+      "urls": [
+        {
+          "url": "https://www.lsuagcenter.com/nr/rdonlyres/c6ba2774-31c5-41af-8a30-9ac50cd1135a/101354/pub3369sugarcaneaphids2ndproof.pdf",
+          "title": "Sugarcane Aphid Management in Sorghum",
+          "crops": ["sorghum"],
+          "topics": ["pest", "management"],
+          "expectedChunks": 5
+        }
+      ]
+    },
+    "tamu_sorghum_pest": {
+      "institution": "Texas A&M AgriLife Extension",
+      "baseUrl": "https://southtexas.tamu.edu",
+      "priority": "medium",
+      "urls": [
+        {
+          "url": "https://plantdiseasehandbook.tamu.edu/food-crops/cereal-crops/grain-sorghum/",
+          "title": "Sorghum Disease Handbook",
+          "crops": ["sorghum"],
+          "topics": ["disease", "diagnosis"],
+          "expectedChunks": 10
+        }
+      ]
+    },
+    "oregon_peach_disease": {
+      "institution": "Oregon State University Extension",
+      "baseUrl": "https://extension.oregonstate.edu",
+      "priority": "medium",
+      "urls": [
+        {
+          "url": "https://extension.oregonstate.edu/sites/extd8/files/documents/em8419.pdf",
+          "title": "Peach Pest Management Guide",
+          "crops": ["peaches"],
+          "topics": ["disease", "pest", "management"],
+          "expectedChunks": 12
+        }
+      ]
+    },
+    "usu_onion_management": {
+      "institution": "Utah State University Extension",
+      "baseUrl": "https://extension.usu.edu",
+      "priority": "medium",
+      "urls": [
+        {
+          "url": "https://extension.usu.edu/productionhort/files/OnionHealthManagementandProduction.pdf",
+          "title": "Onion Health Management and Production",
+          "crops": ["onions"],
+          "topics": ["management", "disease", "pest"],
+          "expectedChunks": 25
+        },
+        {
+          "url": "https://extension.usu.edu/planthealth/research/onion-thrips.pdf",
+          "title": "Onion Thrips Management",
+          "crops": ["onions"],
+          "topics": ["pest", "management"],
+          "expectedChunks": 6
+        }
+      ]
+    },
+    "osu_carrot_ipm": {
+      "institution": "Ohio State University Extension",
+      "baseUrl": "https://ipm.osu.edu",
+      "priority": "medium",
+      "urls": [
+        {
+          "url": "https://ipm.osu.edu/sites/ipm/files/imce/IPM%20carrots-final.pdf",
+          "title": "Carrot IPM Elements",
+          "crops": ["carrots"],
+          "topics": ["ipm", "disease", "pest"],
+          "expectedChunks": 5
+        }
+      ]
+    },
+    "ucipm_carrot_pest": {
+      "institution": "University of California IPM",
+      "baseUrl": "https://ipm.ucanr.edu",
+      "priority": "medium",
+      "urls": [
+        {
+          "url": "https://ipm.ucanr.edu/pdf/pmg/pmgcarrot.pdf",
+          "title": "Carrot Pest Management Guidelines",
+          "crops": ["carrots"],
+          "topics": ["pest", "disease", "management"],
+          "expectedChunks": 18
+        }
+      ]
+    },
+    "perennia_carrot_pest": {
+      "institution": "Perennia (Nova Scotia)",
+      "baseUrl": "https://www.perennia.ca",
+      "priority": "medium",
+      "urls": [
+        {
+          "url": "https://www.perennia.ca/wp-content/uploads/2018/03/Guide-to-Pest-Management-in-Carrots-2021.pdf",
+          "title": "Guide to Pest Management in Carrots",
+          "crops": ["carrots"],
+          "topics": ["pest", "disease", "management"],
+          "expectedChunks": 12
+        }
+      ]
+    },
+    "usu_brassica_pest": {
+      "institution": "Utah State University Extension",
+      "baseUrl": "https://extension.usu.edu",
+      "priority": "medium",
+      "urls": [
+        {
+          "url": "https://extension.usu.edu/planthealth/research/caterpillar-pests-brassicas.pdf",
+          "title": "Brassica Caterpillar Identification",
+          "crops": ["brassicas"],
+          "topics": ["pest", "diagnosis"],
+          "expectedChunks": 5
+        }
+      ]
+    },
+    "uw_brassica_pest": {
+      "institution": "University of Wisconsin Extension",
+      "baseUrl": "https://richland.extension.wisc.edu",
+      "priority": "medium",
+      "urls": [
+        {
+          "url": "https://richland.extension.wisc.edu/files/2012/07/Cabbage-Looper.pdf",
+          "title": "Cabbage Looper Management",
+          "crops": ["cabbage", "brassicas"],
+          "topics": ["pest", "management"],
+          "expectedChunks": 4
+        }
+      ]
+    }
+  }
+}

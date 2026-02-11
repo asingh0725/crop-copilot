@@ -1,0 +1,122 @@
+{
+  "crop": "wheat",
+  "cropAliases": [
+    "corn",
+    "rice",
+    "barley",
+    "oats",
+    "sorghum"
+  ],
+  "region": {
+    "macro": "Canadian Prairies",
+    "states": [],
+    "provinces": [
+      "Alberta",
+      "Saskatchewan",
+      "Manitoba"
+    ],
+    "regulatoryAuthority": [
+      "PMRA"
+    ]
+  },
+  "domain": "management",
+  "problems": [
+    {
+      "name": "Integrated Crop Management",
+      "scientificName": null,
+      "severityClasses": [
+        "low",
+        "medium",
+        "high"
+      ],
+      "signals": {
+        "visual": {
+          "positiveIndicators": [
+            "Healthy stand and canopy"
+          ],
+          "negativeIndicators": [
+            "Poor emergence or uneven canopy"
+          ],
+          "imageSources": []
+        },
+        "contextual": {
+          "growthStages": [
+            "All stages"
+          ],
+          "weatherTriggers": [
+            "Seasonal variability"
+          ],
+          "rotationRisk": [
+            "Short rotations"
+          ]
+        }
+      },
+      "decisionLogic": {
+        "scoutingThresholds": [
+          {
+            "condition": "Risk factors present",
+            "action": "Adjust management practices"
+          }
+        ],
+        "preventativeActions": [
+          "Use IPM and crop rotation"
+        ],
+        "curativeActions": [
+          {
+            "type": "cultural",
+            "constraints": {
+              "requiresRotation": false,
+              "regulatoryCheck": false,
+              "phiRelevant": false
+            }
+          }
+        ]
+      },
+      "sources": [
+        {
+          "institution": "www.gov.mb.ca",
+          "publicationId": null,
+          "url": "https://www.gov.mb.ca/agriculture/crops/guides-and-publications/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "www.gov.mb.ca",
+          "publicationId": null,
+          "url": "https://www.gov.mb.ca/agriculture/crops/guides-and-publications/pubs/guide-crop-protection-2025.pdf",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "www.albertabluebook.com",
+          "publicationId": null,
+          "url": "https://www.albertabluebook.com/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "www.saskatchewan.ca",
+          "publicationId": null,
+          "url": "https://www.saskatchewan.ca/business/agriculture-natural-resources-and-industry/agribusiness-farmers-and-ranchers/crops-and-irrigation/crop-guides-and-publications/guide-to-crop-protection",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "albertacanola.com",
+          "publicationId": null,
+          "url": "https://albertacanola.com/grower-resources/agronomy/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "www.albertagrains.com",
+          "publicationId": null,
+          "url": "https://www.albertagrains.com/agronomy",
+          "year": null,
+          "authority": "supporting"
+        }
+      ]
+    }
+  ],
+  "lastValidated": "2026-02-03"
+}

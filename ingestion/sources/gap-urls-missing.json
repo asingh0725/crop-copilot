@@ -1,0 +1,70 @@
+{
+  "phase": 3,
+  "description": "Missing UC IPM grape pages",
+  "totalUrls": 8,
+  "sources": {
+    "ucipm_grape_missing": {
+      "institution": "UC IPM",
+      "baseUrl": "https://ipm.ucanr.edu",
+      "priority": "high",
+      "urls": [
+        {
+          "url": "https://ipm.ucanr.edu/agriculture/grape/botryosphaeria-dieback",
+          "title": "Botryosphaeria Dieback",
+          "type": "html",
+          "crops": ["grapes"],
+          "topics": ["disease", "trunk disease", "management"]
+        },
+        {
+          "url": "https://ipm.ucanr.edu/agriculture/grape/cutworms",
+          "title": "Cutworms",
+          "type": "html",
+          "crops": ["grapes"],
+          "topics": ["pest", "monitoring", "management"]
+        },
+        {
+          "url": "https://ipm.ucanr.edu/agriculture/grape/leafhoppers",
+          "title": "Leafhoppers",
+          "type": "html",
+          "crops": ["grapes"],
+          "topics": ["pest", "monitoring", "management"]
+        },
+        {
+          "url": "https://ipm.ucanr.edu/agriculture/grape/mealybugs-pseudococcus",
+          "title": "Mealybugs (Pseudococcus)",
+          "type": "html",
+          "crops": ["grapes"],
+          "topics": ["pest", "monitoring", "management"]
+        },
+        {
+          "url": "https://ipm.ucanr.edu/agriculture/grape/omnivorous-leafroller",
+          "title": "Omnivorous Leafroller",
+          "type": "html",
+          "crops": ["grapes"],
+          "topics": ["pest", "monitoring", "management"]
+        },
+        {
+          "url": "https://ipm.ucanr.edu/agriculture/grape/pheromone-traps",
+          "title": "Pheromone Traps",
+          "type": "html",
+          "crops": ["grapes"],
+          "topics": ["ipm", "monitoring", "management"]
+        },
+        {
+          "url": "https://ipm.ucanr.edu/agriculture/grape/sharpshooters",
+          "title": "Sharpshooters",
+          "type": "html",
+          "crops": ["grapes"],
+          "topics": ["pest", "monitoring", "management"]
+        },
+        {
+          "url": "https://ipm.ucanr.edu/agriculture/grape/webspinning-spider-mites",
+          "title": "Webspinning Spider Mites",
+          "type": "html",
+          "crops": ["grapes"],
+          "topics": ["pest", "monitoring", "management"]
+        }
+      ]
+    }
+  }
+}

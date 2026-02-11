@@ -1,0 +1,101 @@
+{
+  "crop": "tomatoes",
+  "cropAliases": [
+    "potatoes",
+    "peppers"
+  ],
+  "region": {
+    "macro": "Pacific Northwest",
+    "states": [
+      "Washington",
+      "Oregon",
+      "Idaho"
+    ],
+    "provinces": [],
+    "regulatoryAuthority": [
+      "EPA"
+    ]
+  },
+  "domain": "nutrients",
+  "problems": [
+    {
+      "name": "General Nutrient Deficiency Diagnosis",
+      "scientificName": null,
+      "severityClasses": [
+        "low",
+        "medium",
+        "high"
+      ],
+      "signals": {
+        "visual": {
+          "positiveIndicators": [
+            "Interveinal chlorosis, stunting, marginal burn"
+          ],
+          "negativeIndicators": [
+            "Lesions with sporulation or pest presence"
+          ],
+          "imageSources": []
+        },
+        "contextual": {
+          "growthStages": [
+            "Vegetative",
+            "Reproductive"
+          ],
+          "weatherTriggers": [
+            "Excess rainfall",
+            "Drought stress"
+          ],
+          "rotationRisk": [
+            "Low organic matter soils"
+          ]
+        }
+      },
+      "decisionLogic": {
+        "scoutingThresholds": [
+          {
+            "condition": "Deficiency symptoms confirmed",
+            "action": "Verify with tissue/soil tests"
+          }
+        ],
+        "preventativeActions": [
+          "Balanced fertility program",
+          "Soil testing"
+        ],
+        "curativeActions": [
+          {
+            "type": "cultural",
+            "constraints": {
+              "requiresRotation": false,
+              "regulatoryCheck": false,
+              "phiRelevant": false
+            }
+          }
+        ]
+      },
+      "sources": [
+        {
+          "institution": "extension.oregonstate.edu",
+          "publicationId": null,
+          "url": "https://extension.oregonstate.edu/produce-forage/field-crops",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "potatoes.wsu.edu",
+          "publicationId": null,
+          "url": "https://potatoes.wsu.edu/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "www.uidaho.edu",
+          "publicationId": null,
+          "url": "https://www.uidaho.edu/idaho-ag-experiment-station/potatoes/production",
+          "year": null,
+          "authority": "supporting"
+        }
+      ]
+    }
+  ],
+  "lastValidated": "2026-02-03"
+}

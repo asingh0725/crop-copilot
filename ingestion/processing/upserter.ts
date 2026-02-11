@@ -34,11 +34,13 @@ export async function upsertSources(
           institution: doc.metadata.institution,
           status: "processed",
           chunksCount: 0, // Will be updated when chunks are added
+          metadata: doc.metadata,
         },
         update: {
           title: doc.title,
           institution: doc.metadata.institution,
           status: "processed",
+          metadata: doc.metadata,
         },
       });
 
@@ -87,10 +89,28 @@ export async function upsertTextChunks(
           // Check if exists (using findFirst since contentHash is nullable)
           const existing = await prisma.textChunk.findFirst({
             where: { contentHash: hash },
+            select: { id: true, metadata: true },
           });
 
           if (existing) {
-            skipped++;
+            const existingMeta: any = existing.metadata || {};
+            const nextMeta: any = chunk.metadata || {};
+            const shouldUpdate =
+              (Array.isArray(nextMeta.crops) && nextMeta.crops.length > 0 &&
+                (!Array.isArray(existingMeta.crops) || existingMeta.crops.length === 0)) ||
+              (Array.isArray(nextMeta.topics) && nextMeta.topics.length > 0 &&
+                (!Array.isArray(existingMeta.topics) || existingMeta.topics.length === 0)) ||
+              (nextMeta.region && !existingMeta.region);
+
+            if (shouldUpdate) {
+              await prisma.textChunk.update({
+                where: { id: existing.id },
+                data: { metadata: nextMeta },
+              });
+              updated++;
+            } else {
+              skipped++;
+            }
           } else {
             // Insert new chunk
             await prisma.$executeRaw`

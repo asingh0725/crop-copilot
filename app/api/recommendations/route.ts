@@ -2,8 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/prisma";
-import { searchTextChunks, searchImageChunks } from "@/lib/retrieval/search";
+import {
+  searchTextChunks,
+  searchImageChunks,
+  fetchRequiredTextChunks,
+} from "@/lib/retrieval/search";
 import { assembleContext } from "@/lib/retrieval/context-assembly";
+import { buildRetrievalPlan } from "@/lib/retrieval/query";
+import { resolveSourceHints } from "@/lib/retrieval/source-hints";
 import { generateWithRetry, ValidationError } from "@/lib/validation/retry";
 import { Prisma } from "@prisma/client";
 import { CLAUDE_MODEL } from "@/lib/ai/claude";
@@ -178,14 +184,36 @@ export async function POST(request: NextRequest) {
     }
 
     // Build query from input
-    const query = buildQuery(input);
+    const plan = buildRetrievalPlan({
+      description: input.description,
+      labData: input.labData as Record<string, unknown> | null,
+      crop: input.crop,
+      location: input.location ?? input.user.profile?.location ?? null,
+      growthStage: input.season,
+      type: input.type,
+    });
 
     // Retrieve relevant chunks
-    const textResults = await searchTextChunks(query, 5);
-    const imageResults = await searchImageChunks(query, 3);
+    const sourceHints = await resolveSourceHints(plan.sourceTitleHints);
+    const searchOptions = {
+      crop: input.crop ?? (input.labData as any)?.crop ?? undefined,
+      region: input.location ?? input.user.profile?.location ?? undefined,
+      topics: plan.topics,
+      sourceBoosts: sourceHints.sourceBoosts,
+    };
+    const textResults = await searchTextChunks(plan.query, 5, searchOptions);
+    const requiredText = await fetchRequiredTextChunks(
+      plan.query,
+      sourceHints.requiredSourceIds
+    );
+    const imageResults = await searchImageChunks(plan.query, 3, searchOptions);
 
     // Assemble context
-    const context = await assembleContext(textResults, imageResults);
+    const context = await assembleContext(
+      [...textResults, ...requiredText],
+      imageResults,
+      { requiredSourceIds: sourceHints.requiredSourceIds }
+    );
 
     if (context.totalChunks === 0) {
       return NextResponse.json(
@@ -310,24 +338,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
-
-/**
- * Build search query from input
- */
-function buildQuery(input: any): string {
-  const parts: string[] = [];
-
-  if (input.description) {
-    parts.push(input.description);
-  }
-
-  if (input.labData) {
-    const labData = input.labData as any;
-    if (labData.crop) parts.push(`Crop: ${labData.crop}`);
-    if (labData.symptoms) parts.push(`Symptoms: ${labData.symptoms}`);
-    if (labData.soilPh) parts.push(`pH: ${labData.soilPh}`);
-  }
-
-  return parts.join(". ");
 }

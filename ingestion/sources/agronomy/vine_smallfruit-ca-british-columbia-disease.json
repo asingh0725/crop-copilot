@@ -1,0 +1,427 @@
+{
+  "crop": "grapes",
+  "cropAliases": [
+    "strawberries",
+    "blueberries"
+  ],
+  "region": {
+    "macro": "British Columbia",
+    "states": [],
+    "provinces": [
+      "British Columbia"
+    ],
+    "regulatoryAuthority": [
+      "PMRA"
+    ]
+  },
+  "domain": "disease",
+  "problems": [
+    {
+      "name": "General Disease Identification and Management",
+      "scientificName": null,
+      "severityClasses": [
+        "low",
+        "medium",
+        "high"
+      ],
+      "signals": {
+        "visual": {
+          "positiveIndicators": [
+            "Lesions, discoloration, blights, wilts, or rots"
+          ],
+          "negativeIndicators": [
+            "Uniform discoloration without lesions (possible abiotic)"
+          ],
+          "imageSources": []
+        },
+        "contextual": {
+          "growthStages": [
+            "All stages"
+          ],
+          "weatherTriggers": [
+            "Extended leaf wetness",
+            "High humidity"
+          ],
+          "rotationRisk": [
+            "Short rotations with host crops"
+          ]
+        }
+      },
+      "decisionLogic": {
+        "scoutingThresholds": [
+          {
+            "condition": "Symptoms increasing in field",
+            "action": "Intensify scouting and confirm diagnosis"
+          }
+        ],
+        "preventativeActions": [
+          "Use resistant varieties",
+          "Rotate crops"
+        ],
+        "curativeActions": [
+          {
+            "type": "chemical",
+            "constraints": {
+              "requiresRotation": true,
+              "regulatoryCheck": true,
+              "phiRelevant": true
+            }
+          }
+        ]
+      },
+      "sources": [
+        {
+          "institution": "www2.gov.bc.ca",
+          "publicationId": null,
+          "url": "https://www2.gov.bc.ca/assets/gov/environment/pesticides-and-pest-management/publications-and-guides/surveys/2017_survey_of_pesticide_use_in_bc_final_ipm.pdf",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "www2.gov.bc.ca",
+          "publicationId": null,
+          "url": "https://www2.gov.bc.ca/assets/gov/farming-natural-resources-and-industry/agriculture-and-seafood/food-safety/sample_h_cleaning_practice_animal_medication_injection_gun.pdf",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "www2.gov.bc.ca",
+          "publicationId": null,
+          "url": "https://www2.gov.bc.ca/assets/gov/farming-natural-resources-and-industry/agriculture-and-seafood/agricultural-land-and-environment/soil-nutrients/blueberry_n_trial_aug_2015.pdf",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "www2.gov.bc.ca",
+          "publicationId": null,
+          "url": "https://www2.gov.bc.ca/assets/gov/environment/plants-animals-and-ecosystems/wildlife-wildlife-habitat/wildlife-health/wildlife-health-documents/giant_liver_fluke.pdf",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "www2.gov.bc.ca",
+          "publicationId": null,
+          "url": "https://www2.gov.bc.ca/assets/gov/environment/plants-animals-and-ecosystems/fish-fish-habitat/fishery-resources/fraser-river-white-sturgeon/11_bcwf_jessezeman_nov23.pdf",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "www2.gov.bc.ca",
+          "publicationId": null,
+          "url": "https://www2.gov.bc.ca/assets/gov/environment/plants-animals-and-ecosystems/species-ecosystems-at-risk/brochures/northern_goshawk.pdf",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "www2.gov.bc.ca",
+          "publicationId": null,
+          "url": "https://www2.gov.bc.ca/assets/gov/environment/plants-animals-and-ecosystems/wildlife-wildlife-habitat/caribou/science_update_final_from_web_jan_2014.pdf",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "www2.gov.bc.ca",
+          "publicationId": null,
+          "url": "https://www2.gov.bc.ca/assets/gov/environment/natural-resource-stewardship/land-based-investment/forests-for-tomorrow/potential_nitrogen_losses_after_fertilization.pdf",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "www2.gov.bc.ca",
+          "publicationId": null,
+          "url": "https://www2.gov.bc.ca/assets/gov/farming-natural-resources-and-industry/agriculture-and-seafood/agricultural-land-and-environment/strengthening-farming/planning-for-agriculture/aac/aac_regional_workshops_2009_proceedings.pdf",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "www2.gov.bc.ca",
+          "publicationId": null,
+          "url": "https://www2.gov.bc.ca/assets/gov/farming-natural-resources-and-industry/agriculture-and-seafood/statistics/census/census-2016/aginbrief_2016_sunshine_coast.pdf",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "www2.gov.bc.ca",
+          "publicationId": null,
+          "url": "https://www2.gov.bc.ca/assets/gov/farming-natural-resources-and-industry/agriculture-and-seafood/statistics/census/ag-in-brief/dec2024/cd/ag_in_brief_2021_-_cd_bulkley-nechako_-_december_2024_correction.pdf",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "www2.gov.bc.ca",
+          "publicationId": null,
+          "url": "https://www2.gov.bc.ca/assets/gov/farming-natural-resources-and-industry/agriculture-and-seafood/animal-and-crops/animal-health/general_order_cwd_250919.pdf",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "www2.gov.bc.ca",
+          "publicationId": null,
+          "url": "https://www2.gov.bc.ca/assets/gov/farming-natural-resources-and-industry/agriculture-and-seafood/farm-management/market-development/domestic-marketing/how_to_conduct_and_use_market_research.pdf",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "www2.gov.bc.ca",
+          "publicationId": null,
+          "url": "https://www2.gov.bc.ca/assets/gov/environment/plants-animals-and-ecosystems/wildlife-wildlife-habitat/moose/chilcotin_moose_recovery_plan.pdf",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "www2.gov.bc.ca",
+          "publicationId": null,
+          "url": "https://www2.gov.bc.ca/assets/gov/environment/air-land-water/site-permitting-and-compliance/hullcar/inspections/107156/2014-2016_nutrient_management_plan_soil_data-dregehr.pdf",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "www2.gov.bc.ca",
+          "publicationId": null,
+          "url": "https://www2.gov.bc.ca/assets/gov/farming-natural-resources-and-industry/agriculture-and-seafood/agricultural-land-and-environment/water/drought/drought-articles/7_-_data_mining_your_financial_records.pdf",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "www2.gov.bc.ca",
+          "publicationId": null,
+          "url": "https://www2.gov.bc.ca/assets/gov/environment/plants-animals-and-ecosystems/ecosystems/secure-data-policy-and-procedures/secure_data_and_information_policy_v20_2015-04-08.pdf",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "www2.gov.bc.ca",
+          "publicationId": null,
+          "url": "https://www2.gov.bc.ca/assets/gov/environment/plants-animals-and-ecosystems/fish-fish-habitat/fish-passage/stream_simulation_planning_and_design_for_closed_bottom_structures_for_fish_streams.pdf",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "www2.gov.bc.ca",
+          "publicationId": null,
+          "url": "https://www2.gov.bc.ca/assets/gov/farming-natural-resources-and-industry/agriculture-and-seafood/animal-and-crops/plant-health/gardenguide-appendix2-measurement.pdf",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "www2.gov.bc.ca",
+          "publicationId": null,
+          "url": "https://www2.gov.bc.ca/assets/gov/farming-natural-resources-and-industry/agriculture-and-seafood/agricultural-land-and-environment/water/irrigation/sprinkler-irrigation-manual/563000-1_web_chapter_3.pdf",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "www2.gov.bc.ca",
+          "publicationId": null,
+          "url": "https://www2.gov.bc.ca/assets/gov/farming-natural-resources-and-industry/agriculture-and-seafood/animal-and-crops/plant-health/disease-factsheets/tree-fruits/x_disease_western_x.pdf",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "www2.gov.bc.ca",
+          "publicationId": null,
+          "url": "https://www2.gov.bc.ca/assets/gov/farming-natural-resources-and-industry/forestry/timber-tenures/tree-farm-licence/management-plans/tfl-39-07-mngment-plan-8-appendix-7-insects--disease.pdf",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "www2.gov.bc.ca",
+          "publicationId": null,
+          "url": "https://www2.gov.bc.ca/assets/gov/farming-natural-resources-and-industry/agriculture-and-seafood/animal-and-crops/plant-health/phu-lateblight-potatotomatoss.pdf",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "www2.gov.bc.ca",
+          "publicationId": null,
+          "url": "https://www2.gov.bc.ca/assets/gov/farming-natural-resources-and-industry/agriculture-and-seafood/programs/insurance-and-income-protection/risk-management/agristability/as_reference_years.pdf",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "www2.gov.bc.ca",
+          "publicationId": null,
+          "url": "https://www2.gov.bc.ca/assets/gov/farming-natural-resources-and-industry/agriculture-and-seafood/animal-and-crops/plant-health/phu-blueberry-anthracnosess.pdf",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "www2.gov.bc.ca",
+          "publicationId": null,
+          "url": "https://www2.gov.bc.ca/assets/gov/farming-natural-resources-and-industry/agriculture-and-seafood/programs/regional-extension/regional_guidebook_hwy_16.pdf",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "www2.gov.bc.ca",
+          "publicationId": null,
+          "url": "https://www2.gov.bc.ca/assets/gov/farming-natural-resources-and-industry/agriculture-and-seafood/agricultural-land-and-environment/climate-action/user-guide-adaptation-pathways-preparedness.pdf",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "www2.gov.bc.ca",
+          "publicationId": null,
+          "url": "https://www2.gov.bc.ca/assets/gov/environment/plants-animals-and-ecosystems/invasive-species/guidance-resources/invasive_plant_and_knotweed_guidelines_for_provincial_sediment_removal_for_flood_mitigation.pdf",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "www2.gov.bc.ca",
+          "publicationId": null,
+          "url": "https://www2.gov.bc.ca/assets/gov/environment/plants-animals-and-ecosystems/species-ecosystems-at-risk/brochures/western_harvest_mouse.pdf",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "www2.gov.bc.ca",
+          "publicationId": null,
+          "url": "https://www2.gov.bc.ca/assets/gov/farming-natural-resources-and-industry/agriculture-and-seafood/animal-and-crops/crop-production/tree-fruit-stabilization-plan/analysis_and_audit_of_organizations.pdf",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "www2.gov.bc.ca",
+          "publicationId": null,
+          "url": "https://www2.gov.bc.ca/assets/gov/environment/plants-animals-and-ecosystems/conservation-data-centre/data-changes/bc_cdc_annual_data_update_2025_web_version.pdf",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "www2.gov.bc.ca",
+          "publicationId": null,
+          "url": "https://www2.gov.bc.ca/assets/gov/farming-natural-resources-and-industry/agriculture-and-seafood/programs/insurance-and-income-protection/risk-management/agristability/manage-your-account/as_change_participant_info.pdf",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "www2.gov.bc.ca",
+          "publicationId": null,
+          "url": "https://www2.gov.bc.ca/assets/gov/environment/plants-animals-and-ecosystems/wildlife-wildlife-habitat/regional-wildlife/northeast-region/best-mgmt-practices/mine_exploration_bmp_revised_2008-10-02.pdf",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "www2.gov.bc.ca",
+          "publicationId": null,
+          "url": "https://www2.gov.bc.ca/assets/gov/farming-natural-resources-and-industry/agriculture-and-seafood/agricultural-land-and-environment/soil-nutrients/nutrient-management/nutrient-management-plans-reference-materials/manure_nutrient_content.pdf",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "www2.gov.bc.ca",
+          "publicationId": null,
+          "url": "https://www2.gov.bc.ca/assets/gov/farming-natural-resources-and-industry/agriculture-and-seafood/animal-and-crops/plant-health/guide_to_pest_control_products_registered_for_use_on_grapes_in_british_columbia.pdf",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "www2.gov.bc.ca",
+          "publicationId": null,
+          "url": "https://www2.gov.bc.ca/assets/gov/environment/plants-animals-and-ecosystems/invasive-species/biocontrol/biocontrol-agents/rhinusa_pilosa.pdf",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "www2.gov.bc.ca",
+          "publicationId": null,
+          "url": "https://www2.gov.bc.ca/assets/gov/farming-natural-resources-and-industry/agriculture-and-seafood/fisheries-and-aquaculture/seafood-safety/bc_live_oyster_record_keeping_requirements.pdf",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "www2.gov.bc.ca",
+          "publicationId": null,
+          "url": "https://www2.gov.bc.ca/assets/gov/environment/plants-animals-and-ecosystems/species-ecosystems-at-risk/brochures/badger.pdf",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "www2.gov.bc.ca",
+          "publicationId": null,
+          "url": "https://www2.gov.bc.ca/assets/gov/farming-natural-resources-and-industry/agriculture-and-seafood/agricultural-land-and-environment/water/livestock-watering/590307-3_winter_outdoor_watering.pdf",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "www2.gov.bc.ca",
+          "publicationId": null,
+          "url": "https://www2.gov.bc.ca/assets/gov/environment/plants-animals-and-ecosystems/wildlife-wildlife-habitat/kb_mule_deer_managementplan.pdf",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "www2.gov.bc.ca",
+          "publicationId": null,
+          "url": "https://www2.gov.bc.ca/assets/gov/farming-natural-resources-and-industry/agriculture-and-seafood/statistics/census/census-2016/aginbrief_2016_powell_river.pdf",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "www2.gov.bc.ca",
+          "publicationId": null,
+          "url": "https://www2.gov.bc.ca/assets/gov/farming-natural-resources-and-industry/agriculture-and-seafood/food-safety/good-agricultural-practices/posters/foodsafety_remember_chinese_web.pdf",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "www2.gov.bc.ca",
+          "publicationId": null,
+          "url": "https://www2.gov.bc.ca/assets/gov/farming-natural-resources-and-industry/agriculture-and-seafood/agricultural-land-and-environment/water/riparian/810210-4_selecting_plants_for_agric_riparian_plantings.pdf",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "www2.gov.bc.ca",
+          "publicationId": null,
+          "url": "https://www2.gov.bc.ca/assets/gov/health/about-bc-s-health-care-system/office-of-the-provincial-health-officer/british-columbia-ebola-virus-disease-evd-contact-investigation-and-management-guideline.pdf",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "www2.gov.bc.ca",
+          "publicationId": null,
+          "url": "https://www2.gov.bc.ca/assets/gov/environment/plants-animals-and-ecosystems/appendix_5_guidance_for_threat_assessments_v30_jan_2023.pdf",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "www2.gov.bc.ca",
+          "publicationId": null,
+          "url": "https://www2.gov.bc.ca/assets/gov/farming-natural-resources-and-industry/agriculture-and-seafood/agricultural-land-and-environment/waste-management/manure-management/383510-1_circulatory_agitation_systems_for_dairy_manure.pdf",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "www2.gov.bc.ca",
+          "publicationId": null,
+          "url": "https://www2.gov.bc.ca/assets/gov/farming-natural-resources-and-industry/agriculture-and-seafood/animal-and-crops/plant-health/controlling_armyworms_in_home_gardens.pdf",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "www2.gov.bc.ca",
+          "publicationId": null,
+          "url": "https://www2.gov.bc.ca/assets/gov/farming-natural-resources-and-industry/agriculture-and-seafood/food-safety/meat-inspection/ai_-_guidance_for_meat_processors_handling_bird_motalities_-_2022-05-24.pdf",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "www2.gov.bc.ca",
+          "publicationId": null,
+          "url": "https://www2.gov.bc.ca/assets/gov/environment/plants-animals-and-ecosystems/invasive-species/invasive-mussels/2018_interim_final_report.pdf",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "www2.gov.bc.ca",
+          "publicationId": null,
+          "url": "https://www2.gov.bc.ca/assets/gov/farming-natural-resources-and-industry/agriculture-and-seafood/agriservicebc/crop-and-livestock-reporter/may/2025/week_1_-_2025-05-14_-_field_vegetables.pdf",
+          "year": null,
+          "authority": "supporting"
+        }
+      ]
+    }
+  ],
+  "lastValidated": "2026-02-03"
+}

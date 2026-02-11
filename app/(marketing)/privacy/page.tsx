@@ -3,13 +3,28 @@ export const metadata = {
   description: "Privacy Policy for AI Agronomist - Learn how we collect, use, and protect your data.",
 };
 
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { ArrowLeft } from "lucide-react";
+
 export default function PrivacyPolicyPage() {
   return (
-    <main className="min-h-screen bg-white pt-20">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <h1 className="text-4xl font-bold text-gray-900 mb-4">Privacy Policy</h1>
-        <p className="text-gray-500 mb-12">Last updated: January 2025</p>
+    <main className="min-h-screen bg-white">
+      {/* Dark header area */}
+      <div className="bg-hero-dark pt-28 pb-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-4xl mx-auto">
+          <Button asChild variant="ghost" size="sm" className="gap-2 text-white/60 hover:text-white hover:bg-white/10 mb-6">
+            <Link href="/">
+              <ArrowLeft className="w-4 h-4" />
+              Back to Home
+            </Link>
+          </Button>
+          <h1 className="text-4xl font-bold text-white mb-2">Privacy Policy</h1>
+          <p className="text-white/50">Last updated: January 2025</p>
+        </div>
+      </div>
 
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="prose prose-gray max-w-none">
           <section className="mb-10">
             <h2 className="text-2xl font-semibold text-gray-900 mb-4">1. Introduction</h2>

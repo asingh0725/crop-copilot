@@ -1,0 +1,143 @@
+{
+  "crop": "tomatoes",
+  "cropAliases": [
+    "potatoes",
+    "peppers"
+  ],
+  "region": {
+    "macro": "Pacific Northwest",
+    "states": [
+      "Washington",
+      "Oregon",
+      "Idaho"
+    ],
+    "provinces": [],
+    "regulatoryAuthority": [
+      "EPA"
+    ]
+  },
+  "domain": "pest",
+  "problems": [
+    {
+      "name": "General Pest Identification and Thresholds",
+      "scientificName": null,
+      "severityClasses": [
+        "low",
+        "medium",
+        "high"
+      ],
+      "signals": {
+        "visual": {
+          "positiveIndicators": [
+            "Feeding damage, frass, or insect presence"
+          ],
+          "negativeIndicators": [
+            "Nutrient deficiency patterns without pest activity"
+          ],
+          "imageSources": []
+        },
+        "contextual": {
+          "growthStages": [
+            "Early vegetative",
+            "Reproductive"
+          ],
+          "weatherTriggers": [
+            "Warm temperatures"
+          ],
+          "rotationRisk": [
+            "Continuous host cropping"
+          ]
+        }
+      },
+      "decisionLogic": {
+        "scoutingThresholds": [
+          {
+            "condition": "Economic threshold exceeded",
+            "action": "Select appropriate control based on label"
+          }
+        ],
+        "preventativeActions": [
+          "Use resistant varieties",
+          "Encourage beneficials"
+        ],
+        "curativeActions": [
+          {
+            "type": "biological",
+            "constraints": {
+              "requiresRotation": false,
+              "regulatoryCheck": true,
+              "phiRelevant": false
+            }
+          },
+          {
+            "type": "chemical",
+            "constraints": {
+              "requiresRotation": true,
+              "regulatoryCheck": true,
+              "phiRelevant": true
+            }
+          }
+        ]
+      },
+      "sources": [
+        {
+          "institution": "pnwhandbooks.org",
+          "publicationId": null,
+          "url": "https://pnwhandbooks.org/insect",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "pnwhandbooks.org",
+          "publicationId": null,
+          "url": "https://pnwhandbooks.org/insect",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.oregonstate.edu",
+          "publicationId": null,
+          "url": "https://extension.oregonstate.edu/collection/weed-poisonous-plant-pest-resources-small-farms",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.oregonstate.edu",
+          "publicationId": null,
+          "url": "https://extension.oregonstate.edu/collection/field-crop-ipm",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.oregonstate.edu",
+          "publicationId": null,
+          "url": "https://extension.oregonstate.edu/pests-weeds-diseases/weeds",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.oregonstate.edu",
+          "publicationId": null,
+          "url": "https://extension.oregonstate.edu/collection/vegetable-crop-resources-small-farms",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.oregonstate.edu",
+          "publicationId": null,
+          "url": "https://extension.oregonstate.edu/pests-weeds-diseases/ipm",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "pnwhandbooks.org",
+          "publicationId": null,
+          "url": "https://pnwhandbooks.org/handbook/insect",
+          "year": null,
+          "authority": "supporting"
+        }
+      ]
+    }
+  ],
+  "lastValidated": "2026-02-03"
+}

@@ -1,0 +1,1380 @@
+{
+  "phase": 3,
+  "description": "Gap-fill ingestion for grapes, tomatoes, corn, soybeans, sorghum",
+  "totalUrls": 95,
+  "estimatedChunks": null,
+  "sources": {
+    "canada_grape_diseases": {
+      "institution": "Agriculture and Agri-Food Canada",
+      "baseUrl": "https://agriculture.canada.ca",
+      "priority": "high",
+      "urls": [
+        {
+          "url": "https://agriculture.canada.ca/en/agricultural-production/crop-protection/agricultural-pest-management-resources/identification-guide-major-diseases-grapes",
+          "title": "Identification Guide for Major Diseases of Grapes",
+          "type": "html",
+          "crops": [
+            "grapes"
+          ],
+          "topics": [
+            "disease",
+            "diagnosis",
+            "management"
+          ],
+          "estimatedChunks": 24
+        }
+      ]
+    },
+    "bc_specialty_vegetables": {
+      "institution": "Government of British Columbia",
+      "baseUrl": "https://www2.gov.bc.ca",
+      "priority": "medium",
+      "urls": [
+        {
+          "url": "https://www2.gov.bc.ca/gov/content/industry/agriculture-seafood/agriservice-bc/production-guides/vegetables/specialty-vegetables",
+          "title": "Specialty Vegetables Production Guide",
+          "type": "html",
+          "crops": [
+            "vegetables"
+          ],
+          "topics": [
+            "disease",
+            "management",
+            "production"
+          ],
+          "estimatedChunks": 16
+        },
+        {
+          "url": "https://www2.gov.bc.ca/gov/content/industry/agriculture-seafood/agriservice-bc/production-guides/vegetables/tomatoes",
+          "title": "Tomatoes - Production Guide",
+          "type": "html",
+          "crops": [
+            "tomatoes"
+          ],
+          "topics": [
+            "disease",
+            "management",
+            "ipm"
+          ],
+          "estimatedChunks": 18
+        }
+      ]
+    },
+    "ontario_tomato_bacterial": {
+      "institution": "Ontario Ministry of Agriculture, Food and Rural Affairs",
+      "baseUrl": "https://www.ontario.ca",
+      "priority": "high",
+      "urls": [
+        {
+          "url": "https://www.ontario.ca/page/bacterial-diseases-tomato-bacterial-spot-bacterial-speck-and-bacterial-canker",
+          "title": "Bacterial diseases of tomato: bacterial spot, speck and canker",
+          "type": "html",
+          "crops": [
+            "tomatoes"
+          ],
+          "topics": [
+            "disease",
+            "diagnosis",
+            "bacterial"
+          ],
+          "estimatedChunks": 14
+        }
+      ]
+    },
+    "iastate_striped_corn": {
+      "institution": "Iowa State University Extension",
+      "baseUrl": "https://dr.lib.iastate.edu",
+      "priority": "high",
+      "urls": [
+        {
+          "url": "https://dr.lib.iastate.edu/bitstreams/b667ff21-6487-41dc-9152-e873621a112b/download",
+          "title": "What Causes Striped Corn Leaves?",
+          "type": "pdf",
+          "crops": [
+            "corn"
+          ],
+          "topics": [
+            "diagnosis",
+            "nutrient",
+            "disease",
+            "injury"
+          ],
+          "estimatedChunks": 24
+        }
+      ]
+    },
+    "frogeye_leaf_spot": {
+      "institution": "Crop Protection Network",
+      "baseUrl": "https://crop-protection-network.s3.amazonaws.com",
+      "priority": "high",
+      "urls": [
+        {
+          "url": "https://crop-protection-network.s3.amazonaws.com/publications/cpn-1017-frogeye-leaf-spot.pdf",
+          "title": "CPN 1017: Frogeye Leaf Spot of Soybean",
+          "type": "pdf",
+          "crops": [
+            "soybeans"
+          ],
+          "topics": [
+            "disease",
+            "diagnosis",
+            "management"
+          ],
+          "estimatedChunks": 20
+        },
+        {
+          "url": "https://soybeanresearchinfo.com/soybean-disease/frogeye-leaf-spot/?pdf_download=1",
+          "title": "Frogeye Leaf Spot (Soybean Research & Info)",
+          "type": "pdf",
+          "crops": [
+            "soybeans"
+          ],
+          "topics": [
+            "disease",
+            "diagnosis",
+            "management"
+          ],
+          "estimatedChunks": 16
+        }
+      ]
+    },
+    "phytophthora_soybean": {
+      "institution": "Manitoba Pulse & Soybean Growers",
+      "baseUrl": "https://manitobapulse.ca",
+      "priority": "high",
+      "urls": [
+        {
+          "url": "https://manitobapulse.ca/2020/07/phytophthora-root-rot/",
+          "title": "Phytophthora Root Rot",
+          "type": "html",
+          "crops": [
+            "soybeans"
+          ],
+          "topics": [
+            "disease",
+            "diagnosis",
+            "management"
+          ],
+          "estimatedChunks": 14
+        },
+        {
+          "url": "https://extension.umn.edu/soybean/soybean-pest-management",
+          "title": "Soybean Pest Management",
+          "type": "html",
+          "crops": [
+            "soybeans"
+          ],
+          "topics": [
+            "pest",
+            "disease",
+            "management"
+          ],
+          "estimatedChunks": 18
+        }
+      ]
+    },
+    "iastate_nutrient_def": {
+      "institution": "Iowa State University Extension",
+      "baseUrl": "https://crops.extension.iastate.edu",
+      "priority": "high",
+      "urls": [
+        {
+          "url": "https://crops.extension.iastate.edu/files/article/nutrientdeficiency.pdf",
+          "title": "Nutrient Deficiency Symptoms in Corn",
+          "type": "pdf",
+          "crops": [
+            "corn"
+          ],
+          "topics": [
+            "nutrient",
+            "deficiency",
+            "diagnosis"
+          ],
+          "estimatedChunks": 20
+        }
+      ]
+    },
+    "ksu_sorghum": {
+      "institution": "Kansas State Research and Extension",
+      "baseUrl": "https://bookstore.ksre.ksu.edu",
+      "priority": "high",
+      "urls": [
+        {
+          "url": "https://bookstore.ksre.ksu.edu/pubs/diagnosing-sorghum-production-problems-in-kansas_S125.pdf",
+          "title": "Diagnosing Sorghum Production Problems in Kansas (S125)",
+          "type": "pdf",
+          "crops": [
+            "sorghum"
+          ],
+          "topics": [
+            "diagnosis",
+            "nutrient",
+            "disease",
+            "management"
+          ],
+          "estimatedChunks": 26
+        }
+      ]
+    },
+    "ucipm_grape": {
+      "institution": "UC IPM",
+      "baseUrl": "https://ipm.ucanr.edu/agriculture/grape/",
+      "priority": "critical",
+      "urls": [
+        {
+          "url": "https://ipm.ucanr.edu/agriculture/grape/",
+          "title": "UC IPM Grape (Landing)",
+          "type": "html",
+          "crops": [
+            "grapes"
+          ],
+          "topics": [
+            "ipm",
+            "management"
+          ],
+          "estimatedChunks": 12
+        },
+        {
+          "url": "https://ipm.ucanr.edu/agriculture/grape/2017-fungicide-efficacy-and-treatment-timing",
+          "title": "2017 Fungicide Efficacy And Treatment Timing",
+          "type": "html",
+          "crops": [
+            "grapes"
+          ],
+          "topics": [
+            "fungicide",
+            "resistance",
+            "treatment"
+          ],
+          "estimatedChunks": 12
+        },
+        {
+          "url": "https://ipm.ucanr.edu/agriculture/grape/Authors-and-Credits",
+          "title": "Authors And Credits",
+          "type": "html",
+          "crops": [
+            "grapes"
+          ],
+          "topics": [
+            "ipm",
+            "management"
+          ],
+          "estimatedChunks": 12
+        },
+        {
+          "url": "https://ipm.ucanr.edu/agriculture/grape/ants",
+          "title": "Ants",
+          "type": "html",
+          "crops": [
+            "grapes"
+          ],
+          "topics": [
+            "ipm",
+            "management"
+          ],
+          "estimatedChunks": 12
+        },
+        {
+          "url": "https://ipm.ucanr.edu/agriculture/grape/armillaria-root-rot-oak-root-fungus",
+          "title": "Armillaria Root Rot Oak Root Fungus",
+          "type": "html",
+          "crops": [
+            "grapes"
+          ],
+          "topics": [
+            "diagnosis",
+            "disease",
+            "management"
+          ],
+          "estimatedChunks": 12
+        },
+        {
+          "url": "https://ipm.ucanr.edu/agriculture/grape/birds",
+          "title": "Birds",
+          "type": "html",
+          "crops": [
+            "grapes"
+          ],
+          "topics": [
+            "ipm",
+            "management"
+          ],
+          "estimatedChunks": 12
+        },
+        {
+          "url": "https://ipm.ucanr.edu/agriculture/grape/black-vine-weevil",
+          "title": "Black Vine Weevil",
+          "type": "html",
+          "crops": [
+            "grapes"
+          ],
+          "topics": [
+            "ipm",
+            "management"
+          ],
+          "estimatedChunks": 12
+        },
+        {
+          "url": "https://ipm.ucanr.edu/agriculture/grape/black-widow-spider",
+          "title": "Black Widow Spider",
+          "type": "html",
+          "crops": [
+            "grapes"
+          ],
+          "topics": [
+            "ipm",
+            "management"
+          ],
+          "estimatedChunks": 12
+        },
+        {
+          "url": "https://ipm.ucanr.edu/agriculture/grape/botryosphaeria-dieback",
+          "title": "Botryosphaeria Dieback",
+          "type": "html",
+          "crops": [
+            "grapes"
+          ],
+          "topics": [
+            "diagnosis",
+            "disease",
+            "management"
+          ],
+          "estimatedChunks": 12
+        },
+        {
+          "url": "https://ipm.ucanr.edu/agriculture/grape/botrytis-bunch-rot",
+          "title": "Botrytis Bunch Rot",
+          "type": "html",
+          "crops": [
+            "grapes"
+          ],
+          "topics": [
+            "diagnosis",
+            "disease",
+            "management"
+          ],
+          "estimatedChunks": 12
+        },
+        {
+          "url": "https://ipm.ucanr.edu/agriculture/grape/branch-and-twig-borer",
+          "title": "Branch And Twig Borer",
+          "type": "html",
+          "crops": [
+            "grapes"
+          ],
+          "topics": [
+            "ipm",
+            "management"
+          ],
+          "estimatedChunks": 12
+        },
+        {
+          "url": "https://ipm.ucanr.edu/agriculture/grape/california-ground-squirrels",
+          "title": "California Ground Squirrels",
+          "type": "html",
+          "crops": [
+            "grapes"
+          ],
+          "topics": [
+            "ipm",
+            "management"
+          ],
+          "estimatedChunks": 12
+        },
+        {
+          "url": "https://ipm.ucanr.edu/agriculture/grape/crown-gall",
+          "title": "Crown Gall",
+          "type": "html",
+          "crops": [
+            "grapes"
+          ],
+          "topics": [
+            "diagnosis",
+            "disease",
+            "management"
+          ],
+          "estimatedChunks": 12
+        },
+        {
+          "url": "https://ipm.ucanr.edu/agriculture/grape/cutworms",
+          "title": "Cutworms",
+          "type": "html",
+          "crops": [
+            "grapes"
+          ],
+          "topics": [
+            "management",
+            "monitoring",
+            "pest"
+          ],
+          "estimatedChunks": 12
+        },
+        {
+          "url": "https://ipm.ucanr.edu/agriculture/grape/deer",
+          "title": "Deer",
+          "type": "html",
+          "crops": [
+            "grapes"
+          ],
+          "topics": [
+            "ipm",
+            "management"
+          ],
+          "estimatedChunks": 12
+        },
+        {
+          "url": "https://ipm.ucanr.edu/agriculture/grape/delayed-dormant-and-bud-break-monitoring-wine-and-raisin-grapes",
+          "title": "Delayed Dormant And Bud Break Monitoring Wine And Raisin Grapes",
+          "type": "html",
+          "crops": [
+            "grapes"
+          ],
+          "topics": [
+            "ipm",
+            "management",
+            "timing"
+          ],
+          "estimatedChunks": 12
+        },
+        {
+          "url": "https://ipm.ucanr.edu/agriculture/grape/delayed-dormant-and-budbreak-monitoring-table-grapes",
+          "title": "Delayed Dormant And Budbreak Monitoring Table Grapes",
+          "type": "html",
+          "crops": [
+            "grapes"
+          ],
+          "topics": [
+            "ipm",
+            "management",
+            "timing"
+          ],
+          "estimatedChunks": 12
+        },
+        {
+          "url": "https://ipm.ucanr.edu/agriculture/grape/downy-mildew",
+          "title": "Downy Mildew",
+          "type": "html",
+          "crops": [
+            "grapes"
+          ],
+          "topics": [
+            "diagnosis",
+            "disease",
+            "management"
+          ],
+          "estimatedChunks": 12
+        },
+        {
+          "url": "https://ipm.ucanr.edu/agriculture/grape/drosophila-flies",
+          "title": "Drosophila Flies",
+          "type": "html",
+          "crops": [
+            "grapes"
+          ],
+          "topics": [
+            "ipm",
+            "management"
+          ],
+          "estimatedChunks": 12
+        },
+        {
+          "url": "https://ipm.ucanr.edu/agriculture/grape/esca-black-measles",
+          "title": "Esca Black Measles",
+          "type": "html",
+          "crops": [
+            "grapes"
+          ],
+          "topics": [
+            "diagnosis",
+            "disease",
+            "management"
+          ],
+          "estimatedChunks": 12
+        },
+        {
+          "url": "https://ipm.ucanr.edu/agriculture/grape/european-fruit-lecanium-scale",
+          "title": "European Fruit Lecanium Scale",
+          "type": "html",
+          "crops": [
+            "grapes"
+          ],
+          "topics": [
+            "management",
+            "monitoring",
+            "pest"
+          ],
+          "estimatedChunks": 12
+        },
+        {
+          "url": "https://ipm.ucanr.edu/agriculture/grape/eutypa-dieback",
+          "title": "Eutypa Dieback",
+          "type": "html",
+          "crops": [
+            "grapes"
+          ],
+          "topics": [
+            "diagnosis",
+            "disease",
+            "management"
+          ],
+          "estimatedChunks": 12
+        },
+        {
+          "url": "https://ipm.ucanr.edu/agriculture/grape/false-chinch-bug",
+          "title": "False Chinch Bug",
+          "type": "html",
+          "crops": [
+            "grapes"
+          ],
+          "topics": [
+            "ipm",
+            "management"
+          ],
+          "estimatedChunks": 12
+        },
+        {
+          "url": "https://ipm.ucanr.edu/agriculture/grape/fungicide-efficacybiologicals-annd-natural-products",
+          "title": "Fungicide Efficacybiologicals Annd Natural Products",
+          "type": "html",
+          "crops": [
+            "grapes"
+          ],
+          "topics": [
+            "fungicide",
+            "resistance",
+            "treatment"
+          ],
+          "estimatedChunks": 12
+        },
+        {
+          "url": "https://ipm.ucanr.edu/agriculture/grape/fungicide-resistance-management",
+          "title": "Fungicide Resistance Management",
+          "type": "html",
+          "crops": [
+            "grapes"
+          ],
+          "topics": [
+            "fungicide",
+            "resistance",
+            "treatment"
+          ],
+          "estimatedChunks": 12
+        },
+        {
+          "url": "https://ipm.ucanr.edu/agriculture/grape/general-properties-of-fungicides-used-in-grapes",
+          "title": "General Properties Of Fungicides Used In Grapes",
+          "type": "html",
+          "crops": [
+            "grapes"
+          ],
+          "topics": [
+            "fungicide",
+            "resistance",
+            "treatment"
+          ],
+          "estimatedChunks": 12
+        },
+        {
+          "url": "https://ipm.ucanr.edu/agriculture/grape/gills-mealybug",
+          "title": "Gills Mealybug",
+          "type": "html",
+          "crops": [
+            "grapes"
+          ],
+          "topics": [
+            "management",
+            "monitoring",
+            "pest"
+          ],
+          "estimatedChunks": 12
+        },
+        {
+          "url": "https://ipm.ucanr.edu/agriculture/grape/grape-bud-beetle",
+          "title": "Grape Bud Beetle",
+          "type": "html",
+          "crops": [
+            "grapes"
+          ],
+          "topics": [
+            "management",
+            "monitoring",
+            "pest"
+          ],
+          "estimatedChunks": 12
+        },
+        {
+          "url": "https://ipm.ucanr.edu/agriculture/grape/grape-leaffolder",
+          "title": "Grape Leaffolder",
+          "type": "html",
+          "crops": [
+            "grapes"
+          ],
+          "topics": [
+            "ipm",
+            "management"
+          ],
+          "estimatedChunks": 12
+        },
+        {
+          "url": "https://ipm.ucanr.edu/agriculture/grape/grape-phylloxera",
+          "title": "Grape Phylloxera",
+          "type": "html",
+          "crops": [
+            "grapes"
+          ],
+          "topics": [
+            "management",
+            "monitoring",
+            "pest"
+          ],
+          "estimatedChunks": 12
+        },
+        {
+          "url": "https://ipm.ucanr.edu/agriculture/grape/herbicide-treatment-table",
+          "title": "Herbicide Treatment Table",
+          "type": "html",
+          "crops": [
+            "grapes"
+          ],
+          "topics": [
+            "fungicide",
+            "herbicide",
+            "management",
+            "resistance",
+            "treatment",
+            "weed"
+          ],
+          "estimatedChunks": 12
+        },
+        {
+          "url": "https://ipm.ucanr.edu/agriculture/grape/integrated-weed-management",
+          "title": "Integrated Weed Management",
+          "type": "html",
+          "crops": [
+            "grapes"
+          ],
+          "topics": [
+            "herbicide",
+            "management",
+            "weed"
+          ],
+          "estimatedChunks": 12
+        },
+        {
+          "url": "https://ipm.ucanr.edu/agriculture/grape/leadcable-borer",
+          "title": "Leadcable Borer",
+          "type": "html",
+          "crops": [
+            "grapes"
+          ],
+          "topics": [
+            "ipm",
+            "management"
+          ],
+          "estimatedChunks": 12
+        },
+        {
+          "url": "https://ipm.ucanr.edu/agriculture/grape/leafhoppers",
+          "title": "Leafhoppers",
+          "type": "html",
+          "crops": [
+            "grapes"
+          ],
+          "topics": [
+            "management",
+            "monitoring",
+            "pest"
+          ],
+          "estimatedChunks": 12
+        },
+        {
+          "url": "https://ipm.ucanr.edu/agriculture/grape/light-brown-apple-moth",
+          "title": "Light Brown Apple Moth",
+          "type": "html",
+          "crops": [
+            "grapes"
+          ],
+          "topics": [
+            "management",
+            "monitoring",
+            "pest"
+          ],
+          "estimatedChunks": 12
+        },
+        {
+          "url": "https://ipm.ucanr.edu/agriculture/grape/managing-vertebrates",
+          "title": "Managing Vertebrates",
+          "type": "html",
+          "crops": [
+            "grapes"
+          ],
+          "topics": [
+            "ipm",
+            "management"
+          ],
+          "estimatedChunks": 12
+        },
+        {
+          "url": "https://ipm.ucanr.edu/agriculture/grape/mealybugs-pseudococcus",
+          "title": "Mealybugs Pseudococcus",
+          "type": "html",
+          "crops": [
+            "grapes"
+          ],
+          "topics": [
+            "management",
+            "monitoring",
+            "pest"
+          ],
+          "estimatedChunks": 12
+        },
+        {
+          "url": "https://ipm.ucanr.edu/agriculture/grape/monitoring-caterpillars",
+          "title": "Monitoring Caterpillars",
+          "type": "html",
+          "crops": [
+            "grapes"
+          ],
+          "topics": [
+            "ipm",
+            "management"
+          ],
+          "estimatedChunks": 12
+        },
+        {
+          "url": "https://ipm.ucanr.edu/agriculture/grape/monitoring-insects-and-spider-mites",
+          "title": "Monitoring Insects And Spider Mites",
+          "type": "html",
+          "crops": [
+            "grapes"
+          ],
+          "topics": [
+            "management",
+            "monitoring",
+            "pest"
+          ],
+          "estimatedChunks": 12
+        },
+        {
+          "url": "https://ipm.ucanr.edu/agriculture/grape/nematodes",
+          "title": "Nematodes",
+          "type": "html",
+          "crops": [
+            "grapes"
+          ],
+          "topics": [
+            "ipm",
+            "management"
+          ],
+          "estimatedChunks": 12
+        },
+        {
+          "url": "https://ipm.ucanr.edu/agriculture/grape/omnivorous-leafroller",
+          "title": "Omnivorous Leafroller",
+          "type": "html",
+          "crops": [
+            "grapes"
+          ],
+          "topics": [
+            "management",
+            "monitoring",
+            "pest"
+          ],
+          "estimatedChunks": 12
+        },
+        {
+          "url": "https://ipm.ucanr.edu/agriculture/grape/orange-tortrix",
+          "title": "Orange Tortrix",
+          "type": "html",
+          "crops": [
+            "grapes"
+          ],
+          "topics": [
+            "ipm",
+            "management"
+          ],
+          "estimatedChunks": 12
+        },
+        {
+          "url": "https://ipm.ucanr.edu/agriculture/grape/pacific-coast-wireworm-click-beetle",
+          "title": "Pacific Coast Wireworm Click Beetle",
+          "type": "html",
+          "crops": [
+            "grapes"
+          ],
+          "topics": [
+            "management",
+            "monitoring",
+            "pest"
+          ],
+          "estimatedChunks": 12
+        },
+        {
+          "url": "https://ipm.ucanr.edu/agriculture/grape/pathogen-testing-service-for-grapes",
+          "title": "Pathogen Testing Service For Grapes",
+          "type": "html",
+          "crops": [
+            "grapes"
+          ],
+          "topics": [
+            "ipm",
+            "management"
+          ],
+          "estimatedChunks": 12
+        },
+        {
+          "url": "https://ipm.ucanr.edu/agriculture/grape/pheromone-traps",
+          "title": "Pheromone Traps",
+          "type": "html",
+          "crops": [
+            "grapes"
+          ],
+          "topics": [
+            "ipm",
+            "management"
+          ],
+          "estimatedChunks": 12
+        },
+        {
+          "url": "https://ipm.ucanr.edu/agriculture/grape/phomopsis-cane-and-leafspot",
+          "title": "Phomopsis Cane And Leafspot",
+          "type": "html",
+          "crops": [
+            "grapes"
+          ],
+          "topics": [
+            "diagnosis",
+            "disease",
+            "management"
+          ],
+          "estimatedChunks": 12
+        },
+        {
+          "url": "https://ipm.ucanr.edu/agriculture/grape/phomopsis-dieback",
+          "title": "Phomopsis Dieback",
+          "type": "html",
+          "crops": [
+            "grapes"
+          ],
+          "topics": [
+            "diagnosis",
+            "disease",
+            "management"
+          ],
+          "estimatedChunks": 12
+        },
+        {
+          "url": "https://ipm.ucanr.edu/agriculture/grape/pierces-disease",
+          "title": "Pierces Disease",
+          "type": "html",
+          "crops": [
+            "grapes"
+          ],
+          "topics": [
+            "diagnosis",
+            "disease",
+            "management"
+          ],
+          "estimatedChunks": 12
+        },
+        {
+          "url": "https://ipm.ucanr.edu/agriculture/grape/pocket-gophers",
+          "title": "Pocket Gophers",
+          "type": "html",
+          "crops": [
+            "grapes"
+          ],
+          "topics": [
+            "ipm",
+            "management"
+          ],
+          "estimatedChunks": 12
+        },
+        {
+          "url": "https://ipm.ucanr.edu/agriculture/grape/powdery-mildew",
+          "title": "Powdery Mildew",
+          "type": "html",
+          "crops": [
+            "grapes"
+          ],
+          "topics": [
+            "diagnosis",
+            "disease",
+            "management"
+          ],
+          "estimatedChunks": 12
+        },
+        {
+          "url": "https://ipm.ucanr.edu/agriculture/grape/rabbits",
+          "title": "Rabbits",
+          "type": "html",
+          "crops": [
+            "grapes"
+          ],
+          "topics": [
+            "ipm",
+            "management"
+          ],
+          "estimatedChunks": 12
+        },
+        {
+          "url": "https://ipm.ucanr.edu/agriculture/grape/relative-toxicities-of-insecticides-and-miticides-used-in-grapes-to-natural-enemies-and-honey-bees",
+          "title": "Relative Toxicities Of Insecticides And Miticides Used In Grapes To Natural Enemies And Honey Bees",
+          "type": "html",
+          "crops": [
+            "grapes"
+          ],
+          "topics": [
+            "management",
+            "monitoring",
+            "pest"
+          ],
+          "estimatedChunks": 12
+        },
+        {
+          "url": "https://ipm.ucanr.edu/agriculture/grape/sharpshooters",
+          "title": "Sharpshooters",
+          "type": "html",
+          "crops": [
+            "grapes"
+          ],
+          "topics": [
+            "management",
+            "monitoring",
+            "pest"
+          ],
+          "estimatedChunks": 12
+        },
+        {
+          "url": "https://ipm.ucanr.edu/agriculture/grape/special-weed-problems",
+          "title": "Special Weed Problems",
+          "type": "html",
+          "crops": [
+            "grapes"
+          ],
+          "topics": [
+            "herbicide",
+            "management",
+            "weed"
+          ],
+          "estimatedChunks": 12
+        },
+        {
+          "url": "https://ipm.ucanr.edu/agriculture/grape/summer-bunch-rot-sour-rot",
+          "title": "Summer Bunch Rot Sour Rot",
+          "type": "html",
+          "crops": [
+            "grapes"
+          ],
+          "topics": [
+            "diagnosis",
+            "disease",
+            "management"
+          ],
+          "estimatedChunks": 12
+        },
+        {
+          "url": "https://ipm.ucanr.edu/agriculture/grape/susceptibility-of-weeds-to-herbicide-control",
+          "title": "Susceptibility Of Weeds To Herbicide Control",
+          "type": "html",
+          "crops": [
+            "grapes"
+          ],
+          "topics": [
+            "herbicide",
+            "management",
+            "weed"
+          ],
+          "estimatedChunks": 12
+        },
+        {
+          "url": "https://ipm.ucanr.edu/agriculture/grape/table-grapes-bloom-to-vraison",
+          "title": "Table Grapes Bloom To Vraison",
+          "type": "html",
+          "crops": [
+            "grapes"
+          ],
+          "topics": [
+            "ipm",
+            "management",
+            "timing"
+          ],
+          "estimatedChunks": 12
+        },
+        {
+          "url": "https://ipm.ucanr.edu/agriculture/grape/table-grapes-budbreak",
+          "title": "Table Grapes Budbreak",
+          "type": "html",
+          "crops": [
+            "grapes"
+          ],
+          "topics": [
+            "ipm",
+            "management",
+            "timing"
+          ],
+          "estimatedChunks": 12
+        },
+        {
+          "url": "https://ipm.ucanr.edu/agriculture/grape/table-grapes-delayed-dormancy",
+          "title": "Table Grapes Delayed Dormancy",
+          "type": "html",
+          "crops": [
+            "grapes"
+          ],
+          "topics": [
+            "ipm",
+            "management"
+          ],
+          "estimatedChunks": 12
+        },
+        {
+          "url": "https://ipm.ucanr.edu/agriculture/grape/table-grapes-dormancy",
+          "title": "Table Grapes Dormancy",
+          "type": "html",
+          "crops": [
+            "grapes"
+          ],
+          "topics": [
+            "ipm",
+            "management"
+          ],
+          "estimatedChunks": 12
+        },
+        {
+          "url": "https://ipm.ucanr.edu/agriculture/grape/table-grapes-harvest",
+          "title": "Table Grapes Harvest",
+          "type": "html",
+          "crops": [
+            "grapes"
+          ],
+          "topics": [
+            "ipm",
+            "management",
+            "timing"
+          ],
+          "estimatedChunks": 12
+        },
+        {
+          "url": "https://ipm.ucanr.edu/agriculture/grape/table-grapes-pesticide-application-checklist",
+          "title": "Table Grapes Pesticide Application Checklist",
+          "type": "html",
+          "crops": [
+            "grapes"
+          ],
+          "topics": [
+            "fungicide",
+            "resistance",
+            "treatment"
+          ],
+          "estimatedChunks": 12
+        },
+        {
+          "url": "https://ipm.ucanr.edu/agriculture/grape/table-grapes-postharvest",
+          "title": "Table Grapes Postharvest",
+          "type": "html",
+          "crops": [
+            "grapes"
+          ],
+          "topics": [
+            "ipm",
+            "management",
+            "timing"
+          ],
+          "estimatedChunks": 12
+        },
+        {
+          "url": "https://ipm.ucanr.edu/agriculture/grape/table-grapes-rapid-shoot-growth",
+          "title": "Table Grapes Rapid Shoot Growth",
+          "type": "html",
+          "crops": [
+            "grapes"
+          ],
+          "topics": [
+            "ipm",
+            "management"
+          ],
+          "estimatedChunks": 12
+        },
+        {
+          "url": "https://ipm.ucanr.edu/agriculture/grape/table-grapes-vraison",
+          "title": "Table Grapes Vraison",
+          "type": "html",
+          "crops": [
+            "grapes"
+          ],
+          "topics": [
+            "ipm",
+            "management",
+            "timing"
+          ],
+          "estimatedChunks": 12
+        },
+        {
+          "url": "https://ipm.ucanr.edu/agriculture/grape/thrips",
+          "title": "Thrips",
+          "type": "html",
+          "crops": [
+            "grapes"
+          ],
+          "topics": [
+            "management",
+            "monitoring",
+            "pest"
+          ],
+          "estimatedChunks": 12
+        },
+        {
+          "url": "https://ipm.ucanr.edu/agriculture/grape/treatment-timing-for-key-diseases",
+          "title": "Treatment Timing For Key Diseases",
+          "type": "html",
+          "crops": [
+            "grapes"
+          ],
+          "topics": [
+            "diagnosis",
+            "disease",
+            "fungicide",
+            "management",
+            "resistance",
+            "treatment"
+          ],
+          "estimatedChunks": 12
+        },
+        {
+          "url": "https://ipm.ucanr.edu/agriculture/grape/vine-mealybug",
+          "title": "Vine Mealybug",
+          "type": "html",
+          "crops": [
+            "grapes"
+          ],
+          "topics": [
+            "management",
+            "monitoring",
+            "pest"
+          ],
+          "estimatedChunks": 12
+        },
+        {
+          "url": "https://ipm.ucanr.edu/agriculture/grape/virus-diseases",
+          "title": "Virus Diseases",
+          "type": "html",
+          "crops": [
+            "grapes"
+          ],
+          "topics": [
+            "diagnosis",
+            "disease",
+            "management"
+          ],
+          "estimatedChunks": 12
+        },
+        {
+          "url": "https://ipm.ucanr.edu/agriculture/grape/voles-meadow-vole-meadow-mice",
+          "title": "Voles Meadow Vole Meadow Mice",
+          "type": "html",
+          "crops": [
+            "grapes"
+          ],
+          "topics": [
+            "ipm",
+            "management"
+          ],
+          "estimatedChunks": 12
+        },
+        {
+          "url": "https://ipm.ucanr.edu/agriculture/grape/webspinning-spider-mites",
+          "title": "Webspinning Spider Mites",
+          "type": "html",
+          "crops": [
+            "grapes"
+          ],
+          "topics": [
+            "management",
+            "monitoring",
+            "pest"
+          ],
+          "estimatedChunks": 12
+        },
+        {
+          "url": "https://ipm.ucanr.edu/agriculture/grape/weed-management-in-organic-vineyards",
+          "title": "Weed Management In Organic Vineyards",
+          "type": "html",
+          "crops": [
+            "grapes"
+          ],
+          "topics": [
+            "herbicide",
+            "management",
+            "weed"
+          ],
+          "estimatedChunks": 12
+        },
+        {
+          "url": "https://ipm.ucanr.edu/agriculture/grape/weed-photo-gallery--with-common-and-scientific-names",
+          "title": "Weed Photo Gallery With Common And Scientific Names",
+          "type": "html",
+          "crops": [
+            "grapes"
+          ],
+          "topics": [
+            "herbicide",
+            "management",
+            "weed"
+          ],
+          "estimatedChunks": 12
+        },
+        {
+          "url": "https://ipm.ucanr.edu/agriculture/grape/western-grapeleaf-skeletonizer",
+          "title": "Western Grapeleaf Skeletonizer",
+          "type": "html",
+          "crops": [
+            "grapes"
+          ],
+          "topics": [
+            "ipm",
+            "management"
+          ],
+          "estimatedChunks": 12
+        },
+        {
+          "url": "https://ipm.ucanr.edu/agriculture/grape/wine-and-raisin-grapes-bloom-to-vraison",
+          "title": "Wine And Raisin Grapes Bloom To Vraison",
+          "type": "html",
+          "crops": [
+            "grapes"
+          ],
+          "topics": [
+            "ipm",
+            "management",
+            "timing"
+          ],
+          "estimatedChunks": 12
+        },
+        {
+          "url": "https://ipm.ucanr.edu/agriculture/grape/wine-and-raisin-grapes-budbreak",
+          "title": "Wine And Raisin Grapes Budbreak",
+          "type": "html",
+          "crops": [
+            "grapes"
+          ],
+          "topics": [
+            "ipm",
+            "management",
+            "timing"
+          ],
+          "estimatedChunks": 12
+        },
+        {
+          "url": "https://ipm.ucanr.edu/agriculture/grape/wine-and-raisin-grapes-delayed-dormancy",
+          "title": "Wine And Raisin Grapes Delayed Dormancy",
+          "type": "html",
+          "crops": [
+            "grapes"
+          ],
+          "topics": [
+            "ipm",
+            "management"
+          ],
+          "estimatedChunks": 12
+        },
+        {
+          "url": "https://ipm.ucanr.edu/agriculture/grape/wine-and-raisin-grapes-dormancy",
+          "title": "Wine And Raisin Grapes Dormancy",
+          "type": "html",
+          "crops": [
+            "grapes"
+          ],
+          "topics": [
+            "ipm",
+            "management"
+          ],
+          "estimatedChunks": 12
+        },
+        {
+          "url": "https://ipm.ucanr.edu/agriculture/grape/wine-and-raisin-grapes-harvest",
+          "title": "Wine And Raisin Grapes Harvest",
+          "type": "html",
+          "crops": [
+            "grapes"
+          ],
+          "topics": [
+            "ipm",
+            "management",
+            "timing"
+          ],
+          "estimatedChunks": 12
+        },
+        {
+          "url": "https://ipm.ucanr.edu/agriculture/grape/wine-and-raisin-grapes-pesticide-application-checklist",
+          "title": "Wine And Raisin Grapes Pesticide Application Checklist",
+          "type": "html",
+          "crops": [
+            "grapes"
+          ],
+          "topics": [
+            "fungicide",
+            "resistance",
+            "treatment"
+          ],
+          "estimatedChunks": 12
+        },
+        {
+          "url": "https://ipm.ucanr.edu/agriculture/grape/wine-and-raisin-grapes-postharvest",
+          "title": "Wine And Raisin Grapes Postharvest",
+          "type": "html",
+          "crops": [
+            "grapes"
+          ],
+          "topics": [
+            "ipm",
+            "management",
+            "timing"
+          ],
+          "estimatedChunks": 12
+        },
+        {
+          "url": "https://ipm.ucanr.edu/agriculture/grape/wine-and-raisin-grapes-rapid-shoot-growth",
+          "title": "Wine And Raisin Grapes Rapid Shoot Growth",
+          "type": "html",
+          "crops": [
+            "grapes"
+          ],
+          "topics": [
+            "ipm",
+            "management"
+          ],
+          "estimatedChunks": 12
+        },
+        {
+          "url": "https://ipm.ucanr.edu/agriculture/grape/wine-and-raisin-grapes-vraison",
+          "title": "Wine And Raisin Grapes Vraison",
+          "type": "html",
+          "crops": [
+            "grapes"
+          ],
+          "topics": [
+            "ipm",
+            "management",
+            "timing"
+          ],
+          "estimatedChunks": 12
+        },
+        {
+          "url": "https://ipm.ucanr.edu/agriculture/grape/year-round-ipm-program-introduction",
+          "title": "Year Round Ipm Program Introduction",
+          "type": "html",
+          "crops": [
+            "grapes"
+          ],
+          "topics": [
+            "ipm",
+            "management",
+            "timing"
+          ],
+          "estimatedChunks": 12
+        }
+      ]
+    }
+  }
+}

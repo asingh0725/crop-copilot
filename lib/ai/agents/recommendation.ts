@@ -1,4 +1,4 @@
-import { anthropic, CLAUDE_MODEL } from "../claude";
+import { CLAUDE_MODEL, getAnthropicClient } from "../claude";
 import type { AssembledContext } from "@/lib/retrieval/context-assembly";
 
 export interface NormalizedInput {
@@ -38,50 +38,27 @@ export interface RecommendationOutput {
   confidence: number;
 }
 
-const SYSTEM_PROMPT = `You are an expert agricultural advisor AI agent. Your role is to generate structured crop recommendations based on user inputs and retrieved knowledge base context.
+const SYSTEM_PROMPT = `You are an expert agricultural advisor. Use ONLY the provided context.
 
-**Your Constraints:**
-- You MUST cite sources for all factual claims using chunk IDs from the provided context
-- You CANNOT recommend products not mentioned in the context or knowledge base
-- You MUST express uncertainty when confidence is low (< 0.7)
-- Your output MUST match the exact JSON schema provided
-- Confidence scores must be between 0.5 and 0.95 (never claim 100% certainty)
+Rules:
+- Output ONLY valid JSON matching the schema.
+- Cite chunk IDs for every factual claim and each action.
+- Prefer extension/government/research chunks when available.
+- Only recommend products mentioned in context.
+- The primary diagnosis MUST be explicitly supported by at least one cited chunk (condition name or defining symptom).
+- conditionType MUST match the primary diagnosis category; if uncertain, set conditionType to "unknown".
+- Include differential diagnosis in diagnosis.reasoning.
+- Include at least one timing window tied to growth stage.
+- Include a validation step before high-cost actions.
+- If confidence < 0.75 or evidence is mixed, state uncertainty and escalation.
+- If evidence is insufficient/conflicting, set conditionType to "unknown" and focus on diagnostics.
+- Confidence must be 0.5–0.95.
+- Keep output compact when possible (≈2 recommendations, ≤2 sources).
+- Every recommendation action MUST cite at least one chunk. Actions without citations will be rejected.
+- If chunks from required/priority sources are in the context, at least one MUST appear in your citations.
 
-**Output Format:**
-You must respond with a valid JSON object matching this structure:
-{
-  "diagnosis": {
-    "condition": "Primary condition identified",
-    "conditionType": "deficiency|disease|pest|environmental|unknown",
-    "confidence": 0.0-1.0,
-    "reasoning": "Explanation of diagnosis"
-  },
-  "recommendations": [
-    {
-      "action": "Specific action to take",
-      "priority": "immediate|soon|when_convenient",
-      "timing": "When to apply (optional)",
-      "details": "Detailed instructions",
-      "citations": ["chunk_id_1", "chunk_id_2"]
-    }
-  ],
-  "products": [
-    {
-      "productId": "product_id_from_context",
-      "reason": "Why this product is recommended",
-      "applicationRate": "Rate (optional)",
-      "alternatives": ["alt_product_id_1"]
-    }
-  ],
-  "sources": [
-    {
-      "chunkId": "chunk_id",
-      "relevance": 0.0-1.0,
-      "excerpt": "Relevant text excerpt (max 500 chars)"
-    }
-  ],
-  "confidence": 0.0-1.0
-}`;
+Schema (compact):
+{"diagnosis":{"condition":"","conditionType":"deficiency|disease|pest|environmental|unknown","confidence":0.0,"reasoning":""},"recommendations":[{"action":"","priority":"immediate|soon|when_convenient","timing":"","details":"","citations":["chunkId"]}],"products":[{"productId":"","reason":"","applicationRate":"","alternatives":["id"]}],"sources":[{"chunkId":"","relevance":0.0,"excerpt":""}],"confidence":0.0}`;
 
 export async function generateRecommendation(
   input: NormalizedInput,
@@ -89,6 +66,7 @@ export async function generateRecommendation(
   retryFeedback?: string
 ): Promise<RecommendationOutput> {
   const startTime = Date.now();
+  const anthropic = getAnthropicClient();
 
   const userMessage = formatUserMessage(input, context, retryFeedback);
 
@@ -170,32 +148,26 @@ function formatUserMessage(
   context: AssembledContext,
   retryFeedback?: string
 ): string {
-  let message = `Generate a crop recommendation based on the following input and context.
+  const inputPayload: Record<string, unknown> = {
+    type: input.type,
+  };
 
-**USER INPUT:**
-- Input Type: ${input.type}
-- Crop: ${input.crop || "Not specified"}
-- Location: ${input.location || "Not specified"}
-`;
+  if (input.crop) inputPayload.crop = input.crop;
+  if (input.location) inputPayload.location = input.location;
+  if (input.description) inputPayload.description = input.description;
+  if (input.labData) inputPayload.labData = input.labData;
 
-  if (input.description) {
-    message += `- Description: ${input.description}\n`;
-  }
+  let message = `INPUT:${JSON.stringify(inputPayload)}\nCONTEXT:\n`;
 
-  if (input.labData) {
-    message += `- Lab Data: ${JSON.stringify(input.labData, null, 2)}\n`;
-  }
-
-  message += `\n**RETRIEVED CONTEXT (${context.totalChunks} chunks, ${context.totalTokens} tokens):**\n\n`;
-
-  context.chunks.forEach((chunk, index) => {
-    message += `[Chunk ID: ${chunk.id}] (Relevance: ${chunk.similarity.toFixed(2)})\n`;
-    message += `Source: ${chunk.source.title} (${chunk.source.sourceType})\n`;
+  context.chunks.forEach((chunk) => {
+    message += `[${chunk.id}|rel=${chunk.similarity.toFixed(
+      2
+    )}|${chunk.source.sourceType}] ${chunk.source.title}\n`;
     message += `${chunk.content}\n\n`;
   });
 
   if (retryFeedback) {
-    message += `\n**RETRY FEEDBACK:**\n${retryFeedback}\n\nPlease fix the issues and try again.\n`;
+    message += `RETRY:${retryFeedback}\n`;
   }
 
   return message;

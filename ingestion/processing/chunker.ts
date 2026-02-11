@@ -47,10 +47,11 @@ export function chunkDocument(
 
   // Base metadata for chunks
   // Note: Source metadata would come from a separate metadata field if added to schema
+  const sourceMeta = (source as any).metadata || {};
   const baseMeta = {
-    crops: [],
-    topics: [],
-    region: undefined,
+    crops: Array.isArray(sourceMeta.crops) ? sourceMeta.crops : [],
+    topics: Array.isArray(sourceMeta.topics) ? sourceMeta.topics : [],
+    region: sourceMeta.region,
   };
 
   // Process each section

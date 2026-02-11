@@ -2,10 +2,17 @@ import { createClient } from '@/lib/supabase/server'
 import { prisma } from '@/lib/prisma'
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
-import { searchTextChunks, searchImageChunks } from '@/lib/retrieval/search'
+import {
+  searchTextChunks,
+  searchImageChunks,
+  fetchRequiredTextChunks,
+} from '@/lib/retrieval/search'
 import { assembleContext } from '@/lib/retrieval/context-assembly'
+import { buildRetrievalPlan } from '@/lib/retrieval/query'
+import { resolveSourceHints } from '@/lib/retrieval/source-hints'
 import { generateWithRetry, ValidationError } from '@/lib/validation/retry'
 import { CLAUDE_MODEL } from '@/lib/ai/claude'
+import { logRetrievalAudit } from '@/lib/retrieval/audit'
 
 const createInputSchema = z.object({
   type: z.enum(['PHOTO', 'LAB_REPORT']),
@@ -47,10 +54,32 @@ export async function POST(request: NextRequest) {
     })
 
     // Generate recommendation immediately after creating input
-    const query = buildQuery(input)
-    const textResults = await searchTextChunks(query, 5)
-    const imageResults = await searchImageChunks(query, 3)
-    const context = await assembleContext(textResults, imageResults)
+    const plan = buildRetrievalPlan({
+      description: input.description,
+      labData: input.labData as Record<string, unknown> | null,
+      crop: input.crop,
+      location: input.location,
+      growthStage: input.season,
+      type: input.type,
+    })
+    const sourceHints = await resolveSourceHints(plan.sourceTitleHints)
+    const searchOptions = {
+      crop: input.crop ?? (input.labData as any)?.crop ?? undefined,
+      region: input.location ?? undefined,
+      topics: plan.topics,
+      sourceBoosts: sourceHints.sourceBoosts,
+    }
+    const textResults = await searchTextChunks(plan.query, 5, searchOptions)
+    const requiredText = await fetchRequiredTextChunks(
+      plan.query,
+      sourceHints.requiredSourceIds
+    )
+    const imageResults = await searchImageChunks(plan.query, 3, searchOptions)
+    const context = await assembleContext(
+      [...textResults, ...requiredText],
+      imageResults,
+      { requiredSourceIds: sourceHints.requiredSourceIds }
+    )
 
     if (context.totalChunks === 0) {
       return NextResponse.json(
@@ -112,6 +141,26 @@ export async function POST(request: NextRequest) {
       })
     )
 
+    // Log retrieval audit (fire-and-forget)
+    logRetrievalAudit({
+      inputId: input.id,
+      recommendationId: savedRecommendation.id,
+      plan,
+      requiredSourceIds: sourceHints.requiredSourceIds,
+      textCandidates: [...textResults, ...requiredText].map((r) => ({
+        id: r.id,
+        similarity: r.similarity,
+        sourceId: r.sourceId,
+      })),
+      imageCandidates: imageResults.map((r) => ({
+        id: r.id,
+        similarity: r.similarity,
+        sourceId: r.sourceId,
+      })),
+      assembledChunkIds: context.chunks.map((c) => c.id),
+      citedChunkIds: recommendation.sources.map((s) => s.chunkId),
+    })
+
     return NextResponse.json({
       input,
       recommendationId: savedRecommendation.id,
@@ -131,34 +180,6 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
-}
-
-/**
- * Build search query from input
- */
-function buildQuery(input: {
-  description?: string | null
-  labData?: unknown
-  crop?: string | null
-}): string {
-  const parts: string[] = []
-
-  if (input.description) {
-    parts.push(input.description)
-  }
-
-  if (input.crop) {
-    parts.push(`Crop: ${input.crop}`)
-  }
-
-  if (input.labData && typeof input.labData === 'object') {
-    const labData = input.labData as Record<string, unknown>
-    if (labData.crop) parts.push(`Crop: ${labData.crop}`)
-    if (labData.symptoms) parts.push(`Symptoms: ${labData.symptoms}`)
-    if (labData.soilPh) parts.push(`pH: ${labData.soilPh}`)
-  }
-
-  return parts.join('. ')
 }
 
 export async function GET(request: NextRequest) {

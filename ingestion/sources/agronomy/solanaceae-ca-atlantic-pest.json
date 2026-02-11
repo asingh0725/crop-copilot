@@ -1,0 +1,214 @@
+{
+  "crop": "tomatoes",
+  "cropAliases": [
+    "potatoes",
+    "peppers"
+  ],
+  "region": {
+    "macro": "Atlantic Canada",
+    "states": [],
+    "provinces": [
+      "New Brunswick",
+      "Nova Scotia",
+      "Prince Edward Island",
+      "Newfoundland and Labrador"
+    ],
+    "regulatoryAuthority": [
+      "PMRA"
+    ]
+  },
+  "domain": "pest",
+  "problems": [
+    {
+      "name": "General Pest Identification and Thresholds",
+      "scientificName": null,
+      "severityClasses": [
+        "low",
+        "medium",
+        "high"
+      ],
+      "signals": {
+        "visual": {
+          "positiveIndicators": [
+            "Feeding damage, frass, or insect presence"
+          ],
+          "negativeIndicators": [
+            "Nutrient deficiency patterns without pest activity"
+          ],
+          "imageSources": []
+        },
+        "contextual": {
+          "growthStages": [
+            "Early vegetative",
+            "Reproductive"
+          ],
+          "weatherTriggers": [
+            "Warm temperatures"
+          ],
+          "rotationRisk": [
+            "Continuous host cropping"
+          ]
+        }
+      },
+      "decisionLogic": {
+        "scoutingThresholds": [
+          {
+            "condition": "Economic threshold exceeded",
+            "action": "Select appropriate control based on label"
+          }
+        ],
+        "preventativeActions": [
+          "Use resistant varieties",
+          "Encourage beneficials"
+        ],
+        "curativeActions": [
+          {
+            "type": "biological",
+            "constraints": {
+              "requiresRotation": false,
+              "regulatoryCheck": true,
+              "phiRelevant": false
+            }
+          },
+          {
+            "type": "chemical",
+            "constraints": {
+              "requiresRotation": true,
+              "regulatoryCheck": true,
+              "phiRelevant": true
+            }
+          }
+        ]
+      },
+      "sources": [
+        {
+          "institution": "www.perennia.ca",
+          "publicationId": null,
+          "url": "https://www.perennia.ca/product/cover-crops-ask-me-anything/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "www.perennia.ca",
+          "publicationId": null,
+          "url": "https://www.perennia.ca/video/oats-and-winter-rye-as-cover-crops/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "www.perennia.ca",
+          "publicationId": null,
+          "url": "https://www.perennia.ca/product/getting-into-the-weeds-pesticide-re-evaluation-updates-and-nova-scotia-weed-survey/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "www.perennia.ca",
+          "publicationId": null,
+          "url": "https://www.perennia.ca/video/using-warm-seasons-grasses-as-cover-crops/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "www.perennia.ca",
+          "publicationId": null,
+          "url": "https://www.perennia.ca/portfolio-items/field-crops-specialist/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "www.perennia.ca",
+          "publicationId": null,
+          "url": "https://www.perennia.ca/eventer/getting-into-the-weeds-insect-management-updates-blueberry-fruit-fly-and-european-corn-borer/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "www.perennia.ca",
+          "publicationId": null,
+          "url": "https://www.perennia.ca/eventer/cultiv8ing-cover-crops/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "www.perennia.ca",
+          "publicationId": null,
+          "url": "https://www.perennia.ca/eventer/soil-health-through-livestock-in-rotation-with-crops/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "www.perennia.ca",
+          "publicationId": null,
+          "url": "https://www.perennia.ca/portfolio-items/tree-fruit-specialist/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "www.perennia.ca",
+          "publicationId": null,
+          "url": "https://www.perennia.ca/product/agrologist-training-integrating-cover-crops-into-rotations/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "www.perennia.ca",
+          "publicationId": null,
+          "url": "https://www.perennia.ca/longcaneraspberryguide/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "www.perennia.ca",
+          "publicationId": null,
+          "url": "https://www.perennia.ca/video/getting-into-the-weeds-high-tunnel-soils-long-term-nutrient-management-for-crop-health/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "www.perennia.ca",
+          "publicationId": null,
+          "url": "https://www.perennia.ca/eventer/efficient-use-of-nitrogen-in-crop-production/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "www.perennia.ca",
+          "publicationId": null,
+          "url": "https://www.perennia.ca/pest-guides/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "www.perennia.ca",
+          "publicationId": null,
+          "url": "https://www.perennia.ca/eventer/tools-in-the-toolbox-for-apple-crop-load-management/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "www.perennia.ca",
+          "publicationId": null,
+          "url": "https://www.perennia.ca/eventer/increasing-legumes-in-rotation-nitrogen-credits-from-legume-cover-crops-at-wrights-family-farm/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "www.perennia.ca",
+          "publicationId": null,
+          "url": "https://www.perennia.ca/portfolio-items/protected-vegetable/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "www.perennia.ca",
+          "publicationId": null,
+          "url": "https://www.perennia.ca/eventer/grape-pest-scouting-basics/",
+          "year": null,
+          "authority": "supporting"
+        }
+      ]
+    }
+  ],
+  "lastValidated": "2026-02-03"
+}

@@ -1,0 +1,446 @@
+{
+  "crop": "apples",
+  "cropAliases": [
+    "peaches",
+    "cherries"
+  ],
+  "region": {
+    "macro": "Northeast",
+    "states": [
+      "West Virginia",
+      "Pennsylvania",
+      "New York",
+      "Vermont",
+      "New Hampshire",
+      "Maine",
+      "Massachusetts",
+      "Rhode Island",
+      "Connecticut",
+      "New Jersey",
+      "Delaware",
+      "Maryland"
+    ],
+    "provinces": [],
+    "regulatoryAuthority": [
+      "EPA"
+    ]
+  },
+  "domain": "pest",
+  "problems": [
+    {
+      "name": "General Pest Identification and Thresholds",
+      "scientificName": null,
+      "severityClasses": [
+        "low",
+        "medium",
+        "high"
+      ],
+      "signals": {
+        "visual": {
+          "positiveIndicators": [
+            "Feeding damage, frass, or insect presence"
+          ],
+          "negativeIndicators": [
+            "Nutrient deficiency patterns without pest activity"
+          ],
+          "imageSources": []
+        },
+        "contextual": {
+          "growthStages": [
+            "Early vegetative",
+            "Reproductive"
+          ],
+          "weatherTriggers": [
+            "Warm temperatures"
+          ],
+          "rotationRisk": [
+            "Continuous host cropping"
+          ]
+        }
+      },
+      "decisionLogic": {
+        "scoutingThresholds": [
+          {
+            "condition": "Economic threshold exceeded",
+            "action": "Select appropriate control based on label"
+          }
+        ],
+        "preventativeActions": [
+          "Use resistant varieties",
+          "Encourage beneficials"
+        ],
+        "curativeActions": [
+          {
+            "type": "biological",
+            "constraints": {
+              "requiresRotation": false,
+              "regulatoryCheck": true,
+              "phiRelevant": false
+            }
+          },
+          {
+            "type": "chemical",
+            "constraints": {
+              "requiresRotation": true,
+              "regulatoryCheck": true,
+              "phiRelevant": true
+            }
+          }
+        ]
+      },
+      "sources": [
+        {
+          "institution": "extension.umaine.edu",
+          "publicationId": null,
+          "url": "https://extension.umaine.edu/cranberries/grower-services/cranberry-management-calendar/view-entire-calendar/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.umaine.edu",
+          "publicationId": null,
+          "url": "https://extension.umaine.edu/agriculture/flowering-in-the-north-conference/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.umaine.edu",
+          "publicationId": null,
+          "url": "https://extension.umaine.edu/potatoes/thank-you-for-subscribing-to-pest-alert/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.psu.edu",
+          "publicationId": null,
+          "url": "https://extension.psu.edu/soils-and-plant-nutrition-for-ornamental-landscapes/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.psu.edu",
+          "publicationId": null,
+          "url": "https://extension.psu.edu/water/water-for-agriculture/keep-up-with-regulations/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.psu.edu",
+          "publicationId": null,
+          "url": "https://extension.psu.edu/hydroponics-systems-and-principles-of-plant-nutrition-essential-nutrients-function-deficiency-and-excess/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.psu.edu",
+          "publicationId": null,
+          "url": "https://extension.psu.edu/forests-and-wildlife/forest-management/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.psu.edu",
+          "publicationId": null,
+          "url": "https://extension.psu.edu/multiflora-rose-management-in-grass-pastures-an-integrated-approach/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.psu.edu",
+          "publicationId": null,
+          "url": "https://extension.psu.edu/pesticidas-y-la-salud-de-los-polinizadores/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.psu.edu",
+          "publicationId": null,
+          "url": "https://extension.psu.edu/can-on-farm-nir-analysis-improve-feed-management/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.psu.edu",
+          "publicationId": null,
+          "url": "https://extension.psu.edu/reduce-your-exposure-to-pesticides-wear-gloves/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.psu.edu",
+          "publicationId": null,
+          "url": "https://extension.psu.edu/insects-pests-and-diseases/pest-disease-and-weed-identification/weed-identification-and-control/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.umaine.edu",
+          "publicationId": null,
+          "url": "https://extension.umaine.edu/ipm/ipddl/plant-disease-images/phomopsis-canker-of-hawthorn/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.psu.edu",
+          "publicationId": null,
+          "url": "https://extension.psu.edu/plant-guide-shade-to-part-shade-dry-to-moist-soil/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.psu.edu",
+          "publicationId": null,
+          "url": "https://extension.psu.edu/pesticide-applicator-certification-study-materials-interior-plantscape/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.psu.edu",
+          "publicationId": null,
+          "url": "https://extension.psu.edu/plant-cover-crops-asap/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.umaine.edu",
+          "publicationId": null,
+          "url": "https://extension.umaine.edu/home-and-garden-ipm/tag/tree-pest/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.umaine.edu",
+          "publicationId": null,
+          "url": "https://extension.umaine.edu/2025/06/30/sustainable-agriculture-research-tour-2/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.umaine.edu",
+          "publicationId": null,
+          "url": "https://extension.umaine.edu/agriculture/greenhouse-plastic-recycling/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.psu.edu",
+          "publicationId": null,
+          "url": "https://extension.psu.edu/apple-and-pear-disease-fire-blight/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.psu.edu",
+          "publicationId": null,
+          "url": "https://extension.psu.edu/common-urban-pests-identification-prevention-and-control/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.psu.edu",
+          "publicationId": null,
+          "url": "https://extension.psu.edu/kinship-family-forum-self-care-and-stress-management/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.umaine.edu",
+          "publicationId": null,
+          "url": "https://extension.umaine.edu/agriculture/new-farmer-farm-visit-series-small-tools-for-small-scale-farming/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.psu.edu",
+          "publicationId": null,
+          "url": "https://extension.psu.edu/pasture-and-grazing-management/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.psu.edu",
+          "publicationId": null,
+          "url": "https://extension.psu.edu/tree-fruit-insect-pest-spotted-tentiform-leafminer/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.psu.edu",
+          "publicationId": null,
+          "url": "https://extension.psu.edu/produccion-de-la-fruta-y-control-de-los-pests-el-ecosistema-de-la-huerta/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.umaine.edu",
+          "publicationId": null,
+          "url": "https://extension.umaine.edu/veterinarylab/2014/11/03/media-report-on-question-2-proposed-pest-lab/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.umaine.edu",
+          "publicationId": null,
+          "url": "https://extension.umaine.edu/gardening/2024/08/02/why-are-my-curly-parsley-plants-dying/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.psu.edu",
+          "publicationId": null,
+          "url": "https://extension.psu.edu/implants-used-in-beef-cattle-are-safe-and-efficacious/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.umaine.edu",
+          "publicationId": null,
+          "url": "https://extension.umaine.edu/agriculture/2016/01/21/made-in-maine-tanzania/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.umaine.edu",
+          "publicationId": null,
+          "url": "https://extension.umaine.edu/agriculture/2021/06/02/usda-to-invest-15-million-in-the-future-of-conservation-through-innovation-grants-program/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.umaine.edu",
+          "publicationId": null,
+          "url": "https://extension.umaine.edu/publications/4807e/s1-planting-seeds/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.umaine.edu",
+          "publicationId": null,
+          "url": "https://extension.umaine.edu/ipm/pesticide-safety/pesticide-applicator-recertification-training/pfas-quiz/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.umaine.edu",
+          "publicationId": null,
+          "url": "https://extension.umaine.edu/blueberries/2014/07/21/swd-management-recommendations-fact-sheet/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.umaine.edu",
+          "publicationId": null,
+          "url": "https://extension.umaine.edu/maine-farmer-resource-network/2020/04/03/opportunities-for-earning-your-pesticide-recertification-credits-online/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.psu.edu",
+          "publicationId": null,
+          "url": "https://extension.psu.edu/rain-garden-plants-golden-ragwort/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.umaine.edu",
+          "publicationId": null,
+          "url": "https://extension.umaine.edu/highmoor/resources-by-crop/melon/muskmelon-evaluations-2007-08/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.psu.edu",
+          "publicationId": null,
+          "url": "https://extension.psu.edu/pennsylvania-pesticide-applicator-certification/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.umaine.edu",
+          "publicationId": null,
+          "url": "https://extension.umaine.edu/agriculture/2021/04/21/understanding-dairy-revenue-protection/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.psu.edu",
+          "publicationId": null,
+          "url": "https://extension.psu.edu/best-management-practices-for-private-water-wells/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.umaine.edu",
+          "publicationId": null,
+          "url": "https://extension.umaine.edu/blueberries/2022/04/12/mummy-berry-report-for-april-12-2022-plants-and-mummy-berry-are-progressing/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.psu.edu",
+          "publicationId": null,
+          "url": "https://extension.psu.edu/insects-pests-and-diseases/vectors/experts/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.umaine.edu",
+          "publicationId": null,
+          "url": "https://extension.umaine.edu/ipm/ipddl/plant-disease-images/delphinium-phoma/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.psu.edu",
+          "publicationId": null,
+          "url": "https://extension.psu.edu/10-warning-signs-of-alzheimers-disease/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.umaine.edu",
+          "publicationId": null,
+          "url": "https://extension.umaine.edu/agriculture/series/agrisafe-qpr-for-farmers-and-farm-families/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.psu.edu",
+          "publicationId": null,
+          "url": "https://extension.psu.edu/vineyard-management-efficiency-industry-panel/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.umaine.edu",
+          "publicationId": null,
+          "url": "https://extension.umaine.edu/agriculture/events/category/midcoast-sustainable-agriculture-committee/waldo-county/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.psu.edu",
+          "publicationId": null,
+          "url": "https://extension.psu.edu/sap-beetle-management-in-sweet-corn/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.psu.edu",
+          "publicationId": null,
+          "url": "https://extension.psu.edu/rain-garden-plants-elderberry/",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.umaine.edu",
+          "publicationId": null,
+          "url": "https://extension.umaine.edu/cumberland/event/bringing-nature-home-a-guide-to-native-plant-gardening/",
+          "year": null,
+          "authority": "supporting"
+        }
+      ]
+    }
+  ],
+  "lastValidated": "2026-02-03"
+}

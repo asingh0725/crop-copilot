@@ -30,6 +30,12 @@ export class ExtensionScraper extends BaseScraper {
         return this.processHTMLBuffer(buffer, url);
       }
 
+      // Fallback: attempt to treat unknown content as HTML
+      const fallbackHtml = buffer.toString("utf8");
+      if (/<html|<!doctype|<head|<!--/i.test(fallbackHtml)) {
+        return this.processHTMLBuffer(buffer, url);
+      }
+
       throw new Error("Unknown content type");
     } catch (error) {
       console.error(`Scrape failed for ${url}:`, error);

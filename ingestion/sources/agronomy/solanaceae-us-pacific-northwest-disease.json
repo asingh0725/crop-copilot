@@ -1,0 +1,219 @@
+{
+  "crop": "tomatoes",
+  "cropAliases": [
+    "potatoes",
+    "peppers"
+  ],
+  "region": {
+    "macro": "Pacific Northwest",
+    "states": [
+      "Washington",
+      "Oregon",
+      "Idaho"
+    ],
+    "provinces": [],
+    "regulatoryAuthority": [
+      "EPA"
+    ]
+  },
+  "domain": "disease",
+  "problems": [
+    {
+      "name": "General Disease Identification and Management",
+      "scientificName": null,
+      "severityClasses": [
+        "low",
+        "medium",
+        "high"
+      ],
+      "signals": {
+        "visual": {
+          "positiveIndicators": [
+            "Lesions, discoloration, blights, wilts, or rots"
+          ],
+          "negativeIndicators": [
+            "Uniform discoloration without lesions (possible abiotic)"
+          ],
+          "imageSources": []
+        },
+        "contextual": {
+          "growthStages": [
+            "All stages"
+          ],
+          "weatherTriggers": [
+            "Extended leaf wetness",
+            "High humidity"
+          ],
+          "rotationRisk": [
+            "Short rotations with host crops"
+          ]
+        }
+      },
+      "decisionLogic": {
+        "scoutingThresholds": [
+          {
+            "condition": "Symptoms increasing in field",
+            "action": "Intensify scouting and confirm diagnosis"
+          }
+        ],
+        "preventativeActions": [
+          "Use resistant varieties",
+          "Rotate crops"
+        ],
+        "curativeActions": [
+          {
+            "type": "chemical",
+            "constraints": {
+              "requiresRotation": true,
+              "regulatoryCheck": true,
+              "phiRelevant": true
+            }
+          }
+        ]
+      },
+      "sources": [
+        {
+          "institution": "pnwhandbooks.org",
+          "publicationId": null,
+          "url": "https://pnwhandbooks.org/plantdisease",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.oregonstate.edu",
+          "publicationId": null,
+          "url": "https://extension.oregonstate.edu/collection/field-crop-plant-health-challenges",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.oregonstate.edu",
+          "publicationId": null,
+          "url": "https://extension.oregonstate.edu/pests-weeds-diseases/plant-diseases",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "pnwhandbooks.org",
+          "publicationId": null,
+          "url": "https://pnwhandbooks.org/plantdisease/host-and-disease-descriptions",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.oregonstate.edu",
+          "publicationId": null,
+          "url": "https://extension.oregonstate.edu/catalog/new-releases?page=9",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.oregonstate.edu",
+          "publicationId": null,
+          "url": "https://extension.oregonstate.edu/catalog/new-releases?page=1",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "ipm.ucanr.edu",
+          "publicationId": null,
+          "url": "https://ipm.ucanr.edu/PMG/menu.crop.html",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.oregonstate.edu",
+          "publicationId": null,
+          "url": "https://extension.oregonstate.edu/catalog/new-releases?page=8",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "ipm.ucanr.edu",
+          "publicationId": null,
+          "url": "https://ipm.ucanr.edu/PMG/crops-agriculture.html",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.oregonstate.edu",
+          "publicationId": null,
+          "url": "https://extension.oregonstate.edu/catalog/new-releases?page=5",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.oregonstate.edu",
+          "publicationId": null,
+          "url": "https://extension.oregonstate.edu/catalog/new-releases?page=7",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "pnwhandbooks.org",
+          "publicationId": null,
+          "url": "https://pnwhandbooks.org/plantdisease",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.oregonstate.edu",
+          "publicationId": null,
+          "url": "https://extension.oregonstate.edu/catalog/new-releases?page=6",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.oregonstate.edu",
+          "publicationId": null,
+          "url": "https://extension.oregonstate.edu/catalog/new-releases?page=4",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "pnwhandbooks.org",
+          "publicationId": null,
+          "url": "https://pnwhandbooks.org/handbook/plant-disease",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.oregonstate.edu",
+          "publicationId": null,
+          "url": "https://extension.oregonstate.edu/catalog/new-releases?page=2",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "pubs.extension.wsu.edu",
+          "publicationId": null,
+          "url": "https://pubs.extension.wsu.edu/product/2019-pnw-plant-disease-management-handbook",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.oregonstate.edu",
+          "publicationId": null,
+          "url": "https://extension.oregonstate.edu/catalog/new-releases?page=3",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.oregonstate.edu",
+          "publicationId": null,
+          "url": "https://extension.oregonstate.edu/catalog/pub/plant-2022-pnw-plant-disease-management-handbook",
+          "year": null,
+          "authority": "supporting"
+        },
+        {
+          "institution": "extension.oregonstate.edu",
+          "publicationId": null,
+          "url": "https://extension.oregonstate.edu/catalog/new-releases?page=10",
+          "year": null,
+          "authority": "supporting"
+        }
+      ]
+    }
+  ],
+  "lastValidated": "2026-02-03"
+}

@@ -8,7 +8,14 @@
     "start": "next start",
     "lint": "next lint",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
-    "test:ingestion": "tsx scripts/ingestion/test-ingestion.ts"
+    "test:ingestion": "tsx scripts/ingestion/test-ingestion.ts",
+    "eval": "tsx eval/eval-uat.ts",
+    "eval:rules-only": "tsx eval/eval-uat.ts --skip-llm",
+    "eval:summary": "tsx eval/eval-uat.ts --summary-only",
+    "eval:loop": "tsx eval/run-feedback-loop.ts",
+    "eval:loop:dry": "tsx eval/run-feedback-loop.ts --dry-run",
+    "eval:loop:rules": "tsx eval/run-feedback-loop.ts --skip-llm",
+    "eval:seed": "tsx eval/seed-scenarios.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.71.2",
@@ -32,6 +39,7 @@
     "class-variance-authority": "^0.7.1",
     "commander": "^14.0.2",
     "date-fns": "^4.1.0",
+    "framer-motion": "^12.34.0",
     "ioredis": "^5.9.2",
     "jsdom": "^27.4.0",
     "lucide-react": "^0.562.0",

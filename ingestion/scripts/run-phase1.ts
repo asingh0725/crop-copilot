@@ -1,5 +1,6 @@
 #!/usr/bin/env tsx
 import { Command } from "commander";
+import { loadEnvConfig } from "@next/env";
 import fs from "fs/promises";
 import { ExtensionScraper } from "../scrapers/extension-scraper";
 import { parseHTML } from "../parsers/html-parser";
@@ -25,7 +26,10 @@ interface RunOptions {
   skipScrape: boolean;
   skipImages: boolean;
   dryRun: boolean;
+  urlFile?: string;
 }
+
+loadEnvConfig(process.cwd());
 
 /**
  * Detect actual content type from buffer, not URL extension
@@ -97,9 +101,11 @@ async function runPhase1Ingestion(options: RunOptions) {
   console.log("");
 
   // Load URL list
-  const urlFile = options.test
-    ? "ingestion/sources/test-urls.json"
-    : "ingestion/sources/phase3-urls.json";
+  const urlFile =
+    options.urlFile ||
+    (options.test
+      ? "ingestion/sources/test-urls.json"
+      : "ingestion/sources/phase3-urls.json");
 
   const urlList: SourceUrlConfig = JSON.parse(
     await fs.readFile(urlFile, "utf-8")
@@ -274,9 +280,16 @@ async function runPhase1Ingestion(options: RunOptions) {
   if (failedDocs.length > 0) {
     console.log(`⚠️  ${failedDocs.length} documents failed to parse`);
     await fs.writeFile(
-      'ingestion/state/failed-docs.json',
+      "ingestion/state/failed-docs.json",
       JSON.stringify(failedDocs, null, 2)
     );
+  } else {
+    // Clear stale failures from previous runs
+    try {
+      await fs.unlink("ingestion/state/failed-docs.json");
+    } catch {
+      // ignore if missing
+    }
   }
 
   // DEBUG: Check parsed content for images
@@ -507,6 +520,7 @@ program
   .name("run-phase1")
   .description("Run Phase 1 knowledge base ingestion")
   .option("--test", "Use test-urls.json (10 URLs) instead of full phase1", false)
+  .option("--urlFile <path>", "Path to source URL list JSON")
   .option("--limit <number>", "Limit number of URLs to process", parseInt)
   .option("--skip-scrape", "Skip scraping, use cached documents", false)
   .option("--skip-images", "Skip image processing", false)
