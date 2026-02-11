@@ -47,38 +47,33 @@ export const CROP_OPTIONS = [
   // Vegetables
   { value: 'tomatoes', label: 'Tomatoes', category: 'Vegetables' },
   { value: 'potatoes', label: 'Potatoes', category: 'Vegetables' },
+  { value: 'peppers', label: 'Peppers', category: 'Vegetables' },
   { value: 'onions', label: 'Onions', category: 'Vegetables' },
   { value: 'carrots', label: 'Carrots', category: 'Vegetables' },
-  { value: 'lettuce', label: 'Lettuce', category: 'Vegetables' },
-  { value: 'peppers', label: 'Peppers', category: 'Vegetables' },
-  { value: 'cucumbers', label: 'Cucumbers', category: 'Vegetables' },
   { value: 'cabbage', label: 'Cabbage', category: 'Vegetables' },
   { value: 'broccoli', label: 'Broccoli', category: 'Vegetables' },
   { value: 'cauliflower', label: 'Cauliflower', category: 'Vegetables' },
-  { value: 'spinach', label: 'Spinach', category: 'Vegetables' },
-  { value: 'kale', label: 'Kale', category: 'Vegetables' },
+  { value: 'squash', label: 'Squash', category: 'Vegetables' },
+  { value: 'lettuce', label: 'Lettuce', category: 'Vegetables' },
 
   // Fruits
   { value: 'apples', label: 'Apples', category: 'Fruits' },
-  { value: 'oranges', label: 'Oranges', category: 'Fruits' },
   { value: 'grapes', label: 'Grapes', category: 'Fruits' },
   { value: 'strawberries', label: 'Strawberries', category: 'Fruits' },
   { value: 'blueberries', label: 'Blueberries', category: 'Fruits' },
   { value: 'peaches', label: 'Peaches', category: 'Fruits' },
   { value: 'cherries', label: 'Cherries', category: 'Fruits' },
-  { value: 'watermelon', label: 'Watermelon', category: 'Fruits' },
 
   // Legumes
   { value: 'soybeans', label: 'Soybeans', category: 'Legumes' },
+  { value: 'peanuts', label: 'Peanuts', category: 'Legumes' },
   { value: 'peas', label: 'Peas', category: 'Legumes' },
   { value: 'beans', label: 'Beans', category: 'Legumes' },
   { value: 'lentils', label: 'Lentils', category: 'Legumes' },
-  { value: 'peanuts', label: 'Peanuts', category: 'Legumes' },
 
   // Other
   { value: 'cotton', label: 'Cotton', category: 'Other' },
-  { value: 'sugarcane', label: 'Sugarcane', category: 'Other' },
-  { value: 'sunflower', label: 'Sunflower', category: 'Other' },
   { value: 'canola', label: 'Canola', category: 'Other' },
-  { value: 'alfalfa', label: 'Alfalfa', category: 'Other' }
+  { value: 'alfalfa', label: 'Alfalfa', category: 'Other' },
+  { value: 'sugar beets', label: 'Sugar Beets', category: 'Other' }
 ]

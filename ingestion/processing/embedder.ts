@@ -8,9 +8,16 @@ import OpenAI from "openai";
 import { encoding_for_model } from "@dqbd/tiktoken";
 import type { ChunkData, ImageData } from "../scrapers/types";
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+let openai: OpenAI | null = null;
+
+function getOpenAIClient(): OpenAI {
+  if (!openai) {
+    openai = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
+    });
+  }
+  return openai;
+}
 
 // OpenAI text-embedding-3-small limits
 const MAX_TOKENS_PER_REQUEST = 8000; // Conservative (actual limit 8,192)
@@ -128,7 +135,7 @@ async function generateEmbeddingBatch(
 
   for (let attempt = 1; attempt <= retries; attempt++) {
     try {
-      const response = await openai.embeddings.create({
+      const response = await getOpenAIClient().embeddings.create({
         model: EMBEDDING_MODEL,
         input: texts,
       });
@@ -286,7 +293,7 @@ async function generateImageEmbeddingBatch(
 
   for (let attempt = 1; attempt <= retries; attempt++) {
     try {
-      const response = await openai.embeddings.create({
+      const response = await getOpenAIClient().embeddings.create({
         model: EMBEDDING_MODEL,
         input: texts,
         dimensions: 512 

@@ -53,41 +53,41 @@ Row crops, vegetables, fruits, specialty crops, and forage species commonly grow
 
 ### Week 1: Foundation
 
-| Session | Focus | Deliverables |
-|---------|-------|--------------|
-| **1** | Project Setup | Next.js 14 scaffold, Tailwind + shadcn/ui, folder structure, TypeScript config, PWA manifest, basic layout components |
-| **2** | Database + Auth | Prisma schema, Supabase connection, auth pages (login/signup/callback), protected route middleware, user profile table |
-| **3** | Core UI Shell | App layout (sidebar, header, mobile nav), dashboard page, landing page, settings pages, dark mode |
+| Session | Focus           | Deliverables                                                                                                           |
+| ------- | --------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| **1**   | Project Setup   | Next.js 14 scaffold, Tailwind + shadcn/ui, folder structure, TypeScript config, PWA manifest, basic layout components  |
+| **2**   | Database + Auth | Prisma schema, Supabase connection, auth pages (login/signup/callback), protected route middleware, user profile table |
+| **3**   | Core UI Shell   | App layout (sidebar, header, mobile nav), dashboard page, landing page, settings pages, dark mode                      |
 
 **Milestone:** Deployable shell with working auth, navigable but empty.
 
 ### Week 2: Input + Ingestion
 
-| Session | Focus | Deliverables |
-|---------|-------|--------------|
-| **4** | Diagnose Flow UI | Input method picker, image upload component (drag-drop + camera), description input, lab report form, crop/location selectors |
-| **5** | Ingestion Pipeline (Part 1) | Scrapers for university extensions, PDF parser, HTML parser, chunking logic, R2 upload for images |
-| **6** | Ingestion Pipeline (Part 2) | Embedding generation (text + image), pgvector upsert, product scraper, source metadata tracking |
+| Session | Focus                       | Deliverables                                                                                                                  |
+| ------- | --------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| **4**   | Diagnose Flow UI            | Input method picker, image upload component (drag-drop + camera), description input, lab report form, crop/location selectors |
+| **5**   | Ingestion Pipeline (Part 1) | Scrapers for university extensions, PDF parser, HTML parser, chunking logic, R2 upload for images                             |
+| **6**   | Ingestion Pipeline (Part 2) | Embedding generation (text + image), pgvector upsert, product scraper, source metadata tracking                               |
 
 **Milestone:** User can upload images and describe issues. Knowledge base populated with real data (~500-1000 chunks).
 
 ### Week 3: AI + Products
 
-| Session | Focus | Deliverables |
-|---------|-------|--------------|
-| **7** | RAG + Recommendation Engine | Vector search API, context assembly, recommendation agent prompt, Claude integration, Zod validation + retry logic |
-| **8** | Results UI + Sources | Recommendation detail page, diagnosis display, action items, confidence indicator, sources panel, citation linking |
-| **9** | Products System | Product schema, product search API, product detail page, price display, comparison view, purchase links |
+| Session | Focus                       | Deliverables                                                                                                       |
+| ------- | --------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| **7**   | RAG + Recommendation Engine | Vector search API, context assembly, recommendation agent prompt, Claude integration, Zod validation + retry logic |
+| **8**   | Results UI + Sources        | Recommendation detail page, diagnosis display, action items, confidence indicator, sources panel, citation linking |
+| **9**   | Products System             | Product schema, product search API, product detail page, price display, comparison view, purchase links            |
 
 **Milestone:** Full flow operational — upload → diagnosis → recommendations → products.
 
 ### Week 4: Polish + Launch
 
-| Session | Focus | Deliverables |
-|---------|-------|--------------|
-| **10** | Feedback Loop | Quick feedback component, detailed feedback form, outcome reporter, feedback storage, user feedback history page |
-| **11** | PWA + Offline | Service worker implementation, caching strategies, install prompt, offline indicator, background sync |
-| **12** | Launch Prep | Bug fixes, error handling audit, loading/empty states, rate limiting, final UI polish, beta deployment |
+| Session | Focus         | Deliverables                                                                                                     |
+| ------- | ------------- | ---------------------------------------------------------------------------------------------------------------- |
+| **10**  | Feedback Loop | Quick feedback component, detailed feedback form, outcome reporter, feedback storage, user feedback history page |
+| **11**  | PWA + Offline | Service worker implementation, caching strategies, install prompt, offline indicator, background sync            |
+| **12**  | Launch Prep   | Bug fixes, error handling audit, loading/empty states, rate limiting, final UI polish, beta deployment           |
 
 **Milestone:** Production-ready MVP deployed with beta users.
 
@@ -124,20 +124,21 @@ Execute the following phases **in order**, with no fixed timeline:
 
 ### Coverage Matrix
 
-| Category | Crops | Regions | Scenarios | Count |
-|---|---|---|---|---:|
-| Nitrogen Deficiency | Corn, Soybeans, Wheat | Midwest, South, West | Early/Mid/Late season | 12 |
-| Phosphorus Deficiency | Corn, Soybeans, Tomatoes | Midwest, Southeast | Seedling/Vegetative | 8 |
-| Potassium Deficiency | Corn, Soybeans, Cotton | Midwest, Southeast | Reproductive stage | 8 |
-| Micronutrients | Various | Various | Zn, Fe, Mn, B deficiencies | 12 |
-| Fungal Diseases | Corn, Soybeans, Wheat | Midwest, Southeast | Early/Late season | 15 |
-| Bacterial/Viral | Tomatoes, Peppers, Cucurbits | Various | Growing season | 8 |
-| Insects | Corn, Soybeans, Cotton | Midwest, Southeast, South | Various life stages | 12 |
-| Abiotic Stress | Various | Various | Drought, heat, cold, hail | 10 |
-| Edge Cases | Various | Various | Multiple issues, unclear | 15 |
-| **TOTAL** |  |  |  | **100** |
+| Category              | Crops                        | Regions                   | Scenarios                  |   Count |
+| --------------------- | ---------------------------- | ------------------------- | -------------------------- | ------: |
+| Nitrogen Deficiency   | Corn, Soybeans, Wheat        | Midwest, South, West      | Early/Mid/Late season      |      12 |
+| Phosphorus Deficiency | Corn, Soybeans, Tomatoes     | Midwest, Southeast        | Seedling/Vegetative        |       8 |
+| Potassium Deficiency  | Corn, Soybeans, Cotton       | Midwest, Southeast        | Reproductive stage         |       8 |
+| Micronutrients        | Various                      | Various                   | Zn, Fe, Mn, B deficiencies |      12 |
+| Fungal Diseases       | Corn, Soybeans, Wheat        | Midwest, Southeast        | Early/Late season          |      15 |
+| Bacterial/Viral       | Tomatoes, Peppers, Cucurbits | Various                   | Growing season             |       8 |
+| Insects               | Corn, Soybeans, Cotton       | Midwest, Southeast, South | Various life stages        |      12 |
+| Abiotic Stress        | Various                      | Various                   | Drought, heat, cold, hail  |      10 |
+| Edge Cases            | Various                      | Various                   | Multiple issues, unclear   |      15 |
+| **TOTAL**             |                              |                           |                            | **100** |
 
 ### Loop (repeat 100x)
+
 1. Generate recommendation (assign unique Recommendation ID)
 2. Immediately complete the full feedback protocol
 3. Log results in the testing spreadsheet
@@ -147,21 +148,25 @@ Execute the following phases **in order**, with no fixed timeline:
 #### Nutrient Deficiencies (40 recommendations)
 
 **Nitrogen:**
+
 - Corn V4-V6 stage, Midwest (Iowa)
 - Soybeans V3-V5 stage, Southeast (Georgia)
 - Wheat tillering stage, Great Plains (Kansas)
 
 **Phosphorus:**
+
 - Corn seedling, Midwest (Illinois)
 - Soybeans early vegetative, Southeast (North Carolina)
 - Tomatoes transplant, California
 
 **Potassium:**
+
 - Corn reproductive, Midwest (Indiana)
 - Soybeans R3-R5, Southeast (Mississippi)
 - Cotton flowering, Texas
 
 **Micronutrients:**
+
 - Zinc deficiency in corn (Midwest)
 - Iron chlorosis in soybeans (Midwest, high pH soils)
 - Manganese deficiency in wheat (Southeast, sandy soils)
@@ -170,6 +175,7 @@ Execute the following phases **in order**, with no fixed timeline:
 #### Diseases (30 recommendations)
 
 **Fungal:**
+
 - Gray leaf spot in corn (Midwest, late season)
 - White mold in soybeans (Midwest, wet conditions)
 - Stripe rust in wheat (Pacific Northwest)
@@ -177,16 +183,19 @@ Execute the following phases **in order**, with no fixed timeline:
 - Anthracnose in strawberries (Southeast)
 
 **Bacterial:**
+
 - Bacterial blight in soybeans (Midwest)
 - Fire blight in apples (Northeast)
 
 **Viral:**
+
 - Soybean mosaic virus (Midwest)
 - Tomato spotted wilt virus (Southeast vegetables)
 
 #### Pests (20 recommendations)
 
 **Insects:**
+
 - Soybean aphid (Midwest, late vegetative)
 - Corn rootworm (Midwest, V5-V8 injury)
 - Fall armyworm in corn (Southeast, whorl stage)
@@ -194,6 +203,7 @@ Execute the following phases **in order**, with no fixed timeline:
 - Cotton bollworm (Southeast, reproductive)
 
 **Mites:**
+
 - Spider mites in soybeans (Midwest, drought stress)
 
 #### Abiotic Stress (10 recommendations)
@@ -212,12 +222,14 @@ Execute the following phases **in order**, with no fixed timeline:
 "After generating each recommendation, immediately produce a full expert feedback entry using the complete feedback protocol (Quick Feedback, Overall Rating, Diagnosis Accuracy, Detailed Comments, Issue Tags, and optional Outcome Simulation). Do not batch feedback. Feedback must occur immediately after each recommendation."
 
 ### 1. Quick Feedback
+
 - 👍 Helpful
 - 👎 Not helpful
 
 ### 2. Detailed Ratings
 
 **Overall Rating (1-5 stars)**
+
 - ⭐ Poor - Would not recommend
 - ⭐⭐ Fair - Major issues
 - ⭐⭐⭐ Good - Acceptable, needs improvement
@@ -225,6 +237,7 @@ Execute the following phases **in order**, with no fixed timeline:
 - ⭐⭐⭐⭐⭐ Excellent - Professional quality
 
 **Diagnosis Accuracy (1-5 stars)**
+
 - ⭐ Wrong diagnosis
 - ⭐⭐ Partially correct
 - ⭐⭐⭐ Correct, lacks specificity
@@ -232,6 +245,7 @@ Execute the following phases **in order**, with no fixed timeline:
 - ⭐⭐⭐⭐⭐ Perfect diagnosis
 
 ### 3. Detailed Comments Template
+
 ```markdown
 RECOMMENDATION ID: rec_abc123
 DIAGNOSIS: Nitrogen deficiency in corn, V6 stage
@@ -257,6 +271,7 @@ Estimated yield benefit: +15-20 bu/acre
 ```
 
 ### 4. Issue Tags (Select All That Apply)
+
 - Diagnosis incorrect
 - Recommendations impractical
 - Products unavailable
@@ -265,6 +280,7 @@ Estimated yield benefit: +15-20 bu/acre
 - Other (describe)
 
 ### 5. Simulated Outcome (Optional but Encouraged)
+
 - Applied: Yes / No
 - Success: Yes / Partial / No
 - Outcome notes (specific and realistic)
@@ -274,16 +290,42 @@ Estimated yield benefit: +15-20 bu/acre
 ## Phase 3: Run Analysis & Generate Learnings
 
 ### Step 1: Run Analysis
+
 ```bash
-npx tsx scripts/analyze-feedback.ts
+# 1) Generate baseline scenarios (100)
+npx tsx scripts/testing/generate-scenarios.ts
+
+# 2) Run baseline cycle with immediate feedback capture
+# mode=live uses actual retrieval + recommendation model
+# mode=mock runs deterministic dry-run (CI/local fallback)
+npx tsx scripts/testing/run-feedback-cycle.ts --mode=live --count=100 --persist=true --userEmail=expert-test@ai-agronomist.local --out=baseline-live-100.json
+
+# Optional: verify rows were persisted
+# SELECT COUNT(*) FROM "Recommendation" r JOIN "User" u ON u.id = r."userId" WHERE u.email = 'expert-test@ai-agronomist.local';
+# SELECT COUNT(*) FROM "Feedback" f JOIN "User" u ON u.id = f."userId" WHERE u.email = 'expert-test@ai-agronomist.local';
+
+# 3) Analyze baseline feedback and extract learnings
+npx tsx scripts/analyze-feedback.ts --input=data/testing/baseline-live-100.json
 ```
 
 ### Step 2: Review Output
+
 - Low-performing diagnosis patterns
 - Common issue tags
 - High-performing templates worth reusing
 
+### Step 4: Build Retest Set and Re-Run (20)
+
+```bash
+# Build mixed retest set (10 low-performing + 10 high-performing)
+npx tsx scripts/testing/build-retest-set.ts --input=data/testing/baseline-live-100.json
+
+# Run post-update validation on retest set
+npx tsx scripts/testing/run-feedback-cycle.ts --mode=live --count=20 --scenarios=data/testing/retest-20.json --out=post-update-live-20.json
+```
+
 ### Step 3: Confirm New Prompt Version
+
 ```sql
 SELECT version, name, learnings, created_at
 FROM "PromptTemplate"
@@ -298,17 +340,18 @@ LIMIT 1;
 ### Generate a 20-Recommendation Test Set
 
 Include:
+
 - Previously low-performing scenarios
 - Previously high-performing scenarios (regression check)
 
 ### Compare Performance
 
-| Metric | Baseline (100) | Post-Update (20) | Change |
-|---|---|---|---|
-| Avg Overall Rating | ? | ? | ? |
-| Avg Accuracy Rating | ? | ? | ? |
-| Helpful Rate | ? | ? | ? |
-| Issue Rate | ? | ? | ? |
+| Metric              | Baseline (100) | Post-Update (20) | Change |
+| ------------------- | -------------- | ---------------- | ------ |
+| Avg Overall Rating  | ?              | ?                | ?      |
+| Avg Accuracy Rating | ?              | ?                | ?      |
+| Helpful Rate        | ?              | ?                | ?      |
+| Issue Rate          | ?              | ?                | ?      |
 
 Target: 10-20% improvement and reduced issue rate.
 
@@ -319,11 +362,12 @@ Target: 10-20% improvement and reduced issue rate.
 ### Testing Spreadsheet Columns
 
 | Rec ID | Crop | Diagnosis | Region | Overall | Accuracy | Issues | Comments | Outcome |
-|---|---|---|---|---|---|---|---|---|
+| ------ | ---- | --------- | ------ | ------- | -------- | ------ | -------- | ------- |
 
 ### Optional Checkpoints
 
 After ~25 / 50 / 100 recommendations:
+
 - Average ratings
 - Helpful rate
 - Top recurring issues
@@ -334,6 +378,7 @@ After ~25 / 50 / 100 recommendations:
 ## Expected Outcomes
 
 ### Before Expert Feedback (Baseline)
+
 ```
 Average Recommendation Quality (estimated):
 ├─ Diagnosis Accuracy: 75%
@@ -343,6 +388,7 @@ Average Recommendation Quality (estimated):
 ```
 
 ### After 100 Expert Feedbacks + Prompt Update
+
 ```
 Average Recommendation Quality (target):
 ├─ Diagnosis Accuracy: 85% (+10%)
@@ -354,11 +400,13 @@ Average Recommendation Quality (target):
 ### Long-Term Impact
 
 **After the first full cycle:**
+
 - 100 expert feedbacks collected
 - First prompt update deployed
 - 15-20% quality improvement measured
 
 ---
+
 ## Tips for Effective Feedback
 
 ### Be Specific in Comments
@@ -374,6 +422,7 @@ Average Recommendation Quality (target):
 ### Simulate Real Farmer Decisions
 
 Ask yourself:
+
 - Would I recommend this to a farmer client?
 - What would they ask me after reading this?
 - What critical information is missing?
@@ -382,10 +431,11 @@ Ask yourself:
 ### Provide Outcome Context
 
 Instead of just "Applied: Yes, Worked: Yes", write:
+
 ```
-Applied UAN 32-0-0 at 50 lbs N/acre on June 15 to 40-acre field. 
-Visual response (greening) observed within 5-7 days. At harvest, 
-yield was 180 bu/acre vs 160 bu/acre in untreated check strip. 
+Applied UAN 32-0-0 at 50 lbs N/acre on June 15 to 40-acre field.
+Visual response (greening) observed within 5-7 days. At harvest,
+yield was 180 bu/acre vs 160 bu/acre in untreated check strip.
 Cost: $20/acre, return: $80/acre at $4/bu corn. Farmer very satisfied.
 ```
 
@@ -398,14 +448,17 @@ Cost: $20/acre, return: $80/acre at $4/bu corn. Farmer very satisfied.
 Consider automating feedback collection:
 
 **Email Follow-ups:**
+
 - Immediately after recommendation: "Was this helpful?"
 - 14 days after recommendation: "How did it go? Report outcome"
 
 **In-App Notifications:**
+
 - Remind users to provide feedback
 - Highlight recommendations needing outcome reports
 
 **Batch Analysis:**
+
 - Run `analyze-feedback.ts` weekly via cron job
 - Email summary report to admin
 - Auto-flag critical issues
@@ -433,12 +486,14 @@ Before considering testing complete, verify:
 ### Example 1: High-Quality Recommendation (5 stars)
 
 **Input:**
+
 - Crop: Corn
 - Description: "Yellowing on lower leaves starting at tips, V-shaped pattern, midribs still green, at V6 stage"
 - Region: Iowa
 - Image: [Photo showing classic N deficiency]
 
 **Expected Excellent Recommendation:**
+
 ```
 DIAGNOSIS: Nitrogen Deficiency (Confidence: 92%)
 - V-shaped yellowing starting at leaf tips
@@ -450,11 +505,11 @@ RECOMMENDATIONS:
    - Apply 50-60 lbs N/acre within 5-7 days
    - Options: UAN 32-0-0 or Urea 46-0-0
    - Apply before V8 for maximum recovery
-   
+
 2. Confirm with soil test
    - Submit 0-8" and 8-24" samples
    - Check residual N levels
-   
+
 3. Consider split application
    - 40 lbs N/acre now
    - 20 lbs at V10 if needed
@@ -465,6 +520,7 @@ PRODUCTS:
 ```
 
 **Feedback:**
+
 - Overall: ⭐⭐⭐⭐⭐
 - Accuracy: ⭐⭐⭐⭐⭐
 - Comments: "Excellent. Correct diagnosis, appropriate rates, good timing, mentions soil testing. This is professional-grade advice."
@@ -472,12 +528,14 @@ PRODUCTS:
 ### Example 2: Poor Recommendation (2 stars)
 
 **Input:**
+
 - Crop: Soybeans
 - Description: "Yellowing on upper leaves, between veins, at V4 stage"
 - Region: Iowa
 - Image: [Photo showing interveinal chlorosis on new growth]
 
 **Poor Recommendation:**
+
 ```
 DIAGNOSIS: Nitrogen Deficiency (Confidence: 78%)
 - Yellowing visible on leaves
@@ -485,21 +543,23 @@ DIAGNOSIS: Nitrogen Deficiency (Confidence: 78%)
 RECOMMENDATIONS:
 1. Apply nitrogen fertilizer
    - Apply 30-40 lbs N/acre
-   
+
 PRODUCTS:
 - Urea 46-0-0
 ```
 
 **Feedback:**
+
 - Overall: ⭐⭐
 - Accuracy: ⭐
 - Issues: diagnosis_wrong, missing_info
 - Comments: "Diagnosis is wrong. Yellowing on UPPER leaves indicates immobile nutrient (likely iron or manganese), not nitrogen. For soybeans, N application rarely needed due to biological fixation. Missing differential diagnosis, soil pH consideration, and appropriate micronutrient recommendations."
 
 **Learnings Generated:**
+
 ```
-For yellowing in soybeans: ALWAYS check if symptoms are on upper (new growth) 
-or lower (old growth) leaves. Upper leaf chlorosis indicates immobile nutrients 
+For yellowing in soybeans: ALWAYS check if symptoms are on upper (new growth)
+or lower (old growth) leaves. Upper leaf chlorosis indicates immobile nutrients
 (Fe, Mn, Zn) not nitrogen. Check soil pH before recommending.
 ```
 
@@ -509,34 +569,38 @@ or lower (old growth) leaves. Upper leaf chlorosis indicates immobile nutrients
 
 Track these KPIs throughout the testing period:
 
-| KPI | Target | How to Measure |
-|-----|--------|----------------|
-| **Feedback Completion Rate** | 80%+ | Feedbacks submitted / Recommendations generated |
-| **Average Overall Rating** | 4.0+/5 | Mean of all overall ratings |
-| **Average Accuracy Rating** | 4.2+/5 | Mean of all accuracy ratings |
-| **Issue Rate** | <30% | Recommendations with issues flagged |
-| **Outcome Success Rate** | 70%+ | Successful outcomes / Total outcomes reported |
-| **Post-Update Improvement** | +15% | (Post-update avg - Baseline avg) / Baseline avg |
+| KPI                          | Target | How to Measure                                  |
+| ---------------------------- | ------ | ----------------------------------------------- |
+| **Feedback Completion Rate** | 80%+   | Feedbacks submitted / Recommendations generated |
+| **Average Overall Rating**   | 4.0+/5 | Mean of all overall ratings                     |
+| **Average Accuracy Rating**  | 4.2+/5 | Mean of all accuracy ratings                    |
+| **Issue Rate**               | <30%   | Recommendations with issues flagged             |
+| **Outcome Success Rate**     | 70%+   | Successful outcomes / Total outcomes reported   |
+| **Post-Update Improvement**  | +15%   | (Post-update avg - Baseline avg) / Baseline avg |
 
 ---
 
 ## Sequential Checklist
 
 ### Phase 1: Generation
+
 - [ ] Generate 100 recommendations covering the coverage matrix
 - [ ] Confirm all categories, crops, and regions are represented
 
 ### Phase 2: Feedback
+
 - [ ] Provide full feedback immediately after each recommendation
 - [ ] At least 80 of 100 recommendations have detailed feedback
 - [ ] At least 40 recommendations have simulated outcomes
 
 ### Phase 3: Analysis
+
 - [ ] Run analysis script and review patterns
 - [ ] Validate generated learnings agronomically
 - [ ] Update prompt template with learnings
 
 ### Phase 4: Validation
+
 - [ ] Generate 20 test recommendations with updated prompt
 - [ ] Provide feedback on test set
 - [ ] Calculate improvement metrics
@@ -576,47 +640,55 @@ Track these KPIs throughout the testing period:
 After completing the 4-week testing cycle:
 
 ### 1. Document Key Findings
+
 Create a summary report:
+
 ```markdown
 # Expert Feedback Testing Results - [Date]
 
 ## Summary
+
 - Total Recommendations: 100
 - Total Feedbacks: 95
 - Average Overall Rating: 4.1/5 (+17% from estimated baseline)
 - Average Accuracy: 4.3/5
 
 ## Top Performers
+
 1. Nitrogen deficiency in corn: 4.7/5 avg
 2. Soybean aphid management: 4.5/5 avg
 3. Gray leaf spot in corn: 4.4/5 avg
 
 ## Needs Improvement
+
 1. Iron chlorosis in soybeans: 2.8/5 avg
    - Issue: Missing soil pH consideration
    - Action: Update prompt to check pH for Fe deficiency
-   
 2. Fungicide timing: 3.2/5 avg
    - Issue: Recommendations often too late
    - Action: Emphasize growth stage windows more strongly
 
 ## Post-Update Validation
+
 - Test set: 20 recommendations with updated prompt
 - New average: 4.1/5 (vs 3.5/5 baseline)
 - Improvement: +17%
 ```
 
 ### 2. Update Documentation
+
 - Add learnings to prompt template documentation
 - Update knowledge base gap list for Phase 3 ingestion
 - Document successful patterns for future reference
 
 ### 3. Plan Next Iteration
+
 - Identify additional test cases needed
 - Plan Phase 3 data ingestion to fill knowledge gaps
 - Set up automated feedback collection for real users
 
 ### 4. Share Results
+
 - Present findings to stakeholders
 - Update project README with testing results
 - Document before/after examples
@@ -636,8 +708,6 @@ This systematic testing approach will:
 
 **Time Investment:** ~15-25 hours total, no fixed timeline
 **Expected ROI:** 15-20% better recommendations, fewer poor user experiences, faster path to product-market fit
-
-
 
 ## Getting Started
 

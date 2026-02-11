@@ -1,0 +1,120 @@
+{
+  "phase": 3,
+  "description": "Gap-fill v2: tomatoes, peanuts, sugar beets, blueberries, squash, brassicas, onions",
+  "totalUrls": 8,
+  "estimatedChunks": null,
+  "sources": {
+    "uga_tomato_production": {
+      "institution": "University of Georgia Extension",
+      "baseUrl": "https://fieldreport.caes.uga.edu",
+      "priority": "high",
+      "urls": [
+        {
+          "url": "https://fieldreport.caes.uga.edu/publications/B1312/commercial-tomato-production-handbook/",
+          "title": "Commercial Tomato Production Handbook",
+          "crops": ["tomatoes"],
+          "topics": ["production", "nutrients", "management"],
+          "expectedChunks": 25
+        }
+      ]
+    },
+    "uga_peanut_disease": {
+      "institution": "University of Georgia / Peanut Rx",
+      "baseUrl": "https://peanutrx.org",
+      "priority": "medium",
+      "urls": [
+        {
+          "url": "https://peanutrx.org/docs/umbra2025.pdf",
+          "title": "Peanut Disease Risk Index 2025",
+          "crops": ["peanuts"],
+          "topics": ["disease", "management"],
+          "expectedChunks": 15
+        }
+      ]
+    },
+    "sbreb_sugarbeet_production": {
+      "institution": "Sugarbeet Research and Education Board (NDSU/UMN)",
+      "baseUrl": "https://www.sbreb.org",
+      "priority": "high",
+      "urls": [
+        {
+          "url": "https://www.sbreb.org/wp-content/uploads/2025/08/2025-Sugarbeet-Production-Guide.pdf",
+          "title": "2025 Sugarbeet Production Guide",
+          "crops": ["sugar beets"],
+          "topics": ["production", "nutrients", "pest", "disease", "management"],
+          "expectedChunks": 30
+        }
+      ]
+    },
+    "uga_blueberry_ipm": {
+      "institution": "University of Georgia Extension",
+      "baseUrl": "https://fieldreport.caes.uga.edu",
+      "priority": "medium",
+      "urls": [
+        {
+          "url": "https://fieldreport.caes.uga.edu/publications/AP123-5/2025-southeast-regional-blueberry-integrated-management-guide/",
+          "title": "2025 Southeast Regional Blueberry Integrated Management Guide",
+          "crops": ["blueberries"],
+          "topics": ["ipm", "disease", "pest", "management"],
+          "expectedChunks": 25
+        }
+      ]
+    },
+    "msu_blueberry_scouting": {
+      "institution": "Michigan State University Extension",
+      "baseUrl": "https://www.canr.msu.edu",
+      "priority": "medium",
+      "urls": [
+        {
+          "url": "https://www.canr.msu.edu/resources/a-mobile-guide-to-ipm-scouting-in-highbush-blueberries",
+          "title": "IPM Scouting Guide for Highbush Blueberries",
+          "crops": ["blueberries"],
+          "topics": ["ipm", "pest", "disease", "diagnosis"],
+          "expectedChunks": 15
+        }
+      ]
+    },
+    "uga_squash_production": {
+      "institution": "University of Georgia Extension",
+      "baseUrl": "https://fieldreport.caes.uga.edu",
+      "priority": "high",
+      "urls": [
+        {
+          "url": "https://fieldreport.caes.uga.edu/publications/C527/commercial-squash-production/",
+          "title": "Commercial Squash Production",
+          "crops": ["squash"],
+          "topics": ["production", "pest", "disease", "management"],
+          "expectedChunks": 20
+        }
+      ]
+    },
+    "sdsu_brassica_disease": {
+      "institution": "South Dakota State University Extension",
+      "baseUrl": "https://extension.sdstate.edu",
+      "priority": "medium",
+      "urls": [
+        {
+          "url": "https://extension.sdstate.edu/black-rot-brassica-crops",
+          "title": "Black Rot in Brassica Crops",
+          "crops": ["brassicas", "cabbage", "broccoli", "cauliflower"],
+          "topics": ["disease", "management"],
+          "expectedChunks": 8
+        }
+      ]
+    },
+    "cornell_onion_disease": {
+      "institution": "Cornell Cooperative Extension",
+      "baseUrl": "https://rvpadmin.cce.cornell.edu",
+      "priority": "medium",
+      "urls": [
+        {
+          "url": "https://rvpadmin.cce.cornell.edu/uploads/doc_1216.pdf",
+          "title": "Onion Leaf Disease Fungicide Guide",
+          "crops": ["onions"],
+          "topics": ["disease", "management"],
+          "expectedChunks": 8
+        }
+      ]
+    }
+  }
+}

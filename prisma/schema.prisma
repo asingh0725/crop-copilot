@@ -34,7 +34,7 @@ model UserProfile {
 }
 
 model Input {
-  id              String          @id @default(cuid())
+  id              String           @id @default(cuid())
   userId          String
   type            String
   imageUrl        String?
@@ -43,36 +43,54 @@ model Input {
   location        String?
   crop            String?
   season          String?
-  createdAt       DateTime        @default(now())
-  user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt       DateTime         @default(now())
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   recommendations Recommendation?
+  retrievalAudits RetrievalAudit[]
+  testScenarios   TestScenario[]
 }
 
 model Recommendation {
-  id         String                  @id @default(cuid())
-  userId     String
-  inputId    String                  @unique
-  diagnosis  Json
-  confidence Float
-  modelUsed  String
-  tokensUsed Int?
-  createdAt  DateTime                @default(now())
-  feedback   Feedback[]
-  input      Input                   @relation(fields: [inputId], references: [id], onDelete: Cascade)
-  user       User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  sources    RecommendationSource[]
-  products   ProductRecommendation[]
+  id              String                    @id @default(cuid())
+  userId          String
+  inputId         String                    @unique
+  diagnosis       Json
+  confidence      Float
+  modelUsed       String
+  tokensUsed      Int?
+  createdAt       DateTime                  @default(now())
+  feedback        Feedback[]
+  input           Input                     @relation(fields: [inputId], references: [id], onDelete: Cascade)
+  user            User                      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sources         RecommendationSource[]
+  products        ProductRecommendation[]
+  evaluations     Evaluation[]
+  revisions       RecommendationRevision[]
+  retrievalAudits RetrievalAudit[]
 }
 
 model Feedback {
   id               String         @id @default(cuid())
   userId           String
-  recommendationId String
+  recommendationId String         @unique
   helpful          Boolean?
   accuracyRating   Int?
   outcome          String?
   comments         String?
   createdAt        DateTime       @default(now())
+  rating           Int?
+  accuracy         Int?
+  issues           Json?
+  outcomeReported  Boolean        @default(false)
+  outcomeApplied   Boolean?
+  outcomeSuccess   Boolean?
+  outcomeNotes     String?
+  outcomeImages    String[]       @default([])
+  outcomeTimestamp DateTime?
+  promptVersion    String?
+  retrievedChunks  Json?
+  suggestedProducts Json?
+  updatedAt        DateTime       @default(now()) @updatedAt
   recommendation   Recommendation @relation(fields: [recommendationId], references: [id], onDelete: Cascade)
   user             User           @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
@@ -91,6 +109,7 @@ model Source {
   metadata     Json?
   imageChunks  ImageChunk[]
   textChunks   TextChunk[]
+  boost        SourceBoost?
 }
 
 model TextChunk {
@@ -172,6 +191,80 @@ model ProductRecommendation {
   @@unique([recommendationId, productId])
   @@index([recommendationId])
   @@index([productId])
+}
+
+model TestScenario {
+  id                    String       @id @default(cuid())
+  inputId               String?
+  scenarioType          String
+  expectedDiagnosis     String
+  expectedConditionType String
+  mustInclude           String[]
+  shouldAvoid           String[]
+  symptoms              String
+  crop                  String
+  location              String
+  season                String?
+  sourceFocus           String[]     @default([])
+  createdAt             DateTime     @default(now())
+  input                 Input?       @relation(fields: [inputId], references: [id])
+  evaluations           Evaluation[]
+}
+
+model RetrievalAudit {
+  id                String          @id @default(cuid())
+  inputId           String
+  recommendationId  String?
+  query             String          @db.Text
+  topics            String[]
+  sourceHints       String[]
+  requiredSourceIds String[]
+  candidateChunks   Json
+  usedChunks        Json
+  missedChunks      Json
+  createdAt         DateTime        @default(now())
+  input             Input           @relation(fields: [inputId], references: [id])
+  recommendation    Recommendation? @relation(fields: [recommendationId], references: [id])
+}
+
+model Evaluation {
+  id                 String          @id @default(cuid())
+  recommendationId   String
+  scenarioId         String?
+  overall            Int
+  accuracy           Int
+  helpfulness        Int
+  faithfulness       Int
+  actionability      Int
+  completeness       Int
+  retrievalRelevance Int
+  issues             Json?
+  missingEvidence    Json?
+  llmJudgeOutput     Json?
+  createdAt          DateTime        @default(now())
+  recommendation     Recommendation  @relation(fields: [recommendationId], references: [id], onDelete: Cascade)
+  scenario           TestScenario?   @relation(fields: [scenarioId], references: [id])
+}
+
+model RecommendationRevision {
+  id               String         @id @default(cuid())
+  recommendationId String
+  revisionIndex    Int
+  promptVersion    String
+  diagnosis        Json
+  confidence       Float
+  forcedSourceIds  String[]
+  createdAt        DateTime       @default(now())
+  recommendation   Recommendation @relation(fields: [recommendationId], references: [id], onDelete: Cascade)
+}
+
+model SourceBoost {
+  id            String   @id @default(cuid())
+  sourceId      String   @unique
+  boost         Float    @default(0)
+  feedbackCount Int      @default(0)
+  updatedAt     DateTime @default(now()) @updatedAt
+  source        Source   @relation(fields: [sourceId], references: [id], onDelete: Cascade)
 }
 
 enum ProductType {

@@ -103,9 +103,20 @@ function formatRetryFeedback(error: Error): string {
       "- Condition type is one of: deficiency, disease, pest, environmental, unknown\n";
     feedback += "- Each recommendation has at least one citation\n";
     feedback += "- Product IDs match those available in the context\n";
+    feedback += "- Keep sources.excerpt <= 300 characters\n";
+    feedback += "- Keep output compact (2 recommendations, <= 2 sources if possible)\n";
+    feedback += "- Return ONLY valid JSON (no markdown or extra text)\n";
 
     return feedback;
   }
 
-  return `Previous attempt failed: ${error.message}`;
+  if (error instanceof SyntaxError) {
+    return (
+      "Previous attempt failed due to invalid JSON. Return ONLY valid JSON with no extra text. " +
+      "Keep output compact: 2 recommendations, <= 2 sources, no products unless critical, " +
+      "and ensure each sources.excerpt is <= 300 characters."
+    );
+  }
+
+  return `Previous attempt failed: ${error.message}. Return ONLY valid JSON and keep output concise (2 recommendations, <= 2 sources).`;
 }

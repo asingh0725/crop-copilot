@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -59,9 +59,10 @@ const typeConfig: Record<ProductType, { icon: typeof Beaker; color: string; labe
 
 export function ProductRecommendations({ recommendationId }: ProductRecommendationsProps) {
   const [products, setProducts] = useState<ProductRecommendation[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [activated, setActivated] = useState(false);
 
   const fetchProducts = async (refresh = false) => {
     if (refresh) {
@@ -94,9 +95,34 @@ export function ProductRecommendations({ recommendationId }: ProductRecommendati
     }
   };
 
-  useEffect(() => {
+  const handleActivate = () => {
+    setActivated(true);
     fetchProducts();
-  }, [recommendationId]);
+  };
+
+  // Show call-to-action before user activates
+  if (!activated) {
+    return (
+      <Card>
+        <CardContent className="py-8">
+          <div className="text-center">
+            <ShoppingCart className="h-10 w-10 text-gray-300 mx-auto mb-3" />
+            <p className="text-sm text-gray-500 mb-4">
+              Get product recommendations based on this diagnosis
+            </p>
+            <Button
+              variant="outline"
+              onClick={handleActivate}
+              className="gap-2"
+            >
+              <ShoppingCart className="h-4 w-4" />
+              Find Products
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   if (loading) {
     return (
