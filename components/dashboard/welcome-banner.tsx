@@ -1,7 +1,5 @@
 "use client";
 
-import { format } from "date-fns";
-import { motion } from "framer-motion";
 import { Sprout } from "lucide-react";
 
 interface WelcomeBannerProps {
@@ -9,16 +7,22 @@ interface WelcomeBannerProps {
   location?: string | null;
 }
 
+function formatDate(date: Date): string {
+  return date.toLocaleDateString("en-US", {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+}
+
 export function WelcomeBanner({ userName, location }: WelcomeBannerProps) {
   const greeting = getGreeting();
-  const formattedDate = format(new Date(), "EEEE, MMMM d, yyyy");
+  const formattedDate = formatDate(new Date());
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4 }}
-      className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-earth-900 via-earth-800 to-earth-900 p-6 text-white border border-lime-400/10"
+    <div
+      className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-earth-900 via-earth-800 to-earth-900 p-6 text-white border border-lime-400/10 animate-in fade-in slide-in-from-bottom-2 duration-400"
     >
       {/* Accent top border */}
       <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-lime-400/0 via-lime-400/60 to-lime-400/0" />
@@ -44,7 +48,7 @@ export function WelcomeBanner({ userName, location }: WelcomeBannerProps) {
           <Sprout className="w-7 h-7 text-lime-400 animate-float" />
         </div>
       </div>
-    </motion.div>
+    </div>
   );
 }
 

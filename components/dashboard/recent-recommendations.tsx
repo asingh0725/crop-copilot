@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/shared/empty-state";
-import { formatDistanceToNow } from "date-fns";
+import { timeAgo } from "@/lib/utils/date";
 import { ArrowRight, Camera, Leaf } from "lucide-react";
 import {
   getConfidenceColor,
@@ -84,7 +84,7 @@ export function RecentRecommendations({ recommendations }: RecentRecommendations
                     <span className="text-sm text-gray-600 truncate">{condition}</span>
                   </div>
                   <div className="flex items-center gap-2 text-xs text-gray-500">
-                    <span>{formatDistanceToNow(new Date(rec.createdAt), { addSuffix: true })}</span>
+                    <span>{timeAgo(rec.createdAt)}</span>
                     <Badge
                       variant="outline"
                       className={`${getConfidenceColor(rec.confidence)} text-xs`}

@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { useEffect, useState } from "react";
 import {
   formatConfidence,
   getConfidenceLevel,
@@ -62,6 +62,12 @@ interface ConfidenceBarProps {
 
 export function ConfidenceBar({ confidence }: ConfidenceBarProps) {
   const level = getConfidenceLevel(confidence);
+  const [animated, setAnimated] = useState(false);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setAnimated(true), 100);
+    return () => clearTimeout(timer);
+  }, []);
 
   const barColors = {
     low: "text-amber-500",
@@ -78,7 +84,7 @@ export function ConfidenceBar({ confidence }: ConfidenceBarProps) {
   const percentage = confidence * 100;
   const radius = 40;
   const circumference = 2 * Math.PI * radius;
-  const offset = circumference - (percentage / 100) * circumference;
+  const offset = animated ? circumference - (percentage / 100) * circumference : circumference;
 
   return (
     <div className="flex items-center gap-4">
@@ -96,7 +102,7 @@ export function ConfidenceBar({ confidence }: ConfidenceBarProps) {
             className="text-gray-200"
           />
           {/* Animated fill ring */}
-          <motion.circle
+          <circle
             cx="50"
             cy="50"
             r={radius}
@@ -105,21 +111,17 @@ export function ConfidenceBar({ confidence }: ConfidenceBarProps) {
             strokeWidth="6"
             strokeLinecap="round"
             strokeDasharray={circumference}
-            initial={{ strokeDashoffset: circumference }}
-            animate={{ strokeDashoffset: offset }}
-            transition={{ duration: 1.5, ease: "easeOut", delay: 0.3 }}
+            strokeDashoffset={offset}
+            style={{ transition: "stroke-dashoffset 1.2s ease-out" }}
           />
         </svg>
         {/* Center text */}
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <motion.span
-            className={`text-lg font-bold ${barColors[level]}`}
-            initial={{ opacity: 0, scale: 0.5 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.8, type: "spring" }}
+          <span
+            className={`text-lg font-bold ${barColors[level]} transition-opacity duration-500 ${animated ? "opacity-100" : "opacity-0"}`}
           >
             {formatConfidence(confidence)}
-          </motion.span>
+          </span>
         </div>
       </div>
 

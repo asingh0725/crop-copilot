@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Camera, FileSpreadsheet } from 'lucide-react'
-import { formatDistanceToNow } from 'date-fns'
+import { timeAgo } from '@/lib/utils/date'
 
 interface Input {
   id: string
@@ -112,7 +112,7 @@ export default function HistoryPage() {
                 <CardDescription>
                   {input.crop && `${input.crop} • `}
                   {input.location && `${input.location} • `}
-                  {formatDistanceToNow(new Date(input.createdAt), { addSuffix: true })}
+                  {timeAgo(input.createdAt)}
                 </CardDescription>
               </div>
             </CardHeader>

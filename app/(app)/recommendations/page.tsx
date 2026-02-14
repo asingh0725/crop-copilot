@@ -26,7 +26,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
-import { formatDistanceToNow } from "date-fns";
+import { timeAgo } from "@/lib/utils/date";
 import {
   getConditionTypeColor,
   getConfidenceColor,
@@ -273,9 +273,7 @@ function RecommendationsContent() {
                     </div>
 
                     <p className="text-xs text-gray-500">
-                      {formatDistanceToNow(new Date(rec.createdAt), {
-                        addSuffix: true,
-                      })}
+                      {timeAgo(rec.createdAt)}
                     </p>
 
                     {rec.firstAction && (

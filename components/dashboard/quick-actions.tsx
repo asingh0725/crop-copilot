@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { Camera, ClipboardList, History } from "lucide-react";
-import { motion } from "framer-motion";
 
 const actions = [
   {
@@ -34,11 +33,10 @@ export function QuickActions() {
       <h2 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h2>
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {actions.map((action, i) => (
-          <motion.div
+          <div
             key={action.href}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.1 }}
+            className="animate-in fade-in slide-in-from-bottom-2"
+            style={{ animationDelay: `${i * 100}ms`, animationFillMode: "backwards" }}
           >
             <Link href={action.href}>
               <div
@@ -71,7 +69,7 @@ export function QuickActions() {
                 <p className="text-sm text-gray-500">{action.description}</p>
               </div>
             </Link>
-          </motion.div>
+          </div>
         ))}
       </div>
     </div>
