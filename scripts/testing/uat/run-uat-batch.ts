@@ -237,7 +237,7 @@ async function fetchClassImages(className: string): Promise<string[]> {
     `https://api.github.com/repos/spMohanty/PlantVillage-Dataset/contents/raw/color/${encodedClass}`,
     {
       headers: {
-        "User-Agent": "ai-agronomist-uat",
+        "User-Agent": "cropcopilot-uat",
         Accept: "application/vnd.github+json",
       },
     }

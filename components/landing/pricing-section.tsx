@@ -10,7 +10,7 @@ const plans = [
   {
     name: "Starter",
     price: "Free",
-    description: "Perfect for trying out AI Agronomist",
+    description: "Perfect for trying out Crop Copilot",
     features: [
       "3 soil test analyses per month",
       "Basic crop recommendations",

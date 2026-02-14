@@ -54,7 +54,7 @@ export function Footer() {
                 <Leaf className="w-5 h-5 text-earth-950" />
               </div>
               <span className="font-semibold text-lg text-white">
-                AI Agronomist
+                Crop Copilot
               </span>
             </Link>
             <p className="text-white/40 text-sm">
@@ -117,7 +117,7 @@ export function Footer() {
         {/* Bottom */}
         <div className="mt-12 pt-8 border-t border-white/5 flex flex-col sm:flex-row justify-between items-center gap-4">
           <p className="text-sm text-white/30">
-            &copy; {new Date().getFullYear()} AI Agronomist. All rights reserved.
+            &copy; {new Date().getFullYear()} Crop Copilot. All rights reserved.
           </p>
           <p className="text-sm text-white/30">
             Made with care for farmers everywhere.

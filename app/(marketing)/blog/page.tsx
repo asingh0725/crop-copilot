@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { BookOpen, ArrowLeft } from "lucide-react";
 
 export const metadata = {
-  title: "Blog | AI Agronomist",
+  title: "Blog | Crop Copilot",
   description: "Insights, tips, and research on modern farming and soil analysis.",
 };
 

@@ -3,9 +3,9 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, Mail, MessageSquare } from "lucide-react";
 
 export const metadata = {
-  title: "Contact | AI Agronomist",
+  title: "Contact | Crop Copilot",
   description:
-    "Get in touch with the AI Agronomist team for support, partnerships, or enterprise inquiries.",
+    "Get in touch with the Crop Copilot team for support, partnerships, or enterprise inquiries.",
 };
 
 export default function ContactPage() {
@@ -40,13 +40,13 @@ export default function ContactPage() {
               General Inquiries
             </h2>
             <p className="text-gray-600 text-sm mb-3">
-              Questions about AI Agronomist, feature requests, or feedback.
+              Questions about Crop Copilot, feature requests, or feedback.
             </p>
             <a
-              href="mailto:hello@aiagronomist.com"
+              href="mailto:hello@cropcopilot.app"
               className="text-[#76C043] font-medium text-sm hover:underline"
             >
-              hello@aiagronomist.com
+              hello@cropcopilot.app
             </a>
           </div>
 
@@ -61,10 +61,10 @@ export default function ContactPage() {
               Custom integrations, API access, or co-op partnerships.
             </p>
             <a
-              href="mailto:enterprise@aiagronomist.com"
+              href="mailto:enterprise@cropcopilot.app"
               className="text-blue-600 font-medium text-sm hover:underline"
             >
-              enterprise@aiagronomist.com
+              enterprise@cropcopilot.app
             </a>
           </div>
         </div>

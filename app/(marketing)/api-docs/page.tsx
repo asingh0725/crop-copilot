@@ -3,9 +3,9 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, Code2, Lock, Zap } from "lucide-react";
 
 export const metadata = {
-  title: "API Documentation | AI Agronomist",
+  title: "API Documentation | Crop Copilot",
   description:
-    "AI Agronomist API documentation — integrate soil analysis and crop recommendations into your own applications.",
+    "Crop Copilot API documentation — integrate soil analysis and crop recommendations into your own applications.",
 };
 
 export default function ApiDocsPage() {
@@ -21,7 +21,7 @@ export default function ApiDocsPage() {
             API Coming Soon
           </h1>
           <p className="text-xl text-white/60 max-w-2xl mx-auto">
-            We&apos;re building an API so you can integrate AI Agronomist&apos;s
+            We&apos;re building an API so you can integrate Crop Copilot&apos;s
             soil analysis and recommendation engine into your own applications.
           </p>
         </div>

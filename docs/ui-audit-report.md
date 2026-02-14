@@ -1,7 +1,7 @@
 # UI Audit Report
 
 **Generated:** January 28, 2026
-**Application:** AI Agronomist Advisor
+**Application:** Crop Copilot
 
 ---
 

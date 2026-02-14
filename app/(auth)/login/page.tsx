@@ -74,7 +74,7 @@ export default function LoginPage() {
           </div>
           <CardTitle className="text-2xl">Welcome back</CardTitle>
           <CardDescription>
-            Sign in to your AI Agronomist Advisor account
+            Sign in to your Crop Copilot account
           </CardDescription>
         </CardHeader>
         <CardContent>

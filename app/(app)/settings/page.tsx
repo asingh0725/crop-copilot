@@ -26,7 +26,7 @@ const settingsItems = [
   },
   {
     title: "Help & Support",
-    description: "Get help with using the AI Agronomist Advisor",
+    description: "Get help with using Crop Copilot",
     icon: HelpCircle,
     href: "/settings/help",
     disabled: true,

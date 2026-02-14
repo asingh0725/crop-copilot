@@ -27,13 +27,13 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "AI Agronomist Advisor",
+  title: "Crop Copilot",
   description:
     "Diagnose crop issues. Get actionable recommendations. Find the right products.",
   manifest: "/manifest.webmanifest",
   appleWebApp: {
     statusBarStyle: "default",
-    title: "AI Agronomist",
+    title: "Crop Copilot",
   },
   icons: {
     icon: [

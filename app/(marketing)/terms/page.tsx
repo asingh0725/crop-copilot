@@ -1,6 +1,6 @@
 export const metadata = {
-  title: "Terms of Service | AI Agronomist",
-  description: "Terms of Service for AI Agronomist - Read our terms and conditions for using our service.",
+  title: "Terms of Service | Crop Copilot",
+  description: "Terms of Service for Crop Copilot - Read our terms and conditions for using our service.",
 };
 
 import Link from "next/link";
@@ -29,7 +29,7 @@ export default function TermsOfServicePage() {
           <section className="mb-10">
             <h2 className="text-2xl font-semibold text-gray-900 mb-4">1. Acceptance of Terms</h2>
             <p className="text-gray-700 leading-relaxed">
-              By accessing or using AI Agronomist (&quot;the Service&quot;), you agree to be bound by these
+              By accessing or using Crop Copilot (&quot;the Service&quot;), you agree to be bound by these
               Terms of Service. If you do not agree to these terms, please do not use our Service.
             </p>
           </section>
@@ -37,7 +37,7 @@ export default function TermsOfServicePage() {
           <section className="mb-10">
             <h2 className="text-2xl font-semibold text-gray-900 mb-4">2. Description of Service</h2>
             <p className="text-gray-700 leading-relaxed">
-              AI Agronomist provides AI-powered soil analysis and agricultural recommendations based
+              Crop Copilot provides AI-powered soil analysis and agricultural recommendations based
               on soil test data and crop information you provide. Our recommendations are generated
               using machine learning models trained on university research and agronomic best practices.
             </p>
@@ -75,7 +75,7 @@ export default function TermsOfServicePage() {
             <h2 className="text-2xl font-semibold text-gray-900 mb-4">5. Intellectual Property</h2>
             <p className="text-gray-700 leading-relaxed mb-4">
               <strong>Our Content:</strong> The Service, including its design, features, and content,
-              is owned by AI Agronomist and protected by intellectual property laws.
+              is owned by Crop Copilot and protected by intellectual property laws.
             </p>
             <p className="text-gray-700 leading-relaxed">
               <strong>Your Content:</strong> You retain ownership of any data, soil tests, or information
@@ -155,8 +155,8 @@ export default function TermsOfServicePage() {
               For questions about these Terms of Service, please contact us at:
             </p>
             <p className="text-gray-700 mt-4">
-              <strong>Email:</strong> legal@aiagronomist.com<br />
-              <strong>Address:</strong> AI Agronomist, LLC
+              <strong>Email:</strong> legal@cropcopilot.app<br />
+              <strong>Address:</strong> Crop Copilot, LLC
             </p>
           </section>
         </div>

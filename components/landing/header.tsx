@@ -45,7 +45,7 @@ export function LandingHeader() {
               <Leaf className="w-5 h-5 text-earth-950" />
             </div>
             <span className="font-semibold text-lg text-white">
-              AI Agronomist
+              Crop Copilot
             </span>
           </Link>
 

@@ -79,7 +79,7 @@ export default function SignupPage() {
           </div>
           <CardTitle className="text-2xl">Create an account</CardTitle>
           <CardDescription>
-            Get started with AI Agronomist Advisor
+            Get started with Crop Copilot
           </CardDescription>
         </CardHeader>
         <CardContent>

@@ -88,7 +88,7 @@ export function Sidebar({ userName, userEmail, collapsed, onCollapsedChange }: S
           </div>
           {!collapsed && (
             <span className="font-semibold text-white truncate">
-              AI Agronomist
+              Crop Copilot
             </span>
           )}
         </div>

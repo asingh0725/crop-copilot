@@ -1,14 +1,14 @@
-# AI Agronomist Advisor
+# Crop Copilot
 
 > **Diagnose crop issues. Get actionable recommendations. Find the right products.**
 >
-> AI Agronomist Advisor turns field observations into research-backed recommendations with product pricing and purchase links.
+> Crop Copilot turns field observations into research-backed recommendations with product pricing and purchase links.
 
 ---
 
 ## Overview
 
-**AI Agronomist Advisor** is an agricultural recommendation system for farmers and agronomists in North America (US and Canada). Users can submit a photo, a description, lab data, or a combination to receive targeted diagnoses and next-step actions grounded in university extension research and regional best practices.
+**Crop Copilot** is an agricultural recommendation system for farmers and agronomists in North America (US and Canada). Users can submit a photo, a description, lab data, or a combination to receive targeted diagnoses and next-step actions grounded in university extension research and regional best practices.
 
 ### Who It’s For
 
@@ -298,11 +298,11 @@ npx tsx scripts/testing/generate-scenarios.ts
 # 2) Run baseline cycle with immediate feedback capture
 # mode=live uses actual retrieval + recommendation model
 # mode=mock runs deterministic dry-run (CI/local fallback)
-npx tsx scripts/testing/run-feedback-cycle.ts --mode=live --count=100 --persist=true --userEmail=expert-test@ai-agronomist.local --out=baseline-live-100.json
+npx tsx scripts/testing/run-feedback-cycle.ts --mode=live --count=100 --persist=true --userEmail=expert-test@cropcopilot.local --out=baseline-live-100.json
 
 # Optional: verify rows were persisted
-# SELECT COUNT(*) FROM "Recommendation" r JOIN "User" u ON u.id = r."userId" WHERE u.email = 'expert-test@ai-agronomist.local';
-# SELECT COUNT(*) FROM "Feedback" f JOIN "User" u ON u.id = f."userId" WHERE u.email = 'expert-test@ai-agronomist.local';
+# SELECT COUNT(*) FROM "Recommendation" r JOIN "User" u ON u.id = r."userId" WHERE u.email = 'expert-test@cropcopilot.local';
+# SELECT COUNT(*) FROM "Feedback" f JOIN "User" u ON u.id = f."userId" WHERE u.email = 'expert-test@cropcopilot.local';
 
 # 3) Analyze baseline feedback and extract learnings
 npx tsx scripts/analyze-feedback.ts --input=data/testing/baseline-live-100.json
@@ -724,8 +724,8 @@ This systematic testing approach will:
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/ai-agronomist-advisor.git
-cd ai-agronomist-advisor
+git clone https://github.com/yourusername/cropcopilot-advisor.git
+cd cropcopilot-advisor
 
 # Install dependencies
 pnpm install

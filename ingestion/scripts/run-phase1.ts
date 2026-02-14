@@ -90,7 +90,7 @@ function estimateChunks(urlList: SourceUrlConfig): number {
 async function runPhase1Ingestion(options: RunOptions) {
   const startTime = Date.now();
 
-  console.log("🌱 AI Agronomist Knowledge Base Ingestion - Phase 1");
+  console.log("🌱 Crop Copilot Knowledge Base Ingestion - Phase 1");
   console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
   console.log(
     `Mode: ${options.test ? "TEST (10 URLs)" : "FULL (187 URLs)"}`

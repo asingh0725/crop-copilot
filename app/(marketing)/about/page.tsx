@@ -9,9 +9,9 @@ import {
 } from "lucide-react";
 
 export const metadata = {
-  title: "About | AI Agronomist",
+  title: "About | Crop Copilot",
   description:
-    "Learn about AI Agronomist — our mission, approach, and commitment to research-backed agricultural advice.",
+    "Learn about Crop Copilot — our mission, approach, and commitment to research-backed agricultural advice.",
 };
 
 export default function AboutPage() {
@@ -27,7 +27,7 @@ export default function AboutPage() {
             </Link>
           </Button>
           <h1 className="text-4xl sm:text-5xl font-bold text-white mb-4">
-            About AI Agronomist
+            About Crop Copilot
           </h1>
           <p className="text-xl text-white/60 leading-relaxed">
             We&apos;re building AI-powered tools that make university-level
@@ -52,7 +52,7 @@ export default function AboutPage() {
               dollars and take weeks. Meanwhile, university extension programs
               publish incredible research — but it&apos;s scattered across
               hundreds of websites, buried in PDFs, and hard to apply to your
-              specific situation. We bridge that gap. AI Agronomist takes
+              specific situation. We bridge that gap. Crop Copilot takes
               published research from leading agricultural universities, makes it
               searchable with AI, and delivers personalized recommendations in
               seconds.
@@ -99,7 +99,7 @@ export default function AboutPage() {
               </h2>
             </div>
             <p className="text-gray-700 leading-relaxed mb-4">
-              AI Agronomist currently focuses on North American agriculture with
+              Crop Copilot currently focuses on North American agriculture with
               particular depth in:
             </p>
             <ul className="list-disc pl-6 text-gray-700 space-y-2">
@@ -124,7 +124,7 @@ export default function AboutPage() {
               </h2>
             </div>
             <p className="text-gray-700 leading-relaxed">
-              AI Agronomist is a decision-support tool, not a replacement for
+              Crop Copilot is a decision-support tool, not a replacement for
               professional agronomic consultation. Our AI provides confidence
               scores (never above 95%) and always cites its sources so you can
               verify. For critical decisions involving significant financial

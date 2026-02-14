@@ -31,7 +31,7 @@ const outputPath = resolve(process.cwd(), "data/testing", outputName);
 const persist = args.get("persist")
   ? args.get("persist") === "true"
   : mode === "live";
-const userEmail = args.get("userEmail") || "testing-bot@ai-agronomist.local";
+const userEmail = args.get("userEmail") || "testing-bot@cropcopilot.local";
 
 function simulateRecommendation(scenario: TestScenario): RecommendationOutput {
   const scenarioNum = Number(scenario.id.split("_")[1] || "0");

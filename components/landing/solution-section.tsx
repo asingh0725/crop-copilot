@@ -53,7 +53,7 @@ export function SolutionSection() {
             The Solution
           </span>
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-6">
-            How AI Agronomist{" "}
+            How Crop Copilot{" "}
             <span className="font-serif italic text-gradient">Works</span>
           </h2>
           <p className="text-lg text-white/50 max-w-2xl mx-auto">

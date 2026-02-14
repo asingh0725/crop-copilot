@@ -2,8 +2,8 @@ import { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "AI Agronomist Advisor",
-    short_name: "AI Agronomist",
+    name: "Crop Copilot",
+    short_name: "Crop Copilot",
     description:
       "Diagnose crop issues. Get actionable recommendations. Find the right products.",
     start_url: "/",

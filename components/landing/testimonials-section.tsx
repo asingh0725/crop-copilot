@@ -7,7 +7,7 @@ import { MotionDiv, MotionStagger, staggerItem } from "./motion-wrapper";
 const testimonials = [
   {
     quote:
-      "AI Agronomist cut my fertilizer costs by 15% while actually improving my corn yields. The recommendations are spot-on.",
+      "Crop Copilot cut my fertilizer costs by 15% while actually improving my corn yields. The recommendations are spot-on.",
     author: "Mike Thompson",
     role: "Corn & Soybean Farmer",
     location: "Iowa",
@@ -52,7 +52,7 @@ export function TestimonialsSection() {
             <span className="font-serif italic text-gradient">Saying</span>
           </h2>
           <p className="text-lg text-white/50 max-w-2xl mx-auto">
-            See what farmers across the Midwest are saying about AI Agronomist.
+            See what farmers across the Midwest are saying about Crop Copilot.
           </p>
         </MotionDiv>
 

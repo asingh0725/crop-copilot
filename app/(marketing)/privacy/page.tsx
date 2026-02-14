@@ -1,6 +1,6 @@
 export const metadata = {
-  title: "Privacy Policy | AI Agronomist",
-  description: "Privacy Policy for AI Agronomist - Learn how we collect, use, and protect your data.",
+  title: "Privacy Policy | Crop Copilot",
+  description: "Privacy Policy for Crop Copilot - Learn how we collect, use, and protect your data.",
 };
 
 import Link from "next/link";
@@ -29,12 +29,12 @@ export default function PrivacyPolicyPage() {
           <section className="mb-10">
             <h2 className="text-2xl font-semibold text-gray-900 mb-4">1. Introduction</h2>
             <p className="text-gray-700 leading-relaxed mb-4">
-              AI Agronomist (&quot;we,&quot; &quot;our,&quot; or &quot;us&quot;) is committed to protecting your privacy.
+              Crop Copilot (&quot;we,&quot; &quot;our,&quot; or &quot;us&quot;) is committed to protecting your privacy.
               This Privacy Policy explains how we collect, use, disclose, and safeguard your information
               when you use our soil analysis and agricultural recommendation service.
             </p>
             <p className="text-gray-700 leading-relaxed">
-              By using AI Agronomist, you agree to the collection and use of information in accordance
+              By using Crop Copilot, you agree to the collection and use of information in accordance
               with this policy.
             </p>
           </section>
@@ -153,8 +153,8 @@ export default function PrivacyPolicyPage() {
               If you have questions about this Privacy Policy or our data practices, please contact us at:
             </p>
             <p className="text-gray-700 mt-4">
-              <strong>Email:</strong> privacy@aiagronomist.com<br />
-              <strong>Address:</strong> AI Agronomist, LLC
+              <strong>Email:</strong> privacy@cropcopilot.app<br />
+              <strong>Address:</strong> Crop Copilot, LLC
             </p>
           </section>
         </div>
