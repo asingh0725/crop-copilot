@@ -1,11 +1,28 @@
 import { HeroSection } from "@/components/landing/hero";
 import { TrustBar } from "@/components/landing/trust-bar";
-import { ProblemSection } from "@/components/landing/problem-section";
-import { SolutionSection } from "@/components/landing/solution-section";
-import { HowAIWorksSection } from "@/components/landing/how-ai-works-section";
-import { FeaturesSection } from "@/components/landing/features-section";
-import { TestimonialsSection } from "@/components/landing/testimonials-section";
-import { PricingSection } from "@/components/landing/pricing-section";
+import dynamic from "next/dynamic";
+
+const ProblemSection = dynamic(() =>
+  import("@/components/landing/problem-section").then((m) => ({ default: m.ProblemSection }))
+);
+const SolutionSection = dynamic(() =>
+  import("@/components/landing/solution-section").then((m) => ({ default: m.SolutionSection }))
+);
+const HowAIWorksSection = dynamic(() =>
+  import("@/components/landing/how-ai-works-section").then((m) => ({ default: m.HowAIWorksSection }))
+);
+const FeaturesSection = dynamic(() =>
+  import("@/components/landing/features-section").then((m) => ({ default: m.FeaturesSection }))
+);
+const TestimonialsSection = dynamic(() =>
+  import("@/components/landing/testimonials-section").then((m) => ({ default: m.TestimonialsSection }))
+);
+const PricingSection = dynamic(() =>
+  import("@/components/landing/pricing-section").then((m) => ({ default: m.PricingSection }))
+);
+const CTASection = dynamic(() =>
+  import("@/components/landing/cta-section").then((m) => ({ default: m.CTASection }))
+);
 
 export default function LandingPage() {
   return (
@@ -18,6 +35,7 @@ export default function LandingPage() {
       <FeaturesSection />
       <TestimonialsSection />
       <PricingSection />
+      <CTASection />
     </>
   );
 }

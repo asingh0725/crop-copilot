@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { ShieldCheck, ArrowRight } from "lucide-react";
 import { HeroParticles } from "./hero-particles";
-import { HeroSpline } from "./hero-spline";
+import { HeroVisual } from "./hero-visual";
 import { DashboardPreview } from "./dashboard-preview";
 
 const container = {
@@ -124,14 +124,14 @@ export function HeroSection() {
             </motion.p>
           </motion.div>
 
-          {/* Right — 3D Scene (hidden on mobile) */}
+          {/* Right — Animated Visual */}
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 1, delay: 0.5, ease: "easeOut" }}
-            className="hidden lg:block h-[500px] xl:h-[550px]"
+            className="hidden sm:flex h-[300px] sm:h-[400px] lg:h-[500px] xl:h-[550px] items-center justify-center"
           >
-            <HeroSpline />
+            <HeroVisual />
           </motion.div>
         </div>
 

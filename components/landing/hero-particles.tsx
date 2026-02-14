@@ -13,6 +13,12 @@ interface Particle {
   maxLife: number;
 }
 
+// Pre-computed fill styles to avoid string allocation per frame
+const FILL_CACHE: string[] = [];
+for (let i = 0; i <= 100; i++) {
+  FILL_CACHE[i] = `rgba(118,192,67,${(i / 100) * 0.35})`;
+}
+
 export function HeroParticles() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -28,19 +34,24 @@ export function HeroParticles() {
 
     let animId: number;
     const particles: Particle[] = [];
-    const PARTICLE_COUNT = 60;
+    const PARTICLE_COUNT = 40;
+    let w = 0;
+    let h = 0;
 
     const resize = () => {
-      canvas.width = canvas.offsetWidth * window.devicePixelRatio;
-      canvas.height = canvas.offsetHeight * window.devicePixelRatio;
-      ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+      const dpr = window.devicePixelRatio || 1;
+      w = canvas.offsetWidth;
+      h = canvas.offsetHeight;
+      canvas.width = w * dpr;
+      canvas.height = h * dpr;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     };
     resize();
     window.addEventListener("resize", resize);
 
     const spawn = (): Particle => ({
-      x: Math.random() * canvas.offsetWidth,
-      y: Math.random() * canvas.offsetHeight,
+      x: Math.random() * w,
+      y: Math.random() * h,
       vx: (Math.random() - 0.5) * 0.3,
       vy: -Math.random() * 0.4 - 0.1,
       size: Math.random() * 2 + 0.5,
@@ -56,7 +67,7 @@ export function HeroParticles() {
     }
 
     const draw = () => {
-      ctx.clearRect(0, 0, canvas.offsetWidth, canvas.offsetHeight);
+      ctx.clearRect(0, 0, w, h);
 
       for (let i = 0; i < particles.length; i++) {
         const p = particles[i];
@@ -66,7 +77,6 @@ export function HeroParticles() {
 
         const progress = p.life / p.maxLife;
         p.opacity = progress < 0.1 ? progress / 0.1 : progress > 0.8 ? (1 - progress) / 0.2 : 1;
-        p.opacity *= 0.35;
 
         if (p.life >= p.maxLife) {
           particles[i] = spawn();
@@ -75,7 +85,7 @@ export function HeroParticles() {
 
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(118, 192, 67, ${p.opacity})`;
+        ctx.fillStyle = FILL_CACHE[Math.round(p.opacity * 100)] || FILL_CACHE[0];
         ctx.fill();
       }
 
