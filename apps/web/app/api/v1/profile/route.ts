@@ -24,7 +24,7 @@ export const GET = withAuth(async (request) => {
       )
     }
 
-    return NextResponse.json(profile)
+    return NextResponse.json({ profile })
   } catch (error) {
     console.error('Get profile error:', error)
     return NextResponse.json(
@@ -55,7 +55,7 @@ export const PUT = withAuth(async (request) => {
       profileData: validated.data,
     })
 
-    return NextResponse.json(profile)
+    return NextResponse.json({ profile })
   } catch (error: any) {
     console.error('Update profile error:', error)
 

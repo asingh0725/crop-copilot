@@ -8,6 +8,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { withAuth } from '@/lib/middleware/auth'
 import { createInput, listInputs } from '@/lib/services'
+import { ValidationError } from '@/lib/validation/retry'
 import { z } from 'zod'
 
 const createInputSchema = z.object({
@@ -44,17 +45,17 @@ export const POST = withAuth(async (request) => {
   } catch (error: any) {
     console.error('Create input error:', error)
 
-    if (error.message?.includes('No relevant knowledge found')) {
+    if (error instanceof ValidationError) {
       return NextResponse.json(
-        { error: 'No relevant knowledge found', details: error.message },
+        { error: error.message, details: error.details },
         { status: 422 }
       )
     }
 
-    if (error.message?.includes('validation failed')) {
+    if (error.message?.includes('Forbidden')) {
       return NextResponse.json(
-        { error: 'Recommendation validation failed', details: error.message },
-        { status: 422 }
+        { error: 'Forbidden' },
+        { status: 403 }
       )
     }
 

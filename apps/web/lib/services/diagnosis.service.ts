@@ -6,7 +6,6 @@
  */
 
 import { prisma } from '@/lib/prisma';
-import { InputType } from '@prisma/client';
 import {
   searchTextChunks,
   searchImageChunks,
@@ -21,7 +20,7 @@ import { logRetrievalAudit } from '@/lib/retrieval/audit';
 
 export interface CreateInputParams {
   userId: string;
-  type: InputType;
+  type: string;
   imageUrl?: string | null;
   description?: string | null;
   labData?: Record<string, any> | null;
@@ -34,7 +33,7 @@ export interface CreateInputResult {
   input: {
     id: string;
     userId: string;
-    type: InputType;
+    type: string;
     imageUrl: string | null;
     description: string | null;
     labData: any;

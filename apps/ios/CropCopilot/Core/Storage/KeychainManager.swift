@@ -21,8 +21,9 @@ class KeychainManager {
     }
 
     // MARK: - Save
+    @discardableResult
     func save(_ value: String, for key: KeychainKey) -> Bool {
-        let data = value.data(using: .utf8)!
+        guard let data = value.data(using: .utf8) else { return false }
 
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
@@ -63,6 +64,7 @@ class KeychainManager {
     }
 
     // MARK: - Delete
+    @discardableResult
     func delete(for key: KeychainKey) -> Bool {
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
