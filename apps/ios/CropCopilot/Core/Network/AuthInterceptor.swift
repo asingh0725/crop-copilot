@@ -10,7 +10,7 @@ import Foundation
 actor AuthInterceptor {
     private let keychainManager = KeychainManager.shared
     private var isRefreshing = false
-    private var refreshContinuation: CheckedContinuation<String, Error>?
+    private var pendingContinuations: [CheckedContinuation<String, Error>] = []
 
     func addAuthHeader(to request: inout URLRequest) {
         if let token = keychainManager.get(for: .accessToken) {
@@ -22,7 +22,7 @@ actor AuthInterceptor {
         // If already refreshing, wait for the result
         if isRefreshing {
             return try await withCheckedThrowingContinuation { continuation in
-                self.refreshContinuation = continuation
+                pendingContinuations.append(continuation)
             }
         }
 
@@ -31,13 +31,19 @@ actor AuthInterceptor {
         do {
             let newToken = try await refreshToken()
             isRefreshing = false
-            refreshContinuation?.resume(returning: newToken)
-            refreshContinuation = nil
+            // Resume all pending continuations
+            for continuation in pendingContinuations {
+                continuation.resume(returning: newToken)
+            }
+            pendingContinuations.removeAll()
             return newToken
         } catch {
             isRefreshing = false
-            refreshContinuation?.resume(throwing: error)
-            refreshContinuation = nil
+            // Resume all pending continuations with error
+            for continuation in pendingContinuations {
+                continuation.resume(throwing: error)
+            }
+            pendingContinuations.removeAll()
             throw error
         }
     }
@@ -47,14 +53,18 @@ actor AuthInterceptor {
             throw NetworkError.unauthorized
         }
 
-        // Create refresh request
-        let url = URL(string: Configuration.apiBaseURL + "/auth/refresh")!
+        // Call Supabase's GoTrue token refresh endpoint directly
+        guard let url = URL(string: Configuration.supabaseURL + "/auth/v1/token?grant_type=refresh_token") else {
+            throw NetworkError.unauthorized
+        }
+
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer " + Configuration.supabaseAnonKey, forHTTPHeaderField: "apikey")
 
         let body = ["refresh_token": refreshToken]
-        request.httpBody = try? JSONEncoder().encode(body)
+        request.httpBody = try JSONEncoder().encode(body)
 
         let (data, response) = try await URLSession.shared.data(for: request)
 
@@ -65,16 +75,14 @@ actor AuthInterceptor {
 
         struct RefreshResponse: Codable {
             let access_token: String
-            let refresh_token: String?
+            let refresh_token: String
         }
 
         let refreshResponse = try JSONDecoder().decode(RefreshResponse.self, from: data)
 
         // Save new tokens
-        _ = keychainManager.save(refreshResponse.access_token, for: .accessToken)
-        if let newRefreshToken = refreshResponse.refresh_token {
-            _ = keychainManager.save(newRefreshToken, for: .refreshToken)
-        }
+        keychainManager.save(refreshResponse.access_token, for: .accessToken)
+        keychainManager.save(refreshResponse.refresh_token, for: .refreshToken)
 
         return refreshResponse.access_token
     }

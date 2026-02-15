@@ -15,8 +15,9 @@ struct LoginView: View {
     @State private var email = ""
     @State private var password = ""
     @State private var showingSignup = false
+    @State private var currentNonce: String?
 
-    var body: View {
+    var body: some View {
         NavigationStack {
             VStack(spacing: 24) {
                 // Logo/Header
@@ -77,10 +78,13 @@ struct LoginView: View {
 
                     // Forgot Password
                     Button("Forgot Password?") {
-                        // TODO: Implement forgot password
+                        Task {
+                            await authViewModel.resetPassword(email: email)
+                        }
                     }
                     .font(.caption)
                     .foregroundColor(.blue)
+                    .disabled(email.isEmpty)
                 }
                 .padding(.horizontal, 32)
 
@@ -100,17 +104,21 @@ struct LoginView: View {
 
                 // Sign in with Apple
                 SignInWithAppleButton(.signIn) { request in
+                    let nonce = AuthRepository.randomNonceString()
+                    currentNonce = nonce
                     request.requestedScopes = [.fullName, .email]
+                    request.nonce = AuthRepository.sha256(nonce)
                 } onCompletion: { result in
                     switch result {
                     case .success(let authorization):
                         if let appleIDCredential = authorization.credential as? ASAuthorizationAppleIDCredential,
                            let identityToken = appleIDCredential.identityToken,
-                           let tokenString = String(data: identityToken, encoding: .utf8) {
+                           let tokenString = String(data: identityToken, encoding: .utf8),
+                           let nonce = currentNonce {
                             Task {
                                 await authViewModel.handleSignInWithAppleCompletion(
                                     idToken: tokenString,
-                                    nonce: "" // TODO: Generate nonce
+                                    nonce: nonce
                                 )
                             }
                         }

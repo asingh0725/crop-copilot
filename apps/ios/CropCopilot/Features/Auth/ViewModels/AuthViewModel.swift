@@ -119,13 +119,18 @@ class AuthViewModel: ObservableObject {
 
     // MARK: - Sign Out
     func signOut() async {
-        do {
-            guard let repository = authRepository else { return }
-            try await repository.signOut()
+        // Always clear local state, even if server sign-out fails
+        defer {
             currentUser = nil
             isAuthenticated = false
+            KeychainManager.shared.deleteAll()
+        }
+
+        do {
+            try await authRepository?.signOut()
         } catch {
-            errorMessage = error.localizedDescription
+            // Server sign-out failed, but local state is still cleared
+            print("Sign out error: \(error.localizedDescription)")
         }
     }
 

@@ -13,7 +13,7 @@ struct BiometricAuthView: View {
     @State private var isUnlocked = false
     @State private var errorMessage: String?
 
-    var body: View {
+    var body: some View {
         VStack(spacing: 20) {
             Image(systemName: "faceid")
                 .font(.system(size: 80))

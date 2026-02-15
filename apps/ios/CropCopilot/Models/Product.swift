@@ -25,26 +25,27 @@ struct Product: Codable, Identifiable {
     }
 }
 
+// Matches Prisma ProductType enum exactly
 enum ProductType: String, Codable, CaseIterable {
     case fertilizer = "FERTILIZER"
+    case amendment = "AMENDMENT"
     case pesticide = "PESTICIDE"
     case herbicide = "HERBICIDE"
     case fungicide = "FUNGICIDE"
     case insecticide = "INSECTICIDE"
-    case soilAmendment = "SOIL_AMENDMENT"
-    case micronutrient = "MICRONUTRIENT"
-    case other = "OTHER"
+    case seedTreatment = "SEED_TREATMENT"
+    case biological = "BIOLOGICAL"
 
     var displayName: String {
         switch self {
         case .fertilizer: return "Fertilizer"
+        case .amendment: return "Amendment"
         case .pesticide: return "Pesticide"
         case .herbicide: return "Herbicide"
         case .fungicide: return "Fungicide"
         case .insecticide: return "Insecticide"
-        case .soilAmendment: return "Soil Amendment"
-        case .micronutrient: return "Micronutrient"
-        case .other: return "Other"
+        case .seedTreatment: return "Seed Treatment"
+        case .biological: return "Biological"
         }
     }
 }

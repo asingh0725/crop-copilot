@@ -24,7 +24,7 @@ struct SignupView: View {
         agreedToTerms
     }
 
-    var body: View {
+    var body: some View {
         ScrollView {
             VStack(spacing: 24) {
                 // Header

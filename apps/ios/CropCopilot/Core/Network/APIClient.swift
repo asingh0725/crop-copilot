@@ -73,7 +73,7 @@ class APIClient {
                 do {
                     _ = try await authInterceptor.handleUnauthorized()
                     // Retry request with new token
-                    return try await request(endpoint, body: body, retry: false)
+                    return try await self.request(endpoint, body: body, retry: false)
                 } catch {
                     throw NetworkError.unauthorized
                 }

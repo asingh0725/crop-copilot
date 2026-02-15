@@ -1,0 +1,63 @@
+name: CropCopilot
+options:
+  bundleIdPrefix: com.cropcopilot
+  deploymentTarget:
+    iOS: "16.0"
+  xcodeVersion: "15.0"
+  generateEmptyDirectories: true
+
+settings:
+  base:
+    SWIFT_VERSION: "5.9"
+    DEVELOPMENT_TEAM: ""
+    ENABLE_USER_SCRIPT_SANDBOXING: "NO"
+
+packages:
+  Supabase:
+    url: https://github.com/supabase/supabase-swift
+    from: "2.0.0"
+  Kingfisher:
+    url: https://github.com/onevcat/Kingfisher
+    from: "7.0.0"
+
+targets:
+  CropCopilot:
+    type: application
+    platform: iOS
+    deploymentTarget: "16.0"
+    sources:
+      - path: CropCopilot
+        excludes:
+          - "**/.DS_Store"
+    settings:
+      base:
+        INFOPLIST_FILE: CropCopilot/Info.plist
+        PRODUCT_BUNDLE_IDENTIFIER: com.cropcopilot.app
+        PRODUCT_NAME: CropCopilot
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        GENERATE_INFOPLIST_FILE: false
+        CODE_SIGN_STYLE: Automatic
+        SWIFT_EMIT_LOC_STRINGS: "YES"
+        CURRENT_PROJECT_VERSION: "1"
+        MARKETING_VERSION: "1.0.0"
+    dependencies:
+      - package: Supabase
+      - package: Kingfisher
+    preBuildScripts: []
+
+  CropCopilotTests:
+    type: bundle.unit-test
+    platform: iOS
+    deploymentTarget: "16.0"
+    sources:
+      - path: CropCopilotTests
+        excludes:
+          - "**/.DS_Store"
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.cropcopilot.app.tests
+        GENERATE_INFOPLIST_FILE: true
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/CropCopilot.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/CropCopilot"
+        BUNDLE_LOADER: "$(TEST_HOST)"
+    dependencies:
+      - target: CropCopilot
