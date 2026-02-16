@@ -209,7 +209,7 @@ test('create input returns 500 when store enqueue fails', async () => {
     enqueueInput() {
       throw new Error('persistence unavailable');
     },
-    getJobStatus(_jobId, _userId) {
+    async getJobStatus(_jobId, _userId) {
       return null;
     },
   };

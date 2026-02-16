@@ -33,3 +33,8 @@ Storage and persistence env:
 - `DATABASE_URL` (required when `DATA_BACKEND=postgres`)
 - `S3_UPLOAD_BUCKET`
 - `S3_UPLOAD_URL_EXPIRY_SECONDS` (optional, default 900)
+
+Upload URL request contract:
+
+- `contentLength` is required and capped at 25MB
+- the generated presigned request includes `ContentLength` to enforce size

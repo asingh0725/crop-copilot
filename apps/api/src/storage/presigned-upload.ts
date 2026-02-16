@@ -58,6 +58,7 @@ export async function createPresignedUploadUrl(
     Bucket: bucket,
     Key: objectKey,
     ContentType: payload.contentType,
+    ContentLength: payload.contentLength,
     Metadata: {
       uploader: userId,
     },

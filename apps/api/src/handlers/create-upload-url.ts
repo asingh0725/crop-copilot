@@ -5,10 +5,14 @@ import {
 } from '@crop-copilot/contracts';
 import { withAuth } from '../auth/with-auth';
 import type { AuthVerifier } from '../auth/types';
-import { jsonResponse, parseJsonBody } from '../lib/http';
+import { isBadRequestError, jsonResponse, parseJsonBody } from '../lib/http';
 import { createPresignedUploadUrl } from '../storage/presigned-upload';
 
 type UploadUrlFactory = typeof createPresignedUploadUrl;
+
+function isValidationError(error: unknown): error is Error {
+  return error instanceof Error && error.name === 'ZodError';
+}
 
 export function buildCreateUploadUrlHandler(
   verifier?: AuthVerifier,
@@ -24,14 +28,28 @@ export function buildCreateUploadUrlHandler(
         statusCode: 200,
       });
     } catch (error) {
+      if (isValidationError(error) || isBadRequestError(error)) {
+        return jsonResponse(
+          {
+            error: {
+              code: 'BAD_REQUEST',
+              message: error.message,
+            },
+          },
+          { statusCode: 400 }
+        );
+      }
+
+      console.error('Failed to create presigned upload URL', error);
+
       return jsonResponse(
         {
           error: {
-            code: 'BAD_REQUEST',
-            message: (error as Error).message,
+            code: 'INTERNAL_SERVER_ERROR',
+            message: 'Internal server error',
           },
         },
-        { statusCode: 400 }
+        { statusCode: 500 }
       );
     }
   }, verifier);

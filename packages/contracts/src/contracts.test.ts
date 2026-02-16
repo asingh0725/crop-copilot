@@ -69,6 +69,15 @@ test('CreateUploadUrlRequestSchema validates upload payload', () => {
   assert.equal(parsed.contentType, 'image/jpeg');
 });
 
+test('CreateUploadUrlRequestSchema requires contentLength', () => {
+  assert.throws(() =>
+    CreateUploadUrlRequestSchema.parse({
+      fileName: 'leaf-photo.jpg',
+      contentType: 'image/jpeg',
+    })
+  );
+});
+
 test('SyncPullRequestSchema parses includeCompletedJobs=false correctly', () => {
   const parsed = SyncPullRequestSchema.parse({
     includeCompletedJobs: 'false',

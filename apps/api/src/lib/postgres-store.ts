@@ -14,6 +14,11 @@ interface ExistingCommandRow {
   accepted_at: Date;
 }
 
+interface InsertedInputRow {
+  input_id: string;
+  created_at: Date;
+}
+
 interface JobStatusRow {
   input_id: string;
   job_id: string;
@@ -30,55 +35,62 @@ export class PostgresRecommendationStore implements RecommendationStore {
     payload: CreateInputCommand
   ): Promise<CreateInputAccepted> {
     return this.withTransaction(async (client) => {
-      const existing = await client.query<ExistingCommandRow>(
-        `
-          SELECT i.id AS input_id,
-                 j.id AS job_id,
-                 j.status,
-                 j.created_at AS accepted_at
-          FROM app_input_command i
-          JOIN app_recommendation_job j ON j.input_id = i.id
-          WHERE i.user_id = $1
-            AND i.idempotency_key = $2
-          LIMIT 1
-        `,
-        [userId, payload.idempotencyKey]
-      );
-
-      if (existing.rows.length > 0) {
-        const row = existing.rows[0];
-        return {
-          inputId: row.input_id,
-          jobId: row.job_id,
-          status: row.status,
-          acceptedAt: row.accepted_at.toISOString(),
-        };
-      }
-
       const inputId = randomUUID();
-      const jobId = randomUUID();
-
-      await client.query(
+      const insertedInput = await client.query<InsertedInputRow>(
         `
           INSERT INTO app_input_command (id, user_id, idempotency_key, payload, created_at, updated_at)
           VALUES ($1, $2, $3, $4::jsonb, NOW(), NOW())
+          ON CONFLICT (user_id, idempotency_key) DO NOTHING
+          RETURNING id AS input_id, created_at
         `,
         [inputId, userId, payload.idempotencyKey, JSON.stringify(payload)]
       );
+
+      if (insertedInput.rows.length === 0) {
+        const existing = await client.query<ExistingCommandRow>(
+          `
+            SELECT i.id AS input_id,
+                   j.id AS job_id,
+                   j.status,
+                   j.created_at AS accepted_at
+            FROM app_input_command i
+            JOIN app_recommendation_job j ON j.input_id = i.id
+            WHERE i.user_id = $1
+              AND i.idempotency_key = $2
+            LIMIT 1
+          `,
+          [userId, payload.idempotencyKey]
+        );
+
+        if (existing.rows.length === 0) {
+          throw new Error('Existing idempotent input command found without recommendation job');
+        }
+
+        const existingRow = existing.rows[0];
+        return {
+          inputId: existingRow.input_id,
+          jobId: existingRow.job_id,
+          status: existingRow.status,
+          acceptedAt: existingRow.accepted_at.toISOString(),
+        };
+      }
+
+      const insertedRow = insertedInput.rows[0];
+      const jobId = randomUUID();
 
       await client.query(
         `
           INSERT INTO app_recommendation_job (id, input_id, user_id, status, created_at, updated_at)
           VALUES ($1, $2, $3, 'queued', NOW(), NOW())
         `,
-        [jobId, inputId, userId]
+        [jobId, insertedRow.input_id, userId]
       );
 
       return {
-        inputId,
+        inputId: insertedRow.input_id,
         jobId,
         status: 'queued',
-        acceptedAt: new Date().toISOString(),
+        acceptedAt: insertedRow.created_at.toISOString(),
       };
     });
   }
