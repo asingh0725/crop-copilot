@@ -9,6 +9,7 @@ Lambda-oriented API service that will become the canonical backend for web and i
 - get recommendation job status handler
 - in-memory store abstraction for local testing
 - Cognito JWT verification middleware (`Authorization: Bearer <token>`)
+- RAG v2 scaffold modules (query expansion, hybrid reranking, semantic chunking, multimodal linking)
 
 ## Scripts
 

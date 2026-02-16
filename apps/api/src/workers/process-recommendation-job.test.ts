@@ -48,5 +48,5 @@ test('process-recommendation-job worker moves job to completed', async () => {
   const status = await store.getJobStatus(accepted.jobId, '11111111-1111-4111-8111-111111111111');
   assert.equal(status?.status, 'completed');
   assert.ok(status?.result);
-  assert.equal(status?.result?.modelUsed, 'pipeline-scaffold-v1');
+  assert.equal(status?.result?.modelUsed, 'rag-v2-scaffold');
 });

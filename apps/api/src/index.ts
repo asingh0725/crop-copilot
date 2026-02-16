@@ -6,3 +6,7 @@ export * as ProcessRecommendationJobWorker from './workers/process-recommendatio
 export * from './auth/cognito-jwt';
 export * from './auth/with-auth';
 export * from './queue/recommendation-queue';
+export * from './rag/hybrid-ranker';
+export * from './rag/query-expansion';
+export * from './rag/semantic-chunker-v2';
+export * from './rag/multimodal-linker';
