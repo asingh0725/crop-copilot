@@ -1,27 +1,40 @@
 import type { SQSBatchItemFailure, SQSEvent, SQSHandler } from 'aws-lambda';
-import { RecommendationJobRequestedSchema } from '@crop-copilot/contracts';
+import {
+  RecommendationJobRequestedSchema,
+  type RecommendationJobRequested,
+} from '@crop-copilot/contracts';
 import { getRecommendationStore, type RecommendationStore } from '../lib/store';
 import {
   getPushEventPublisher,
   type PushEventPublisher,
 } from '../notifications/push-events';
 import { runRecommendationPipeline } from '../pipeline/recommendation-pipeline';
+import {
+  emitRecommendationMetrics,
+  type RecommendationMetricPayload,
+} from '../telemetry/recommendation-metrics';
 
 type RecommendationPipelineRunner = typeof runRecommendationPipeline;
+type RecommendationMetricsReporter = (payload: RecommendationMetricPayload) => void;
+
+interface ProcessedRecommendationResult {
+  traceId?: string;
+  modelUsed?: string;
+  estimatedCostUsd: number;
+}
 
 async function processMessage(
-  messageBody: string,
+  payload: RecommendationJobRequested,
   store: RecommendationStore,
   pipelineRunner: RecommendationPipelineRunner,
   pushEvents: PushEventPublisher
-): Promise<void> {
-  const payload = RecommendationJobRequestedSchema.parse(JSON.parse(messageBody));
+): Promise<ProcessedRecommendationResult | null> {
   const currentStatus = await store.getJobStatus(payload.jobId, payload.userId);
   if (!currentStatus) {
     throw new Error(`Recommendation job not found: ${payload.jobId}`);
   }
   if (currentStatus.status === 'completed' || currentStatus.status === 'failed') {
-    return;
+    return null;
   }
 
   await store.updateJobStatus(payload.jobId, payload.userId, 'retrieving_context');
@@ -43,6 +56,7 @@ async function processMessage(
       eventType: 'recommendation.ready',
       eventVersion: '1',
       occurredAt: new Date().toISOString(),
+      traceId: payload.traceId,
       userId: payload.userId,
       inputId: payload.inputId,
       jobId: payload.jobId,
@@ -52,39 +66,67 @@ async function processMessage(
     console.error('Failed to publish recommendation.ready event', {
       jobId: payload.jobId,
       userId: payload.userId,
+      traceId: payload.traceId,
       error: (error as Error).message,
     });
   }
+
+  return {
+    traceId: payload.traceId,
+    modelUsed: result.modelUsed,
+    estimatedCostUsd: estimateRecommendationCostUsd(result.modelUsed),
+  };
 }
 
 export function buildProcessRecommendationJobHandler(
   store: RecommendationStore = getRecommendationStore(),
   pipelineRunner: RecommendationPipelineRunner = runRecommendationPipeline,
-  pushEvents: PushEventPublisher = getPushEventPublisher()
+  pushEvents: PushEventPublisher = getPushEventPublisher(),
+  metricsReporter: RecommendationMetricsReporter = emitRecommendationMetrics
 ): SQSHandler {
   return async (event: SQSEvent) => {
     const batchItemFailures: SQSBatchItemFailure[] = [];
 
     for (const record of event.Records) {
+      const startedAt = Date.now();
+      let payload: RecommendationJobRequested | null = null;
+
       try {
-        await processMessage(record.body, store, pipelineRunner, pushEvents);
+        payload = RecommendationJobRequestedSchema.parse(JSON.parse(record.body));
+        const result = await processMessage(payload, store, pipelineRunner, pushEvents);
+
+        if (result) {
+          metricsReporter({
+            status: 'completed',
+            durationMs: Date.now() - startedAt,
+            estimatedCostUsd: result.estimatedCostUsd,
+            traceId: result.traceId,
+            modelUsed: result.modelUsed,
+          });
+        }
       } catch (error) {
         console.error('Failed to process recommendation job record', {
           messageId: record.messageId,
+          traceId: payload?.traceId,
           error: (error as Error).message,
         });
 
         try {
-          const payload = RecommendationJobRequestedSchema.parse(JSON.parse(record.body));
-          await store.updateJobStatus(
-            payload.jobId,
-            payload.userId,
-            'failed',
-            (error as Error).message
-          );
+          if (!payload) {
+            payload = RecommendationJobRequestedSchema.parse(JSON.parse(record.body));
+          }
+
+          await store.updateJobStatus(payload.jobId, payload.userId, 'failed', (error as Error).message);
         } catch {
           // ignore parsing/update errors here and still return batch item failure
         }
+
+        metricsReporter({
+          status: 'failed',
+          durationMs: Date.now() - startedAt,
+          estimatedCostUsd: 0,
+          traceId: payload?.traceId,
+        });
 
         batchItemFailures.push({ itemIdentifier: record.messageId });
       }
@@ -97,3 +139,29 @@ export function buildProcessRecommendationJobHandler(
 }
 
 export const handler = buildProcessRecommendationJobHandler();
+
+function estimateRecommendationCostUsd(modelUsed: string): number {
+  const fallback = parseCostValue(process.env.RECOMMENDATION_COST_USD, 0.81);
+  const byModelRaw = process.env.RECOMMENDATION_COST_BY_MODEL_JSON;
+
+  if (!byModelRaw) {
+    return fallback;
+  }
+
+  try {
+    const parsed = JSON.parse(byModelRaw) as Record<string, unknown>;
+    const modelValue = parsed[modelUsed];
+    return parseCostValue(modelValue, fallback);
+  } catch {
+    return fallback;
+  }
+}
+
+function parseCostValue(value: unknown, fallback: number): number {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed < 0) {
+    return fallback;
+  }
+
+  return parsed;
+}

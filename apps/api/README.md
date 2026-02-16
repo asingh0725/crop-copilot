@@ -10,6 +10,7 @@ Lambda-oriented API service that will become the canonical backend for web and i
 - cursor-based sync pull handler for offline clients
 - in-memory store abstraction for local testing
 - Cognito JWT verification middleware (`Authorization: Bearer <token>`)
+- trace-aware recommendation pipeline telemetry (latency, failures, cost-per-recommendation estimates)
 - RAG v2 scaffold modules (query expansion, hybrid reranking, semantic chunking, multimodal linking)
 
 ## Scripts
@@ -40,3 +41,6 @@ Storage and persistence env:
 - `SQS_RECOMMENDATION_QUEUE_URL` (optional; if set, create-input publishes async job messages)
 - `SQS_INGESTION_QUEUE_URL` (optional; if set, ingestion scheduler publishes ingestion batches)
 - `SNS_PUSH_EVENTS_TOPIC_ARN` (optional; if set, recommendation worker emits `recommendation.ready` events)
+- `METRICS_NAMESPACE` (optional; defaults to `CropCopilot/Pipeline` for EMF metrics)
+- `RECOMMENDATION_COST_USD` (optional; default fallback cost estimate per recommendation, default `0.81`)
+- `RECOMMENDATION_COST_BY_MODEL_JSON` (optional JSON map for model-specific cost estimates)

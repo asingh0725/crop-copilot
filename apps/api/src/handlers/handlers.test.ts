@@ -27,9 +27,11 @@ test('create input returns 202 and job id, then get status returns queued', asyn
     scopes: ['recommendation:write'],
   });
   let published = 0;
+  let lastPublishedTraceId: string | undefined;
   const queue: RecommendationQueue = {
-    publishRecommendationJob: async () => {
+    publishRecommendationJob: async (message) => {
       published += 1;
+      lastPublishedTraceId = message.traceId;
     },
   };
   const createInputHandler = buildCreateInputHandler(authVerifier, queue);
@@ -43,6 +45,9 @@ test('create input returns 202 and job id, then get status returns queued', asyn
         imageUrl: 'https://example.com/image.jpg',
       }),
       headers: { authorization: 'Bearer fake-token' },
+      requestContext: {
+        requestId: 'req-test-001',
+      },
     } as any,
     {} as any,
     () => undefined
@@ -54,6 +59,7 @@ test('create input returns 202 and job id, then get status returns queued', asyn
   assert.ok(accepted.jobId);
   assert.ok(accepted.inputId);
   assert.equal(published, 1);
+  assert.equal(lastPublishedTraceId, 'req-test-001');
 
   const statusRes = await getJobStatusHandler(
     {

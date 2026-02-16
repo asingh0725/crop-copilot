@@ -7,6 +7,7 @@ import { InMemoryRecommendationStore } from '../lib/store';
 test('process-recommendation-job worker moves job to completed', async () => {
   const store = new InMemoryRecommendationStore();
   let publishedEvents = 0;
+  const metrics: Array<{ status: string }> = [];
   const handler = buildProcessRecommendationJobHandler(
     store,
     async () => ({
@@ -20,6 +21,9 @@ test('process-recommendation-job worker moves job to completed', async () => {
       publishRecommendationReady: async () => {
         publishedEvents += 1;
       },
+    },
+    (payload) => {
+      metrics.push(payload);
     }
   );
 
@@ -65,6 +69,8 @@ test('process-recommendation-job worker moves job to completed', async () => {
   assert.ok(status?.result);
   assert.equal(status?.result?.modelUsed, 'rag-v2-scaffold');
   assert.equal(publishedEvents, 1);
+  assert.equal(metrics.length, 1);
+  assert.equal(metrics[0].status, 'completed');
 });
 
 test('process-recommendation-job skips processing for already completed jobs', async () => {
@@ -77,6 +83,7 @@ test('process-recommendation-job skips processing for already completed jobs', a
 
   let pipelineInvocations = 0;
   let publishedEvents = 0;
+  const metrics: Array<{ status: string }> = [];
   const handler = buildProcessRecommendationJobHandler(
     store,
     async () => {
@@ -93,6 +100,9 @@ test('process-recommendation-job skips processing for already completed jobs', a
       publishRecommendationReady: async () => {
         publishedEvents += 1;
       },
+    },
+    (payload) => {
+      metrics.push(payload);
     }
   );
 
@@ -128,6 +138,7 @@ test('process-recommendation-job skips processing for already completed jobs', a
   assert.equal(response.batchItemFailures.length, 0);
   assert.equal(pipelineInvocations, 0);
   assert.equal(publishedEvents, 0);
+  assert.equal(metrics.length, 0);
 });
 
 test('process-recommendation-job does not fail batch when push publish fails', async () => {
@@ -137,6 +148,7 @@ test('process-recommendation-job does not fail batch when push publish fails', a
     type: 'PHOTO',
   });
 
+  const metrics: Array<{ status: string }> = [];
   const handler = buildProcessRecommendationJobHandler(
     store,
     async () => ({
@@ -150,6 +162,9 @@ test('process-recommendation-job does not fail batch when push publish fails', a
       publishRecommendationReady: async () => {
         throw new Error('sns unavailable');
       },
+    },
+    (payload) => {
+      metrics.push(payload);
     }
   );
 
@@ -183,4 +198,63 @@ test('process-recommendation-job does not fail batch when push publish fails', a
 
   const response = await handler(event, {} as any, () => undefined);
   assert.equal(response.batchItemFailures.length, 0);
+  assert.equal(metrics.length, 1);
+  assert.equal(metrics[0].status, 'completed');
+});
+
+test('process-recommendation-job reports failed metrics when pipeline throws', async () => {
+  const store = new InMemoryRecommendationStore();
+  const accepted = await store.enqueueInput('11111111-1111-4111-8111-111111111111', {
+    idempotencyKey: 'ios-device-01:key-0004',
+    type: 'PHOTO',
+  });
+  const metrics: Array<{ status: string }> = [];
+  const handler = buildProcessRecommendationJobHandler(
+    store,
+    async () => {
+      throw new Error('pipeline crashed');
+    },
+    {
+      publishRecommendationReady: async () => undefined,
+    },
+    (payload) => {
+      metrics.push(payload);
+    }
+  );
+
+  const event: SQSEvent = {
+    Records: [
+      {
+        messageId: 'm4',
+        receiptHandle: 'rh',
+        body: JSON.stringify({
+          messageType: 'recommendation.job.requested',
+          messageVersion: '1',
+          requestedAt: new Date().toISOString(),
+          userId: '11111111-1111-4111-8111-111111111111',
+          inputId: accepted.inputId,
+          jobId: accepted.jobId,
+        }),
+        attributes: {
+          ApproximateReceiveCount: '1',
+          SentTimestamp: String(Date.now()),
+          SenderId: 'test',
+          ApproximateFirstReceiveTimestamp: String(Date.now()),
+        },
+        messageAttributes: {},
+        md5OfBody: '',
+        eventSource: 'aws:sqs',
+        eventSourceARN: 'arn:aws:sqs:ca-west-1:123456789012:queue',
+        awsRegion: 'ca-west-1',
+      },
+    ],
+  };
+
+  const response = await handler(event, {} as any, () => undefined);
+  assert.equal(response.batchItemFailures.length, 1);
+  assert.equal(metrics.length, 1);
+  assert.equal(metrics[0].status, 'failed');
+
+  const status = await store.getJobStatus(accepted.jobId, '11111111-1111-4111-8111-111111111111');
+  assert.equal(status?.status, 'failed');
 });

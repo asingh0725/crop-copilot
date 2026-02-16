@@ -9,6 +9,7 @@ export * as ProcessIngestionBatchWorker from './workers/process-ingestion-batch'
 export * from './auth/cognito-jwt';
 export * from './auth/with-auth';
 export * from './notifications/push-events';
+export * from './telemetry/recommendation-metrics';
 export * from './queue/recommendation-queue';
 export * from './queue/ingestion-queue';
 export * from './rag/hybrid-ranker';

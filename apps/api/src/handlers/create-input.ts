@@ -11,6 +11,11 @@ export function buildCreateInputHandler(
   queue: RecommendationQueue = getRecommendationQueue()
 ): APIGatewayProxyHandlerV2 {
   return withAuth(async (event, auth) => {
+    const traceId =
+      event.requestContext?.requestId ??
+      event.headers?.['x-request-id'] ??
+      event.headers?.['X-Request-Id'];
+
     let command: CreateInputCommand;
     try {
       const payload = parseJsonBody<unknown>(event.body);
@@ -37,6 +42,7 @@ export function buildCreateInputHandler(
         messageType: 'recommendation.job.requested',
         messageVersion: '1',
         requestedAt: new Date().toISOString(),
+        traceId,
         userId: auth.userId,
         inputId: response.inputId,
         jobId: response.jobId,

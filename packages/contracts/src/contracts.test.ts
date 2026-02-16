@@ -4,6 +4,7 @@ import {
   CreateInputCommandSchema,
   CreateUploadUrlRequestSchema,
   IngestionBatchMessageSchema,
+  RecommendationReadyEventSchema,
   RecommendationJobRequestedSchema,
   RecommendationJobStatusResponseSchema,
   SyncPullRequestSchema,
@@ -93,12 +94,29 @@ test('RecommendationJobRequestedSchema validates queue message', () => {
     messageType: 'recommendation.job.requested',
     messageVersion: '1',
     requestedAt: '2026-02-16T12:00:00.000Z',
+    traceId: 'req_abc12345',
     userId: '11111111-1111-4111-8111-111111111111',
     inputId: 'd3d62e25-5a03-4691-aa42-6de8ce6f0b5b',
     jobId: 'f412cbaf-2f60-414b-9804-715f5c3b89ef',
   });
 
   assert.equal(parsed.messageType, 'recommendation.job.requested');
+  assert.equal(parsed.traceId, 'req_abc12345');
+});
+
+test('RecommendationReadyEventSchema supports trace correlation metadata', () => {
+  const parsed = RecommendationReadyEventSchema.parse({
+    eventType: 'recommendation.ready',
+    eventVersion: '1',
+    occurredAt: '2026-02-16T12:00:00.000Z',
+    traceId: 'req_abc12345',
+    userId: '11111111-1111-4111-8111-111111111111',
+    inputId: 'd3d62e25-5a03-4691-aa42-6de8ce6f0b5b',
+    jobId: 'f412cbaf-2f60-414b-9804-715f5c3b89ef',
+    recommendationId: '8b679b28-877f-48db-b3c6-b4e50273ef79',
+  });
+
+  assert.equal(parsed.traceId, 'req_abc12345');
 });
 
 test('IngestionBatchMessageSchema validates batch ingestion request', () => {

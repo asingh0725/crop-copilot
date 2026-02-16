@@ -8,6 +8,8 @@ import * as sqs from 'aws-cdk-lib/aws-sqs';
 import * as sfn from 'aws-cdk-lib/aws-stepfunctions';
 import * as events from 'aws-cdk-lib/aws-events';
 import * as targets from 'aws-cdk-lib/aws-events-targets';
+import * as cloudwatch from 'aws-cdk-lib/aws-cloudwatch';
+import * as cloudwatchActions from 'aws-cdk-lib/aws-cloudwatch-actions';
 import { Construct } from 'constructs';
 import type { EnvironmentConfig } from '../config';
 
@@ -120,6 +122,124 @@ export class FoundationStack extends Stack {
       },
     });
 
+    const recommendationLatencyMetric = new cloudwatch.Metric({
+      namespace: 'CropCopilot/Pipeline',
+      metricName: 'RecommendationDurationMs',
+      statistic: 'Average',
+      period: Duration.minutes(5),
+    });
+
+    const recommendationCostMetric = new cloudwatch.Metric({
+      namespace: 'CropCopilot/Pipeline',
+      metricName: 'RecommendationEstimatedCostUsd',
+      statistic: 'Average',
+      period: Duration.minutes(5),
+    });
+
+    const recommendationFailureMetric = new cloudwatch.Metric({
+      namespace: 'CropCopilot/Pipeline',
+      metricName: 'RecommendationFailedCount',
+      statistic: 'Sum',
+      period: Duration.minutes(5),
+    });
+
+    const queueBacklogAlarm = new cloudwatch.Alarm(this, 'RecommendationQueueBacklogAlarm', {
+      alarmName: `${config.projectSlug}-${config.envName}-recommendation-queue-backlog`,
+      alarmDescription: 'Recommendation queue backlog exceeded expected threshold.',
+      metric: recommendationQueue.metricApproximateNumberOfMessagesVisible({
+        statistic: 'Average',
+        period: Duration.minutes(5),
+      }),
+      threshold: 25,
+      evaluationPeriods: 2,
+      datapointsToAlarm: 2,
+      treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
+    });
+
+    const recommendationDlqAlarm = new cloudwatch.Alarm(this, 'RecommendationDlqAlarm', {
+      alarmName: `${config.projectSlug}-${config.envName}-recommendation-dlq-depth`,
+      alarmDescription: 'Recommendation DLQ has pending messages.',
+      metric: recommendationDlq.metricApproximateNumberOfMessagesVisible({
+        statistic: 'Maximum',
+        period: Duration.minutes(5),
+      }),
+      threshold: 1,
+      evaluationPeriods: 1,
+      datapointsToAlarm: 1,
+      treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
+    });
+
+    const recommendationFailureAlarm = new cloudwatch.Alarm(
+      this,
+      'RecommendationFailureRateAlarm',
+      {
+        alarmName: `${config.projectSlug}-${config.envName}-recommendation-failures`,
+        alarmDescription: 'Recommendation pipeline reported failed runs.',
+        metric: recommendationFailureMetric,
+        threshold: 1,
+        evaluationPeriods: 1,
+        datapointsToAlarm: 1,
+        treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
+      }
+    );
+
+    const recommendationCostAlarm = new cloudwatch.Alarm(this, 'RecommendationCostAlarm', {
+      alarmName: `${config.projectSlug}-${config.envName}-recommendation-cost`,
+      alarmDescription: 'Average recommendation cost exceeded configured target.',
+      metric: recommendationCostMetric,
+      threshold: config.maxRecommendationCostUsd,
+      evaluationPeriods: 3,
+      datapointsToAlarm: 2,
+      treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
+    });
+
+    const opsDashboard = new cloudwatch.Dashboard(this, 'OpsDashboard', {
+      dashboardName: `${config.projectSlug}-${config.envName}-ops`,
+    });
+
+    opsDashboard.addWidgets(
+      new cloudwatch.GraphWidget({
+        title: 'Queue backlog',
+        left: [
+          recommendationQueue.metricApproximateNumberOfMessagesVisible({
+            statistic: 'Average',
+            period: Duration.minutes(5),
+          }),
+          ingestionQueue.metricApproximateNumberOfMessagesVisible({
+            statistic: 'Average',
+            period: Duration.minutes(5),
+          }),
+        ],
+      }),
+      new cloudwatch.GraphWidget({
+        title: 'Dead-letter queues',
+        left: [
+          recommendationDlq.metricApproximateNumberOfMessagesVisible({
+            statistic: 'Maximum',
+            period: Duration.minutes(5),
+          }),
+          ingestionDlq.metricApproximateNumberOfMessagesVisible({
+            statistic: 'Maximum',
+            period: Duration.minutes(5),
+          }),
+        ],
+      }),
+      new cloudwatch.GraphWidget({
+        title: 'Recommendation performance and cost',
+        left: [recommendationLatencyMetric, recommendationCostMetric],
+        right: [recommendationFailureMetric],
+      })
+    );
+
+    for (const alarm of [
+      queueBacklogAlarm,
+      recommendationDlqAlarm,
+      recommendationFailureAlarm,
+      recommendationCostAlarm,
+    ]) {
+      alarm.addAlarmAction(new cloudwatchActions.SnsAction(billingAlertsTopic));
+    }
+
     const pipelineDefinition = new sfn.Pass(this, 'RetrievingContext')
       .next(new sfn.Pass(this, 'GeneratingRecommendation'))
       .next(new sfn.Pass(this, 'ValidatingOutput'))
@@ -204,6 +324,12 @@ export class FoundationStack extends Stack {
       description: 'SNS topic ARN for recommendation-ready push event fanout.',
     });
 
+    new ssm.StringParameter(this, 'ParameterOpsDashboardName', {
+      parameterName: `${parameterPrefix}/ops/dashboard/name`,
+      stringValue: opsDashboard.dashboardName,
+      description: 'CloudWatch dashboard for queue, pipeline, and FinOps metrics.',
+    });
+
     new ssm.StringParameter(this, 'ParameterIngestionQueueUrl', {
       parameterName: `${parameterPrefix}/pipeline/ingestion-queue-url`,
       stringValue: ingestionQueue.queueUrl,
@@ -252,6 +378,11 @@ export class FoundationStack extends Stack {
     new CfnOutput(this, 'PushEventsTopicArn', {
       value: mobilePushEventsTopic.topicArn,
       description: 'SNS topic ARN for recommendation-ready push event fanout.',
+    });
+
+    new CfnOutput(this, 'OpsDashboardName', {
+      value: opsDashboard.dashboardName,
+      description: 'CloudWatch dashboard name for operational and cost monitoring.',
     });
 
     new CfnOutput(this, 'IngestionQueueUrl', {

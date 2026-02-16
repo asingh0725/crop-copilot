@@ -12,6 +12,8 @@ This package provisions the AWS foundation stack for Crop Copilot.
 - SNS mobile push events topic
 - Step Functions recommendation pipeline scaffold
 - Step Functions ingestion pipeline scaffold + EventBridge schedule trigger
+- CloudWatch ops dashboard (queue depth, DLQ, latency, cost metrics)
+- CloudWatch alarms for queue backlog, DLQ depth, failures, and per-recommendation cost
 - SSM parameter namespace for platform runtime config
 
 ## Environment variables
@@ -27,6 +29,7 @@ Required values:
 Optional values:
 
 - `MONTHLY_BUDGET_USD`
+- `MAX_RECOMMENDATION_COST_USD`
 - `COST_ALERT_EMAIL`
 
 ## Commands
