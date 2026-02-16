@@ -40,3 +40,8 @@ Storage and persistence env:
 - `SQS_RECOMMENDATION_QUEUE_URL` (optional; if set, create-input publishes async job messages)
 - `SQS_INGESTION_QUEUE_URL` (optional; if set, ingestion scheduler publishes ingestion batches)
 - `SNS_PUSH_EVENTS_TOPIC_ARN` (optional; if set, recommendation worker emits `recommendation.ready` events)
+
+Upload URL request contract:
+
+- `contentLength` is required and capped at 25MB
+- the generated presigned request includes `ContentLength` to enforce size

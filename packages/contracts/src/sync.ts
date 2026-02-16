@@ -3,16 +3,23 @@ import { PaginationSchema } from './common';
 import { JobStatusSchema } from './diagnosis';
 
 const QueryBooleanSchema = z.preprocess((value) => {
-  if (typeof value !== 'string') {
-    return value;
+  if (typeof value === 'string') {
+    const normalized = value.trim().toLowerCase();
+    if (normalized === 'true' || normalized === '1') {
+      return true;
+    }
+    if (normalized === 'false' || normalized === '0') {
+      return false;
+    }
   }
 
-  const normalized = value.trim().toLowerCase();
-  if (normalized === 'true') {
-    return true;
-  }
-  if (normalized === 'false') {
-    return false;
+  if (typeof value === 'number') {
+    if (value === 1) {
+      return true;
+    }
+    if (value === 0) {
+      return false;
+    }
   }
 
   return value;

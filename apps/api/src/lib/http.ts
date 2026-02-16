@@ -5,6 +5,17 @@ export interface JsonResponseInit {
   headers?: Record<string, string>;
 }
 
+export class BadRequestError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'BadRequestError';
+  }
+}
+
+export function isBadRequestError(error: unknown): error is BadRequestError {
+  return error instanceof BadRequestError;
+}
+
 export function jsonResponse<T>(
   payload: T,
   init: JsonResponseInit
@@ -21,8 +32,12 @@ export function jsonResponse<T>(
 
 export function parseJsonBody<T>(body: string | undefined | null): T {
   if (!body) {
-    throw new Error('Request body is required');
+    throw new BadRequestError('Request body is required');
   }
 
-  return JSON.parse(body) as T;
+  try {
+    return JSON.parse(body) as T;
+  } catch {
+    throw new BadRequestError('Request body must be valid JSON');
+  }
 }

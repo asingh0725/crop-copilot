@@ -31,6 +31,7 @@ test('buildIngestionBatchMessage prioritizes high priority sources', () => {
     new Date('2026-02-16T12:00:00.000Z')
   );
 
+  assert.ok(batch);
   assert.equal(batch.sources[0].sourceId, 'high-source');
 });
 

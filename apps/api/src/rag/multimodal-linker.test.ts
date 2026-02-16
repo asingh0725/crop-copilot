@@ -35,3 +35,28 @@ test('linkImageCandidatesToText links images to best matching text chunk', () =>
   assert.equal(links[0].linkedChunkId, 'chunk-b');
   assert.ok(links[0].score > 0.5);
 });
+
+test('linkImageCandidatesToText returns null link when no tag overlap exists', () => {
+  const links = linkImageCandidatesToText(
+    [
+      {
+        imageId: 'img-2',
+        caption: 'Leaf edge curling',
+        tags: ['leaf', 'curling'],
+      },
+    ],
+    [
+      {
+        chunkId: 'chunk-z',
+        content: 'Nutrient and irrigation scheduling',
+        similarity: 0.6,
+        sourceType: 'OTHER',
+        sourceTitle: 'General',
+        metadata: { tags: ['nitrogen', 'water'] },
+      },
+    ]
+  );
+
+  assert.equal(links[0].linkedChunkId, null);
+  assert.equal(links[0].score, 0);
+});

@@ -25,7 +25,7 @@ function overlapScore(tagsA: string[], tagsB: string[]): number {
 
 function positionScore(imagePosition: number | undefined, chunkPosition: number | undefined): number {
   if (imagePosition === undefined || chunkPosition === undefined) {
-    return 0.5;
+    return 0;
   }
 
   const delta = Math.abs(imagePosition - chunkPosition);
@@ -43,6 +43,9 @@ export function linkImageCandidatesToText(
     for (const candidate of textCandidates) {
       const candidateTags = candidate.metadata?.tags ?? [];
       const tagScore = overlapScore(image.tags, candidateTags);
+      if (tagScore === 0) {
+        continue;
+      }
       const posScore = positionScore(image.position, candidate.metadata?.position);
       const score = tagScore * 0.7 + posScore * 0.3;
 
@@ -54,7 +57,7 @@ export function linkImageCandidatesToText(
 
     return {
       imageId: image.imageId,
-      linkedChunkId: bestChunk?.chunkId ?? null,
+      linkedChunkId: bestScore > 0 ? bestChunk?.chunkId ?? null : null,
       score: Number(bestScore.toFixed(4)),
     };
   });

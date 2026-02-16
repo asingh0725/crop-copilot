@@ -11,7 +11,11 @@ import type {
   SyncPullResponse,
 } from '@crop-copilot/contracts';
 import { SyncPullRequestSchema } from '@crop-copilot/contracts';
-import { decodeSyncCursor, encodeSyncCursor, normalizeIdempotencyKey } from '@crop-copilot/domain';
+import {
+  decodeSyncCursor,
+  encodeSyncCursor,
+  normalizeIdempotencyKey,
+} from '@crop-copilot/domain';
 import { PostgresRecommendationStore } from './postgres-store';
 
 interface StoredInput {
@@ -33,8 +37,16 @@ interface StoredJob {
   result?: RecommendationResult;
 }
 
+function buildIdempotencyLookupKey(userId: string, idempotencyKey: string): string {
+  return `${userId}:${normalizeIdempotencyKey(idempotencyKey)}`;
+}
+
+export interface EnqueueInputResult extends CreateInputAccepted {
+  wasCreated: boolean;
+}
+
 export interface RecommendationStore {
-  enqueueInput(userId: string, payload: CreateInputCommand): Promise<CreateInputAccepted>;
+  enqueueInput(userId: string, payload: CreateInputCommand): Promise<EnqueueInputResult>;
   getJobStatus(
     jobId: string,
     userId: string
@@ -56,46 +68,50 @@ export interface RecommendationStore {
 export class InMemoryRecommendationStore implements RecommendationStore {
   private readonly inputsById = new Map<string, StoredInput>();
   private readonly jobById = new Map<string, StoredJob>();
-  private readonly inputIdByUserIdempotency = new Map<string, string>();
+  private readonly inputIdByIdempotencyKey = new Map<string, string>();
 
   async enqueueInput(
     userId: string,
     payload: CreateInputCommand
-  ): Promise<CreateInputAccepted> {
-    const normalizedKey = normalizeIdempotencyKey(payload.idempotencyKey);
-    const dedupeKey = this.buildInputDedupeKey(userId, normalizedKey);
-    const existingInputId = this.inputIdByUserIdempotency.get(dedupeKey);
+  ): Promise<EnqueueInputResult> {
+    const idempotencyLookupKey = buildIdempotencyLookupKey(
+      userId,
+      payload.idempotencyKey
+    );
+    const existingInputId = this.inputIdByIdempotencyKey.get(idempotencyLookupKey);
     if (existingInputId) {
       const existingInput = this.inputsById.get(existingInputId);
-      const existingJob = existingInput ? this.jobById.get(existingInput.jobId) : null;
+      if (existingInput) {
+        const existingJob = this.jobById.get(existingInput.jobId);
 
-      if (existingInput && existingJob) {
         return {
           inputId: existingInput.inputId,
-          jobId: existingJob.jobId,
-          status: existingJob.status,
+          jobId: existingInput.jobId,
+          status: existingJob?.status ?? 'queued',
           acceptedAt: existingInput.createdAt,
+          wasCreated: false,
         };
       }
+
+      this.inputIdByIdempotencyKey.delete(idempotencyLookupKey);
     }
 
     const now = new Date().toISOString();
     const inputId = randomUUID();
     const jobId = randomUUID();
-    const storedPayload: CreateInputCommand = {
+    const normalizedPayload: CreateInputCommand = {
       ...payload,
-      idempotencyKey: normalizedKey,
+      idempotencyKey: normalizeIdempotencyKey(payload.idempotencyKey),
     };
 
     this.inputsById.set(inputId, {
       inputId,
       userId,
-      payload: storedPayload,
+      payload: normalizedPayload,
       createdAt: now,
       updatedAt: now,
       jobId,
     });
-    this.inputIdByUserIdempotency.set(dedupeKey, inputId);
 
     this.jobById.set(jobId, {
       jobId,
@@ -104,12 +120,14 @@ export class InMemoryRecommendationStore implements RecommendationStore {
       status: 'queued',
       updatedAt: now,
     });
+    this.inputIdByIdempotencyKey.set(idempotencyLookupKey, inputId);
 
     return {
       inputId,
       jobId,
       status: 'queued',
       acceptedAt: now,
+      wasCreated: true,
     };
   }
 
@@ -154,8 +172,7 @@ export class InMemoryRecommendationStore implements RecommendationStore {
         continue;
       }
 
-      const updatedAt =
-        job.updatedAt > input.updatedAt ? job.updatedAt : input.updatedAt;
+      const updatedAt = job.updatedAt > input.updatedAt ? job.updatedAt : input.updatedAt;
 
       items.push({
         inputId: input.inputId,
@@ -239,10 +256,6 @@ export class InMemoryRecommendationStore implements RecommendationStore {
       input.updatedAt = job.updatedAt;
       this.inputsById.set(input.inputId, input);
     }
-  }
-
-  private buildInputDedupeKey(userId: string, idempotencyKey: string): string {
-    return `${userId}:${idempotencyKey}`;
   }
 }
 
