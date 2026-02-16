@@ -52,3 +52,26 @@ tools/data/testing/
 
 # OS files
 .DS_Store
+
+# iOS secrets
+apps/ios/Config/Secrets.xcconfig
+
+# Xcode
+apps/ios/DerivedData/
+apps/ios/**/*.xcuserdata
+apps/ios/**/*.xcuserdatad
+apps/ios/**/*.xcworkspace/xcuserdata
+apps/ios/**/xcuserdata/
+apps/ios/.DS_Store
+apps/ios/build/
+*.pbxuser
+*.mode1v3
+*.mode2v3
+*.perspectivev3
+*.xccheckout
+*.moved-aside
+*.xcuserstate
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
