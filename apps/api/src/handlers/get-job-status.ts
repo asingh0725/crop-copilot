@@ -23,7 +23,7 @@ export function buildGetJobStatusHandler(
       );
     }
 
-    const status = getRecommendationStore().getJobStatus(jobId, auth.userId);
+    const status = await getRecommendationStore().getJobStatus(jobId, auth.userId);
     if (!status) {
       return jsonResponse(
         {

@@ -17,8 +17,19 @@ pnpm --filter @crop-copilot/api build
 pnpm --filter @crop-copilot/api test
 ```
 
+Database bootstrap SQL:
+
+- `apps/api/sql/001_async_recommendation_tables.sql`
+
 Required env for Cognito auth at runtime:
 
 - `COGNITO_REGION`
 - `COGNITO_USER_POOL_ID`
 - `COGNITO_APP_CLIENT_ID` (optional but recommended)
+
+Storage and persistence env:
+
+- `DATA_BACKEND` (`in-memory` default, `postgres` for Aurora/RDS)
+- `DATABASE_URL` (required when `DATA_BACKEND=postgres`)
+- `S3_UPLOAD_BUCKET`
+- `S3_UPLOAD_URL_EXPIRY_SECONDS` (optional, default 900)

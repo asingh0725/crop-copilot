@@ -1,10 +1,12 @@
 import { randomUUID } from 'node:crypto';
+import { Pool } from 'pg';
 import type {
   CreateInputAccepted,
   CreateInputCommand,
   JobStatus,
   RecommendationJobStatusResponse,
 } from '@crop-copilot/contracts';
+import { PostgresRecommendationStore } from './postgres-store';
 
 interface StoredInput {
   inputId: string;
@@ -24,15 +26,21 @@ interface StoredJob {
 }
 
 export interface RecommendationStore {
-  enqueueInput(userId: string, payload: CreateInputCommand): CreateInputAccepted;
-  getJobStatus(jobId: string, userId: string): RecommendationJobStatusResponse | null;
+  enqueueInput(userId: string, payload: CreateInputCommand): Promise<CreateInputAccepted>;
+  getJobStatus(
+    jobId: string,
+    userId: string
+  ): Promise<RecommendationJobStatusResponse | null>;
 }
 
 export class InMemoryRecommendationStore implements RecommendationStore {
   private readonly inputsById = new Map<string, StoredInput>();
   private readonly jobById = new Map<string, StoredJob>();
 
-  enqueueInput(userId: string, payload: CreateInputCommand): CreateInputAccepted {
+  async enqueueInput(
+    userId: string,
+    payload: CreateInputCommand
+  ): Promise<CreateInputAccepted> {
     const now = new Date().toISOString();
     const inputId = randomUUID();
     const jobId = randomUUID();
@@ -61,7 +69,10 @@ export class InMemoryRecommendationStore implements RecommendationStore {
     };
   }
 
-  getJobStatus(jobId: string, userId: string): RecommendationJobStatusResponse | null {
+  async getJobStatus(
+    jobId: string,
+    userId: string
+  ): Promise<RecommendationJobStatusResponse | null> {
     const job = this.jobById.get(jobId);
     if (!job) {
       return null;
@@ -82,10 +93,36 @@ export class InMemoryRecommendationStore implements RecommendationStore {
 }
 
 let singletonStore: RecommendationStore | null = null;
+let sharedPool: Pool | null = null;
+
+function createPostgresStore(): RecommendationStore {
+  if (!sharedPool) {
+    const databaseUrl = process.env.DATABASE_URL;
+    if (!databaseUrl) {
+      throw new Error('DATABASE_URL is required when DATA_BACKEND=postgres');
+    }
+
+    sharedPool = new Pool({
+      connectionString: databaseUrl,
+      max: Number(process.env.PG_POOL_MAX ?? 5),
+      ssl:
+        process.env.PG_SSL_MODE === 'disable'
+          ? false
+          : {
+              rejectUnauthorized: false,
+            },
+    });
+  }
+
+  return new PostgresRecommendationStore(sharedPool);
+}
 
 export function getRecommendationStore(): RecommendationStore {
   if (!singletonStore) {
-    singletonStore = new InMemoryRecommendationStore();
+    singletonStore =
+      process.env.DATA_BACKEND === 'postgres'
+        ? createPostgresStore()
+        : new InMemoryRecommendationStore();
   }
 
   return singletonStore;

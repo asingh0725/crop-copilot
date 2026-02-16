@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   CreateInputCommandSchema,
+  CreateUploadUrlRequestSchema,
   RecommendationJobStatusResponseSchema,
   SyncPullResponseSchema,
 } from './index';
@@ -54,4 +55,15 @@ test('SyncPullResponseSchema requires server timestamp and next cursor', () => {
   });
 
   assert.equal(parsed.hasMore, false);
+});
+
+test('CreateUploadUrlRequestSchema validates upload payload', () => {
+  const parsed = CreateUploadUrlRequestSchema.parse({
+    fileName: 'leaf-photo.jpg',
+    contentType: 'image/jpeg',
+    contentLength: 1024,
+  });
+
+  assert.equal(parsed.fileName, 'leaf-photo.jpg');
+  assert.equal(parsed.contentType, 'image/jpeg');
 });

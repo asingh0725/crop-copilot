@@ -13,7 +13,10 @@ export function buildCreateInputHandler(
       const payload = parseJsonBody<unknown>(event.body);
       const command = CreateInputCommandSchema.parse(payload);
 
-      const response = getRecommendationStore().enqueueInput(auth.userId, command);
+      const response = await getRecommendationStore().enqueueInput(
+        auth.userId,
+        command
+      );
 
       return jsonResponse(response, { statusCode: 202 });
     } catch (error) {
