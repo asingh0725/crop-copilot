@@ -5,6 +5,7 @@ import {
   CreateUploadUrlRequestSchema,
   RecommendationJobRequestedSchema,
   RecommendationJobStatusResponseSchema,
+  SyncPullRequestSchema,
   SyncPullResponseSchema,
 } from './index';
 
@@ -69,6 +70,15 @@ test('CreateUploadUrlRequestSchema validates upload payload', () => {
   assert.equal(parsed.contentType, 'image/jpeg');
 });
 
+test('CreateUploadUrlRequestSchema requires contentLength', () => {
+  assert.throws(() =>
+    CreateUploadUrlRequestSchema.parse({
+      fileName: 'leaf-photo.jpg',
+      contentType: 'image/jpeg',
+    })
+  );
+});
+
 test('RecommendationJobRequestedSchema validates queue message', () => {
   const parsed = RecommendationJobRequestedSchema.parse({
     messageType: 'recommendation.job.requested',
@@ -80,4 +90,22 @@ test('RecommendationJobRequestedSchema validates queue message', () => {
   });
 
   assert.equal(parsed.messageType, 'recommendation.job.requested');
+});
+
+test('SyncPullRequestSchema parses includeCompletedJobs=false correctly', () => {
+  const parsed = SyncPullRequestSchema.parse({
+    includeCompletedJobs: 'false',
+    limit: '10',
+  });
+
+  assert.equal(parsed.includeCompletedJobs, false);
+  assert.equal(parsed.limit, 10);
+});
+
+test('SyncPullRequestSchema parses includeCompletedJobs=0 correctly', () => {
+  const parsed = SyncPullRequestSchema.parse({
+    includeCompletedJobs: '0',
+  });
+
+  assert.equal(parsed.includeCompletedJobs, false);
 });

@@ -27,8 +27,12 @@ interface StoredJob {
   result?: RecommendationResult;
 }
 
+function buildIdempotencyLookupKey(userId: string, idempotencyKey: string): string {
+  return `${userId}:${idempotencyKey.trim().toLowerCase()}`;
+}
+
 export interface RecommendationStore {
-  enqueueInput(userId: string, payload: CreateInputCommand): Promise<CreateInputAccepted>;
+  enqueueInput(userId: string, payload: CreateInputCommand): Promise<EnqueueInputResult>;
   getJobStatus(
     jobId: string,
     userId: string
@@ -46,14 +50,41 @@ export interface RecommendationStore {
   ): Promise<void>;
 }
 
+export interface EnqueueInputResult extends CreateInputAccepted {
+  wasCreated: boolean;
+}
+
 export class InMemoryRecommendationStore implements RecommendationStore {
   private readonly inputsById = new Map<string, StoredInput>();
   private readonly jobById = new Map<string, StoredJob>();
+  private readonly inputIdByIdempotencyKey = new Map<string, string>();
 
   async enqueueInput(
     userId: string,
     payload: CreateInputCommand
-  ): Promise<CreateInputAccepted> {
+  ): Promise<EnqueueInputResult> {
+    const idempotencyLookupKey = buildIdempotencyLookupKey(
+      userId,
+      payload.idempotencyKey
+    );
+    const existingInputId =
+      this.inputIdByIdempotencyKey.get(idempotencyLookupKey);
+    if (existingInputId) {
+      const existingInput = this.inputsById.get(existingInputId);
+      if (existingInput) {
+        const existingJob = this.jobById.get(existingInput.jobId);
+
+        return {
+          inputId: existingInput.inputId,
+          jobId: existingInput.jobId,
+          status: existingJob?.status ?? 'queued',
+          acceptedAt: existingInput.createdAt,
+          wasCreated: false,
+        };
+      }
+
+      this.inputIdByIdempotencyKey.delete(idempotencyLookupKey);
+    }
     const now = new Date().toISOString();
     const inputId = randomUUID();
     const jobId = randomUUID();
@@ -73,12 +104,14 @@ export class InMemoryRecommendationStore implements RecommendationStore {
       status: 'queued',
       updatedAt: now,
     });
+    this.inputIdByIdempotencyKey.set(idempotencyLookupKey, inputId);
 
     return {
       inputId,
       jobId,
       status: 'queued',
       acceptedAt: now,
+      wasCreated: true,
     };
   }
 
