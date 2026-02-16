@@ -23,8 +23,7 @@ struct CropCopilotApp: App {
         WindowGroup {
             Group {
                 if authViewModel.isAuthenticated {
-                    Text("Dashboard Placeholder")
-                        .font(.title)
+                    MainTabView()
                 } else {
                     LoginView()
                 }
