@@ -1,6 +1,7 @@
 import { CfnOutput, RemovalPolicy, Stack, StackProps, Tags } from 'aws-cdk-lib';
 import * as budgets from 'aws-cdk-lib/aws-budgets';
 import * as s3 from 'aws-cdk-lib/aws-s3';
+import * as iam from 'aws-cdk-lib/aws-iam';
 import * as sns from 'aws-cdk-lib/aws-sns';
 import * as subscriptions from 'aws-cdk-lib/aws-sns-subscriptions';
 import * as ssm from 'aws-cdk-lib/aws-ssm';
@@ -36,6 +37,15 @@ export class FoundationStack extends Stack {
       displayName: `Crop Copilot ${config.envName} billing alerts`,
       topicName: `${config.projectSlug}-${config.envName}-billing-alerts`,
     });
+
+    billingAlertsTopic.addToResourcePolicy(
+      new iam.PolicyStatement({
+        sid: 'AllowBudgetsToPublish',
+        actions: ['sns:Publish'],
+        principals: [new iam.ServicePrincipal('budgets.amazonaws.com')],
+        resources: [billingAlertsTopic.topicArn],
+      })
+    );
 
     if (config.costAlertEmail) {
       billingAlertsTopic.addSubscription(
