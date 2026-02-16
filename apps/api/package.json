@@ -9,7 +9,8 @@
   },
   "dependencies": {
     "@crop-copilot/contracts": "workspace:*",
-    "@crop-copilot/domain": "workspace:*"
+    "@crop-copilot/domain": "workspace:*",
+    "jose": "^6.1.0"
   },
   "devDependencies": {
     "@types/aws-lambda": "^8.10.150",

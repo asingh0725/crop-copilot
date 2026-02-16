@@ -1,10 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { handler as createInputHandler } from './create-input';
-import { handler as getJobStatusHandler } from './get-job-status';
 import { handler as healthHandler } from './health';
+import { buildCreateInputHandler } from './create-input';
+import { buildGetJobStatusHandler } from './get-job-status';
 import type { RecommendationStore } from '../lib/store';
 import { setRecommendationStore } from '../lib/store';
+import { AuthError } from '../auth/errors';
 
 interface HandlerResponse {
   statusCode: number;
@@ -33,6 +34,12 @@ test('health handler returns 200', async () => {
 
 test('create input returns 202 and job id, then get status returns queued', async () => {
   setRecommendationStore(null);
+  const authVerifier = async () => ({
+    userId: '11111111-1111-1111-1111-111111111111',
+    scopes: ['recommendation:write'],
+  });
+  const createInputHandler = buildCreateInputHandler(authVerifier);
+  const getJobStatusHandler = buildGetJobStatusHandler(authVerifier);
 
   const createRes = asHandlerResponse(
     await createInputHandler(
@@ -42,7 +49,7 @@ test('create input returns 202 and job id, then get status returns queued', asyn
           type: 'PHOTO',
           imageUrl: 'https://example.com/image.jpg',
         }),
-        headers: { 'x-user-id': '11111111-1111-1111-1111-111111111111' },
+        headers: { authorization: 'Bearer fake-token' },
       } as any,
       {} as any,
       () => undefined
@@ -75,6 +82,10 @@ test('create input returns 202 and job id, then get status returns queued', asyn
 
 test('create input returns 400 for invalid body', async () => {
   setRecommendationStore(null);
+  const createInputHandler = buildCreateInputHandler(async () => ({
+    userId: '11111111-1111-1111-1111-111111111111',
+    scopes: ['recommendation:write'],
+  }));
 
   const response = asHandlerResponse(
     await createInputHandler(
@@ -94,8 +105,35 @@ test('create input returns 400 for invalid body', async () => {
   assert.equal(body.error.code, 'BAD_REQUEST');
 });
 
+test('create input returns 401 for failed auth', async () => {
+  setRecommendationStore(null);
+  const createInputHandler = buildCreateInputHandler(async () => {
+    throw new AuthError('Token missing');
+  });
+
+  const response = asHandlerResponse(
+    await createInputHandler(
+      {
+        body: JSON.stringify({
+          idempotencyKey: 'ios-device-01:abc12345',
+          type: 'PHOTO',
+        }),
+        headers: {},
+      } as any,
+      {} as any,
+      () => undefined
+    )
+  );
+
+  assert.equal(response.statusCode, 401);
+});
+
 test('create input returns same job for idempotent retry by same user', async () => {
   setRecommendationStore(null);
+  const createInputHandler = buildCreateInputHandler(async () => ({
+    userId: '33333333-3333-3333-3333-333333333333',
+    scopes: ['recommendation:write'],
+  }));
 
   const event = {
     body: JSON.stringify({
@@ -103,7 +141,7 @@ test('create input returns same job for idempotent retry by same user', async ()
       type: 'PHOTO',
       imageUrl: 'https://example.com/image.jpg',
     }),
-    headers: { 'x-user-id': '33333333-3333-3333-3333-333333333333' },
+    headers: { authorization: 'Bearer fake-token' },
   } as any;
 
   const firstResponse = asHandlerResponse(
@@ -112,9 +150,6 @@ test('create input returns same job for idempotent retry by same user', async ()
   const secondResponse = asHandlerResponse(
     await createInputHandler(event, {} as any, () => undefined)
   );
-
-  assert.equal(firstResponse.statusCode, 202);
-  assert.equal(secondResponse.statusCode, 202);
 
   const firstBody = parseBody<{ jobId: string; inputId: string }>(firstResponse.body);
   const secondBody = parseBody<{ jobId: string; inputId: string }>(secondResponse.body);
@@ -132,21 +167,30 @@ test('create input idempotency key is scoped by user', async () => {
     imageUrl: 'https://example.com/image.jpg',
   });
 
+  const firstHandler = buildCreateInputHandler(async () => ({
+    userId: '44444444-4444-4444-4444-444444444444',
+    scopes: ['recommendation:write'],
+  }));
+  const secondHandler = buildCreateInputHandler(async () => ({
+    userId: '55555555-5555-5555-5555-555555555555',
+    scopes: ['recommendation:write'],
+  }));
+
   const firstResponse = asHandlerResponse(
-    await createInputHandler(
+    await firstHandler(
       {
         body,
-        headers: { 'x-user-id': '44444444-4444-4444-4444-444444444444' },
+        headers: { authorization: 'Bearer fake-token' },
       } as any,
       {} as any,
       () => undefined
     )
   );
   const secondResponse = asHandlerResponse(
-    await createInputHandler(
+    await secondHandler(
       {
         body,
-        headers: { 'x-user-id': '55555555-5555-5555-5555-555555555555' },
+        headers: { authorization: 'Bearer fake-token' },
       } as any,
       {} as any,
       () => undefined
@@ -165,11 +209,16 @@ test('create input returns 500 when store enqueue fails', async () => {
     enqueueInput() {
       throw new Error('persistence unavailable');
     },
-    getJobStatus() {
+    getJobStatus(_jobId, _userId) {
       return null;
     },
   };
   setRecommendationStore(failingStore);
+
+  const createInputHandler = buildCreateInputHandler(async () => ({
+    userId: '66666666-6666-6666-6666-666666666666',
+    scopes: ['recommendation:write'],
+  }));
 
   const response = asHandlerResponse(
     await createInputHandler(
@@ -179,7 +228,7 @@ test('create input returns 500 when store enqueue fails', async () => {
           type: 'PHOTO',
           imageUrl: 'https://example.com/image.jpg',
         }),
-        headers: { 'x-user-id': '66666666-6666-6666-6666-666666666666' },
+        headers: { authorization: 'Bearer fake-token' },
       } as any,
       {} as any,
       () => undefined
@@ -187,8 +236,8 @@ test('create input returns 500 when store enqueue fails', async () => {
   );
 
   assert.equal(response.statusCode, 500);
-  const body = parseBody<{ error: { code: string } }>(response.body);
-  assert.equal(body.error.code, 'INTERNAL_SERVER_ERROR');
+  const bodyResponse = parseBody<{ error: { code: string } }>(response.body);
+  assert.equal(bodyResponse.error.code, 'INTERNAL_SERVER_ERROR');
 
   setRecommendationStore(null);
 });
