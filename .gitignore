@@ -40,6 +40,9 @@ next-env.d.ts
 
 # turborepo
 .turbo
+infra/cdk.out/
+infra/.cdk.staging/
+infra/.env
 
 # ingestion pipeline cache & state
 tools/ingestion/.cache/

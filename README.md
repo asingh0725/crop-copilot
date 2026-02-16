@@ -21,6 +21,20 @@
 
 Row crops, vegetables, fruits, specialty crops, and forage species commonly grown across North America.
 
+## AWS Infrastructure
+
+Infrastructure as code now lives in `infra/` using AWS CDK (TypeScript).
+
+Quick commands:
+
+```bash
+pnpm infra:build
+pnpm infra:synth
+pnpm infra:diff
+pnpm infra:bootstrap
+pnpm infra:deploy
+```
+
 ---
 
 ## Key Features

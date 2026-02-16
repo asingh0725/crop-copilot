@@ -5,7 +5,12 @@
   "scripts": {
     "dev": "turbo dev",
     "build": "turbo build",
-    "lint": "turbo lint"
+    "lint": "turbo lint",
+    "infra:build": "pnpm --filter infra build",
+    "infra:synth": "pnpm --filter infra synth",
+    "infra:diff": "pnpm --filter infra diff",
+    "infra:bootstrap": "pnpm --filter infra bootstrap",
+    "infra:deploy": "pnpm --filter infra deploy"
   },
   "devDependencies": {
     "turbo": "^2.4.4",
