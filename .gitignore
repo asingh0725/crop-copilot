@@ -43,6 +43,7 @@ next-env.d.ts
 infra/cdk.out/
 infra/.cdk.staging/
 infra/.env
+packages/*/dist/
 
 # ingestion pipeline cache & state
 tools/ingestion/.cache/
