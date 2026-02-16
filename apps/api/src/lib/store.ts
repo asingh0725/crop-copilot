@@ -17,6 +17,7 @@ interface StoredInput {
 interface StoredJob {
   jobId: string;
   inputId: string;
+  userId: string;
   status: JobStatus;
   updatedAt: string;
   failureReason?: string;
@@ -24,7 +25,7 @@ interface StoredJob {
 
 export interface RecommendationStore {
   enqueueInput(userId: string, payload: CreateInputCommand): CreateInputAccepted;
-  getJobStatus(jobId: string): RecommendationJobStatusResponse | null;
+  getJobStatus(jobId: string, userId: string): RecommendationJobStatusResponse | null;
 }
 
 export class InMemoryRecommendationStore implements RecommendationStore {
@@ -47,6 +48,7 @@ export class InMemoryRecommendationStore implements RecommendationStore {
     this.jobById.set(jobId, {
       jobId,
       inputId,
+      userId,
       status: 'queued',
       updatedAt: now,
     });
@@ -59,9 +61,13 @@ export class InMemoryRecommendationStore implements RecommendationStore {
     };
   }
 
-  getJobStatus(jobId: string): RecommendationJobStatusResponse | null {
+  getJobStatus(jobId: string, userId: string): RecommendationJobStatusResponse | null {
     const job = this.jobById.get(jobId);
     if (!job) {
+      return null;
+    }
+
+    if (job.userId !== userId) {
       return null;
     }
 

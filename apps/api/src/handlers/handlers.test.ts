@@ -1,9 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { handler as createInputHandler } from './create-input';
-import { handler as getJobStatusHandler } from './get-job-status';
 import { handler as healthHandler } from './health';
+import { buildCreateInputHandler } from './create-input';
+import { buildGetJobStatusHandler } from './get-job-status';
 import { setRecommendationStore } from '../lib/store';
+import { AuthError } from '../auth/errors';
 
 function parseBody<T>(body: string | undefined): T {
   assert.ok(body, 'response body is missing');
@@ -19,6 +20,12 @@ test('health handler returns 200', async () => {
 
 test('create input returns 202 and job id, then get status returns queued', async () => {
   setRecommendationStore(null);
+  const authVerifier = async () => ({
+    userId: '11111111-1111-1111-1111-111111111111',
+    scopes: ['recommendation:write'],
+  });
+  const createInputHandler = buildCreateInputHandler(authVerifier);
+  const getJobStatusHandler = buildGetJobStatusHandler(authVerifier);
 
   const createRes = await createInputHandler(
     {
@@ -27,7 +34,7 @@ test('create input returns 202 and job id, then get status returns queued', asyn
         type: 'PHOTO',
         imageUrl: 'https://example.com/image.jpg',
       }),
-      headers: { 'x-user-id': '11111111-1111-1111-1111-111111111111' },
+      headers: { authorization: 'Bearer fake-token' },
     } as any,
     {} as any,
     () => undefined
@@ -57,6 +64,10 @@ test('create input returns 202 and job id, then get status returns queued', asyn
 
 test('create input returns 400 for invalid body', async () => {
   setRecommendationStore(null);
+  const createInputHandler = buildCreateInputHandler(async () => ({
+    userId: '11111111-1111-1111-1111-111111111111',
+    scopes: ['recommendation:write'],
+  }));
 
   const response = await createInputHandler(
     {
@@ -72,4 +83,25 @@ test('create input returns 400 for invalid body', async () => {
   assert.equal(response.statusCode, 400);
   const body = parseBody<{ error: { code: string } }>(response.body);
   assert.equal(body.error.code, 'BAD_REQUEST');
+});
+
+test('create input returns 401 for failed auth', async () => {
+  setRecommendationStore(null);
+  const createInputHandler = buildCreateInputHandler(async () => {
+    throw new AuthError('Token missing');
+  });
+
+  const response = await createInputHandler(
+    {
+      body: JSON.stringify({
+        idempotencyKey: 'ios-device-01:abc12345',
+        type: 'PHOTO',
+      }),
+      headers: {},
+    } as any,
+    {} as any,
+    () => undefined
+  );
+
+  assert.equal(response.statusCode, 401);
 });
