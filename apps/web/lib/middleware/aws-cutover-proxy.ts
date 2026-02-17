@@ -29,7 +29,11 @@ export async function maybeProxyToAwsApi(
     return null
   }
 
-  const targetUrl = new URL(request.nextUrl.pathname + request.nextUrl.search, awsApiBaseUrl)
+  const targetUrl = buildTargetUrl(
+    awsApiBaseUrl,
+    request.nextUrl.pathname,
+    request.nextUrl.search
+  )
   const requestHeaders = buildForwardHeaders(request.headers, resolution.mode)
   const init: RequestInit = {
     method: request.method,
@@ -176,6 +180,9 @@ function buildForwardHeaders(
     'x-request-id',
     'x-correlation-id',
   ]
+  if (process.env.AWS_API_PROXY_INCLUDE_COOKIE_TRAFFIC === 'true') {
+    passthrough.push('cookie')
+  }
 
   for (const key of passthrough) {
     const value = headers.get(key)
@@ -188,4 +195,10 @@ function buildForwardHeaders(
   forwarded['x-crop-copilot-cutover-proxy'] = 'true'
 
   return forwarded
+}
+
+function buildTargetUrl(baseUrl: string, pathname: string, search: string): URL {
+  const normalizedBase = baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`
+  const relativePath = pathname.replace(/^\/+/, '')
+  return new URL(`${relativePath}${search}`, normalizedBase)
 }
