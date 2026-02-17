@@ -70,7 +70,7 @@ export function SecureImage({ src, alt, ...props }: SecureImageProps) {
 
     const controller = new AbortController();
 
-    (async () => {
+    const fetchSignedUrl = async (attempt: number) => {
       try {
         const response = await fetch(
           `/api/v1/upload/view?objectUrl=${encodeURIComponent(src)}`,
@@ -84,8 +84,12 @@ export function SecureImage({ src, alt, ...props }: SecureImageProps) {
         );
 
         if (!response.ok) {
-          // Fall back to raw URL for publicly accessible objects.
-          setResolvedSrc(src);
+          // Avoid rendering unsigned private S3 URLs; retry once for transient auth races.
+          if ((response.status === 401 || response.status === 403) && attempt < 1) {
+            setTimeout(() => {
+              void fetchSignedUrl(attempt + 1);
+            }, 150);
+          }
           return;
         }
 
@@ -103,13 +107,17 @@ export function SecureImage({ src, alt, ...props }: SecureImageProps) {
           setResolvedSrc(body.downloadUrl);
           return;
         }
-
-        setResolvedSrc(src);
       } catch {
-        // Keep original URL as a fallback.
-        setResolvedSrc(src);
+        // Ignore aborted request noise (e.g., StrictMode remount in dev).
+        if (!controller.signal.aborted && attempt < 1) {
+          setTimeout(() => {
+            void fetchSignedUrl(attempt + 1);
+          }, 150);
+        }
       }
-    })();
+    };
+
+    void fetchSignedUrl(0);
 
     return () => {
       controller.abort();

@@ -5,6 +5,7 @@ type CutoverMode = 'legacy' | 'canary' | 'aws'
 
 const CUTOVER_PATH_PREFIX = '/api/v1/'
 const DEFAULT_PROXY_TIMEOUT_MS = 15000
+const ALWAYS_ENABLED_CUTOVER_PREFIXES = ['/api/v1/upload/view']
 const DEFAULT_CUTOVER_PATHS = [
   '/api/v1/health',
   '/api/v1/upload',
@@ -215,6 +216,14 @@ function buildTargetUrl(baseUrl: string, pathname: string, search: string): URL 
 }
 
 function isCutoverPathEnabled(pathname: string): boolean {
+  if (
+    ALWAYS_ENABLED_CUTOVER_PREFIXES.some(
+      (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)
+    )
+  ) {
+    return true
+  }
+
   const configured = process.env.AWS_API_CUTOVER_PATHS
     ?.split(',')
     .map((entry) => entry.trim())
