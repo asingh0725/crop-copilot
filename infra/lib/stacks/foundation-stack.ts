@@ -59,39 +59,42 @@ export class FoundationStack extends Stack {
       );
     }
 
-    new budgets.CfnBudget(this, 'MonthlyBudget', {
-      budget: {
-        budgetName: `${config.projectSlug}-${config.envName}-monthly`,
-        budgetType: 'COST',
-        timeUnit: 'MONTHLY',
-        budgetLimit: {
-          amount: config.monthlyBudgetUsd,
-          unit: 'USD',
-        },
-      },
-      notificationsWithSubscribers: [50, 80, 100].map((threshold) => ({
-        notification: {
-          notificationType: 'ACTUAL',
-          comparisonOperator: 'GREATER_THAN',
-          threshold,
-          thresholdType: 'PERCENTAGE',
-        },
-        subscribers: [
-          {
-            subscriptionType: 'SNS',
-            address: billingAlertsTopic.topicArn,
+    // AWS Budgets CloudFormation is only available in selected regions.
+    if (config.region === 'us-east-1') {
+      new budgets.CfnBudget(this, 'MonthlyBudget', {
+        budget: {
+          budgetName: `${config.projectSlug}-${config.envName}-monthly`,
+          budgetType: 'COST',
+          timeUnit: 'MONTHLY',
+          budgetLimit: {
+            amount: config.monthlyBudgetUsd,
+            unit: 'USD',
           },
-          ...(config.costAlertEmail
-            ? [
-                {
-                  subscriptionType: 'EMAIL',
-                  address: config.costAlertEmail,
-                },
-              ]
-            : []),
-        ],
-      })),
-    });
+        },
+        notificationsWithSubscribers: [50, 80, 100].map((threshold) => ({
+          notification: {
+            notificationType: 'ACTUAL',
+            comparisonOperator: 'GREATER_THAN',
+            threshold,
+            thresholdType: 'PERCENTAGE',
+          },
+          subscribers: [
+            {
+              subscriptionType: 'SNS',
+              address: billingAlertsTopic.topicArn,
+            },
+            ...(config.costAlertEmail
+              ? [
+                  {
+                    subscriptionType: 'EMAIL',
+                    address: config.costAlertEmail,
+                  },
+                ]
+              : []),
+          ],
+        })),
+      });
+    }
 
     const parameterPrefix = `/${config.projectSlug}/${config.envName}`;
 
