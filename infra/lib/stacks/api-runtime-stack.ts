@@ -61,6 +61,11 @@ export class ApiRuntimeStack extends Stack {
       entry: 'handlers/get-upload-view-url.ts',
       environment,
     });
+    const submitFeedbackHandler = createApiFunction(this, {
+      id: 'SubmitFeedbackHandler',
+      entry: 'handlers/submit-feedback.ts',
+      environment,
+    });
 
     const syncPullHandler = createApiFunction(this, {
       id: 'SyncPullHandler',
@@ -141,6 +146,15 @@ export class ApiRuntimeStack extends Stack {
       integration: new integrations.HttpLambdaIntegration(
         'GetUploadViewUrlIntegration',
         getUploadViewUrlHandler
+      ),
+    });
+
+    httpApi.addRoutes({
+      path: '/api/v1/feedback',
+      methods: [apigwv2.HttpMethod.POST],
+      integration: new integrations.HttpLambdaIntegration(
+        'SubmitFeedbackIntegration',
+        submitFeedbackHandler
       ),
     });
 

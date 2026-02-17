@@ -5,7 +5,7 @@ type CutoverMode = 'legacy' | 'canary' | 'aws'
 
 const CUTOVER_PATH_PREFIX = '/api/v1/'
 const DEFAULT_PROXY_TIMEOUT_MS = 15000
-const ALWAYS_ENABLED_CUTOVER_PREFIXES = ['/api/v1/upload/view']
+const ALWAYS_ENABLED_CUTOVER_PREFIXES = ['/api/v1/upload/view', '/api/v1/feedback']
 const DEFAULT_CUTOVER_PATHS = [
   '/api/v1/health',
   '/api/v1/upload',

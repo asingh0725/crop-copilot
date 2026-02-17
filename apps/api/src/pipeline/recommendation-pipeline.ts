@@ -32,6 +32,7 @@ interface CandidateRow {
   institution: string | null;
   similarity: number;
   hybrid_score?: number;
+  source_boost?: number;
 }
 
 interface OutputDiagnosis {
@@ -181,9 +182,19 @@ export async function runRecommendationPipeline(
   const citedChunkIds = collectCitations(normalized.recommendations, topCandidates);
   const sources = buildSources(citedChunkIds, topCandidates);
   const timestamp = now().toISOString();
+  const recommendationId = randomUUID();
+
+  await persistRetrievalAuditRecord({
+    inputId: input.inputId,
+    recommendationId,
+    query: queryExpansion.expandedQuery,
+    queryTerms: queryExpansion.terms,
+    candidates: topCandidates,
+    citedChunkIds,
+  });
 
   return {
-    recommendationId: randomUUID(),
+    recommendationId,
     confidence: normalized.confidence,
     diagnosis: {
       diagnosis: normalized.diagnosis,
@@ -274,15 +285,18 @@ async function retrieveCandidatesFromKnowledgeBase(
         s.title AS source_title,
         s."sourceType"::text AS source_type,
         s.institution,
+        COALESCE(sb.boost, 0)::float8 AS source_boost,
         (1 - (t.embedding <=> $1::vector))::float8 AS similarity,
         (
           (1 - (t.embedding <=> $1::vector)) +
           CASE WHEN $2::text <> '' AND lower(t.content) LIKE '%' || lower($2) || '%' THEN 0.08 ELSE 0 END +
           CASE WHEN $2::text <> '' AND lower(s.title) LIKE '%' || lower($2) || '%' THEN 0.05 ELSE 0 END +
-          CASE WHEN $2::text <> '' AND lower(coalesce(t.metadata::text, '')) LIKE '%' || lower($2) || '%' THEN 0.04 ELSE 0 END
+          CASE WHEN $2::text <> '' AND lower(coalesce(t.metadata::text, '')) LIKE '%' || lower($2) || '%' THEN 0.04 ELSE 0 END +
+          COALESCE(sb.boost, 0)
         )::float8 AS hybrid_score
       FROM "TextChunk" t
       JOIN "Source" s ON s.id = t."sourceId"
+      LEFT JOIN "SourceBoost" sb ON sb."sourceId" = s.id
       WHERE t.embedding IS NOT NULL
         AND s.status IN ('ready', 'processed')
       ORDER BY hybrid_score DESC
@@ -327,9 +341,11 @@ async function retrieveCandidatesLexical(
         s.title AS source_title,
         s."sourceType"::text AS source_type,
         s.institution,
+        COALESCE(sb.boost, 0)::float8 AS source_boost,
         0::float8 AS similarity
       FROM "TextChunk" t
       JOIN "Source" s ON s.id = t."sourceId"
+      LEFT JOIN "SourceBoost" sb ON sb."sourceId" = s.id
       WHERE s.status IN ('ready', 'processed')
         AND (
           lower(t.content) LIKE ANY($1::text[]) OR
@@ -353,10 +369,11 @@ async function retrieveCandidatesLexical(
           JSON.stringify(row.metadata ?? {}).toLowerCase().includes(cropTerm))
           ? 0.2
           : 0;
+      const sourceBoost = clamp(Number(row.source_boost ?? 0), -0.1, 0.25);
 
       return toRetrievedCandidate({
         ...row,
-        similarity: Math.min(0.95, lexicalScore + cropBoost),
+        similarity: Math.min(0.95, lexicalScore + cropBoost + sourceBoost),
       });
     })
     .filter((candidate) => candidate.similarity > 0.2)
@@ -376,6 +393,7 @@ function toRetrievedCandidate(row: CandidateRow): RetrievedCandidate {
 
   return {
     chunkId: row.chunk_id,
+    sourceId: row.source_id,
     content: normalizeWhitespace(row.content),
     similarity: adjustedSimilarity,
     sourceType: normalizeSourceType(row.source_type),
@@ -742,6 +760,88 @@ function buildSources(
   }
 
   return sources;
+}
+
+async function persistRetrievalAuditRecord(params: {
+  inputId: string;
+  recommendationId: string;
+  query: string;
+  queryTerms: string[];
+  candidates: RankedCandidate[];
+  citedChunkIds: string[];
+}): Promise<void> {
+  if (!process.env.DATABASE_URL) {
+    return;
+  }
+
+  try {
+    const pool = resolvePool();
+    const citedSet = new Set(params.citedChunkIds);
+
+    const candidateChunks = params.candidates.map((candidate) => ({
+      id: candidate.chunkId,
+      sourceId: candidate.sourceId ?? null,
+      similarity: candidate.similarity,
+      rankScore: candidate.rankScore,
+      sourceType: candidate.sourceType,
+      cited: citedSet.has(candidate.chunkId),
+      assembled: true,
+      type: 'text',
+    }));
+    const usedChunks = candidateChunks.filter((chunk) => chunk.cited);
+    const missedChunks = candidateChunks.filter(
+      (chunk) => !chunk.cited && chunk.similarity >= 0.45
+    );
+
+    await pool.query(
+      `
+        INSERT INTO "RetrievalAudit" (
+          id,
+          "inputId",
+          "recommendationId",
+          query,
+          topics,
+          "sourceHints",
+          "requiredSourceIds",
+          "candidateChunks",
+          "usedChunks",
+          "missedChunks",
+          "createdAt"
+        )
+        VALUES (
+          $1,
+          $2,
+          $3,
+          $4,
+          $5::text[],
+          $6::text[],
+          $7::text[],
+          $8::jsonb,
+          $9::jsonb,
+          $10::jsonb,
+          NOW()
+        )
+      `,
+      [
+        randomUUID(),
+        params.inputId,
+        params.recommendationId,
+        params.query,
+        params.queryTerms.slice(0, 12),
+        [],
+        [],
+        JSON.stringify(candidateChunks),
+        JSON.stringify(usedChunks),
+        JSON.stringify(missedChunks),
+      ]
+    );
+  } catch (error) {
+    console.error('Failed to persist retrieval audit record', {
+      inputId: params.inputId,
+      recommendationId: params.recommendationId,
+      error: (error as Error).message,
+    });
+  }
 }
 
 function buildRetrievalQueryFromInput(input: InputSnapshot): string {
