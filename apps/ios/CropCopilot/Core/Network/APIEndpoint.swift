@@ -48,6 +48,11 @@ enum APIEndpoint {
     // Feedback
     case submitFeedback
 
+    private enum HostTarget {
+        case primary
+        case runtimePreferred
+    }
+
     var path: String {
         switch self {
         case .login: return "/auth/login"
@@ -66,6 +71,23 @@ enum APIEndpoint {
         case .getProductPricing: return "/products/pricing/batch"
         case .uploadImage: return "/upload"
         case .submitFeedback: return "/feedback"
+        }
+    }
+
+    private var hostTarget: HostTarget {
+        switch self {
+        case .getProfile,
+             .updateProfile,
+             .createInput,
+             .getJobStatus,
+             .listRecommendations,
+             .getRecommendation,
+             .deleteRecommendation,
+             .uploadImage,
+             .submitFeedback:
+            return .runtimePreferred
+        default:
+            return .primary
         }
     }
 
@@ -115,9 +137,37 @@ enum APIEndpoint {
         }
     }
 
-    func url(baseURL: String) -> URL? {
-        var components = URLComponents(string: baseURL + path)
+    private func normalizeBaseURL(_ value: String) -> String {
+        let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        let withoutTrailingSlash =
+            trimmed.hasSuffix("/") ? String(trimmed.dropLast()) : trimmed
+
+        if withoutTrailingSlash.lowercased().hasSuffix("/api/v1") {
+            return withoutTrailingSlash
+        }
+
+        return withoutTrailingSlash + "/api/v1"
+    }
+
+    func url(primaryBaseURL: String, runtimeBaseURL: String?) -> URL? {
+        let baseURL: String
+        switch hostTarget {
+        case .runtimePreferred:
+            if let runtimeBaseURL, !runtimeBaseURL.isEmpty {
+                baseURL = runtimeBaseURL
+            } else {
+                baseURL = primaryBaseURL
+            }
+        case .primary:
+            baseURL = primaryBaseURL
+        }
+
+        var components = URLComponents(string: normalizeBaseURL(baseURL) + path)
         components?.queryItems = queryItems
         return components?.url
+    }
+
+    func url(baseURL: String) -> URL? {
+        url(primaryBaseURL: baseURL, runtimeBaseURL: nil)
     }
 }

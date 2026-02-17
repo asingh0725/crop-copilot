@@ -15,7 +15,8 @@
     "@crop-copilot/contracts": "workspace:*",
     "@crop-copilot/domain": "workspace:*",
     "jose": "^6.1.0",
-    "pg": "^8.16.3"
+    "pg": "^8.16.3",
+    "zod": "^3.24.2"
   },
   "devDependencies": {
     "@types/aws-lambda": "^8.10.150",

@@ -27,10 +27,13 @@ Create a `.env` file in the `apps/ios` directory with the following:
 ```
 SUPABASE_URL=https://your-project.supabase.co
 SUPABASE_ANON_KEY=your-anon-key
-API_BASE_URL=http://localhost:3000/api/v1
+API_BASE_URL=https://your-web-api.example.com
+API_RUNTIME_BASE_URL=https://your-api-id.execute-api.ca-west-1.amazonaws.com
 ```
 
 For production builds, update these in the Xcode scheme settings.
+
+`API_RUNTIME_BASE_URL` is optional but recommended for AWS cutover. If set, iOS will use it for profile, recommendations, inputs, jobs, upload, and feedback endpoints.
 
 ### 3. Open in Xcode
 

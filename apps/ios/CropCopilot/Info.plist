@@ -62,6 +62,8 @@
 	<string>$(SUPABASE_ANON_KEY)</string>
 	<key>API_BASE_URL</key>
 	<string>$(API_BASE_URL)</string>
+	<key>API_RUNTIME_BASE_URL</key>
+	<string>$(API_RUNTIME_BASE_URL)</string>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>

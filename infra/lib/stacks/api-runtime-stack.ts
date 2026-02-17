@@ -66,6 +66,26 @@ export class ApiRuntimeStack extends Stack {
       entry: 'handlers/submit-feedback.ts',
       environment,
     });
+    const profileHandler = createApiFunction(this, {
+      id: 'ProfileHandler',
+      entry: 'handlers/profile.ts',
+      environment,
+    });
+    const listRecommendationsHandler = createApiFunction(this, {
+      id: 'ListRecommendationsHandler',
+      entry: 'handlers/list-recommendations.ts',
+      environment,
+    });
+    const getRecommendationHandler = createApiFunction(this, {
+      id: 'GetRecommendationHandler',
+      entry: 'handlers/get-recommendation.ts',
+      environment,
+    });
+    const deleteRecommendationHandler = createApiFunction(this, {
+      id: 'DeleteRecommendationHandler',
+      entry: 'handlers/delete-recommendation.ts',
+      environment,
+    });
 
     const syncPullHandler = createApiFunction(this, {
       id: 'SyncPullHandler',
@@ -155,6 +175,39 @@ export class ApiRuntimeStack extends Stack {
       integration: new integrations.HttpLambdaIntegration(
         'SubmitFeedbackIntegration',
         submitFeedbackHandler
+      ),
+    });
+
+    httpApi.addRoutes({
+      path: '/api/v1/profile',
+      methods: [apigwv2.HttpMethod.GET, apigwv2.HttpMethod.PUT],
+      integration: new integrations.HttpLambdaIntegration('ProfileIntegration', profileHandler),
+    });
+
+    httpApi.addRoutes({
+      path: '/api/v1/recommendations',
+      methods: [apigwv2.HttpMethod.GET],
+      integration: new integrations.HttpLambdaIntegration(
+        'ListRecommendationsIntegration',
+        listRecommendationsHandler
+      ),
+    });
+
+    httpApi.addRoutes({
+      path: '/api/v1/recommendations/{id}',
+      methods: [apigwv2.HttpMethod.GET],
+      integration: new integrations.HttpLambdaIntegration(
+        'GetRecommendationIntegration',
+        getRecommendationHandler
+      ),
+    });
+
+    httpApi.addRoutes({
+      path: '/api/v1/recommendations/{id}',
+      methods: [apigwv2.HttpMethod.DELETE],
+      integration: new integrations.HttpLambdaIntegration(
+        'DeleteRecommendationIntegration',
+        deleteRecommendationHandler
       ),
     });
 

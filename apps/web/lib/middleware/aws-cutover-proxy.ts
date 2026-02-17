@@ -12,6 +12,8 @@ const DEFAULT_CUTOVER_PATHS = [
   '/api/v1/inputs',
   '/api/v1/jobs',
   '/api/v1/sync/pull',
+  '/api/v1/profile',
+  '/api/v1/recommendations',
 ]
 
 interface ResolvedBackend {

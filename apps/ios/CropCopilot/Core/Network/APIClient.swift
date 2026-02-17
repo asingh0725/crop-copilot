@@ -11,6 +11,7 @@ class APIClient {
     static let shared = APIClient()
 
     private let baseURL = Configuration.apiBaseURL
+    private let runtimeBaseURL = Configuration.apiRuntimeBaseURL
     private let authInterceptor = AuthInterceptor()
     private let session: URLSession
 
@@ -27,7 +28,7 @@ class APIClient {
         body: Encodable? = nil,
         retry: Bool = true
     ) async throws -> T {
-        guard let url = endpoint.url(baseURL: baseURL) else {
+        guard let url = endpoint.url(primaryBaseURL: baseURL, runtimeBaseURL: runtimeBaseURL) else {
             throw NetworkError.unknown(NSError(domain: "Invalid URL", code: -1))
         }
 
