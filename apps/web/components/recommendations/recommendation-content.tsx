@@ -7,7 +7,7 @@ import { SourcesDisplay } from "./sources-display";
 import { ProductSuggestions } from "./product-suggestions";
 import { ProductRecommendations } from "./product-recommendations";
 import { Button } from "@/components/ui/button";
-import { BookOpen } from "lucide-react";
+import { BookOpen, ThumbsDown, ThumbsUp } from "lucide-react";
 import type { ActionItem, ProductSuggestion } from "@/lib/utils/format-diagnosis";
 
 interface Source {
@@ -42,6 +42,9 @@ export function RecommendationContent({
 }: RecommendationContentProps) {
   const [isSourcesPanelOpen, setIsSourcesPanelOpen] = useState(false);
   const [highlightedSourceNumber, setHighlightedSourceNumber] = useState<number | null>(null);
+  const [feedbackSelection, setFeedbackSelection] = useState<boolean | null>(null);
+  const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false);
+  const [feedbackError, setFeedbackError] = useState<string | null>(null);
 
   // Sort sources by relevance for consistent numbering
   const sortedSources = useMemo(
@@ -98,6 +101,39 @@ export function RecommendationContent({
     }, 300);
   }, []);
 
+  const handleFeedbackSubmit = useCallback(
+    async (helpful: boolean) => {
+      if (!recommendationId || isSubmittingFeedback) return;
+
+      setIsSubmittingFeedback(true);
+      setFeedbackError(null);
+
+      try {
+        const response = await fetch("/api/v1/feedback", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            recommendationId,
+            helpful,
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error("Unable to submit feedback");
+        }
+
+        setFeedbackSelection(helpful);
+      } catch {
+        setFeedbackError("Feedback could not be saved. Please try again.");
+      } finally {
+        setIsSubmittingFeedback(false);
+      }
+    },
+    [recommendationId, isSubmittingFeedback]
+  );
+
   return (
     <>
       {/* Action Items */}
@@ -118,6 +154,50 @@ export function RecommendationContent({
             <BookOpen className="h-4 w-4" />
             View Sources ({sources.length})
           </Button>
+        </div>
+      )}
+
+      {/* Feedback */}
+      {recommendationId && (
+        <div className="rounded-lg border bg-card p-4 print:hidden">
+          <div className="mb-3">
+            <h3 className="text-sm font-semibold text-gray-900">
+              Was this recommendation helpful?
+            </h3>
+            <p className="text-xs text-gray-600">
+              Your input improves future recommendations.
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              variant={feedbackSelection === true ? "default" : "outline"}
+              onClick={() => handleFeedbackSubmit(true)}
+              disabled={isSubmittingFeedback}
+              className="gap-2"
+            >
+              <ThumbsUp className="h-4 w-4" />
+              Helpful
+            </Button>
+            <Button
+              type="button"
+              variant={feedbackSelection === false ? "default" : "outline"}
+              onClick={() => handleFeedbackSubmit(false)}
+              disabled={isSubmittingFeedback}
+              className="gap-2"
+            >
+              <ThumbsDown className="h-4 w-4" />
+              Not Helpful
+            </Button>
+          </div>
+          {feedbackSelection !== null && !feedbackError && (
+            <p className="mt-2 text-xs text-green-700">
+              Thanks, feedback saved.
+            </p>
+          )}
+          {feedbackError && (
+            <p className="mt-2 text-xs text-red-600">{feedbackError}</p>
+          )}
         </div>
       )}
 
