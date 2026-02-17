@@ -53,12 +53,39 @@ export async function runRecommendationPipeline(
     topCandidates.map((candidate) => candidate.content).join('\n\n')
   ).slice(0, 1);
 
+  const normalizedCondition = 'probable_foliar_disease';
+  const confidence = 0.78;
+
   return {
     recommendationId: randomUUID(),
-    confidence: 0.78,
+    confidence,
     diagnosis: {
-      condition: 'probable_foliar_disease',
-      summary: `Ranked ${ranked.length} candidates with hybrid scoring and selected ${topCandidates.length} primary evidence chunks.`,
+      diagnosis: {
+        condition: normalizedCondition,
+        conditionType: 'disease',
+        confidence,
+        reasoning: `Ranked ${ranked.length} candidates with hybrid scoring and selected ${topCandidates.length} primary evidence chunks.`,
+      },
+      recommendations: [
+        {
+          action: 'Inspect affected blocks and verify lesion pattern in lower canopy.',
+          priority: 'immediate',
+          timing: 'Within 24 hours',
+          details:
+            'Confirm whether symptoms are spreading between rows and collect representative leaf photos from multiple zones.',
+          citations: topCandidates.map((candidate) => candidate.chunkId),
+        },
+        {
+          action: 'Increase scouting frequency during wet/warm periods.',
+          priority: 'soon',
+          timing: 'Next 3-5 days',
+          details:
+            'Track symptom progression every 48-72 hours and compare with local extension alerts before treatment decisions.',
+          citations: [topCandidates[0]?.chunkId].filter(Boolean),
+        },
+      ],
+      products: [],
+      confidence,
       generatedAt: now,
       inputId: input.inputId,
       userId: input.userId,

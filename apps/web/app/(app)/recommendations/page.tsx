@@ -25,13 +25,12 @@ import {
   FileSpreadsheet,
 } from "lucide-react";
 import Link from "next/link";
-import Image from "next/image";
 import { timeAgo } from "@/lib/utils/date";
 import {
-  getConditionTypeColor,
   getConfidenceColor,
   formatConfidence,
 } from "@/lib/utils/format-diagnosis";
+import { SecureImage } from "@/components/recommendations/secure-image";
 
 interface Recommendation {
   id: string;
@@ -236,7 +235,7 @@ function RecommendationsContent() {
                   {/* Image Thumbnail */}
                   <div className="relative h-20 w-20 rounded-lg overflow-hidden bg-gray-100 shrink-0">
                     {rec.input.imageUrl ? (
-                      <Image
+                      <SecureImage
                         src={rec.input.imageUrl}
                         alt="Crop image"
                         fill

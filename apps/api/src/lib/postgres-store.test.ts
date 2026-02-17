@@ -271,6 +271,18 @@ test('PostgresRecommendationStore persists recommendation payload into legacy ta
       includes: 'SELECT EXISTS \\(SELECT 1 FROM "TextChunk"',
       rows: [{ has_text: false, has_image: false }],
     },
+    {
+      includes: 'INSERT INTO "Source"',
+      rows: [],
+    },
+    {
+      includes: 'INSERT INTO "TextChunk"',
+      rows: [],
+    },
+    {
+      includes: 'INSERT INTO "RecommendationSource"',
+      rows: [],
+    },
     { includes: '^COMMIT$', rows: [] },
   ]);
 

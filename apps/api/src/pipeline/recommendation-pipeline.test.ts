@@ -11,5 +11,8 @@ test('runRecommendationPipeline returns ranked recommendation payload', async ()
 
   assert.equal(result.modelUsed, 'rag-v2-scaffold');
   assert.ok(result.sources.length > 0);
-  assert.equal(result.diagnosis.condition, 'probable_foliar_disease');
+  assert.equal(
+    (result.diagnosis.diagnosis as { condition: string }).condition,
+    'probable_foliar_disease'
+  );
 });

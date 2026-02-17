@@ -438,7 +438,8 @@ export class PostgresRecommendationStore implements RecommendationStore {
       [recommendationId]
     );
 
-    for (const source of result.sources) {
+    for (let index = 0; index < result.sources.length; index += 1) {
+      const source = result.sources[index];
       const existingChunks = await client.query<{
         has_text: boolean;
         has_image: boolean;
@@ -451,8 +452,12 @@ export class PostgresRecommendationStore implements RecommendationStore {
       );
 
       const chunk = existingChunks.rows[0];
-      if (!chunk?.has_text && !chunk?.has_image) {
-        continue;
+      let hasTextChunk = Boolean(chunk?.has_text);
+      let hasImageChunk = Boolean(chunk?.has_image);
+
+      if (!hasTextChunk && !hasImageChunk) {
+        await this.upsertSyntheticSourceChunk(client, source.chunkId, source.excerpt, index);
+        hasTextChunk = true;
       }
 
       await client.query(
@@ -469,12 +474,96 @@ export class PostgresRecommendationStore implements RecommendationStore {
         [
           randomUUID(),
           recommendationId,
-          chunk.has_text ? source.chunkId : null,
-          chunk.has_image ? source.chunkId : null,
+          hasTextChunk ? source.chunkId : null,
+          hasImageChunk ? source.chunkId : null,
           source.relevance,
         ]
       );
     }
+  }
+
+  private async upsertSyntheticSourceChunk(
+    client: PoolClient,
+    chunkId: string,
+    excerpt: string,
+    index: number
+  ): Promise<void> {
+    const syntheticSourceId = `aws-source-${chunkId}`;
+    await client.query(
+      `
+        INSERT INTO "Source" (
+          id,
+          title,
+          url,
+          "sourceType",
+          institution,
+          status,
+          "chunksCount",
+          "errorMessage",
+          "createdAt",
+          "updatedAt",
+          metadata
+        )
+        VALUES (
+          $1,
+          $2,
+          NULL,
+          'UNIVERSITY_EXTENSION',
+          'AWS Runtime',
+          'ready',
+          1,
+          NULL,
+          NOW(),
+          NOW(),
+          $3::jsonb
+        )
+        ON CONFLICT (id) DO UPDATE
+          SET title = EXCLUDED.title,
+              institution = EXCLUDED.institution,
+              status = EXCLUDED.status,
+              "chunksCount" = GREATEST("Source"."chunksCount", 1),
+              metadata = EXCLUDED.metadata,
+              "updatedAt" = NOW()
+      `,
+      [
+        syntheticSourceId,
+        `Evidence ${index + 1}`,
+        JSON.stringify({
+          generatedBy: 'aws-runtime',
+          chunkId,
+        }),
+      ]
+    );
+
+    await client.query(
+      `
+        INSERT INTO "TextChunk" (
+          id,
+          "sourceId",
+          content,
+          embedding,
+          metadata,
+          "createdAt",
+          "chunkIndex",
+          "contentHash"
+        )
+        VALUES ($1, $2, $3, NULL, $4::jsonb, NOW(), $5, NULL)
+        ON CONFLICT (id) DO UPDATE
+          SET content = EXCLUDED.content,
+              metadata = EXCLUDED.metadata,
+              "chunkIndex" = EXCLUDED."chunkIndex"
+      `,
+      [
+        chunkId,
+        syntheticSourceId,
+        excerpt,
+        JSON.stringify({
+          generatedBy: 'aws-runtime',
+          kind: 'pipeline-evidence',
+        }),
+        index,
+      ]
+    );
   }
 
   private async withTransaction<T>(callback: (client: PoolClient) => Promise<T>): Promise<T> {

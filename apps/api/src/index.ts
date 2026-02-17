@@ -2,6 +2,7 @@ export * as HealthHandler from './handlers/health';
 export * as CreateInputHandler from './handlers/create-input';
 export * as GetJobStatusHandler from './handlers/get-job-status';
 export * as CreateUploadUrlHandler from './handlers/create-upload-url';
+export * as GetUploadViewUrlHandler from './handlers/get-upload-view-url';
 export * as SyncPullHandler from './handlers/sync-pull';
 export * as ProcessRecommendationJobWorker from './workers/process-recommendation-job';
 export * as RunIngestionBatchWorker from './workers/run-ingestion-batch';

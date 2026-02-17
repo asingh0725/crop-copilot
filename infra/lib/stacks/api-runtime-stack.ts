@@ -56,6 +56,11 @@ export class ApiRuntimeStack extends Stack {
       entry: 'handlers/create-upload-url.ts',
       environment,
     });
+    const getUploadViewUrlHandler = createApiFunction(this, {
+      id: 'GetUploadViewUrlHandler',
+      entry: 'handlers/get-upload-view-url.ts',
+      environment,
+    });
 
     const syncPullHandler = createApiFunction(this, {
       id: 'SyncPullHandler',
@@ -81,6 +86,7 @@ export class ApiRuntimeStack extends Stack {
 
     foundation.recommendationQueue.grantSendMessages(createInputHandler);
     foundation.artifactsBucket.grantPut(createUploadUrlHandler);
+    foundation.artifactsBucket.grantRead(getUploadViewUrlHandler);
     foundation.pushEventsTopic.grantPublish(processRecommendationJobWorker);
 
     processRecommendationJobWorker.addEventSource(
@@ -127,6 +133,14 @@ export class ApiRuntimeStack extends Stack {
       integration: new integrations.HttpLambdaIntegration(
         'CreateUploadUrlIntegration',
         createUploadUrlHandler
+      ),
+    });
+    httpApi.addRoutes({
+      path: '/api/v1/upload/view',
+      methods: [apigwv2.HttpMethod.GET],
+      integration: new integrations.HttpLambdaIntegration(
+        'GetUploadViewUrlIntegration',
+        getUploadViewUrlHandler
       ),
     });
 
