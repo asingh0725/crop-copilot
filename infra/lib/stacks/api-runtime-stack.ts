@@ -8,19 +8,21 @@ import * as lambdaNodejs from 'aws-cdk-lib/aws-lambda-nodejs';
 import * as ssm from 'aws-cdk-lib/aws-ssm';
 import type { Construct } from 'constructs';
 import type { EnvironmentConfig } from '../config';
+import type { DatabaseStack } from './database-stack';
 import type { FoundationStack } from './foundation-stack';
 
 export interface ApiRuntimeStackProps extends StackProps {
   config: EnvironmentConfig;
   foundation: FoundationStack;
+  database?: DatabaseStack;
 }
 
 export class ApiRuntimeStack extends Stack {
   constructor(scope: Construct, id: string, props: ApiRuntimeStackProps) {
     super(scope, id, props);
 
-    const { config, foundation } = props;
-    const environment = buildApiEnvironment(config, foundation);
+    const { config, foundation, database } = props;
+    const environment = buildApiEnvironment(config, foundation, database);
 
     const httpApi = new apigwv2.HttpApi(this, 'ApiGateway', {
       apiName: `${config.projectSlug}-${config.envName}-api`,
@@ -185,12 +187,17 @@ function createApiFunction(scope: Construct, props: ApiFunctionProps): lambdaNod
 
 function buildApiEnvironment(
   config: EnvironmentConfig,
-  foundation: FoundationStack
+  foundation: FoundationStack,
+  database?: DatabaseStack
 ): Record<string, string> {
   const dataBackend = process.env.DATA_BACKEND ?? 'postgres';
-  const databaseUrl = process.env.DATABASE_URL;
+  const databaseMode = process.env.API_DATABASE_MODE ?? 'external';
+  const databaseUrl =
+    databaseMode === 'aws' ? database?.runtimeDatabaseUrl : process.env.DATABASE_URL;
   if (dataBackend === 'postgres' && !databaseUrl) {
-    throw new Error('DATABASE_URL is required when DATA_BACKEND=postgres.');
+    throw new Error(
+      'DATABASE_URL is required when DATA_BACKEND=postgres (or enable API_DATABASE_MODE=aws with PROVISION_AWS_DATABASE).'
+    );
   }
 
   const supabaseUrl = process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL;

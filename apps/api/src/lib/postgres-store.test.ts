@@ -107,6 +107,8 @@ test('PostgresRecommendationStore inserts job for new input commands', async () 
         },
       ],
     },
+    { includes: 'INSERT INTO "User"', rows: [] },
+    { includes: 'INSERT INTO "Input"', rows: [] },
     { includes: 'INSERT INTO app_recommendation_job', rows: [] },
     { includes: '^COMMIT$', rows: [] },
   ]);
@@ -243,5 +245,52 @@ test('PostgresRecommendationStore pullSyncRecords throws for invalid cursor', as
         cursor: 'not-a-valid-cursor',
       }),
     /Invalid sync cursor/
+  );
+});
+
+test('PostgresRecommendationStore persists recommendation payload into legacy tables', async () => {
+  const pool = createScriptedPool([
+    { includes: '^BEGIN$', rows: [] },
+    {
+      includes: 'UPDATE app_recommendation_job',
+      rows: [{ input_id: '9f2644c5-a906-4739-9fca-a6f4078dc8c7' }],
+    },
+    {
+      includes: 'SELECT id FROM "Recommendation" WHERE "inputId"',
+      rows: [],
+    },
+    {
+      includes: 'INSERT INTO "Recommendation"',
+      rows: [],
+    },
+    {
+      includes: 'DELETE FROM "RecommendationSource"',
+      rows: [],
+    },
+    {
+      includes: 'SELECT EXISTS \\(SELECT 1 FROM "TextChunk"',
+      rows: [{ has_text: false, has_image: false }],
+    },
+    { includes: '^COMMIT$', rows: [] },
+  ]);
+
+  const store = new PostgresRecommendationStore(pool);
+
+  await store.saveRecommendationResult(
+    'deab17cf-f109-43f2-b95b-7d2f328a7720',
+    '11111111-1111-1111-1111-111111111111',
+    {
+      recommendationId: '1d57059e-e6ce-4f89-a061-937eddf591d4',
+      confidence: 0.82,
+      diagnosis: { summary: 'test' },
+      modelUsed: 'rag-v2-scaffold',
+      sources: [
+        {
+          chunkId: 'missing-chunk-id',
+          relevance: 0.62,
+          excerpt: 'no-op',
+        },
+      ],
+    }
   );
 });

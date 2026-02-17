@@ -41,6 +41,26 @@ import {
 } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 
+interface UploadUrlResponse {
+  uploadUrl: string
+  objectKey: string
+}
+
+interface CreateInputAccepted {
+  inputId: string
+  jobId: string
+  status: string
+  acceptedAt: string
+}
+
+interface JobStatusResponse {
+  status: string
+  failureReason?: string
+  result?: {
+    recommendationId?: string
+  }
+}
+
 export default function PhotoDiagnosePage() {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
@@ -98,13 +118,15 @@ export default function PhotoDiagnosePage() {
     setImageError('')
 
     try {
-      // Step 1: Upload image
-      const uploadForm = new FormData()
-      uploadForm.append('file', imageFile)
-
-      const uploadRes = await fetch('/api/upload', {
+      // Step 1: Request a presigned upload URL from the AWS-compatible API contract.
+      const uploadRes = await fetch('/api/v1/upload', {
         method: 'POST',
-        body: uploadForm,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          fileName: imageFile.name,
+          contentType: imageFile.type || 'image/jpeg',
+          contentLength: imageFile.size,
+        }),
       })
 
       if (!uploadRes.ok) {
@@ -112,14 +134,28 @@ export default function PhotoDiagnosePage() {
         throw new Error(err.error || 'Upload failed')
       }
 
-      const { url: imageUrl } = await uploadRes.json()
+      const { uploadUrl }: UploadUrlResponse = await uploadRes.json()
 
-      // Step 2: Create input and generate recommendation
+      const directUploadRes = await fetch(uploadUrl, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': imageFile.type || 'image/jpeg',
+        },
+        body: imageFile,
+      })
+      if (!directUploadRes.ok) {
+        throw new Error('Failed to upload image to storage')
+      }
+
+      const imageUrl = uploadUrl.split('?')[0]
+
+      // Step 2: Enqueue recommendation generation.
       setLoadingStage("analyzing")
-      const inputRes = await fetch('/api/inputs', {
+      const inputRes = await fetch('/api/v1/inputs', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          idempotencyKey: `web-photo-${crypto.randomUUID()}`,
           type: 'PHOTO',
           imageUrl,
           description: data.description,
@@ -134,15 +170,49 @@ export default function PhotoDiagnosePage() {
         throw new Error(err.error || 'Failed to generate recommendation')
       }
 
-      const { recommendationId } = await inputRes.json()
+      const accepted: CreateInputAccepted = await inputRes.json()
+      const recommendation = await waitForRecommendation(accepted.jobId)
+      if (!recommendation) {
+        throw new Error('Recommendation completed without an ID')
+      }
+
       toast.success('Recommendation generated!')
-      router.push(`/recommendations/${recommendationId}`)
+      router.push(`/recommendations/${recommendation}`)
     } catch (error) {
       console.error('Error submitting diagnosis:', error)
       toast.error(error instanceof Error ? error.message : 'Failed to submit analysis')
     } finally {
       setIsLoading(false)
     }
+  }
+
+  async function waitForRecommendation(jobId: string): Promise<string | null> {
+    const startedAt = Date.now()
+    const timeoutMs = 120000
+
+    while (Date.now() - startedAt < timeoutMs) {
+      await new Promise((resolve) => setTimeout(resolve, 2000))
+      const statusRes = await fetch(`/api/v1/jobs/${jobId}`, {
+        method: 'GET',
+        headers: {
+          Accept: 'application/json',
+        },
+      })
+      if (!statusRes.ok) {
+        const err = await statusRes.json().catch(() => null)
+        throw new Error(err?.error?.message || 'Failed to fetch recommendation status')
+      }
+
+      const statusBody = (await statusRes.json()) as JobStatusResponse
+      if (statusBody.status === 'failed') {
+        throw new Error(statusBody.failureReason || 'Recommendation failed')
+      }
+      if (statusBody.status === 'completed') {
+        return statusBody.result?.recommendationId || null
+      }
+    }
+
+    throw new Error('Recommendation is taking longer than expected. Please check history.')
   }
 
   if (isFetching) {

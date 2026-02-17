@@ -45,6 +45,7 @@ class DiagnosisViewModel: ObservableObject {
             submissionStatus = "Analyzing..."
 
             struct CreateInputBody: Encodable {
+                let idempotencyKey: String
                 let type: String
                 let imageUrl: String
                 let description: String?
@@ -54,6 +55,7 @@ class DiagnosisViewModel: ObservableObject {
             }
 
             let body = CreateInputBody(
+                idempotencyKey: "ios-photo-\(UUID().uuidString)",
                 type: "PHOTO",
                 imageUrl: imageUrl,
                 description: description.isEmpty ? nil : description,
@@ -62,8 +64,21 @@ class DiagnosisViewModel: ObservableObject {
                 season: growthStage.isEmpty ? nil : growthStage
             )
 
-            let response: CreateInputResponse = try await apiClient.request(.createInput, body: body)
-            resultRecommendationId = response.recommendationId
+            let accepted: CreateInputAcceptedResponse = try await apiClient.request(
+                .createInput,
+                body: body
+            )
+            let job = try await apiClient.waitForRecommendation(jobId: accepted.jobId)
+            resultRecommendationId = job.result?.recommendationId
+            if resultRecommendationId == nil {
+                throw NetworkError.unknown(
+                    NSError(
+                        domain: "RecommendationMissing",
+                        code: -1,
+                        userInfo: [NSLocalizedDescriptionKey: "Recommendation completed without an ID"]
+                    )
+                )
+            }
             showResult = true
         } catch {
             errorMessage = error.localizedDescription

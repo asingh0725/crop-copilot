@@ -16,6 +16,7 @@ This package provisions the AWS foundation stack for Crop Copilot.
 - CloudWatch alarms for queue backlog, DLQ depth, failures, and per-recommendation cost
 - SSM parameter namespace for platform runtime config
 - API runtime stack (HTTP API + Lambda handlers + SQS workers)
+- PostgreSQL stack (RDS instance + credentials + SSM metadata)
 
 ## Environment variables
 
@@ -42,6 +43,14 @@ Optional values:
 - `SUPABASE_ANON_KEY`
 - `RECOMMENDATION_COST_USD`
 - `RECOMMENDATION_COST_BY_MODEL_JSON`
+- `API_DATABASE_MODE` (`external` or `aws`)
+- `PROVISION_AWS_DATABASE` (`true` by default)
+- `DB_NAME`
+- `DB_USERNAME`
+
+Database cutover controls:
+- `API_DATABASE_MODE=external`: API runtime uses `DATABASE_URL` from env (current Supabase-compatible mode).
+- `API_DATABASE_MODE=aws`: API runtime uses the URL generated from the AWS RDS stack.
 
 ## Commands
 

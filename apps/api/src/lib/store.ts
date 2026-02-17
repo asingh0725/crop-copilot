@@ -45,8 +45,16 @@ export interface EnqueueInputResult extends CreateInputAccepted {
   wasCreated: boolean;
 }
 
+export interface EnqueueInputOptions {
+  email?: string;
+}
+
 export interface RecommendationStore {
-  enqueueInput(userId: string, payload: CreateInputCommand): Promise<EnqueueInputResult>;
+  enqueueInput(
+    userId: string,
+    payload: CreateInputCommand,
+    options?: EnqueueInputOptions
+  ): Promise<EnqueueInputResult>;
   getJobStatus(
     jobId: string,
     userId: string
@@ -72,7 +80,8 @@ export class InMemoryRecommendationStore implements RecommendationStore {
 
   async enqueueInput(
     userId: string,
-    payload: CreateInputCommand
+    payload: CreateInputCommand,
+    _options?: EnqueueInputOptions
   ): Promise<EnqueueInputResult> {
     const idempotencyLookupKey = buildIdempotencyLookupKey(
       userId,

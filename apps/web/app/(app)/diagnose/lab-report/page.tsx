@@ -42,6 +42,21 @@ import {
 } from "@/components/ui/accordion"
 import { Input } from "@/components/ui/input"
 
+interface CreateInputAccepted {
+  inputId: string
+  jobId: string
+  status: string
+  acceptedAt: string
+}
+
+interface JobStatusResponse {
+  status: string
+  failureReason?: string
+  result?: {
+    recommendationId?: string
+  }
+}
+
 export default function LabReportPage() {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
@@ -148,10 +163,11 @@ export default function LabReportPage() {
         sampleId: data.sampleId || null,
       }
 
-      const inputRes = await fetch('/api/inputs', {
+      const inputRes = await fetch('/api/v1/inputs', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          idempotencyKey: `web-lab-${crypto.randomUUID()}`,
           type: 'LAB_REPORT',
           labData,
           crop: data.crop,
@@ -164,7 +180,12 @@ export default function LabReportPage() {
         throw new Error(err.error || 'Failed to generate recommendation')
       }
 
-      const { recommendationId } = await inputRes.json()
+      const accepted: CreateInputAccepted = await inputRes.json()
+      const recommendationId = await waitForRecommendation(accepted.jobId)
+      if (!recommendationId) {
+        throw new Error('Recommendation completed without an ID')
+      }
+
       toast.success('Recommendation generated!')
       router.push(`/recommendations/${recommendationId}`)
     } catch (error) {
@@ -173,6 +194,35 @@ export default function LabReportPage() {
     } finally {
       setIsLoading(false)
     }
+  }
+
+  async function waitForRecommendation(jobId: string): Promise<string | null> {
+    const startedAt = Date.now()
+    const timeoutMs = 120000
+
+    while (Date.now() - startedAt < timeoutMs) {
+      await new Promise((resolve) => setTimeout(resolve, 2000))
+      const statusRes = await fetch(`/api/v1/jobs/${jobId}`, {
+        method: 'GET',
+        headers: {
+          Accept: 'application/json',
+        },
+      })
+      if (!statusRes.ok) {
+        const err = await statusRes.json().catch(() => null)
+        throw new Error(err?.error?.message || 'Failed to fetch recommendation status')
+      }
+
+      const statusBody = (await statusRes.json()) as JobStatusResponse
+      if (statusBody.status === 'failed') {
+        throw new Error(statusBody.failureReason || 'Recommendation failed')
+      }
+      if (statusBody.status === 'completed') {
+        return statusBody.result?.recommendationId || null
+      }
+    }
+
+    throw new Error('Recommendation is taking longer than expected. Please check history.')
   }
 
   if (isFetching) {

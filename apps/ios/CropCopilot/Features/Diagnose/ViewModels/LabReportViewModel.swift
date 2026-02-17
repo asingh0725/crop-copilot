@@ -78,6 +78,7 @@ class LabReportViewModel: ObservableObject {
 
         do {
             struct CreateLabInputBody: Encodable {
+                let idempotencyKey: String
                 let type: String
                 let labData: [String: AnyCodable]
                 let crop: String?
@@ -86,6 +87,7 @@ class LabReportViewModel: ObservableObject {
             }
 
             let body = CreateLabInputBody(
+                idempotencyKey: "ios-lab-\(UUID().uuidString)",
                 type: "LAB_REPORT",
                 labData: labData,
                 crop: crop.isEmpty ? nil : crop,
@@ -94,8 +96,21 @@ class LabReportViewModel: ObservableObject {
             )
 
             submissionStatus = "Analyzing..."
-            let response: CreateInputResponse = try await apiClient.request(.createInput, body: body)
-            resultRecommendationId = response.recommendationId
+            let accepted: CreateInputAcceptedResponse = try await apiClient.request(
+                .createInput,
+                body: body
+            )
+            let job = try await apiClient.waitForRecommendation(jobId: accepted.jobId)
+            resultRecommendationId = job.result?.recommendationId
+            if resultRecommendationId == nil {
+                throw NetworkError.unknown(
+                    NSError(
+                        domain: "RecommendationMissing",
+                        code: -1,
+                        userInfo: [NSLocalizedDescriptionKey: "Recommendation completed without an ID"]
+                    )
+                )
+            }
             showResult = true
         } catch {
             errorMessage = error.localizedDescription

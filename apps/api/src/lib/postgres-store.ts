@@ -15,7 +15,11 @@ import {
   encodeSyncCursor,
   normalizeIdempotencyKey,
 } from '@crop-copilot/domain';
-import type { EnqueueInputResult, RecommendationStore } from './store';
+import type {
+  EnqueueInputOptions,
+  EnqueueInputResult,
+  RecommendationStore,
+} from './store';
 
 interface ExistingCommandRow {
   input_id: string;
@@ -55,13 +59,15 @@ export class PostgresRecommendationStore implements RecommendationStore {
 
   async enqueueInput(
     userId: string,
-    payload: CreateInputCommand
+    payload: CreateInputCommand,
+    options?: EnqueueInputOptions
   ): Promise<EnqueueInputResult> {
     const normalizedKey = normalizeIdempotencyKey(payload.idempotencyKey);
     const normalizedPayload: CreateInputCommand = {
       ...payload,
       idempotencyKey: normalizedKey,
     };
+    const userEmail = normalizeUserEmail(options?.email, userId);
 
     return this.withTransaction(async (client) => {
       const inputId = randomUUID();
@@ -107,6 +113,9 @@ export class PostgresRecommendationStore implements RecommendationStore {
 
       const insertedRow = insertedInput.rows[0];
       const jobId = randomUUID();
+
+      await this.ensureLegacyUser(client, userId, userEmail);
+      await this.upsertLegacyInput(client, insertedRow.input_id, userId, normalizedPayload);
 
       await client.query(
         `
@@ -249,16 +258,223 @@ export class PostgresRecommendationStore implements RecommendationStore {
     userId: string,
     result: RecommendationResult
   ): Promise<void> {
-    await this.pool.query(
+    await this.withTransaction(async (client) => {
+      const persistedResult = { ...result };
+
+      const updatedJob = await client.query<{ input_id: string }>(
+        `
+          UPDATE app_recommendation_job
+          SET result_payload = $3::jsonb,
+              updated_at = NOW()
+          WHERE id = $1
+            AND user_id = $2
+          RETURNING input_id
+        `,
+        [jobId, userId, JSON.stringify(persistedResult)]
+      );
+
+      const inputId = updatedJob.rows[0]?.input_id;
+      if (!inputId) {
+        return;
+      }
+
+      const recommendationId = await this.upsertLegacyRecommendation(
+        client,
+        userId,
+        inputId,
+        persistedResult
+      );
+
+      if (recommendationId !== persistedResult.recommendationId) {
+        persistedResult.recommendationId = recommendationId;
+        await client.query(
+          `
+            UPDATE app_recommendation_job
+            SET result_payload = $3::jsonb,
+                updated_at = NOW()
+            WHERE id = $1
+              AND user_id = $2
+          `,
+          [jobId, userId, JSON.stringify(persistedResult)]
+        );
+      }
+
+      await this.syncRecommendationSources(client, recommendationId, persistedResult);
+    });
+  }
+
+  private async ensureLegacyUser(
+    client: PoolClient,
+    userId: string,
+    email: string
+  ): Promise<void> {
+    await client.query(
       `
-        UPDATE app_recommendation_job
-        SET result_payload = $3::jsonb,
-            updated_at = NOW()
-        WHERE id = $1
-          AND user_id = $2
+        INSERT INTO "User" (id, email, "createdAt", "updatedAt")
+        VALUES ($1, $2, NOW(), NOW())
+        ON CONFLICT (id) DO NOTHING
       `,
-      [jobId, userId, JSON.stringify(result)]
+      [userId, email]
     );
+  }
+
+  private async upsertLegacyInput(
+    client: PoolClient,
+    inputId: string,
+    userId: string,
+    payload: CreateInputCommand
+  ): Promise<void> {
+    await client.query(
+      `
+        INSERT INTO "Input" (
+          id,
+          "userId",
+          type,
+          "imageUrl",
+          description,
+          "labData",
+          location,
+          crop,
+          season,
+          "createdAt"
+        )
+        VALUES ($1, $2, $3, $4, $5, $6::jsonb, $7, $8, $9, NOW())
+        ON CONFLICT (id) DO UPDATE
+          SET "imageUrl" = EXCLUDED."imageUrl",
+              description = EXCLUDED.description,
+              "labData" = EXCLUDED."labData",
+              location = EXCLUDED.location,
+              crop = EXCLUDED.crop,
+              season = EXCLUDED.season
+      `,
+      [
+        inputId,
+        userId,
+        payload.type,
+        payload.imageUrl ?? null,
+        payload.description ?? null,
+        payload.labData ? JSON.stringify(payload.labData) : null,
+        payload.location ?? null,
+        payload.crop ?? null,
+        payload.season ?? null,
+      ]
+    );
+  }
+
+  private async upsertLegacyRecommendation(
+    client: PoolClient,
+    userId: string,
+    inputId: string,
+    result: RecommendationResult
+  ): Promise<string> {
+    const existing = await client.query<{ id: string }>(
+      `
+        SELECT id
+        FROM "Recommendation"
+        WHERE "inputId" = $1
+        LIMIT 1
+      `,
+      [inputId]
+    );
+
+    const recommendationId = existing.rows[0]?.id ?? result.recommendationId;
+
+    if (existing.rows.length > 0) {
+      await client.query(
+        `
+          UPDATE "Recommendation"
+          SET diagnosis = $2::jsonb,
+              confidence = $3,
+              "modelUsed" = $4
+          WHERE id = $1
+        `,
+        [
+          recommendationId,
+          JSON.stringify(result.diagnosis),
+          result.confidence,
+          result.modelUsed,
+        ]
+      );
+      return recommendationId;
+    }
+
+    await client.query(
+      `
+        INSERT INTO "Recommendation" (
+          id,
+          "userId",
+          "inputId",
+          diagnosis,
+          confidence,
+          "modelUsed",
+          "tokensUsed",
+          "createdAt"
+        )
+        VALUES ($1, $2, $3, $4::jsonb, $5, $6, NULL, NOW())
+      `,
+      [
+        recommendationId,
+        userId,
+        inputId,
+        JSON.stringify(result.diagnosis),
+        result.confidence,
+        result.modelUsed,
+      ]
+    );
+
+    return recommendationId;
+  }
+
+  private async syncRecommendationSources(
+    client: PoolClient,
+    recommendationId: string,
+    result: RecommendationResult
+  ): Promise<void> {
+    await client.query(
+      `
+        DELETE FROM "RecommendationSource"
+        WHERE "recommendationId" = $1
+      `,
+      [recommendationId]
+    );
+
+    for (const source of result.sources) {
+      const existingChunks = await client.query<{
+        has_text: boolean;
+        has_image: boolean;
+      }>(
+        `
+          SELECT EXISTS (SELECT 1 FROM "TextChunk" WHERE id = $1) AS has_text,
+                 EXISTS (SELECT 1 FROM "ImageChunk" WHERE id = $1) AS has_image
+        `,
+        [source.chunkId]
+      );
+
+      const chunk = existingChunks.rows[0];
+      if (!chunk?.has_text && !chunk?.has_image) {
+        continue;
+      }
+
+      await client.query(
+        `
+          INSERT INTO "RecommendationSource" (
+            id,
+            "recommendationId",
+            "textChunkId",
+            "imageChunkId",
+            "relevanceScore"
+          )
+          VALUES ($1, $2, $3, $4, $5)
+        `,
+        [
+          randomUUID(),
+          recommendationId,
+          chunk.has_text ? source.chunkId : null,
+          chunk.has_image ? source.chunkId : null,
+          source.relevance,
+        ]
+      );
+    }
   }
 
   private async withTransaction<T>(callback: (client: PoolClient) => Promise<T>): Promise<T> {
@@ -292,4 +508,12 @@ export class PostgresRecommendationStore implements RecommendationStore {
       recommendationId: row.recommendation_id,
     };
   }
+}
+
+function normalizeUserEmail(email: string | undefined, userId: string): string {
+  if (email && email.length > 3 && email.includes('@')) {
+    return email;
+  }
+
+  return `${userId}@placeholder.local`;
 }

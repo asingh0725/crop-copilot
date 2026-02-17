@@ -27,6 +27,7 @@ enum APIEndpoint {
 
     // Inputs
     case createInput
+    case getJobStatus(jobId: String)
     case listInputs
     case getInput(id: String)
 
@@ -54,6 +55,7 @@ enum APIEndpoint {
         case .refreshToken: return "/auth/refresh"
         case .getProfile, .updateProfile: return "/profile"
         case .createInput, .listInputs: return "/inputs"
+        case .getJobStatus(let jobId): return "/jobs/\(jobId)"
         case .getInput(let id): return "/inputs/\(id)"
         case .listRecommendations: return "/recommendations"
         case .getRecommendation(let id): return "/recommendations/\(id)"

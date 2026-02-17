@@ -78,28 +78,42 @@ struct SourceReference: Codable {
     let url: String?
 }
 
-// MARK: - Create Input Response
-struct CreateInputResponse: Codable {
-    let input: InputResponse
+// MARK: - Async Recommendation Contract
+struct CreateInputAcceptedResponse: Codable {
+    let inputId: String
+    let jobId: String
+    let status: String
+    let acceptedAt: String
+}
+
+struct RecommendationJobStatusResponse: Codable {
+    let inputId: String
+    let jobId: String
+    let status: String
+    let updatedAt: String
+    let failureReason: String?
+    let result: RecommendationJobResult?
+}
+
+struct RecommendationJobResult: Codable {
     let recommendationId: String
+    let confidence: Double
+    let diagnosis: [String: AnyCodable]
+    let sources: [RecommendationJobSource]
+    let modelUsed: String
 }
 
-struct InputResponse: Codable {
-    let id: String
-    let userId: String
-    let type: String
-    let imageUrl: String?
-    let description: String?
-    let labData: [String: AnyCodable]?
-    let location: String?
-    let crop: String?
-    let season: String?
-    let createdAt: String
+struct RecommendationJobSource: Codable {
+    let chunkId: String
+    let relevance: Double
+    let excerpt: String
 }
 
-// MARK: - Upload Response
-struct UploadResponse: Codable {
-    let url: String
+// MARK: - Upload URL Response
+struct UploadUrlResponse: Codable {
+    let uploadUrl: String
+    let objectKey: String
+    let expiresInSeconds: Int
 }
 
 // MARK: - Profile Response
