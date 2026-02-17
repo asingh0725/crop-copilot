@@ -43,6 +43,60 @@ function extractOverlapText(content: string, overlapTokens: number): string {
   return overlap;
 }
 
+function splitParagraphByMaxTokens(paragraph: string, maxTokens: number): string[] {
+  if (estimateTokens(paragraph) <= maxTokens) {
+    return [paragraph];
+  }
+
+  const sentences = paragraph
+    .match(/[^.!?]+[.!?]?/g)
+    ?.map((sentence) => sentence.trim())
+    .filter(Boolean) ?? [paragraph];
+  const segments: string[] = [];
+  let current = '';
+
+  const flushCurrent = () => {
+    if (current.trim().length > 0) {
+      segments.push(current.trim());
+      current = '';
+    }
+  };
+
+  for (const sentence of sentences) {
+    if (estimateTokens(sentence) > maxTokens) {
+      flushCurrent();
+      const words = sentence.split(/\s+/).filter(Boolean);
+      let wordChunk: string[] = [];
+
+      for (const word of words) {
+        const nextWordChunk = [...wordChunk, word].join(' ');
+        if (estimateTokens(nextWordChunk) > maxTokens && wordChunk.length > 0) {
+          segments.push(wordChunk.join(' '));
+          wordChunk = [word];
+        } else {
+          wordChunk.push(word);
+        }
+      }
+
+      if (wordChunk.length > 0) {
+        segments.push(wordChunk.join(' '));
+      }
+      continue;
+    }
+
+    const candidate = current ? `${current} ${sentence}` : sentence;
+    if (estimateTokens(candidate) > maxTokens && current) {
+      flushCurrent();
+      current = sentence;
+    } else {
+      current = candidate;
+    }
+  }
+
+  flushCurrent();
+  return segments.length > 0 ? segments : [paragraph];
+}
+
 export function chunkTextSemantically(
   section: string,
   text: string,
@@ -56,27 +110,49 @@ export function chunkTextSemantically(
 
   const chunks: SemanticChunk[] = [];
 
-  let current = `${section}\n\n`;
+  const sectionPrefix = `${section}\n\n`;
+  let current = sectionPrefix;
   let currentTokens = estimateTokens(current);
+  const sectionTokens = currentTokens;
+  const maxParagraphTokens = Math.max(1, config.maxTokens - sectionTokens);
 
   for (const paragraph of paragraphs) {
-    const paragraphTokens = estimateTokens(paragraph);
+    const paragraphSegments = splitParagraphByMaxTokens(paragraph, maxParagraphTokens);
 
-    if (currentTokens + paragraphTokens > config.maxTokens && currentTokens >= config.minTokens) {
-      chunks.push({
-        section,
-        content: current.trim(),
-        tokenCount: estimateTokens(current),
-      });
+    for (const segment of paragraphSegments) {
+      const paragraphTokens = estimateTokens(segment);
+      if (
+        currentTokens + paragraphTokens > config.maxTokens &&
+        currentTokens > sectionTokens
+      ) {
+        chunks.push({
+          section,
+          content: current.trim(),
+          tokenCount: estimateTokens(current),
+        });
 
-      const overlap = extractOverlapText(current, config.overlapTokens);
-      current = overlap ? `${section}\n\n${overlap}\n\n${paragraph}` : `${section}\n\n${paragraph}`;
+        const overlap = extractOverlapText(current, config.overlapTokens);
+        current = overlap
+          ? `${sectionPrefix}${overlap}\n\n${segment}`
+          : `${sectionPrefix}${segment}`;
+        currentTokens = estimateTokens(current);
+        continue;
+      }
+
+      if (currentTokens + paragraphTokens > config.maxTokens) {
+        chunks.push({
+          section,
+          content: current.trim(),
+          tokenCount: estimateTokens(current),
+        });
+        current = `${sectionPrefix}${segment}`;
+        currentTokens = estimateTokens(current);
+        continue;
+      }
+
+      current += `${current.endsWith('\n\n') ? '' : '\n\n'}${segment}`;
       currentTokens = estimateTokens(current);
-      continue;
     }
-
-    current += `${current.endsWith('\n\n') ? '' : '\n\n'}${paragraph}`;
-    currentTokens = estimateTokens(current);
   }
 
   if (current.trim().length > 0) {

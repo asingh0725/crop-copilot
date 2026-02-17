@@ -25,11 +25,17 @@ const DEFAULT_MAX_RECOMMENDATION_COST_USD: Record<EnvironmentName, number> = {
 };
 
 function parseEnvironmentName(raw: string | undefined): EnvironmentName {
+  if (!raw) {
+    return 'dev';
+  }
+
   if (raw === 'dev' || raw === 'staging' || raw === 'prod') {
     return raw;
   }
 
-  return 'dev';
+  throw new Error(
+    `CROP_ENV must be one of dev, staging, or prod. Received: ${raw}`
+  );
 }
 
 function parseMonthlyBudget(raw: string | undefined, fallback: number): number {

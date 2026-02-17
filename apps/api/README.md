@@ -44,3 +44,8 @@ Storage and persistence env:
 - `METRICS_NAMESPACE` (optional; defaults to `CropCopilot/Pipeline` for EMF metrics)
 - `RECOMMENDATION_COST_USD` (optional; default fallback cost estimate per recommendation, default `0.81`)
 - `RECOMMENDATION_COST_BY_MODEL_JSON` (optional JSON map for model-specific cost estimates)
+
+Upload URL request contract:
+
+- `contentLength` is required and capped at 25MB
+- the generated presigned request includes `ContentLength` to enforce size

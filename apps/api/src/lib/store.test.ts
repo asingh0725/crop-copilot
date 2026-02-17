@@ -33,18 +33,22 @@ test('InMemoryRecommendationStore enforces user scoping on job status', async ()
   assert.equal(completed?.result?.modelUsed, 'pipeline-scaffold-v1');
 });
 
-test('InMemoryRecommendationStore enforces idempotency by user and key', async () => {
+test('InMemoryRecommendationStore marks idempotent replays as existing', async () => {
   const store = new InMemoryRecommendationStore();
 
   const first = await store.enqueueInput('user-a', {
-    idempotencyKey: 'IOS-DEVICE-A:KEY-9999',
+    idempotencyKey: 'IOS-DEVICE-A:KEY-8888',
     type: 'PHOTO',
+    imageUrl: 'https://example.com/photo.jpg',
   });
   const second = await store.enqueueInput('user-a', {
-    idempotencyKey: 'ios-device-a:key-9999',
+    idempotencyKey: 'ios-device-a:key-8888',
     type: 'PHOTO',
+    imageUrl: 'https://example.com/photo.jpg',
   });
 
+  assert.equal(first.wasCreated, true);
+  assert.equal(second.wasCreated, false);
   assert.equal(first.inputId, second.inputId);
   assert.equal(first.jobId, second.jobId);
 });

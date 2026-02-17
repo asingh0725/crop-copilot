@@ -9,6 +9,32 @@ export interface CognitoJwtConfig {
   clientId?: string;
 }
 
+function assertClientBinding(
+  payload: JWTPayload,
+  tokenUse: string | undefined,
+  clientId: string
+): void {
+  if (tokenUse === 'access') {
+    const tokenClientId =
+      typeof payload.client_id === 'string' ? payload.client_id : undefined;
+    if (tokenClientId !== clientId) {
+      throw new AuthError('Token client claim does not match app client', 401, 'INVALID_TOKEN');
+    }
+    return;
+  }
+
+  if (tokenUse === 'id') {
+    const audience = payload.aud;
+    const matchesAudience =
+      typeof audience === 'string'
+        ? audience === clientId
+        : Array.isArray(audience) && audience.includes(clientId);
+    if (!matchesAudience) {
+      throw new AuthError('Token audience claim does not match app client', 401, 'INVALID_TOKEN');
+    }
+  }
+}
+
 function resolveIssuer(config: CognitoJwtConfig): string {
   return `https://cognito-idp.${config.region}.amazonaws.com/${config.userPoolId}`;
 }
@@ -41,8 +67,12 @@ export async function verifyJwtToken(
 
   const verified = await jwtVerify(token, keyResolver, {
     issuer,
-    audience: config.clientId,
   });
+  const tokenUse =
+    typeof verified.payload.token_use === 'string' ? verified.payload.token_use : undefined;
+  if (config.clientId) {
+    assertClientBinding(verified.payload, tokenUse, config.clientId);
+  }
 
   return payloadToAuthContext(verified.payload);
 }
@@ -64,7 +94,8 @@ function payloadToAuthContext(payload: JWTPayload): AuthContext {
 }
 
 export async function verifyAccessTokenFromEvent(
-  event: APIGatewayProxyEventV2
+  event: APIGatewayProxyEventV2,
+  getKey?: JWTVerifyGetKey
 ): Promise<AuthContext> {
   const region = process.env.COGNITO_REGION;
   const userPoolId = process.env.COGNITO_USER_POOL_ID;
@@ -75,9 +106,22 @@ export async function verifyAccessTokenFromEvent(
   }
 
   const token = getBearerToken(event.headers ?? {});
-  return verifyJwtToken(token, {
-    region,
-    userPoolId,
-    clientId,
-  });
+  const auth = await verifyJwtToken(
+    token,
+    {
+      region,
+      userPoolId,
+      clientId,
+    },
+    getKey
+  );
+  if (auth.tokenUse !== 'access') {
+    throw new AuthError(
+      'Access token is required for API requests',
+      401,
+      'INVALID_TOKEN_USE'
+    );
+  }
+
+  return auth;
 }

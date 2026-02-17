@@ -30,10 +30,18 @@ async function processMessage(
   pushEvents: PushEventPublisher
 ): Promise<ProcessedRecommendationResult | null> {
   const currentStatus = await store.getJobStatus(payload.jobId, payload.userId);
+
   if (!currentStatus) {
     throw new Error(`Recommendation job not found: ${payload.jobId}`);
   }
-  if (currentStatus.status === 'completed' || currentStatus.status === 'failed') {
+
+  // Standard SQS can redeliver messages; avoid re-running already-finished jobs.
+  if (currentStatus.status === 'completed') {
+    return null;
+  }
+
+  // If another worker has already started this job, skip duplicate delivery.
+  if (currentStatus.status !== 'queued' && currentStatus.status !== 'failed') {
     return null;
   }
 
