@@ -47,7 +47,7 @@ class LabReportViewModel: ObservableObject {
     @Published var showResult = false
     @Published var resultRecommendationId: String?
 
-    let cropOptions = AppConstants.cropLabels
+    let cropOptions = AppConstants.cropOptions
 
     private let apiClient = APIClient.shared
 
@@ -55,11 +55,12 @@ class LabReportViewModel: ObservableObject {
         isSubmitting = true
         errorMessage = nil
         submissionStatus = "Submitting lab data..."
+        defer { isSubmitting = false }
 
         // Build lab data dictionary
         var labData: [String: AnyCodable] = [:]
 
-        if let val = Double(pH) { labData["pH"] = AnyCodable(val) }
+        if let val = Double(pH) { labData["ph"] = AnyCodable(val) }
         if let val = Double(organicMatter) { labData["organicMatter"] = AnyCodable(val) }
         if let val = Double(nitrogen) { labData["nitrogen"] = AnyCodable(val) }
         if let val = Double(phosphorus) { labData["phosphorus"] = AnyCodable(val) }
@@ -72,7 +73,7 @@ class LabReportViewModel: ObservableObject {
         if let val = Double(zinc) { labData["zinc"] = AnyCodable(val) }
         if let val = Double(copper) { labData["copper"] = AnyCodable(val) }
         if let val = Double(boron) { labData["boron"] = AnyCodable(val) }
-        if let val = Double(cec) { labData["CEC"] = AnyCodable(val) }
+        if let val = Double(cec) { labData["cec"] = AnyCodable(val) }
         if let val = Double(baseSaturation) { labData["baseSaturation"] = AnyCodable(val) }
         if !soilTexture.isEmpty { labData["soilTexture"] = AnyCodable(soilTexture) }
 
@@ -90,8 +91,8 @@ class LabReportViewModel: ObservableObject {
                 idempotencyKey: "ios-lab-\(UUID().uuidString)",
                 type: "LAB_REPORT",
                 labData: labData,
-                crop: crop.isEmpty ? nil : crop,
-                location: location.isEmpty ? nil : location,
+                crop: crop.isEmpty ? nil : AppConstants.cropValue(from: crop),
+                location: location.isEmpty ? nil : AppConstants.locationWithCountry(location),
                 season: sampleDate.isEmpty ? nil : sampleDate
             )
 
@@ -112,10 +113,16 @@ class LabReportViewModel: ObservableObject {
                 )
             }
             showResult = true
+        } catch let error as NetworkError {
+            if case .cancelled = error {
+                return
+            }
+            errorMessage = error.localizedDescription
+        } catch is CancellationError {
+            return
         } catch {
             errorMessage = error.localizedDescription
         }
 
-        isSubmitting = false
     }
 }

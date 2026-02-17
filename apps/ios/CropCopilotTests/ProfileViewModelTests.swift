@@ -25,35 +25,35 @@ final class ProfileViewModelTests: XCTestCase {
 
     func testToggleCropAdds() {
         let viewModel = ProfileViewModel()
-        viewModel.toggleCrop("Corn")
-        XCTAssertTrue(viewModel.selectedCrops.contains("Corn"))
+        viewModel.toggleCrop("corn")
+        XCTAssertTrue(viewModel.selectedCrops.contains("corn"))
     }
 
     func testToggleCropRemoves() {
         let viewModel = ProfileViewModel()
-        viewModel.toggleCrop("Corn")
-        viewModel.toggleCrop("Corn")
-        XCTAssertFalse(viewModel.selectedCrops.contains("Corn"))
+        viewModel.toggleCrop("corn")
+        viewModel.toggleCrop("corn")
+        XCTAssertFalse(viewModel.selectedCrops.contains("corn"))
     }
 
     func testToggleMultipleCrops() {
         let viewModel = ProfileViewModel()
-        viewModel.toggleCrop("Corn")
-        viewModel.toggleCrop("Soybeans")
-        viewModel.toggleCrop("Wheat")
+        viewModel.toggleCrop("corn")
+        viewModel.toggleCrop("soybeans")
+        viewModel.toggleCrop("wheat")
         XCTAssertEqual(viewModel.selectedCrops.count, 3)
-        viewModel.toggleCrop("Soybeans")
+        viewModel.toggleCrop("soybeans")
         XCTAssertEqual(viewModel.selectedCrops.count, 2)
-        XCTAssertFalse(viewModel.selectedCrops.contains("Soybeans"))
+        XCTAssertFalse(viewModel.selectedCrops.contains("soybeans"))
     }
 
     func testAvailableCropsMatchWebApp() {
         let viewModel = ProfileViewModel()
         XCTAssertEqual(viewModel.availableCrops.count, 31)
-        XCTAssertTrue(viewModel.availableCrops.contains("Corn"))
-        XCTAssertTrue(viewModel.availableCrops.contains("Tomatoes"))
-        XCTAssertTrue(viewModel.availableCrops.contains("Soybeans"))
-        XCTAssertTrue(viewModel.availableCrops.contains("Sugar Beets"))
+        XCTAssertTrue(viewModel.availableCrops.contains(where: { $0.value == "corn" && $0.label == "Corn" }))
+        XCTAssertTrue(viewModel.availableCrops.contains(where: { $0.value == "tomatoes" && $0.label == "Tomatoes" }))
+        XCTAssertTrue(viewModel.availableCrops.contains(where: { $0.value == "soybeans" && $0.label == "Soybeans" }))
+        XCTAssertTrue(viewModel.availableCrops.contains(where: { $0.value == "sugar beets" && $0.label == "Sugar Beets" }))
     }
 
     func testExperienceLevelsMatchWebApp() {

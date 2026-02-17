@@ -19,7 +19,7 @@ class DiagnosisViewModel: ObservableObject {
     @Published var showResult = false
     @Published var resultRecommendationId: String?
 
-    let cropOptions = AppConstants.cropLabels
+    let cropOptions = AppConstants.cropOptions
     let growthStageOptions = AppConstants.growthStages
 
     private let apiClient = APIClient.shared
@@ -29,12 +29,12 @@ class DiagnosisViewModel: ObservableObject {
         isSubmitting = true
         errorMessage = nil
         submissionStatus = "Uploading image..."
+        defer { isSubmitting = false }
 
         do {
             // 1. Compress and upload image
             guard let imageData = cameraManager.compressImage(image) else {
                 errorMessage = "Failed to compress image"
-                isSubmitting = false
                 return
             }
 
@@ -59,8 +59,8 @@ class DiagnosisViewModel: ObservableObject {
                 type: "PHOTO",
                 imageUrl: imageUrl,
                 description: description.isEmpty ? nil : description,
-                crop: selectedCrop.isEmpty ? nil : selectedCrop,
-                location: location.isEmpty ? nil : location,
+                crop: selectedCrop.isEmpty ? nil : AppConstants.cropValue(from: selectedCrop),
+                location: location.isEmpty ? nil : AppConstants.locationWithCountry(location),
                 season: growthStage.isEmpty ? nil : growthStage
             )
 
@@ -80,10 +80,16 @@ class DiagnosisViewModel: ObservableObject {
                 )
             }
             showResult = true
+        } catch let error as NetworkError {
+            if case .cancelled = error {
+                return
+            }
+            errorMessage = error.localizedDescription
+        } catch is CancellationError {
+            return
         } catch {
             errorMessage = error.localizedDescription
         }
 
-        isSubmitting = false
     }
 }

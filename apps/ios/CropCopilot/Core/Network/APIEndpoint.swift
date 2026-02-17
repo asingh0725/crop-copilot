@@ -158,11 +158,11 @@ enum APIEndpoint {
         let baseURL: String
         switch hostTarget {
         case .runtimePreferred:
-            if let runtimeBaseURL, !runtimeBaseURL.isEmpty {
-                baseURL = runtimeBaseURL
-            } else {
-                baseURL = primaryBaseURL
+            guard let runtimeBaseURL,
+                  !runtimeBaseURL.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+                return nil
             }
+            baseURL = runtimeBaseURL
         case .primary:
             baseURL = primaryBaseURL
         }

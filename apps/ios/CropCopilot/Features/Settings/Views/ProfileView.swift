@@ -29,15 +29,15 @@ struct ProfileView: View {
             }
 
             Section("Crops of Interest") {
-                ForEach(viewModel.availableCrops, id: \.self) { crop in
+                ForEach(viewModel.availableCrops, id: \.value) { crop in
                     Button {
-                        viewModel.toggleCrop(crop)
+                        viewModel.toggleCrop(crop.value)
                     } label: {
                         HStack {
-                            Text(crop)
+                            Text(crop.label)
                                 .foregroundColor(.primary)
                             Spacer()
-                            if viewModel.selectedCrops.contains(crop) {
+                            if viewModel.selectedCrops.contains(crop.value) {
                                 Image(systemName: "checkmark")
                                     .foregroundColor(.appPrimary)
                             }

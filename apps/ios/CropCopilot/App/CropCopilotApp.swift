@@ -36,6 +36,17 @@ struct CropCopilotApp: App {
 
 // MARK: - Configuration
 struct Configuration {
+    private static func isValidHttpUrl(_ value: String) -> Bool {
+        guard let components = URLComponents(string: value),
+              let scheme = components.scheme?.lowercased(),
+              (scheme == "http" || scheme == "https"),
+              components.host != nil else {
+            return false
+        }
+
+        return true
+    }
+
     private static func resolvedConfigValue(for key: String) -> String? {
         guard let raw = Bundle.main.infoDictionary?[key] as? String else {
             return nil
@@ -60,6 +71,10 @@ struct Configuration {
     }()
     static let apiRuntimeBaseURL: String? = {
         resolvedConfigValue(for: "API_RUNTIME_BASE_URL")
+    }()
+    static let isRuntimeApiConfigured: Bool = {
+        guard let value = apiRuntimeBaseURL else { return false }
+        return isValidHttpUrl(value)
     }()
 
 }

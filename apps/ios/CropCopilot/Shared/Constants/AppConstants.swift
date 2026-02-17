@@ -57,6 +57,45 @@ enum AppConstants {
         CropOption(value: "sugar beets", label: "Sugar Beets", category: "Other"),
     ]
 
+    // MARK: - Canonical crop helpers (align iOS payloads with web values)
+    static func cropValue(from valueOrLabel: String) -> String {
+        let trimmed = valueOrLabel.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return "" }
+
+        if let exactValue = cropOptions.first(where: {
+            $0.value.caseInsensitiveCompare(trimmed) == .orderedSame
+        }) {
+            return exactValue.value
+        }
+
+        if let byLabel = cropOptions.first(where: {
+            $0.label.caseInsensitiveCompare(trimmed) == .orderedSame
+        }) {
+            return byLabel.value
+        }
+
+        return trimmed.lowercased()
+    }
+
+    static func cropLabel(for valueOrLabel: String) -> String {
+        let trimmed = valueOrLabel.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return trimmed }
+
+        if let exactValue = cropOptions.first(where: {
+            $0.value.caseInsensitiveCompare(trimmed) == .orderedSame
+        }) {
+            return exactValue.label
+        }
+
+        if let byLabel = cropOptions.first(where: {
+            $0.label.caseInsensitiveCompare(trimmed) == .orderedSame
+        }) {
+            return byLabel.label
+        }
+
+        return trimmed
+    }
+
     static var cropCategories: [String] { Array(Set(cropOptions.map(\.category))).sorted() }
 
     static func crops(in category: String) -> [CropOption] {
@@ -95,6 +134,21 @@ enum AppConstants {
     ]
 
     static let allLocations: [String] = usStates + caProvinces
+
+    static func locationCountryCode(for location: String) -> String? {
+        if usStates.contains(location) { return "US" }
+        if caProvinces.contains(location) { return "CA" }
+        return nil
+    }
+
+    static func locationWithCountry(_ location: String) -> String {
+        let trimmed = location.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return "" }
+        if let country = locationCountryCode(for: trimmed) {
+            return "\(trimmed), \(country)"
+        }
+        return trimmed
+    }
 
     // MARK: - Farm Sizes (matching web lib/constants/profile.ts)
     static let farmSizes = [

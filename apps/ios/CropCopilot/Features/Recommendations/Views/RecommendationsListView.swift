@@ -13,6 +13,14 @@ struct RecommendationsListView: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
+                if !Configuration.isRuntimeApiConfigured {
+                    Text("AWS runtime API is not configured on iOS. Set API_RUNTIME_BASE_URL to keep history/profile in sync with web.")
+                        .font(.caption)
+                        .foregroundColor(.orange)
+                        .padding(.horizontal)
+                        .padding(.top, 6)
+                }
+
                 // Search bar
                 searchBar
 
@@ -36,8 +44,8 @@ struct RecommendationsListView: View {
                 }
             }
             .navigationTitle("History")
-            .task {
-                await viewModel.loadRecommendations()
+            .onAppear {
+                Task { await viewModel.loadRecommendations(reset: true) }
             }
         }
     }
@@ -142,7 +150,7 @@ struct RecommendationsListView: View {
             }
             HStack {
                 if let crop = rec.input.crop {
-                    Label(crop, systemImage: "leaf")
+                    Label(AppConstants.cropLabel(for: crop), systemImage: "leaf")
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }

@@ -45,6 +45,7 @@ class RecommendationsViewModel: ObservableObject {
 
         isLoading = recommendations.isEmpty
         errorMessage = nil
+        defer { isLoading = false }
 
         do {
             let response: RecommendationsListResponse = try await apiClient.request(
@@ -57,16 +58,23 @@ class RecommendationsViewModel: ObservableObject {
             )
             recommendations = response.recommendations
             hasMorePages = response.pagination.page < response.pagination.totalPages
+        } catch let error as NetworkError {
+            if case .cancelled = error {
+                return
+            }
+            errorMessage = error.localizedDescription
+        } catch is CancellationError {
+            return
         } catch {
             errorMessage = error.localizedDescription
         }
 
-        isLoading = false
     }
 
     func loadNextPage() async {
         guard hasMorePages, !isLoadingMore else { return }
         isLoadingMore = true
+        defer { isLoadingMore = false }
         currentPage += 1
 
         do {
@@ -80,12 +88,21 @@ class RecommendationsViewModel: ObservableObject {
             )
             recommendations.append(contentsOf: response.recommendations)
             hasMorePages = response.pagination.page < response.pagination.totalPages
+        } catch let error as NetworkError {
+            if case .cancelled = error {
+                currentPage -= 1
+                return
+            }
+            errorMessage = error.localizedDescription
+            currentPage -= 1
+        } catch is CancellationError {
+            currentPage -= 1
+            return
         } catch {
             errorMessage = error.localizedDescription
             currentPage -= 1
         }
 
-        isLoadingMore = false
     }
 
     func deleteRecommendations(at offsets: IndexSet) async {
@@ -95,6 +112,13 @@ class RecommendationsViewModel: ObservableObject {
                 struct EmptyResponse: Codable {}
                 let _: EmptyResponse = try await apiClient.request(.deleteRecommendation(id: rec.id))
                 recommendations.remove(at: index)
+            } catch let error as NetworkError {
+                if case .cancelled = error {
+                    continue
+                }
+                errorMessage = "Failed to delete: \(error.localizedDescription)"
+            } catch is CancellationError {
+                continue
             } catch {
                 errorMessage = "Failed to delete: \(error.localizedDescription)"
             }

@@ -17,8 +17,8 @@ struct LabReportFormView: View {
             Section("Basic Information") {
                 Picker("Crop", selection: $viewModel.crop) {
                     Text("Select crop...").tag("")
-                    ForEach(viewModel.cropOptions, id: \.self) { crop in
-                        Text(crop).tag(crop)
+                    ForEach(viewModel.cropOptions, id: \.value) { crop in
+                        Text(crop.label).tag(crop.value)
                     }
                 }
                 Picker("Location", selection: $viewModel.location) {

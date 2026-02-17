@@ -29,7 +29,16 @@ class APIClient {
         retry: Bool = true
     ) async throws -> T {
         guard let url = endpoint.url(primaryBaseURL: baseURL, runtimeBaseURL: runtimeBaseURL) else {
-            throw NetworkError.unknown(NSError(domain: "Invalid URL", code: -1))
+            throw NetworkError.unknown(
+                NSError(
+                    domain: "Configuration",
+                    code: -1,
+                    userInfo: [
+                        NSLocalizedDescriptionKey:
+                            "API runtime URL is not configured. Set API_RUNTIME_BASE_URL in Config/Secrets.xcconfig."
+                    ]
+                )
+            )
         }
 
         var request = URLRequest(url: url)
@@ -52,7 +61,17 @@ class APIClient {
         }
 
         // Execute request
-        let (data, response) = try await session.data(for: request)
+        let data: Data
+        let response: URLResponse
+        do {
+            (data, response) = try await session.data(for: request)
+        } catch is CancellationError {
+            throw NetworkError.cancelled
+        } catch let urlError as URLError where urlError.code == .cancelled {
+            throw NetworkError.cancelled
+        } catch {
+            throw NetworkError.unknown(error)
+        }
 
         guard let httpResponse = response as? HTTPURLResponse else {
             throw NetworkError.unknown(NSError(domain: "Invalid response", code: -1))
@@ -128,7 +147,16 @@ class APIClient {
         uploadRequest.setValue("image/jpeg", forHTTPHeaderField: "Content-Type")
         uploadRequest.httpBody = imageData
 
-        let (_, uploadResponse) = try await session.data(for: uploadRequest)
+        let uploadResponse: URLResponse
+        do {
+            (_, uploadResponse) = try await session.data(for: uploadRequest)
+        } catch is CancellationError {
+            throw NetworkError.cancelled
+        } catch let urlError as URLError where urlError.code == .cancelled {
+            throw NetworkError.cancelled
+        } catch {
+            throw NetworkError.unknown(error)
+        }
         guard let httpResponse = uploadResponse as? HTTPURLResponse,
               (200...299).contains(httpResponse.statusCode) else {
             throw NetworkError.serverError(statusCode: (uploadResponse as? HTTPURLResponse)?.statusCode ?? 500)
@@ -150,7 +178,11 @@ class APIClient {
         let startedAt = Date()
 
         while Date().timeIntervalSince(startedAt) < timeoutSeconds {
-            try await Task.sleep(nanoseconds: UInt64(pollIntervalSeconds * 1_000_000_000))
+            do {
+                try await Task.sleep(nanoseconds: UInt64(pollIntervalSeconds * 1_000_000_000))
+            } catch {
+                throw NetworkError.cancelled
+            }
 
             let status: RecommendationJobStatusResponse = try await request(
                 .getJobStatus(jobId: jobId)

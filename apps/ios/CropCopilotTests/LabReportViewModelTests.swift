@@ -28,8 +28,8 @@ final class LabReportViewModelTests: XCTestCase {
     func testCropOptionsMatchWebApp() {
         let viewModel = LabReportViewModel()
         XCTAssertFalse(viewModel.cropOptions.isEmpty)
-        XCTAssertTrue(viewModel.cropOptions.contains("Corn"))
-        XCTAssertTrue(viewModel.cropOptions.contains("Tomatoes"))
+        XCTAssertTrue(viewModel.cropOptions.contains(where: { $0.value == "corn" && $0.label == "Corn" }))
+        XCTAssertTrue(viewModel.cropOptions.contains(where: { $0.value == "tomatoes" && $0.label == "Tomatoes" }))
         XCTAssertEqual(viewModel.cropOptions.count, 31)
     }
 

@@ -200,7 +200,7 @@ struct DiagnosisResultView: View {
                     .font(.caption)
                     .foregroundColor(.secondary)
                 if let crop = detail.input.crop {
-                    Text(crop)
+                    Text(AppConstants.cropLabel(for: crop))
                         .font(.subheadline)
                 }
             }
@@ -712,16 +712,23 @@ class DiagnosisResultViewModel: ObservableObject {
     func loadRecommendation(id: String) async {
         isLoading = true
         errorMessage = nil
+        defer { isLoading = false }
 
         do {
             let response: RecommendationDetailResponse = try await apiClient.request(.getRecommendation(id: id))
             recommendation = response
             await loadFeedback(recommendationId: id)
+        } catch let error as NetworkError {
+            if case .cancelled = error {
+                return
+            }
+            errorMessage = error.localizedDescription
+        } catch is CancellationError {
+            return
         } catch {
             errorMessage = error.localizedDescription
         }
 
-        isLoading = false
     }
 
     func submitQuickFeedback(
@@ -802,17 +809,24 @@ class DiagnosisResultViewModel: ObservableObject {
 
     private func loadFeedback(recommendationId: String) async {
         isFeedbackLoading = true
+        defer { isFeedbackLoading = false }
 
         do {
             let response: FeedbackGetResponse = try await apiClient.request(
                 .getFeedback(recommendationId: recommendationId)
             )
             feedback = response.feedback
+        } catch let error as NetworkError {
+            if case .cancelled = error {
+                return
+            }
+            feedback = nil
+        } catch is CancellationError {
+            return
         } catch {
             feedback = nil
         }
 
-        isFeedbackLoading = false
         nextSuggestedStage = suggestedStage(recommendationId: recommendationId)
     }
 

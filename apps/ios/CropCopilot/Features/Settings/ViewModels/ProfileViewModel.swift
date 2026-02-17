@@ -18,7 +18,7 @@ class ProfileViewModel: ObservableObject {
     @Published var errorMessage: String?
     @Published var successMessage: String?
 
-    let availableCrops = AppConstants.cropLabels
+    let availableCrops = AppConstants.cropOptions
 
     private let apiClient = APIClient.shared
 
@@ -33,6 +33,7 @@ class ProfileViewModel: ObservableObject {
     func loadProfile() async {
         isLoading = true
         errorMessage = nil
+        defer { isLoading = false }
 
         do {
             let response: ProfileResponse = try await apiClient.request(.getProfile)
@@ -41,28 +42,33 @@ class ProfileViewModel: ObservableObject {
             location = profile.location ?? ""
             farmSize = profile.farmSize ?? ""
             if let crops = profile.cropsOfInterest {
-                selectedCrops = Set(crops)
+                selectedCrops = Set(crops.map(AppConstants.cropValue))
             }
             if let level = profile.experienceLevel {
                 experienceLevel = ExperienceLevel(rawValue: level)
             }
         } catch let error as NetworkError {
+            if case .cancelled = error {
+                return
+            }
             if case .notFound = error {
                 // No profile yet, that's fine
             } else {
                 errorMessage = error.localizedDescription
             }
+        } catch is CancellationError {
+            return
         } catch {
             errorMessage = error.localizedDescription
         }
 
-        isLoading = false
     }
 
     func saveProfile() async {
         isSaving = true
         errorMessage = nil
         successMessage = nil
+        defer { isSaving = false }
 
         do {
             struct ProfileUpdate: Encodable {
@@ -81,10 +87,16 @@ class ProfileViewModel: ObservableObject {
 
             let _: ProfileResponse = try await apiClient.request(.updateProfile, body: update)
             successMessage = "Profile saved successfully"
+        } catch let error as NetworkError {
+            if case .cancelled = error {
+                return
+            }
+            errorMessage = error.localizedDescription
+        } catch is CancellationError {
+            return
         } catch {
             errorMessage = error.localizedDescription
         }
 
-        isSaving = false
     }
 }

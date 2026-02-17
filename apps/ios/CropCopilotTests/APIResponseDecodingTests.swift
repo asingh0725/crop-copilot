@@ -54,30 +54,20 @@ final class APIResponseDecodingTests: XCTestCase {
         XCTAssertEqual(response.pagination.totalPages, 1)
     }
 
-    func testCreateInputResponseDecoding() throws {
+    func testCreateInputAcceptedResponseDecoding() throws {
         let json = """
         {
-            "input": {
-                "id": "inp1",
-                "userId": "user1",
-                "type": "PHOTO",
-                "imageUrl": "https://example.com/photo.jpg",
-                "description": "Test photo",
-                "labData": null,
-                "location": "Iowa",
-                "crop": "Corn",
-                "season": "Spring",
-                "createdAt": "2026-01-15T10:00:00.000Z"
-            },
-            "recommendationId": "rec1"
+            "inputId": "inp1",
+            "jobId": "job1",
+            "status": "queued",
+            "acceptedAt": "2026-01-15T10:00:00.000Z"
         }
         """.data(using: .utf8)!
 
-        let response = try decoder.decode(CreateInputResponse.self, from: json)
-        XCTAssertEqual(response.input.id, "inp1")
-        XCTAssertEqual(response.input.type, "PHOTO")
-        XCTAssertEqual(response.input.crop, "Corn")
-        XCTAssertEqual(response.recommendationId, "rec1")
+        let response = try decoder.decode(CreateInputAcceptedResponse.self, from: json)
+        XCTAssertEqual(response.inputId, "inp1")
+        XCTAssertEqual(response.jobId, "job1")
+        XCTAssertEqual(response.status, "queued")
     }
 
     func testProfileResponseDecoding() throws {
@@ -86,9 +76,9 @@ final class APIResponseDecodingTests: XCTestCase {
             "profile": {
                 "userId": "user1",
                 "location": "Iowa",
-                "farmSize": "500",
-                "cropsOfInterest": ["Corn", "Soybeans"],
-                "experienceLevel": "INTERMEDIATE",
+                "farmSize": "medium",
+                "cropsOfInterest": ["corn", "soybeans"],
+                "experienceLevel": "intermediate",
                 "createdAt": "2026-01-01T00:00:00.000Z",
                 "updatedAt": "2026-01-15T00:00:00.000Z"
             }
@@ -98,18 +88,24 @@ final class APIResponseDecodingTests: XCTestCase {
         let response = try decoder.decode(ProfileResponse.self, from: json)
         XCTAssertEqual(response.profile.userId, "user1")
         XCTAssertEqual(response.profile.location, "Iowa")
-        XCTAssertEqual(response.profile.farmSize, "500")
-        XCTAssertEqual(response.profile.cropsOfInterest, ["Corn", "Soybeans"])
-        XCTAssertEqual(response.profile.experienceLevel, "INTERMEDIATE")
+        XCTAssertEqual(response.profile.farmSize, "medium")
+        XCTAssertEqual(response.profile.cropsOfInterest, ["corn", "soybeans"])
+        XCTAssertEqual(response.profile.experienceLevel, "intermediate")
     }
 
-    func testUploadResponseDecoding() throws {
+    func testUploadUrlResponseDecoding() throws {
         let json = """
-        {"url": "https://storage.example.com/uploads/photo.jpg"}
+        {
+            "uploadUrl": "https://storage.example.com/uploads/photo.jpg?signature=abc",
+            "objectKey": "uploads/photo.jpg",
+            "expiresInSeconds": 900
+        }
         """.data(using: .utf8)!
 
-        let response = try decoder.decode(UploadResponse.self, from: json)
-        XCTAssertEqual(response.url, "https://storage.example.com/uploads/photo.jpg")
+        let response = try decoder.decode(UploadUrlResponse.self, from: json)
+        XCTAssertEqual(response.uploadUrl, "https://storage.example.com/uploads/photo.jpg?signature=abc")
+        XCTAssertEqual(response.objectKey, "uploads/photo.jpg")
+        XCTAssertEqual(response.expiresInSeconds, 900)
     }
 
     func testPaginationDecoding() throws {

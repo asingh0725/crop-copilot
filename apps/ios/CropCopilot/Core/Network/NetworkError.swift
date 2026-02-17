@@ -13,6 +13,7 @@ enum NetworkError: LocalizedError {
     case notFound
     case serverError(statusCode: Int)
     case noInternet
+    case cancelled
     case timeout
     case decodingError(Error)
     case encodingError(Error)
@@ -30,6 +31,8 @@ enum NetworkError: LocalizedError {
             return "Server error (\(statusCode)). Please try again later."
         case .noInternet:
             return "No internet connection. Please check your network."
+        case .cancelled:
+            return "Request cancelled."
         case .timeout:
             return "Request timed out. Please try again."
         case .decodingError(let error):
@@ -53,6 +56,8 @@ enum NetworkError: LocalizedError {
             return "Wait a few moments and try again."
         case .noInternet:
             return "Check your WiFi or cellular connection."
+        case .cancelled:
+            return nil
         case .timeout:
             return "Check your connection and try again."
         case .decodingError, .encodingError, .unknown:
