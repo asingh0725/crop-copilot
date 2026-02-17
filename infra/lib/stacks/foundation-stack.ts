@@ -19,6 +19,11 @@ export interface FoundationStackProps extends StackProps {
 }
 
 export class FoundationStack extends Stack {
+  readonly artifactsBucket: s3.IBucket;
+  readonly recommendationQueue: sqs.IQueue;
+  readonly ingestionQueue: sqs.IQueue;
+  readonly pushEventsTopic: sns.ITopic;
+
   constructor(scope: Construct, id: string, props: FoundationStackProps) {
     super(scope, id, props);
 
@@ -38,6 +43,7 @@ export class FoundationStack extends Stack {
       removalPolicy: shouldRetainData ? RemovalPolicy.RETAIN : RemovalPolicy.DESTROY,
       autoDeleteObjects: !shouldRetainData,
     });
+    this.artifactsBucket = artifactsBucket;
 
     const billingAlertsTopic = new sns.Topic(this, 'BillingAlertsTopic', {
       displayName: `Crop Copilot ${config.envName} billing alerts`,
@@ -113,11 +119,13 @@ export class FoundationStack extends Stack {
         maxReceiveCount: 5,
       },
     });
+    this.recommendationQueue = recommendationQueue;
 
     const mobilePushEventsTopic = new sns.Topic(this, 'MobilePushEventsTopic', {
       displayName: `Crop Copilot ${config.envName} mobile push events`,
       topicName: `${config.projectSlug}-${config.envName}-mobile-push-events`,
     });
+    this.pushEventsTopic = mobilePushEventsTopic;
 
     const ingestionDlq = new sqs.Queue(this, 'IngestionDlq', {
       queueName: `${config.projectSlug}-${config.envName}-ingestion-dlq`,
@@ -134,6 +142,7 @@ export class FoundationStack extends Stack {
         maxReceiveCount: 5,
       },
     });
+    this.ingestionQueue = ingestionQueue;
 
     const recommendationLatencyMetric = new cloudwatch.Metric({
       namespace: config.metricsNamespace,

@@ -1,6 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { InMemoryRecommendationStore } from './store';
+import {
+  InMemoryRecommendationStore,
+  resolvePoolSslConfig,
+  sanitizeDatabaseUrlForPool,
+} from './store';
 
 test('InMemoryRecommendationStore enforces user scoping on job status', async () => {
   const store = new InMemoryRecommendationStore();
@@ -94,4 +98,46 @@ test('InMemoryRecommendationStore pullSyncRecords paginates with cursor', async 
   });
   assert.equal(withoutCompleted.items.length, 1);
   assert.equal(withoutCompleted.items[0].status, 'queued');
+});
+
+test('sanitizeDatabaseUrlForPool strips sslmode query param', () => {
+  const sanitized = sanitizeDatabaseUrlForPool(
+    'postgresql://user:pass@host:5432/db?sslmode=require&pgbouncer=true'
+  );
+
+  assert.equal(sanitized.includes('sslmode='), false);
+  assert.equal(sanitized.includes('pgbouncer=true'), true);
+});
+
+test('resolvePoolSslConfig defaults to no-verify', () => {
+  const previous = process.env.PG_SSL_MODE;
+  delete process.env.PG_SSL_MODE;
+
+  try {
+    assert.deepEqual(resolvePoolSslConfig(), { rejectUnauthorized: false });
+  } finally {
+    if (previous === undefined) {
+      delete process.env.PG_SSL_MODE;
+    } else {
+      process.env.PG_SSL_MODE = previous;
+    }
+  }
+});
+
+test('resolvePoolSslConfig supports disable and verify-full', () => {
+  const previous = process.env.PG_SSL_MODE;
+
+  try {
+    process.env.PG_SSL_MODE = 'disable';
+    assert.equal(resolvePoolSslConfig(), false);
+
+    process.env.PG_SSL_MODE = 'verify-full';
+    assert.deepEqual(resolvePoolSslConfig(), { rejectUnauthorized: true });
+  } finally {
+    if (previous === undefined) {
+      delete process.env.PG_SSL_MODE;
+    } else {
+      process.env.PG_SSL_MODE = previous;
+    }
+  }
 });

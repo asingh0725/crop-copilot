@@ -15,6 +15,7 @@ This package provisions the AWS foundation stack for Crop Copilot.
 - CloudWatch ops dashboard (queue depth, DLQ, latency, cost metrics)
 - CloudWatch alarms for queue backlog, DLQ depth, failures, and per-recommendation cost
 - SSM parameter namespace for platform runtime config
+- API runtime stack (HTTP API + Lambda handlers + SQS workers)
 
 ## Environment variables
 
@@ -32,6 +33,15 @@ Optional values:
 - `MAX_RECOMMENDATION_COST_USD`
 - `METRICS_NAMESPACE`
 - `COST_ALERT_EMAIL`
+- `DATA_BACKEND`
+- `DATABASE_URL`
+- `COGNITO_REGION`
+- `COGNITO_USER_POOL_ID`
+- `COGNITO_APP_CLIENT_ID`
+- `SUPABASE_URL`
+- `SUPABASE_ANON_KEY`
+- `RECOMMENDATION_COST_USD`
+- `RECOMMENDATION_COST_BY_MODEL_JSON`
 
 ## Commands
 

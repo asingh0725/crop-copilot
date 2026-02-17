@@ -288,6 +288,23 @@ function isAfterCursor(
 let singletonStore: RecommendationStore | null = null;
 let sharedPool: Pool | null = null;
 
+export function sanitizeDatabaseUrlForPool(rawUrl: string): string {
+  const connectionUrl = new URL(rawUrl);
+  connectionUrl.searchParams.delete('sslmode');
+  return connectionUrl.toString();
+}
+
+export function resolvePoolSslConfig(): boolean | { rejectUnauthorized: boolean } {
+  const mode = (process.env.PG_SSL_MODE ?? 'no-verify').toLowerCase();
+  if (mode === 'disable') {
+    return false;
+  }
+
+  return {
+    rejectUnauthorized: mode === 'verify-full',
+  };
+}
+
 function createPostgresStore(): RecommendationStore {
   if (!sharedPool) {
     const databaseUrl = process.env.DATABASE_URL;
@@ -296,14 +313,9 @@ function createPostgresStore(): RecommendationStore {
     }
 
     sharedPool = new Pool({
-      connectionString: databaseUrl,
+      connectionString: sanitizeDatabaseUrlForPool(databaseUrl),
       max: Number(process.env.PG_POOL_MAX ?? 5),
-      ssl:
-        process.env.PG_SSL_MODE === 'disable'
-          ? false
-          : {
-              rejectUnauthorized: false,
-            },
+      ssl: resolvePoolSslConfig(),
     });
   }
 
