@@ -73,32 +73,69 @@ struct CanvasConfidenceArc: View {
     var body: some View {
         switch style {
         case .compact:
-            HStack(spacing: 6) {
-                Image(systemName: level.icon)
-                    .font(.caption)
-                Text(percentText)
-                    .font(.subheadline.weight(.semibold))
-            }
-            .foregroundStyle(level.foreground)
-            .padding(.horizontal, 10)
-            .padding(.vertical, 6)
-            .background(level.background)
-            .clipShape(Capsule())
+            ConfidenceRing(
+                confidence: clampedConfidence,
+                strokeColor: level.foreground,
+                textColor: level.foreground,
+                size: 48,
+                lineWidth: 4,
+                font: .system(size: 13, weight: .bold)
+            )
         case .detailed:
-            HStack(spacing: 6) {
-                Image(systemName: level.icon)
-                    .font(.footnote)
-                Text(percentText)
-                    .font(.footnote.weight(.semibold))
-                Text(level.title)
-                    .font(.footnote.weight(.medium))
-                    .lineLimit(1)
+            HStack(spacing: 10) {
+                ConfidenceRing(
+                    confidence: clampedConfidence,
+                    strokeColor: level.foreground,
+                    textColor: level.foreground,
+                    size: 58,
+                    lineWidth: 5,
+                    font: .system(size: 14, weight: .bold)
+                )
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(percentText)
+                        .font(.subheadline.weight(.semibold))
+                    Text(level.title)
+                        .font(.caption.weight(.medium))
+                        .lineLimit(1)
+                }
+                .foregroundStyle(.primary)
             }
-            .foregroundStyle(level.foreground)
-            .padding(.horizontal, 12)
-            .padding(.vertical, 7)
-            .background(level.background)
-            .clipShape(Capsule())
+            .padding(.horizontal, 10)
+            .padding(.vertical, 8)
+            .background(level.background.opacity(0.65))
+            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
         }
+    }
+}
+
+private struct ConfidenceRing: View {
+    let confidence: Double
+    let strokeColor: Color
+    let textColor: Color
+    let size: CGFloat
+    let lineWidth: CGFloat
+    let font: Font
+
+    var body: some View {
+        ZStack {
+            Circle()
+                .stroke(Color.black.opacity(0.10), lineWidth: lineWidth)
+
+            Circle()
+                .trim(from: 0, to: min(max(confidence, 0), 1))
+                .stroke(
+                    strokeColor,
+                    style: StrokeStyle(lineWidth: lineWidth, lineCap: .round)
+                )
+                .rotationEffect(.degrees(-90))
+
+            Text("\(Int((confidence * 100).rounded()))%")
+                .font(font)
+                .foregroundStyle(textColor)
+                .monospacedDigit()
+        }
+        .frame(width: size, height: size)
+        .accessibilityLabel("Confidence \(Int((confidence * 100).rounded())) percent")
     }
 }

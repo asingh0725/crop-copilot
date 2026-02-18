@@ -16,10 +16,11 @@ struct DashboardView: View {
                     heroCard
                     insightCards
                     quickActions
+                    statusStrip
                     recentRecommendationsSection
-                    Spacer(minLength: 12)
                 }
                 .padding(16)
+                .padding(.bottom, 28)
             }
             .navigationTitle("Dashboard")
             .refreshable {
@@ -86,6 +87,11 @@ struct DashboardView: View {
                 value: averageConfidenceLabel,
                 subtitle: "confidence"
             )
+            metricCard(
+                title: "High",
+                value: highConfidenceCountLabel,
+                subtitle: ">= 80%"
+            )
         }
     }
 
@@ -94,6 +100,12 @@ struct DashboardView: View {
         let avg = viewModel.recentRecommendations.map(\.confidence).reduce(0, +)
             / Double(viewModel.recentRecommendations.count)
         return "\(Int((avg * 100).rounded()))%"
+    }
+
+    private var highConfidenceCountLabel: String {
+        guard !viewModel.recentRecommendations.isEmpty else { return "0" }
+        let highCount = viewModel.recentRecommendations.filter { $0.confidence >= 0.8 }.count
+        return "\(highCount)"
     }
 
     private func metricCard(title: String, value: String, subtitle: String) -> some View {
@@ -134,6 +146,28 @@ struct DashboardView: View {
                 }
                 .buttonStyle(AntigravityScaleButtonStyle())
             }
+        }
+    }
+
+    private var statusStrip: some View {
+        HStack(spacing: 8) {
+            Label("AWS Runtime Connected", systemImage: "bolt.horizontal.circle.fill")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.primary)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 8)
+                .background(Color.appSecondaryBackground)
+                .clipShape(Capsule())
+
+            Spacer()
+
+            Label("Cited RAG", systemImage: "book.closed.fill")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.primary)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 8)
+                .background(Color.appSecondaryBackground)
+                .clipShape(Capsule())
         }
     }
 
@@ -178,7 +212,7 @@ struct DashboardView: View {
                 emptyState
             } else {
                 VStack(spacing: 10) {
-                    ForEach(viewModel.recentRecommendations.prefix(4)) { recommendation in
+                    ForEach(viewModel.recentRecommendations.prefix(6)) { recommendation in
                         NavigationLink {
                             RecommendationDetailView(recommendationId: recommendation.id)
                         } label: {

@@ -89,31 +89,83 @@ struct SecureAsyncImage<Content: View, Placeholder: View, Failure: View>: View {
                     return
                 }
 
-                do {
-                    let response: UploadViewUrlResponse = try await APIClient.shared.request(
-                        .getUploadViewUrl(objectUrl: url.absoluteString)
-                    )
-                    if let signed = URL(string: response.downloadUrl) {
-                        await SignedImageUrlCache.shared.write(
-                            url: signed,
-                            for: trimmed,
-                            expiresInSeconds: response.expiresInSeconds
-                        )
-                        resolvedURL = signed
-                        return
-                    }
-                } catch {
-                    resolvedURL = url
+                if let signed = await fetchSignedURL(objectUrl: url.absoluteString, cacheKey: trimmed) {
+                    resolvedURL = signed
                     return
                 }
+
+                didFail = true
+                resolvedURL = nil
+                return
             }
 
             resolvedURL = url
             return
         }
 
-        resolvedURL = Configuration.resolveMediaURL(trimmed)
-        didFail = resolvedURL == nil
+        guard let resolved = Configuration.resolveMediaURL(trimmed) else {
+            resolvedURL = nil
+            didFail = true
+            return
+        }
+
+        if shouldPresign(url: resolved) {
+            if let cached = await SignedImageUrlCache.shared.read(for: resolved.absoluteString) {
+                resolvedURL = cached
+                return
+            }
+
+            if let signed = await fetchSignedURL(
+                objectUrl: resolved.absoluteString,
+                cacheKey: resolved.absoluteString
+            ) {
+                resolvedURL = signed
+                return
+            }
+
+            didFail = true
+            resolvedURL = nil
+            return
+        }
+
+        resolvedURL = resolved
+    }
+
+    private func fetchSignedURL(objectUrl: String, cacheKey: String) async -> URL? {
+        for attempt in 0...1 {
+            do {
+                let response: UploadViewUrlResponse = try await APIClient.shared.request(
+                    .getUploadViewUrl(objectUrl: objectUrl)
+                )
+                guard let signed = URL(string: response.downloadUrl) else {
+                    continue
+                }
+
+                await SignedImageUrlCache.shared.write(
+                    url: signed,
+                    for: cacheKey,
+                    expiresInSeconds: response.expiresInSeconds
+                )
+                return signed
+            } catch let error as NetworkError {
+                if case .unauthorized = error, attempt == 0 {
+                    try? await Task.sleep(nanoseconds: 180_000_000)
+                    continue
+                }
+                if case .forbidden = error, attempt == 0 {
+                    try? await Task.sleep(nanoseconds: 180_000_000)
+                    continue
+                }
+                return nil
+            } catch {
+                if attempt == 0 {
+                    try? await Task.sleep(nanoseconds: 180_000_000)
+                    continue
+                }
+                return nil
+            }
+        }
+        return nil
     }
 
     private func shouldPresign(url: URL) -> Bool {
@@ -121,7 +173,8 @@ struct SecureAsyncImage<Content: View, Placeholder: View, Failure: View>: View {
             return false
         }
         let isAws = host.contains("amazonaws.com")
-        let hasSignature = url.query?.contains("X-Amz-Signature") == true
+        let query = url.query?.lowercased() ?? ""
+        let hasSignature = query.contains("x-amz-signature")
         return isAws && !hasSignature
     }
 }

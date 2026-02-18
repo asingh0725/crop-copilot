@@ -149,15 +149,55 @@ struct DiagnosisDetails: Decodable {
     }
 }
 
-struct RecommendationAction: Codable, Identifiable {
-    var id: String { action }
+struct RecommendationAction: Decodable, Identifiable {
+    var id: String { action + timing + priority }
     let action: String
     let timing: String
     let priority: String
     let details: String
+
+    enum CodingKeys: String, CodingKey {
+        case action
+        case title
+        case recommendation
+        case timing
+        case when
+        case priority
+        case details
+        case rationale
+        case description
+    }
+
+    init(action: String, timing: String, priority: String, details: String) {
+        self.action = action
+        self.timing = timing
+        self.priority = priority
+        self.details = details
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        action =
+            try container.decodeIfPresent(String.self, forKey: .action)
+            ?? (try container.decodeIfPresent(String.self, forKey: .title))
+            ?? (try container.decodeIfPresent(String.self, forKey: .recommendation))
+            ?? "Recommended action"
+        timing =
+            try container.decodeIfPresent(String.self, forKey: .timing)
+            ?? (try container.decodeIfPresent(String.self, forKey: .when))
+            ?? "As soon as practical"
+        priority =
+            try container.decodeIfPresent(String.self, forKey: .priority)
+            ?? "medium"
+        details =
+            try container.decodeIfPresent(String.self, forKey: .details)
+            ?? (try container.decodeIfPresent(String.self, forKey: .rationale))
+            ?? (try container.decodeIfPresent(String.self, forKey: .description))
+            ?? "No additional details were provided."
+    }
 }
 
-struct RecommendedProduct: Codable, Identifiable {
+struct RecommendedProduct: Decodable, Identifiable {
     var id: String { productName }
     let productName: String
     let productType: String
@@ -166,9 +206,48 @@ struct RecommendedProduct: Codable, Identifiable {
 
     enum CodingKeys: String, CodingKey {
         case productName = "product_name"
+        case productNameCamel = "productName"
+        case name
         case productType = "product_type"
+        case productTypeCamel = "productType"
+        case type
         case applicationRate = "application_rate"
+        case applicationRateCamel = "applicationRate"
         case reasoning
+        case reason
+    }
+
+    init(
+        productName: String,
+        productType: String,
+        applicationRate: String?,
+        reasoning: String
+    ) {
+        self.productName = productName
+        self.productType = productType
+        self.applicationRate = applicationRate
+        self.reasoning = reasoning
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        productName =
+            try container.decodeIfPresent(String.self, forKey: .productName)
+            ?? (try container.decodeIfPresent(String.self, forKey: .productNameCamel))
+            ?? (try container.decodeIfPresent(String.self, forKey: .name))
+            ?? "Suggested product"
+        productType =
+            try container.decodeIfPresent(String.self, forKey: .productType)
+            ?? (try container.decodeIfPresent(String.self, forKey: .productTypeCamel))
+            ?? (try container.decodeIfPresent(String.self, forKey: .type))
+            ?? "unspecified"
+        applicationRate =
+            try container.decodeIfPresent(String.self, forKey: .applicationRate)
+            ?? (try container.decodeIfPresent(String.self, forKey: .applicationRateCamel))
+        reasoning =
+            try container.decodeIfPresent(String.self, forKey: .reasoning)
+            ?? (try container.decodeIfPresent(String.self, forKey: .reason))
+            ?? "No product rationale provided."
     }
 }
 

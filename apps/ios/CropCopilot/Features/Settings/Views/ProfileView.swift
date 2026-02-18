@@ -57,19 +57,6 @@ struct ProfileView: View {
                             )
                         }
 
-                        GlassSection(title: "Experience Level") {
-                            LabeledContent("Experience") {
-                                Picker("Experience", selection: $viewModel.experienceLevel) {
-                                    Text("Select...").tag(Optional<ExperienceLevel>.none)
-                                    ForEach(ExperienceLevel.allCases, id: \.self) { level in
-                                        Text(level.displayName).tag(Optional(level))
-                                    }
-                                }
-                                .pickerStyle(.menu)
-                                .tint(.primary)
-                            }
-                        }
-
                         Button {
                             Task { await viewModel.saveProfile() }
                         } label: {

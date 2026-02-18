@@ -60,12 +60,16 @@ struct RecommendationCard: View {
             VStack(alignment: .trailing, spacing: 10) {
                 CanvasConfidenceArc(confidence: recommendation.confidence, style: .compact)
                 Image(systemName: "chevron.right")
-                    .font(.footnote.weight(.semibold))
+                    .font(.caption.weight(.bold))
                     .foregroundStyle(.secondary)
+                    .frame(width: 22, height: 22)
+                    .background(Color.appSecondaryBackground)
+                    .clipShape(Circle())
             }
         }
         .padding(14)
         .antigravityGlass(cornerRadius: 16)
+        .contentShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
     }
 
     private var compactBody: some View {

@@ -12,6 +12,7 @@ struct ProductsListView: View {
         NavigationStack {
             VStack(spacing: 12) {
                 searchBar
+                typeFilterBar
 
                 if viewModel.isLoading && viewModel.products.isEmpty {
                     loadingView
@@ -24,6 +25,9 @@ struct ProductsListView: View {
             .navigationTitle("Products")
             .task {
                 await viewModel.loadProducts()
+            }
+            .onChange(of: viewModel.selectedType) { _ in
+                Task { await viewModel.loadProducts() }
             }
         }
     }
@@ -55,9 +59,55 @@ struct ProductsListView: View {
         .padding(.top, 8)
     }
 
+    private var typeFilterBar: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                ForEach(ProductsViewModel.ProductTypeFilter.allCases) { filter in
+                    Button {
+                        viewModel.selectedType = filter
+                    } label: {
+                        Text(filter.displayName)
+                            .font(.caption.weight(.semibold))
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 8)
+                            .background(
+                                Capsule()
+                                    .fill(
+                                        viewModel.selectedType == filter
+                                            ? Color.appPrimary.opacity(0.24)
+                                            : Color.appSecondaryBackground
+                                    )
+                            )
+                            .overlay(
+                                Capsule()
+                                    .stroke(
+                                        viewModel.selectedType == filter
+                                            ? Color.appPrimary
+                                            : Color.black.opacity(0.10),
+                                        lineWidth: viewModel.selectedType == filter ? 1.1 : 0.8
+                                    )
+                            )
+                            .foregroundStyle(.primary)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 2)
+        }
+    }
+
     private var productList: some View {
         ScrollView {
             LazyVStack(spacing: 10) {
+                HStack {
+                    Text("\(viewModel.products.count) products")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                }
+                .padding(.bottom, 2)
+
                 ForEach(viewModel.products) { product in
                     VStack(alignment: .leading, spacing: 8) {
                         HStack(alignment: .top, spacing: 8) {

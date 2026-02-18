@@ -10,66 +10,50 @@ struct CropCopilotLogoMark: View {
     var color: Color = .appSecondary
 
     var body: some View {
-        GeometryReader { proxy in
-            let w = proxy.size.width
-            let h = proxy.size.height
-
-            ZStack {
-                Path { path in
-                    path.move(to: CGPoint(x: w * 0.5, y: h * 0.78))
-                    path.addQuadCurve(
-                        to: CGPoint(x: w * 0.5, y: h * 0.36),
-                        control: CGPoint(x: w * 0.5, y: h * 0.56)
-                    )
-                }
-                .stroke(color, style: StrokeStyle(lineWidth: max(1.4, w * 0.075), lineCap: .round))
-
-                Path { path in
-                    path.move(to: CGPoint(x: w * 0.5, y: h * 0.52))
-                    path.addQuadCurve(
-                        to: CGPoint(x: w * 0.28, y: h * 0.32),
-                        control: CGPoint(x: w * 0.38, y: h * 0.37)
-                    )
-                    path.addQuadCurve(
-                        to: CGPoint(x: w * 0.5, y: h * 0.52),
-                        control: CGPoint(x: w * 0.34, y: h * 0.48)
-                    )
-                }
-                .fill(color.opacity(0.82))
-
-                Path { path in
-                    path.move(to: CGPoint(x: w * 0.5, y: h * 0.44))
-                    path.addQuadCurve(
-                        to: CGPoint(x: w * 0.76, y: h * 0.22),
-                        control: CGPoint(x: w * 0.62, y: h * 0.29)
-                    )
-                    path.addQuadCurve(
-                        to: CGPoint(x: w * 0.5, y: h * 0.44),
-                        control: CGPoint(x: w * 0.7, y: h * 0.39)
-                    )
-                }
-                .fill(color)
-
-                Circle()
-                    .fill(color)
-                    .frame(width: w * 0.11, height: w * 0.11)
-                    .position(x: w * 0.76, y: h * 0.22)
-
-                Circle()
-                    .stroke(color.opacity(0.4), lineWidth: max(0.8, w * 0.03))
-                    .frame(width: w * 0.2, height: w * 0.2)
-                    .position(x: w * 0.76, y: h * 0.22)
-
-                Path { path in
-                    path.move(to: CGPoint(x: w * 0.33, y: h * 0.78))
-                    path.addQuadCurve(
-                        to: CGPoint(x: w * 0.67, y: h * 0.78),
-                        control: CGPoint(x: w * 0.5, y: h * 0.73)
-                    )
-                }
-                .stroke(color.opacity(0.3), style: StrokeStyle(lineWidth: max(1, w * 0.045), lineCap: .round))
+        ZStack {
+            Path { path in
+                path.move(to: CGPoint(x: 16, y: 25))
+                path.addQuadCurve(to: CGPoint(x: 16, y: 13), control: CGPoint(x: 16, y: 19))
             }
+            .stroke(color, style: StrokeStyle(lineWidth: 2, lineCap: .round))
+
+            Path { path in
+                path.move(to: CGPoint(x: 16, y: 17))
+                path.addQuadCurve(to: CGPoint(x: 12, y: 12), control: CGPoint(x: 14, y: 14))
+                path.addQuadCurve(to: CGPoint(x: 9, y: 10), control: CGPoint(x: 10.5, y: 11))
+                path.addQuadCurve(to: CGPoint(x: 11, y: 14), control: CGPoint(x: 9.5, y: 12))
+                path.addQuadCurve(to: CGPoint(x: 16, y: 17), control: CGPoint(x: 13, y: 16))
+            }
+            .fill(color.opacity(0.85))
+
+            Path { path in
+                path.move(to: CGPoint(x: 16, y: 14))
+                path.addQuadCurve(to: CGPoint(x: 21, y: 9), control: CGPoint(x: 18.5, y: 11))
+                path.addQuadCurve(to: CGPoint(x: 24, y: 7), control: CGPoint(x: 22.5, y: 8))
+                path.addQuadCurve(to: CGPoint(x: 22, y: 12), control: CGPoint(x: 23.5, y: 10.5))
+                path.addQuadCurve(to: CGPoint(x: 16, y: 14), control: CGPoint(x: 19.5, y: 13.5))
+            }
+            .fill(color)
+
+            Circle()
+                .fill(color)
+                .frame(width: 3, height: 3)
+                .offset(x: 8, y: -9)
+
+            Circle()
+                .stroke(color.opacity(0.4), lineWidth: 0.7)
+                .frame(width: 6, height: 6)
+                .offset(x: 8, y: -9)
+
+            Path { path in
+                path.move(to: CGPoint(x: 11, y: 25))
+                path.addQuadCurve(to: CGPoint(x: 21, y: 25), control: CGPoint(x: 16, y: 24))
+            }
+            .stroke(color.opacity(0.3), style: StrokeStyle(lineWidth: 1, lineCap: .round))
         }
+        .frame(width: 32, height: 32)
+        .scaleEffect(size / 32)
         .frame(width: size, height: size)
+        .drawingGroup()
     }
 }

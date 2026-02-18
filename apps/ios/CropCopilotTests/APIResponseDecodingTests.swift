@@ -223,4 +223,35 @@ final class APIResponseDecodingTests: XCTestCase {
         XCTAssertEqual(detail.sources.count, 1)
         XCTAssertNil(detail.sources[0].source)
     }
+
+    func testRecommendationDetailResponseDecodingWithSparseRecommendationFields() throws {
+        let json = """
+        {
+            "id": "rec-3",
+            "createdAt": "2026-02-18T12:00:00.000Z",
+            "diagnosis": {
+                "condition": "probable_foliar_disease",
+                "conditionType": "disease",
+                "confidence": 0.74,
+                "reasoning": "Pattern and crop context support foliar disease.",
+                "recommendations": [
+                    {
+                        "action": "Inspect lower canopy"
+                    }
+                ]
+            },
+            "input": {
+                "id": "input-3",
+                "type": "PHOTO",
+                "createdAt": "2026-02-18T11:59:00.000Z"
+            },
+            "sources": []
+        }
+        """.data(using: .utf8)!
+
+        let detail = try decoder.decode(RecommendationDetailResponse.self, from: json)
+        XCTAssertEqual(detail.diagnosis.recommendations.count, 1)
+        XCTAssertEqual(detail.diagnosis.recommendations[0].action, "Inspect lower canopy")
+        XCTAssertFalse(detail.diagnosis.recommendations[0].timing.isEmpty)
+    }
 }

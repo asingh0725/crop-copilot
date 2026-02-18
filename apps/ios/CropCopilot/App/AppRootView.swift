@@ -17,6 +17,14 @@ struct AppRootView: View {
             )
             .ignoresSafeArea()
 
+            RadialGradient(
+                colors: [Color.appPrimary.opacity(0.08), .clear],
+                center: .topTrailing,
+                startRadius: 10,
+                endRadius: 340
+            )
+            .ignoresSafeArea()
+
             TabView(selection: $selectedTab) {
                 DashboardView(selectedTab: $selectedTab)
                     .tabItem {

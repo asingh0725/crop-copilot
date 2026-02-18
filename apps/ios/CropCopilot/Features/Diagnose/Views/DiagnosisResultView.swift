@@ -103,6 +103,7 @@ struct DiagnosisResultView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
                 confidenceHeader(detail)
+                inputSummary(detail)
 
                 sectionCard("Diagnosis") {
                     VStack(alignment: .leading, spacing: 8) {
@@ -189,6 +190,7 @@ struct DiagnosisResultView: View {
                 shareButton(detail)
             }
             .padding()
+            .padding(.bottom, 20)
         }
     }
 
@@ -207,8 +209,7 @@ struct DiagnosisResultView: View {
             CanvasConfidenceArc(confidence: detail.confidence, style: .detailed)
         }
         .padding()
-        .background(Color.appSecondaryBackground)
-        .cornerRadius(12)
+        .antigravityGlass(cornerRadius: 14)
     }
 
     private func sectionCard<Content: View>(_ title: String, @ViewBuilder content: () -> Content) -> some View {
@@ -219,8 +220,63 @@ struct DiagnosisResultView: View {
         }
         .padding()
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.appSecondaryBackground)
-        .cornerRadius(12)
+        .antigravityGlass(cornerRadius: 14)
+    }
+
+    private func inputSummary(_ detail: RecommendationDetailResponse) -> some View {
+        sectionCard("Input") {
+            VStack(alignment: .leading, spacing: 8) {
+                HStack(spacing: 12) {
+                    if let imageUrl = detail.input.imageUrl {
+                        SecureAsyncImage(source: imageUrl) { image in
+                            image
+                                .resizable()
+                                .scaledToFill()
+                        } placeholder: {
+                            ProgressView().tint(Color.appPrimary)
+                        } failure: {
+                            ZStack {
+                                Color.appSecondaryBackground
+                                Image(systemName: "photo")
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                        .frame(width: 78, height: 78)
+                        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                .stroke(.black.opacity(0.08), lineWidth: 0.8)
+                        )
+                    }
+
+                    VStack(alignment: .leading, spacing: 4) {
+                        if let crop = detail.input.crop {
+                            Text("Crop: \(AppConstants.cropLabel(for: crop))")
+                                .font(.caption)
+                                .foregroundStyle(.primary)
+                        }
+                        if let location = detail.input.location {
+                            Text("Location: \(location)")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                        if let season = detail.input.season {
+                            Text("Season: \(season)")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    Spacer()
+                }
+
+                if let description = detail.input.description, !description.isEmpty {
+                    Text(description)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(4)
+                }
+            }
+        }
     }
 
     private func priorityBadge(_ priority: String) -> some View {

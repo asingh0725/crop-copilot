@@ -62,7 +62,21 @@ struct RecommendationDetailResponse: Decodable, Identifiable {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         id = try container.decode(String.self, forKey: .id)
         createdAt = try container.decodeIfPresent(String.self, forKey: .createdAt) ?? ""
-        diagnosis = try container.decode(DiagnosisData.self, forKey: .diagnosis)
+        diagnosis = (try? container.decode(DiagnosisData.self, forKey: .diagnosis))
+            ?? DiagnosisData(
+                diagnosis: DiagnosisDetails(
+                    condition: "Unknown condition",
+                    conditionType: "unknown",
+                    severity: nil,
+                    confidence: 0,
+                    reasoning: "No diagnostic reasoning was returned yet.",
+                    differentialDiagnosis: nil
+                ),
+                recommendations: [],
+                products: [],
+                sources: [],
+                confidence: 0
+            )
         confidence = try container.decodeIfPresent(Double.self, forKey: .confidence) ?? diagnosis.confidence
         modelUsed = try container.decodeIfPresent(String.self, forKey: .modelUsed) ?? "unknown"
         input = try container.decode(RecommendationInputDetail.self, forKey: .input)
@@ -153,7 +167,7 @@ struct CreateInputAcceptedResponse: Codable {
     let acceptedAt: String
 }
 
-struct RecommendationJobStatusResponse: Codable {
+struct RecommendationJobStatusResponse: Decodable {
     let inputId: String
     let jobId: String
     let status: String
@@ -162,18 +176,60 @@ struct RecommendationJobStatusResponse: Codable {
     let result: RecommendationJobResult?
 }
 
-struct RecommendationJobResult: Codable {
+struct RecommendationJobResult: Decodable {
     let recommendationId: String
     let confidence: Double
     let diagnosis: [String: AnyCodable]
     let sources: [RecommendationJobSource]
     let modelUsed: String
+
+    enum CodingKeys: String, CodingKey {
+        case recommendationId
+        case confidence
+        case diagnosis
+        case sources
+        case modelUsed
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        recommendationId = try container.decode(String.self, forKey: .recommendationId)
+        confidence = try container.decodeIfPresent(Double.self, forKey: .confidence) ?? 0
+        diagnosis = try container.decodeIfPresent([String: AnyCodable].self, forKey: .diagnosis) ?? [:]
+        sources = try container.decodeIfPresent([RecommendationJobSource].self, forKey: .sources) ?? []
+        modelUsed = try container.decodeIfPresent(String.self, forKey: .modelUsed) ?? "unknown"
+    }
 }
 
-struct RecommendationJobSource: Codable {
+struct RecommendationJobSource: Decodable {
     let chunkId: String
     let relevance: Double
     let excerpt: String
+
+    enum CodingKeys: String, CodingKey {
+        case chunkId
+        case id
+        case relevance
+        case score
+        case excerpt
+        case content
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        chunkId =
+            try container.decodeIfPresent(String.self, forKey: .chunkId)
+            ?? (try container.decodeIfPresent(String.self, forKey: .id))
+            ?? UUID().uuidString
+        relevance =
+            try container.decodeIfPresent(Double.self, forKey: .relevance)
+            ?? (try container.decodeIfPresent(Double.self, forKey: .score))
+            ?? 0
+        excerpt =
+            try container.decodeIfPresent(String.self, forKey: .excerpt)
+            ?? (try container.decodeIfPresent(String.self, forKey: .content))
+            ?? ""
+    }
 }
 
 // MARK: - Upload URL Response
