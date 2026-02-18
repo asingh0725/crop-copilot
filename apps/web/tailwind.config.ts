@@ -20,22 +20,22 @@ const config: Config = {
   			serif: ['var(--font-serif)', 'Georgia', 'serif'],
   		},
   		colors: {
-  			// Earth palette
-  			'earth-950': '#0a1f14',
-  			'earth-900': '#1a3a2a',
-  			'earth-800': '#234d2e',
-  			'earth-700': '#2C5F2D',
+  			// Earth palette - Updated for Antigravity
+  			'earth-950': '#050a07', // Obsidian
+  			'earth-900': '#0a1f14',
+  			'earth-800': '#153320',
+  			'earth-700': '#234d2e',
   			// Lime accents
-  			'lime-400': '#76C043',
-  			'lime-300': '#9DD565',
+  			'lime-400': '#a3e635', // Translucent Lime (lighter/brighter)
+  			'lime-300': '#bef264',
   			// Warm accent
   			'amber-warm': '#F5A623',
   			// Cream backgrounds
   			'cream-50': '#FAFAF5',
   			'cream-100': '#F3F2ED',
   			// Legacy aliases
-  			'hero-dark': '#1a3a2a',
-  			'hero-accent': '#76C043',
+  			'hero-dark': '#050a07',
+  			'hero-accent': '#a3e635',
   			// shadcn tokens
   			border: 'hsl(var(--border))',
   			input: 'hsl(var(--input))',

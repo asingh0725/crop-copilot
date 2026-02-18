@@ -37,6 +37,12 @@ export function HeroParticles() {
     const PARTICLE_COUNT = 40;
     let w = 0;
     let h = 0;
+    const parallax = {
+      targetX: 0,
+      targetY: 0,
+      currentX: 0,
+      currentY: 0,
+    };
 
     const resize = () => {
       const dpr = window.devicePixelRatio || 1;
@@ -48,6 +54,24 @@ export function HeroParticles() {
     };
     resize();
     window.addEventListener("resize", resize);
+
+    const handlePointerMove = (event: MouseEvent) => {
+      if (!w || !h) {
+        return;
+      }
+      const normalizedX = event.clientX / w - 0.5;
+      const normalizedY = event.clientY / h - 0.5;
+      parallax.targetX = normalizedX * 36;
+      parallax.targetY = normalizedY * 22;
+    };
+
+    const handlePointerLeave = () => {
+      parallax.targetX = 0;
+      parallax.targetY = 0;
+    };
+
+    window.addEventListener("mousemove", handlePointerMove);
+    window.addEventListener("mouseleave", handlePointerLeave);
 
     const spawn = (): Particle => ({
       x: Math.random() * w,
@@ -68,6 +92,8 @@ export function HeroParticles() {
 
     const draw = () => {
       ctx.clearRect(0, 0, w, h);
+      parallax.currentX += (parallax.targetX - parallax.currentX) * 0.04;
+      parallax.currentY += (parallax.targetY - parallax.currentY) * 0.04;
 
       for (let i = 0; i < particles.length; i++) {
         const p = particles[i];
@@ -83,8 +109,12 @@ export function HeroParticles() {
           continue;
         }
 
+        const depth = 0.35 + p.size / 2.6;
+        const drawX = p.x + parallax.currentX * depth;
+        const drawY = p.y + parallax.currentY * depth;
+
         ctx.beginPath();
-        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.arc(drawX, drawY, p.size, 0, Math.PI * 2);
         ctx.fillStyle = FILL_CACHE[Math.round(p.opacity * 100)] || FILL_CACHE[0];
         ctx.fill();
       }
@@ -97,6 +127,8 @@ export function HeroParticles() {
     return () => {
       cancelAnimationFrame(animId);
       window.removeEventListener("resize", resize);
+      window.removeEventListener("mousemove", handlePointerMove);
+      window.removeEventListener("mouseleave", handlePointerLeave);
     };
   }, []);
 
