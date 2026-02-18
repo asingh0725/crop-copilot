@@ -20,9 +20,6 @@ const TestimonialsSection = dynamic(() =>
 const PricingSection = dynamic(() =>
   import("@/components/landing/pricing-section").then((m) => ({ default: m.PricingSection }))
 );
-const CTASection = dynamic(() =>
-  import("@/components/landing/cta-section").then((m) => ({ default: m.CTASection }))
-);
 
 export default function LandingPage() {
   return (
@@ -35,7 +32,6 @@ export default function LandingPage() {
       <FeaturesSection />
       <TestimonialsSection />
       <PricingSection />
-      <CTASection />
     </>
   );
 }

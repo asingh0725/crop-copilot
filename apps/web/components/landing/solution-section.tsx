@@ -37,7 +37,7 @@ const steps = [
 
 export function SolutionSection() {
   return (
-    <section id="how-it-works" className="py-20 lg:py-28 bg-earth-900 relative overflow-hidden">
+    <section id="process-overview" className="py-20 lg:py-28 bg-earth-900 relative overflow-hidden">
       {/* Diagonal gradient overlay */}
       <div
         className="absolute inset-0 opacity-30"

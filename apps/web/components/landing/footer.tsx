@@ -24,26 +24,6 @@ export function Footer() {
 
   return (
     <footer className="bg-earth-950 text-gray-300 topo-pattern relative">
-      {/* CTA Banner */}
-      <div className="border-b border-white/5">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-          <div className="text-center">
-            <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
-              Ready to optimize your farm?
-            </h2>
-            <p className="text-white/40 mb-8 max-w-xl mx-auto">
-              Start analyzing soil tests in minutes — no credit card required.
-            </p>
-            <Link
-              href="/signup"
-              className="inline-flex items-center justify-center px-8 py-4 bg-lime-400 hover:bg-lime-300 text-earth-950 font-semibold rounded-full transition-all hover:scale-[1.03] glow-accent"
-            >
-              Get Started Free
-            </Link>
-          </div>
-        </div>
-      </div>
-
       {/* Main Footer */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="grid grid-cols-2 md:grid-cols-5 gap-8">
