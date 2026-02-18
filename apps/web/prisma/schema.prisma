@@ -51,17 +51,17 @@ model Input {
 }
 
 model Recommendation {
-  id              String                    @id @default(cuid())
+  id              String                   @id @default(cuid())
   userId          String
-  inputId         String                    @unique
+  inputId         String                   @unique
   diagnosis       Json
   confidence      Float
   modelUsed       String
   tokensUsed      Int?
-  createdAt       DateTime                  @default(now())
+  createdAt       DateTime                 @default(now())
   feedback        Feedback[]
-  input           Input                     @relation(fields: [inputId], references: [id], onDelete: Cascade)
-  user            User                      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  input           Input                    @relation(fields: [inputId], references: [id], onDelete: Cascade)
+  user            User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
   sources         RecommendationSource[]
   products        ProductRecommendation[]
   evaluations     Evaluation[]
@@ -70,29 +70,30 @@ model Recommendation {
 }
 
 model Feedback {
-  id               String         @id @default(cuid())
-  userId           String
-  recommendationId String         @unique
-  helpful          Boolean?
-  accuracyRating   Int?
-  outcome          String?
-  comments         String?
-  createdAt        DateTime       @default(now())
-  rating           Int?
-  accuracy         Int?
-  issues           Json?
-  outcomeReported  Boolean        @default(false)
-  outcomeApplied   Boolean?
-  outcomeSuccess   Boolean?
-  outcomeNotes     String?
-  outcomeImages    String[]       @default([])
-  outcomeTimestamp DateTime?
-  promptVersion    String?
-  retrievedChunks  Json?
-  suggestedProducts Json?
-  updatedAt        DateTime       @default(now()) @updatedAt
-  recommendation   Recommendation @relation(fields: [recommendationId], references: [id], onDelete: Cascade)
-  user             User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                  String         @id @default(cuid())
+  userId              String
+  recommendationId    String         @unique
+  helpful             Boolean?
+  accuracyRating      Int?
+  outcome             String?
+  comments            String?
+  createdAt           DateTime       @default(now())
+  rating              Int?
+  accuracy            Int?
+  issues              Json?
+  detailedCompletedAt DateTime?
+  outcomeReported     Boolean        @default(false)
+  outcomeApplied      Boolean?
+  outcomeSuccess      Boolean?
+  outcomeNotes        String?
+  outcomeImages       String[]       @default([])
+  outcomeTimestamp    DateTime?
+  promptVersion       String?
+  retrievedChunks     Json?
+  suggestedProducts   Json?
+  updatedAt           DateTime       @default(now()) @updatedAt
+  recommendation      Recommendation @relation(fields: [recommendationId], references: [id], onDelete: Cascade)
+  user                User           @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Source {
@@ -170,6 +171,7 @@ model Product {
   createdAt       DateTime                @default(now())
   updatedAt       DateTime                @updatedAt
   recommendations ProductRecommendation[]
+  pricingCache    ProductPricingCache[]
 
   @@index([type])
   @@index([name])
@@ -191,6 +193,20 @@ model ProductRecommendation {
   @@unique([recommendationId, productId])
   @@index([recommendationId])
   @@index([productId])
+}
+
+model ProductPricingCache {
+  id        String   @id @default(cuid())
+  productId String
+  region    String
+  pricing   Json
+  cachedAt  DateTime @default(now())
+  expiresAt DateTime
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, region])
+  @@index([productId])
+  @@index([expiresAt])
 }
 
 model TestScenario {
@@ -228,7 +244,7 @@ model RetrievalAudit {
 }
 
 model Evaluation {
-  id                 String          @id @default(cuid())
+  id                 String         @id @default(cuid())
   recommendationId   String
   scenarioId         String?
   overall            Int
@@ -241,9 +257,9 @@ model Evaluation {
   issues             Json?
   missingEvidence    Json?
   llmJudgeOutput     Json?
-  createdAt          DateTime        @default(now())
-  recommendation     Recommendation  @relation(fields: [recommendationId], references: [id], onDelete: Cascade)
-  scenario           TestScenario?   @relation(fields: [scenarioId], references: [id])
+  createdAt          DateTime       @default(now())
+  recommendation     Recommendation @relation(fields: [recommendationId], references: [id], onDelete: Cascade)
+  scenario           TestScenario?  @relation(fields: [scenarioId], references: [id])
 }
 
 model RecommendationRevision {

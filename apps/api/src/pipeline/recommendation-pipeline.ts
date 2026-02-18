@@ -625,11 +625,14 @@ function normalizeOutput(
   products: OutputProduct[];
   confidence: number;
 } {
-  const fallbackDiagnosis = fallback.diagnosis ?? {
-    condition: 'unknown',
-    conditionType: 'unknown',
-    confidence: 0.6,
-    reasoning: 'No model output available.',
+  const fallbackDiagnosis = {
+    condition: normalizeNonEmptyString(fallback.diagnosis?.condition, 'unknown'),
+    conditionType: normalizeConditionType(fallback.diagnosis?.conditionType, 'unknown'),
+    confidence: clamp(Number(fallback.diagnosis?.confidence ?? 0.6), 0.5, 0.95),
+    reasoning: normalizeNonEmptyString(
+      fallback.diagnosis?.reasoning,
+      'No model output available.'
+    ),
   };
 
   const diagnosisConfidence = clamp(
@@ -680,26 +683,36 @@ function normalizeOutput(
     .slice(0, 3);
 
   const products = (Array.isArray(model.products) ? model.products : [])
-    .map((product) => {
+    .map((product): OutputProduct | null => {
       const productId = normalizeOptionalString(product.productId);
       const reason = normalizeOptionalString(product.reason);
       if (!productId || !reason) {
         return null;
       }
 
-      return {
+      const normalizedProduct: OutputProduct = {
         productId,
         reason,
-        applicationRate: normalizeOptionalString(product.applicationRate),
-        alternatives: Array.isArray(product.alternatives)
-          ? product.alternatives
-              .map((entry) => normalizeOptionalString(entry))
-              .filter((entry): entry is string => Boolean(entry))
-              .slice(0, 4)
-          : undefined,
       };
+
+      const applicationRate = normalizeOptionalString(product.applicationRate);
+      if (applicationRate) {
+        normalizedProduct.applicationRate = applicationRate;
+      }
+
+      const alternatives = Array.isArray(product.alternatives)
+        ? product.alternatives
+            .map((entry) => normalizeOptionalString(entry))
+            .filter((entry): entry is string => Boolean(entry))
+            .slice(0, 4)
+        : [];
+      if (alternatives.length > 0) {
+        normalizedProduct.alternatives = alternatives;
+      }
+
+      return normalizedProduct;
     })
-    .filter((entry): entry is OutputProduct => Boolean(entry))
+    .filter((entry): entry is OutputProduct => entry !== null)
     .slice(0, 4);
 
   return {

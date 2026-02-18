@@ -212,7 +212,7 @@ export default function PhotoDiagnosePage() {
       }
     }
 
-    throw new Error('Recommendation is taking longer than expected. Please check history.')
+    throw new Error('Recommendation is taking longer than expected. Please check recommendations.')
   }
 
   if (isFetching) {

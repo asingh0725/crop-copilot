@@ -36,16 +36,24 @@ class RecommendationsViewModel: ObservableObject {
     private var currentPage = 1
     private let pageSize = 20
     private let apiClient = APIClient.shared
+    private var requestGeneration = 0
 
     func loadRecommendations(reset: Bool = false) async {
+        requestGeneration += 1
+        let generation = requestGeneration
+
         if reset {
             currentPage = 1
-            recommendations = []
+            hasMorePages = false
         }
 
         isLoading = recommendations.isEmpty
         errorMessage = nil
-        defer { isLoading = false }
+        defer {
+            if generation == requestGeneration {
+                isLoading = false
+            }
+        }
 
         do {
             let response: RecommendationsListResponse = try await apiClient.request(
@@ -56,9 +64,15 @@ class RecommendationsViewModel: ObservableObject {
                     sort: selectedSort.rawValue
                 )
             )
+            guard generation == requestGeneration else {
+                return
+            }
             recommendations = response.recommendations
             hasMorePages = response.pagination.page < response.pagination.totalPages
         } catch let error as NetworkError {
+            guard generation == requestGeneration else {
+                return
+            }
             if case .cancelled = error {
                 return
             }
@@ -66,13 +80,17 @@ class RecommendationsViewModel: ObservableObject {
         } catch is CancellationError {
             return
         } catch {
+            guard generation == requestGeneration else {
+                return
+            }
             errorMessage = error.localizedDescription
         }
 
     }
 
     func loadNextPage() async {
-        guard hasMorePages, !isLoadingMore else { return }
+        let generation = requestGeneration
+        guard hasMorePages, !isLoadingMore, !isLoading else { return }
         isLoadingMore = true
         defer { isLoadingMore = false }
         currentPage += 1
@@ -86,9 +104,15 @@ class RecommendationsViewModel: ObservableObject {
                     sort: selectedSort.rawValue
                 )
             )
+            guard generation == requestGeneration else {
+                return
+            }
             recommendations.append(contentsOf: response.recommendations)
             hasMorePages = response.pagination.page < response.pagination.totalPages
         } catch let error as NetworkError {
+            guard generation == requestGeneration else {
+                return
+            }
             if case .cancelled = error {
                 currentPage -= 1
                 return
@@ -99,6 +123,9 @@ class RecommendationsViewModel: ObservableObject {
             currentPage -= 1
             return
         } catch {
+            guard generation == requestGeneration else {
+                return
+            }
             errorMessage = error.localizedDescription
             currentPage -= 1
         }

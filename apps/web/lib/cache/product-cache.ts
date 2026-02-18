@@ -1,5 +1,4 @@
 import { prisma } from "@/lib/prisma";
-import { productCache, pricingCache } from "./redis-cache";
 import {
   searchRecommendedProducts,
   ProductSearchResult,
@@ -8,12 +7,14 @@ import {
   searchProductPricing as searchPricingWithGemini,
   ProductPricing,
 } from "@/lib/ai/pricing-search";
-import { ProductType } from "@prisma/client";
+import { Prisma, ProductType } from "@prisma/client";
 
-// Re-export ProductPricing for consumers
 export type { ProductPricing } from "@/lib/ai/pricing-search";
 
-// Types for cached data
+const MAX_PRODUCTS = 3;
+const LIVE_PRODUCT_SEARCH_TIMEOUT_MS = 12000;
+const PRICING_CACHE_TTL_MS = 12 * 60 * 60 * 1000;
+
 export interface CachedProductRecommendation {
   id: string;
   productId: string;
@@ -46,120 +47,97 @@ export interface ProductWithPricing {
   pricing: ProductPricing[];
 }
 
-// Cache keys
-function getRecommendationProductsKey(recommendationId: string): string {
-  return `rec:${recommendationId}:products`;
-}
-
-function getProductPricingKey(productId: string): string {
-  return `product:${productId}:pricing`;
-}
-
-/**
- * Multi-tier cache service for product recommendations
- * Tier 1: Redis (30 min TTL)
- * Tier 2: Database (persistent)
- * Tier 3: LLM web search (on-demand)
- */
 export class ProductCacheService {
-  /**
-   * Get product recommendations for a recommendation
-   * Follows: Redis → Database → LLM fallback
-   */
   async getProductRecommendations(
-    recommendationId: string,
-    diagnosisText: string,
-    crop?: string,
-    location?: string
+    recommendationId: string
   ): Promise<CachedProductRecommendation[]> {
-    // Tier 1: Try Redis cache
-    const cacheKey = getRecommendationProductsKey(recommendationId);
-    const cached = await productCache.get<CachedProductRecommendation[]>(
-      cacheKey
-    );
-    if (cached && cached.length > 0) {
-      console.log(`[Cache] Redis hit for recommendation ${recommendationId}`);
-      return cached;
-    }
-
-    // Tier 2: Try Database
     const dbProducts = await this.getFromDatabase(recommendationId);
     if (dbProducts.length > 0) {
-      console.log(
-        `[Cache] Database hit for recommendation ${recommendationId}`
-      );
-      // Repopulate Redis cache
-      await productCache.set(cacheKey, dbProducts);
+      console.log(`[Products] Database cache hit for recommendation ${recommendationId}`);
       return dbProducts;
     }
 
-    // Tier 3: LLM web search
-    console.log(`[Cache] Cache miss - searching via LLM for ${recommendationId}`);
-    const searchResults = await searchRecommendedProducts({
-      diagnosis: diagnosisText,
-      crop,
-      location,
-      maxProducts: 3,
-    });
-
-    // Store in database and cache
-    const storedProducts = await this.storeSearchResults(
-      recommendationId,
-      searchResults
+    console.log(
+      `[Products] No precomputed recommendations stored for ${recommendationId}`
     );
-
-    // Cache in Redis
-    await productCache.set(cacheKey, storedProducts);
-
-    return storedProducts;
+    return [];
   }
 
-  /**
-   * Get product pricing with caching (using Gemini)
-   * Follows: Redis → Gemini web search fallback
-   *
-   * @param productId - Product ID for caching
-   * @param productName - Product name to search for
-   * @param brand - Optional brand name
-   * @param region - User's region for localized pricing (e.g., "Texas, USA")
-   */
   async getProductPricing(
     productId: string,
     productName: string,
     brand?: string,
     region?: string
   ): Promise<ProductPricing[]> {
-    // Include region in cache key for location-specific pricing
-    const regionKey = region ? `:${region.toLowerCase().replace(/\s+/g, "-")}` : "";
-    const cacheKey = `${getProductPricingKey(productId)}${regionKey}`;
+    const regionLabel = region || "United States";
+    const regionKey = this.normalizeRegionKey(regionLabel);
 
-    // Tier 1: Try Redis cache
-    const cached = await pricingCache.get<ProductPricing[]>(cacheKey);
-    if (cached && cached.length > 0) {
-      console.log(`[Pricing] Redis hit for product ${productId} (${region || "default"})`);
-      return cached;
+    const cachedPricing = await this.getPricingFromDatabaseCache(
+      productId,
+      regionKey
+    );
+    if (cachedPricing.length > 0) {
+      console.log(`[Pricing] Database cache hit for product ${productId} (${regionKey})`);
+      return cachedPricing;
     }
 
-    // Tier 2: Gemini web search for pricing
-    console.log(`[Pricing] Fetching live pricing for ${productName} in ${region || "United States"}`);
+    console.log(`[Pricing] Fetching live pricing for ${productName} in ${regionLabel}`);
     const pricing = await searchPricingWithGemini({
       productName,
       brand,
-      region: region || "United States",
+      region: regionLabel,
       maxResults: 5,
     });
 
-    // Cache in Redis (1 hour TTL)
     if (pricing.length > 0) {
-      await pricingCache.set(cacheKey, pricing);
+      await this.storePricingInDatabaseCache(productId, regionKey, pricing);
     }
 
     return pricing;
   }
 
-  /**
-   * Get product recommendations from database
-   */
+  async invalidateRecommendation(recommendationId: string): Promise<void> {
+    await prisma.productRecommendation.deleteMany({
+      where: { recommendationId },
+    });
+  }
+
+  async invalidatePricing(productId: string): Promise<void> {
+    await prisma.productPricingCache.deleteMany({
+      where: { productId },
+    });
+  }
+
+  async refreshProductRecommendations(
+    recommendationId: string,
+    diagnosisText: string,
+    crop?: string,
+    location?: string
+  ): Promise<CachedProductRecommendation[]> {
+    await this.invalidateRecommendation(recommendationId);
+
+    const liveResults = await this.searchLiveProductsWithTimeout({
+      diagnosis: diagnosisText,
+      crop,
+      location,
+      maxProducts: MAX_PRODUCTS,
+    });
+
+    if (liveResults.length > 0) {
+      return this.storeSearchResults(recommendationId, liveResults);
+    }
+
+    const catalogFallback = await this.getCatalogFallbackSearchResults(
+      diagnosisText,
+      crop
+    );
+    if (catalogFallback.length === 0) {
+      return [];
+    }
+
+    return this.storeSearchResults(recommendationId, catalogFallback);
+  }
+
   private async getFromDatabase(
     recommendationId: string
   ): Promise<CachedProductRecommendation[]> {
@@ -192,9 +170,6 @@ export class ProductCacheService {
     }));
   }
 
-  /**
-   * Store LLM search results in database
-   */
   private async storeSearchResults(
     recommendationId: string,
     results: ProductSearchResult[]
@@ -204,7 +179,6 @@ export class ProductCacheService {
     for (let i = 0; i < results.length; i++) {
       const result = results[i];
 
-      // Create or find product
       let product = await prisma.product.findFirst({
         where: {
           name: result.name,
@@ -226,7 +200,6 @@ export class ProductCacheService {
         });
       }
 
-      // Create product recommendation link
       const productRec = await prisma.productRecommendation.upsert({
         where: {
           recommendationId_productId: {
@@ -263,10 +236,7 @@ export class ProductCacheService {
           name: productRec.product.name,
           brand: productRec.product.brand,
           type: productRec.product.type,
-          analysis: productRec.product.analysis as Record<
-            string,
-            unknown
-          > | null,
+          analysis: productRec.product.analysis as Record<string, unknown> | null,
           applicationRate: productRec.product.applicationRate,
           crops: productRec.product.crops,
           description: productRec.product.description,
@@ -282,16 +252,93 @@ export class ProductCacheService {
     return storedProducts;
   }
 
-  /**
-   * Generate a reason string from product search result
-   */
+  private async getCatalogFallbackSearchResults(
+    diagnosisText: string,
+    crop?: string
+  ): Promise<ProductSearchResult[]> {
+    const candidateTypes = inferProductTypesFromDiagnosis(diagnosisText);
+    const normalizedCrop = crop?.trim().toLowerCase();
+
+    const where: Prisma.ProductWhereInput = {};
+    if (candidateTypes.length > 0) {
+      where.type = { in: candidateTypes };
+    }
+    if (normalizedCrop) {
+      where.OR = [{ crops: { has: normalizedCrop } }, { crops: { isEmpty: true } }];
+    }
+
+    let catalogProducts = await prisma.product.findMany({
+      where,
+      orderBy: [{ updatedAt: "desc" }],
+      take: MAX_PRODUCTS,
+    });
+
+    if (catalogProducts.length === 0 && normalizedCrop) {
+      catalogProducts = await prisma.product.findMany({
+        where: candidateTypes.length > 0 ? { type: { in: candidateTypes } } : {},
+        orderBy: [{ updatedAt: "desc" }],
+        take: MAX_PRODUCTS,
+      });
+    }
+
+    return catalogProducts.map((product) => ({
+      name: product.name,
+      brand: product.brand,
+      type: product.type,
+      analysis: product.analysis as Record<string, number | string> | null,
+      applicationRate: product.applicationRate,
+      crops: product.crops,
+      description: product.description,
+      searchQuery: `catalog-fallback:${diagnosisText.trim().slice(0, 140)}`,
+    }));
+  }
+
+  private async searchLiveProductsWithTimeout(
+    options: {
+      diagnosis: string;
+      crop?: string;
+      location?: string;
+      maxProducts: number;
+    }
+  ): Promise<ProductSearchResult[]> {
+    let timeoutReached = false;
+    let timeoutHandle: ReturnType<typeof setTimeout> | undefined;
+
+    const searchPromise = searchRecommendedProducts(options).catch((error) => {
+      console.error("[Products] Live search failed:", error);
+      return [];
+    });
+
+    const timeoutPromise = new Promise<ProductSearchResult[]>((resolve) => {
+      timeoutHandle = setTimeout(() => {
+        timeoutReached = true;
+        resolve([]);
+      }, LIVE_PRODUCT_SEARCH_TIMEOUT_MS);
+    });
+
+    const results = await Promise.race([searchPromise, timeoutPromise]);
+    if (timeoutHandle) {
+      clearTimeout(timeoutHandle);
+    }
+
+    if (timeoutReached) {
+      console.warn(
+        `[Products] Live search timed out after ${LIVE_PRODUCT_SEARCH_TIMEOUT_MS}ms`
+      );
+    }
+
+    return results.slice(0, MAX_PRODUCTS);
+  }
+
   private generateReason(result: ProductSearchResult): string {
     const parts: string[] = [];
 
     if (result.description) {
       parts.push(result.description);
     } else {
-      parts.push(`${result.name} is a ${result.type.toLowerCase().replace("_", " ")}.`);
+      parts.push(
+        `${result.name} is a ${result.type.toLowerCase().replace("_", " ")}.`
+      );
     }
 
     if (result.crops.length > 0) {
@@ -301,48 +348,155 @@ export class ProductCacheService {
     return parts.join(" ");
   }
 
-  /**
-   * Invalidate cache for a recommendation
-   */
-  async invalidateRecommendation(recommendationId: string): Promise<void> {
-    const cacheKey = getRecommendationProductsKey(recommendationId);
-    await productCache.delete(cacheKey);
+  private normalizeRegionKey(region: string): string {
+    return region.trim().toLowerCase().replace(/\s+/g, " ");
   }
 
-  /**
-   * Invalidate pricing cache for a product
-   */
-  async invalidatePricing(productId: string): Promise<void> {
-    const cacheKey = getProductPricingKey(productId);
-    await pricingCache.delete(cacheKey);
-  }
-
-  /**
-   * Refresh product recommendations (force LLM search)
-   */
-  async refreshProductRecommendations(
-    recommendationId: string,
-    diagnosisText: string,
-    crop?: string,
-    location?: string
-  ): Promise<CachedProductRecommendation[]> {
-    // Invalidate existing cache
-    await this.invalidateRecommendation(recommendationId);
-
-    // Delete existing product recommendations from database
-    await prisma.productRecommendation.deleteMany({
-      where: { recommendationId },
+  private async getPricingFromDatabaseCache(
+    productId: string,
+    regionKey: string
+  ): Promise<ProductPricing[]> {
+    const cached = await prisma.productPricingCache.findUnique({
+      where: {
+        productId_region: {
+          productId,
+          region: regionKey,
+        },
+      },
+      select: {
+        pricing: true,
+        expiresAt: true,
+      },
     });
 
-    // Fetch fresh results
-    return this.getProductRecommendations(
-      recommendationId,
-      diagnosisText,
-      crop,
-      location
-    );
+    if (!cached) {
+      return [];
+    }
+
+    if (cached.expiresAt.getTime() <= Date.now()) {
+      await prisma.productPricingCache
+        .delete({
+          where: {
+            productId_region: {
+              productId,
+              region: regionKey,
+            },
+          },
+        })
+        .catch(() => undefined);
+      return [];
+    }
+
+    return this.parsePricingFromJson(cached.pricing);
+  }
+
+  private async storePricingInDatabaseCache(
+    productId: string,
+    regionKey: string,
+    pricing: ProductPricing[]
+  ): Promise<void> {
+    const now = new Date();
+    const expiresAt = new Date(now.getTime() + PRICING_CACHE_TTL_MS);
+
+    await prisma.productPricingCache.upsert({
+      where: {
+        productId_region: {
+          productId,
+          region: regionKey,
+        },
+      },
+      create: {
+        productId,
+        region: regionKey,
+        pricing: this.toPricingJson(pricing),
+        cachedAt: now,
+        expiresAt,
+      },
+      update: {
+        pricing: this.toPricingJson(pricing),
+        cachedAt: now,
+        expiresAt,
+      },
+    });
+  }
+
+  private toPricingJson(pricing: ProductPricing[]): Prisma.InputJsonValue {
+    return pricing.map((entry) => ({
+      price: entry.price,
+      unit: entry.unit,
+      retailer: entry.retailer,
+      url: entry.url,
+      region: entry.region,
+      lastUpdated: entry.lastUpdated.toISOString(),
+    })) as Prisma.InputJsonValue;
+  }
+
+  private parsePricingFromJson(value: Prisma.JsonValue): ProductPricing[] {
+    if (!Array.isArray(value)) {
+      return [];
+    }
+
+    return value
+      .map((entry) => {
+        if (!entry || typeof entry !== "object" || Array.isArray(entry)) {
+          return null;
+        }
+
+        const parsed = entry as Record<string, unknown>;
+        const lastUpdatedRaw = parsed.lastUpdated;
+        const parsedLastUpdated =
+          typeof lastUpdatedRaw === "string" && !Number.isNaN(Date.parse(lastUpdatedRaw))
+            ? new Date(lastUpdatedRaw)
+            : new Date();
+
+        return {
+          price: typeof parsed.price === "number" ? parsed.price : null,
+          unit: typeof parsed.unit === "string" ? parsed.unit : "each",
+          retailer:
+            typeof parsed.retailer === "string" ? parsed.retailer : "Unknown",
+          url: typeof parsed.url === "string" ? parsed.url : null,
+          region: typeof parsed.region === "string" ? parsed.region : "United States",
+          lastUpdated: parsedLastUpdated,
+        } satisfies ProductPricing;
+      })
+      .filter((entry): entry is ProductPricing => entry !== null);
   }
 }
 
-// Singleton instance
+function inferProductTypesFromDiagnosis(diagnosisText: string): ProductType[] {
+  const diagnosis = diagnosisText.toLowerCase();
+  const inferred = new Set<ProductType>();
+
+  if (/(fung|mildew|blight|rot|rust|spot)/.test(diagnosis)) {
+    inferred.add("FUNGICIDE");
+    inferred.add("BIOLOGICAL");
+  }
+
+  if (/(insect|aphid|beetle|worm|borer|mite|thrip|pest)/.test(diagnosis)) {
+    inferred.add("INSECTICIDE");
+    inferred.add("BIOLOGICAL");
+  }
+
+  if (/(weed|herbicide|grass pressure|broadleaf)/.test(diagnosis)) {
+    inferred.add("HERBICIDE");
+  }
+
+  if (/(nutrient|deficien|chlorosis|yellowing|fertility|npk|nitrogen|phosphorus|potassium)/.test(diagnosis)) {
+    inferred.add("FERTILIZER");
+    inferred.add("AMENDMENT");
+  }
+
+  if (/(seedling|stand establishment|emergence|seed treatment)/.test(diagnosis)) {
+    inferred.add("SEED_TREATMENT");
+  }
+
+  if (inferred.size === 0) {
+    inferred.add("BIOLOGICAL");
+    inferred.add("AMENDMENT");
+    inferred.add("FERTILIZER");
+  }
+
+  return Array.from(inferred);
+}
+
 export const productCacheService = new ProductCacheService();

@@ -14,7 +14,7 @@ struct RecommendationsListView: View {
         NavigationStack {
             VStack(spacing: 0) {
                 if !Configuration.isRuntimeApiConfigured {
-                    Text("AWS runtime API is not configured on iOS. Set API_RUNTIME_BASE_URL to keep history/profile in sync with web.")
+                    Text("AWS runtime API is not configured on iOS. Set API_RUNTIME_BASE_URL to keep recommendations/profile in sync with web.")
                         .font(.caption)
                         .foregroundColor(.orange)
                         .padding(.horizontal)
@@ -43,7 +43,7 @@ struct RecommendationsListView: View {
                         .padding()
                 }
             }
-            .navigationTitle("History")
+            .navigationTitle("Recommendations")
             .onAppear {
                 Task { await viewModel.loadRecommendations(reset: true) }
             }

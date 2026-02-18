@@ -283,6 +283,18 @@ test('PostgresRecommendationStore persists recommendation payload into legacy ta
       includes: 'INSERT INTO "RecommendationSource"',
       rows: [],
     },
+    {
+      includes: 'DELETE FROM "ProductRecommendation"',
+      rows: [],
+    },
+    {
+      includes: 'SELECT crop FROM "Input"',
+      rows: [{ crop: 'corn' }],
+    },
+    {
+      includes: 'SELECT id, name, brand, type::text AS type',
+      rows: [],
+    },
     { includes: '^COMMIT$', rows: [] },
   ]);
 
@@ -303,6 +315,80 @@ test('PostgresRecommendationStore persists recommendation payload into legacy ta
           excerpt: 'no-op',
         },
       ],
+    }
+  );
+});
+
+test('PostgresRecommendationStore persists precomputed product recommendations', async () => {
+  const pool = createScriptedPool([
+    { includes: '^BEGIN$', rows: [] },
+    {
+      includes: 'UPDATE app_recommendation_job',
+      rows: [{ input_id: '9f2644c5-a906-4739-9fca-a6f4078dc8c7' }],
+    },
+    {
+      includes: 'SELECT id FROM "Recommendation" WHERE "inputId"',
+      rows: [{ id: '1d57059e-e6ce-4f89-a061-937eddf591d4' }],
+    },
+    {
+      includes: 'UPDATE "Recommendation"',
+      rows: [],
+    },
+    {
+      includes: 'DELETE FROM "RecommendationSource"',
+      rows: [],
+    },
+    {
+      includes: 'DELETE FROM "ProductRecommendation"',
+      rows: [],
+    },
+    {
+      includes: 'SELECT crop FROM "Input"',
+      rows: [{ crop: 'corn' }],
+    },
+    {
+      includes: 'WHERE id = ANY\\(\\$1::text\\[\\]\\)',
+      rows: [
+        {
+          id: 'prod-1',
+          name: 'Corn Guard',
+          brand: 'Acme',
+          type: 'FUNGICIDE',
+          application_rate: '1 qt/ac',
+          description: 'Protective foliar fungicide.',
+        },
+      ],
+    },
+    {
+      includes: 'INSERT INTO "ProductRecommendation"',
+      rows: [],
+    },
+    { includes: '^COMMIT$', rows: [] },
+  ]);
+
+  const store = new PostgresRecommendationStore(pool);
+
+  await store.saveRecommendationResult(
+    'deab17cf-f109-43f2-b95b-7d2f328a7720',
+    '11111111-1111-1111-1111-111111111111',
+    {
+      recommendationId: '1d57059e-e6ce-4f89-a061-937eddf591d4',
+      confidence: 0.82,
+      diagnosis: {
+        diagnosis: {
+          condition: 'northern corn leaf blight',
+          conditionType: 'disease',
+        },
+        products: [
+          {
+            productId: 'prod-1',
+            reason: 'Targets foliar disease pressure.',
+            applicationRate: '1 qt/ac',
+          },
+        ],
+      },
+      modelUsed: 'rag-v2-scaffold',
+      sources: [],
     }
   );
 });

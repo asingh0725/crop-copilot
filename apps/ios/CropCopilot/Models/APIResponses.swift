@@ -134,6 +134,7 @@ struct ProfileData: Codable {
 // MARK: - Feedback Request
 struct FeedbackRequest: Codable {
     let recommendationId: String
+    let stage: String?
     let helpful: Bool?
     let rating: Int?
     let accuracy: Int?
@@ -153,6 +154,7 @@ struct FeedbackRecord: Codable {
     let accuracy: Int?
     let comments: String?
     let issues: [String]
+    let detailedCompletedAt: String?
     let outcomeApplied: Bool?
     let outcomeSuccess: Bool?
     let outcomeNotes: String?

@@ -1,7 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { ClipboardCheck, MessageSquare, Star, ThumbsDown, ThumbsUp } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { Star, ThumbsDown, ThumbsUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -39,6 +39,7 @@ interface FeedbackRecord {
   accuracy: number | null;
   comments: string | null;
   issues: string[];
+  detailedCompletedAt?: string | null;
   outcomeApplied: boolean | null;
   outcomeSuccess: boolean | null;
   outcomeNotes: string | null;
@@ -83,7 +84,11 @@ function hasDetailedFeedback(feedback: FeedbackRecord | null): boolean {
     return false;
   }
 
-  return feedback.accuracy !== null || feedback.issues.length > 0;
+  return (
+    feedback.detailedCompletedAt != null ||
+    feedback.accuracy !== null ||
+    feedback.issues.length > 0
+  );
 }
 
 function shouldPromptOutcome(feedback: FeedbackRecord | null): boolean {
@@ -169,8 +174,6 @@ export function RecommendationFeedbackFlow({
   const [outcomeNotes, setOutcomeNotes] = useState("");
 
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitError, setSubmitError] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const basicCompleted = hasBasicFeedback(feedback);
   const detailedCompleted = hasDetailedFeedback(feedback);
@@ -178,7 +181,6 @@ export function RecommendationFeedbackFlow({
 
   const loadFeedback = useCallback(async () => {
     setIsFeedbackLoading(true);
-    setSubmitError(null);
 
     try {
       const response = await fetch(
@@ -288,15 +290,14 @@ export function RecommendationFeedbackFlow({
 
   const handleBasicSubmit = useCallback(async () => {
     if (helpful === null) {
-      setSubmitError("Select whether this recommendation was helpful.");
       return;
     }
 
     setIsSubmitting(true);
-    setSubmitError(null);
 
     try {
       const updated = await submitFeedback({
+        stage: "basic",
         helpful,
         rating: rating ?? undefined,
         comments: toTrimmedOrUndefined(basicComments),
@@ -306,9 +307,11 @@ export function RecommendationFeedbackFlow({
       clearSnooze(recommendationId, "basic");
       setIsBasicOpen(false);
       setIsDetailedOpen(true);
-      setSuccessMessage("Thanks. Tell us a bit more so we can improve.");
-    } catch {
-      setSubmitError("We could not save feedback. Please try again.");
+    } catch (error) {
+      console.error("Failed to submit basic feedback", {
+        recommendationId,
+        error: (error as Error).message,
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -316,10 +319,10 @@ export function RecommendationFeedbackFlow({
 
   const handleDetailedSubmit = useCallback(async () => {
     setIsSubmitting(true);
-    setSubmitError(null);
 
     try {
       const updated = await submitFeedback({
+        stage: "detailed",
         accuracy: accuracy ?? undefined,
         issues: selectedIssues.length > 0 ? selectedIssues : undefined,
         comments: toTrimmedOrUndefined(detailedNotes),
@@ -328,9 +331,11 @@ export function RecommendationFeedbackFlow({
       setFeedback(updated);
       clearSnooze(recommendationId, "detailed");
       setIsDetailedOpen(false);
-      setSuccessMessage("Detailed feedback saved.");
-    } catch {
-      setSubmitError("We could not save detailed feedback. Please try again.");
+    } catch (error) {
+      console.error("Failed to submit detailed feedback", {
+        recommendationId,
+        error: (error as Error).message,
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -338,15 +343,14 @@ export function RecommendationFeedbackFlow({
 
   const handleOutcomeSubmit = useCallback(async () => {
     if (outcomeSelection === null) {
-      setSubmitError("Select whether the implementation worked.");
       return;
     }
 
     setIsSubmitting(true);
-    setSubmitError(null);
 
     try {
       const updated = await submitFeedback({
+        stage: "outcome",
         outcomeApplied: true,
         outcomeSuccess: outcomeSelection === "success",
         outcomeNotes: toTrimmedOrUndefined(outcomeNotes),
@@ -355,70 +359,18 @@ export function RecommendationFeedbackFlow({
       setFeedback(updated);
       clearSnooze(recommendationId, "outcome");
       setIsOutcomeOpen(false);
-      setSuccessMessage("Outcome feedback saved. Thank you.");
-    } catch {
-      setSubmitError("We could not save outcome feedback. Please try again.");
+    } catch (error) {
+      console.error("Failed to submit outcome feedback", {
+        recommendationId,
+        error: (error as Error).message,
+      });
     } finally {
       setIsSubmitting(false);
     }
   }, [outcomeNotes, outcomeSelection, recommendationId, submitFeedback]);
 
-  const summaryLabel = useMemo(() => {
-    if (isFeedbackLoading) {
-      return "Loading feedback status...";
-    }
-
-    if (!basicCompleted) {
-      return "Start with quick feedback to improve future recommendations.";
-    }
-
-    if (!detailedCompleted) {
-      return "Quick feedback saved. Add detail so the model learns faster.";
-    }
-
-    if (shouldAskOutcome) {
-      return `It's been about ${FOLLOW_UP_DAYS} days. Share outcome results after implementation.`;
-    }
-
-    return "Feedback captured. You can still update it anytime.";
-  }, [basicCompleted, detailedCompleted, isFeedbackLoading, shouldAskOutcome]);
-
   return (
-    <div className="rounded-lg border bg-card p-4 print:hidden">
-      <div className="mb-3">
-        <h3 className="text-sm font-semibold text-gray-900">Feedback Loop</h3>
-        <p className="text-xs text-gray-600">{summaryLabel}</p>
-      </div>
-
-      <div className="flex flex-wrap items-center gap-2">
-        <Button
-          type="button"
-          variant={basicCompleted ? "outline" : "default"}
-          onClick={() => setIsBasicOpen(true)}
-          className="gap-2"
-        >
-          <MessageSquare className="h-4 w-4" />
-          {basicCompleted ? "Update Quick Feedback" : "Quick Feedback"}
-        </Button>
-        <Button
-          type="button"
-          variant={detailedCompleted ? "outline" : "secondary"}
-          onClick={() => setIsDetailedOpen(true)}
-          className="gap-2"
-        >
-          <ClipboardCheck className="h-4 w-4" />
-          Detailed Feedback
-        </Button>
-        {shouldAskOutcome && (
-          <Button type="button" onClick={() => setIsOutcomeOpen(true)}>
-            Report Outcome
-          </Button>
-        )}
-      </div>
-
-      {successMessage && <p className="mt-2 text-xs text-green-700">{successMessage}</p>}
-      {submitError && <p className="mt-2 text-xs text-red-600">{submitError}</p>}
-
+    <>
       <Dialog
         open={isBasicOpen}
         onOpenChange={(open) => {
@@ -520,7 +472,7 @@ export function RecommendationFeedbackFlow({
         onOpenChange={(open) => {
           setIsDetailedOpen(open);
           if (!open) {
-            setSnooze(recommendationId, "detailed", 3 * SNOOZE_DAY_MS);
+            setSnooze(recommendationId, "detailed", SNOOZE_DAY_MS);
           }
         }}
       >
@@ -596,7 +548,7 @@ export function RecommendationFeedbackFlow({
               type="button"
               variant="outline"
               onClick={() => {
-                setSnooze(recommendationId, "detailed", 3 * SNOOZE_DAY_MS);
+                setSnooze(recommendationId, "detailed", SNOOZE_DAY_MS);
                 setIsDetailedOpen(false);
               }}
               disabled={isSubmitting}
@@ -679,6 +631,6 @@ export function RecommendationFeedbackFlow({
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </>
   );
 }

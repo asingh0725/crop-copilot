@@ -186,7 +186,6 @@ struct DiagnosisResultView: View {
                     }
                 }
 
-                feedbackSection
                 shareButton(detail)
             }
             .padding()
@@ -246,57 +245,6 @@ struct DiagnosisResultView: View {
                     priority.lowercased() == "medium" ? Color.orange : Color.green).opacity(0.1)
             )
             .cornerRadius(4)
-    }
-
-    private var feedbackSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Feedback Loop")
-                .font(.headline)
-            Text(viewModel.feedbackSummary)
-                .font(.caption)
-                .foregroundColor(.secondary)
-
-            HStack(spacing: 10) {
-                Button(viewModel.quickFeedbackComplete ? "Update Quick Feedback" : "Quick Feedback") {
-                    feedbackErrorMessage = nil
-                    activeFeedbackStage = .basic
-                    viewModel.consumeSuggestedStage()
-                }
-                .buttonStyle(.borderedProminent)
-                .tint(viewModel.quickFeedbackComplete ? .gray : .appPrimary)
-
-                Button("Detailed Feedback") {
-                    feedbackErrorMessage = nil
-                    activeFeedbackStage = .detailed
-                    viewModel.consumeSuggestedStage()
-                }
-                .buttonStyle(.bordered)
-            }
-
-            if viewModel.shouldPromptOutcome || (viewModel.feedback?.outcomeReported ?? false) {
-                Button((viewModel.feedback?.outcomeReported ?? false) ? "Update Outcome" : "Report Outcome") {
-                    feedbackErrorMessage = nil
-                    activeFeedbackStage = .outcome
-                    viewModel.consumeSuggestedStage()
-                }
-                .buttonStyle(.bordered)
-            }
-
-            if let success = feedbackSuccessMessage {
-                Text(success)
-                    .font(.caption)
-                    .foregroundColor(.green)
-            }
-
-            if let error = feedbackErrorMessage {
-                Text(error)
-                    .font(.caption)
-                    .foregroundColor(.red)
-            }
-        }
-        .padding()
-        .background(Color.appSecondaryBackground)
-        .cornerRadius(12)
     }
 
     @ViewBuilder
@@ -433,7 +381,7 @@ struct DiagnosisResultView: View {
 
             HStack {
                 Button("Later") {
-                    viewModel.setSnooze(stage: .detailed, recommendationId: recommendationId, days: 3)
+                    viewModel.setSnooze(stage: .detailed, recommendationId: recommendationId, days: 1)
                     activeFeedbackStage = nil
                 }
                 .buttonStyle(.bordered)
@@ -739,6 +687,7 @@ class DiagnosisResultViewModel: ObservableObject {
     ) async throws -> FeedbackRecord {
         let body = FeedbackRequest(
             recommendationId: recommendationId,
+            stage: "basic",
             helpful: helpful,
             rating: rating,
             accuracy: nil,
@@ -760,6 +709,7 @@ class DiagnosisResultViewModel: ObservableObject {
     ) async throws -> FeedbackRecord {
         let body = FeedbackRequest(
             recommendationId: recommendationId,
+            stage: "detailed",
             helpful: nil,
             rating: nil,
             accuracy: accuracy,
@@ -780,6 +730,7 @@ class DiagnosisResultViewModel: ObservableObject {
     ) async throws -> FeedbackRecord {
         let body = FeedbackRequest(
             recommendationId: recommendationId,
+            stage: "outcome",
             helpful: nil,
             rating: nil,
             accuracy: nil,
@@ -873,7 +824,7 @@ class DiagnosisResultViewModel: ObservableObject {
             return false
         }
 
-        return feedback.accuracy != nil || !feedback.issues.isEmpty
+        return feedback.detailedCompletedAt != nil || feedback.accuracy != nil || !feedback.issues.isEmpty
     }
 
     private func shouldPromptOutcome(_ feedback: FeedbackRecord?) -> Bool {

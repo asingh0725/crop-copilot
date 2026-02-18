@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Package, ExternalLink, Scale, Search, ArrowRight } from "lucide-react";
+import { Package, Scale, ArrowRight } from "lucide-react";
 import type { ProductSuggestion } from "@/lib/utils/format-diagnosis";
 
 interface ProductSuggestionsProps {
@@ -15,12 +15,6 @@ export function ProductSuggestions({ products }: ProductSuggestionsProps) {
   if (!products || products.length === 0) {
     return null;
   }
-
-  // Extract search term from product ID (e.g., "UAN 32-0-0" -> "UAN")
-  const getSearchTerm = (productId: string) => {
-    // Get first word or main product name
-    return encodeURIComponent(productId.split(" ")[0]);
-  };
 
   return (
     <Card className="print:shadow-none print:border-gray-300">
@@ -75,21 +69,6 @@ export function ProductSuggestions({ products }: ProductSuggestionsProps) {
                 </div>
               )}
 
-              <div className="flex gap-2 print:hidden">
-                <Button variant="outline" size="sm" className="flex-1" asChild>
-                  <Link href={`/products?search=${getSearchTerm(product.productId)}`}>
-                    <Search className="h-3 w-3 mr-1" />
-                    Find Product
-                  </Link>
-                </Button>
-                {product.alternatives && product.alternatives.length > 0 && (
-                  <Button variant="ghost" size="sm" asChild>
-                    <Link href={`/products?search=${getSearchTerm(product.alternatives[0])}`}>
-                      Compare
-                    </Link>
-                  </Button>
-                )}
-              </div>
             </div>
           ))}
         </div>

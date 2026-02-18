@@ -11,6 +11,7 @@ import { z } from 'zod';
 
 export const feedbackSchema = z.object({
   recommendationId: z.string(),
+  stage: z.enum(['basic', 'detailed', 'outcome']).optional(),
   helpful: z.boolean().optional(),
   rating: z.number().min(1).max(5).optional(),
   accuracy: z.number().min(1).max(5).optional(),
@@ -40,6 +41,7 @@ export interface SubmitFeedbackResult {
     accuracy: number | null;
     comments: string | null;
     issues: string[];
+    detailedCompletedAt: Date | null;
     outcomeApplied: boolean | null;
     outcomeSuccess: boolean | null;
     outcomeNotes: string | null;
@@ -63,6 +65,7 @@ export interface GetFeedbackResult {
   accuracy: number | null;
   comments: string | null;
   issues: string[];
+  detailedCompletedAt: Date | null;
   outcomeApplied: boolean | null;
   outcomeSuccess: boolean | null;
   outcomeNotes: string | null;
@@ -96,6 +99,11 @@ export async function submitFeedback(
     throw new Error('You can only provide feedback on your own recommendations');
   }
 
+  const isDetailedSubmission =
+    validated.stage === 'detailed' ||
+    validated.accuracy !== undefined ||
+    (validated.issues !== undefined && validated.issues.length > 0);
+
   // Create or update feedback
   const feedback = await prisma.feedback.upsert({
     where: { recommendationId: validated.recommendationId },
@@ -107,6 +115,7 @@ export async function submitFeedback(
       accuracy: validated.accuracy ?? null,
       comments: validated.comments ?? null,
       issues: validated.issues ?? [],
+      detailedCompletedAt: isDetailedSubmission ? new Date() : null,
       outcomeApplied: validated.outcomeApplied ?? null,
       outcomeSuccess: validated.outcomeSuccess ?? null,
       outcomeNotes: validated.outcomeNotes ?? null,
@@ -118,6 +127,7 @@ export async function submitFeedback(
       accuracy: validated.accuracy ?? undefined,
       comments: validated.comments ?? undefined,
       issues: validated.issues ?? undefined,
+      detailedCompletedAt: isDetailedSubmission ? new Date() : undefined,
       outcomeApplied: validated.outcomeApplied ?? undefined,
       outcomeSuccess: validated.outcomeSuccess ?? undefined,
       outcomeNotes: validated.outcomeNotes ?? undefined,

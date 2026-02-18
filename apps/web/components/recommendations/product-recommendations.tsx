@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -13,8 +13,6 @@ import {
   Sprout,
   FlaskConical,
   Package,
-  RefreshCw,
-  Loader2,
   ExternalLink,
   ShoppingCart,
   AlertTriangle,
@@ -59,70 +57,37 @@ const typeConfig: Record<ProductType, { icon: typeof Beaker; color: string; labe
 
 export function ProductRecommendations({ recommendationId }: ProductRecommendationsProps) {
   const [products, setProducts] = useState<ProductRecommendation[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [refreshing, setRefreshing] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [activated, setActivated] = useState(false);
 
-  const fetchProducts = async (refresh = false) => {
-    if (refresh) {
-      setRefreshing(true);
-    } else {
+  useEffect(() => {
+    const fetchProducts = async () => {
       setLoading(true);
-    }
 
-    try {
-      const method = refresh ? "POST" : "GET";
-      const response = await fetch(
-        `/api/recommendations/${recommendationId}/products`,
-        { method }
-      );
+      try {
+        const response = await fetch(
+          `/api/recommendations/${recommendationId}/products`,
+          { method: "GET" }
+        );
 
-      if (!response.ok) {
-        const errData = await response.json();
-        throw new Error(errData.error || "Failed to fetch products");
+        if (!response.ok) {
+          const errData = await response.json();
+          throw new Error(errData.error || "Failed to fetch products");
+        }
+
+        const data = await response.json();
+        setProducts(data.products);
+        setError(null);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to load products");
+        console.error(err);
+      } finally {
+        setLoading(false);
       }
+    };
 
-      const data = await response.json();
-      setProducts(data.products);
-      setError(null);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load products");
-      console.error(err);
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  };
-
-  const handleActivate = () => {
-    setActivated(true);
-    fetchProducts();
-  };
-
-  // Show call-to-action before user activates
-  if (!activated) {
-    return (
-      <Card>
-        <CardContent className="py-8">
-          <div className="text-center">
-            <ShoppingCart className="h-10 w-10 text-gray-300 mx-auto mb-3" />
-            <p className="text-sm text-gray-500 mb-4">
-              Get product recommendations based on this diagnosis
-            </p>
-            <Button
-              variant="outline"
-              onClick={handleActivate}
-              className="gap-2"
-            >
-              <ShoppingCart className="h-4 w-4" />
-              Find Products
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
+    void fetchProducts();
+  }, [recommendationId]);
 
   if (loading) {
     return (
@@ -154,22 +119,7 @@ export function ProductRecommendations({ recommendationId }: ProductRecommendati
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-center py-8">
-            <p className="text-gray-500 mb-4">{error}</p>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => fetchProducts(true)}
-              disabled={refreshing}
-            >
-              {refreshing ? (
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              ) : (
-                <RefreshCw className="h-4 w-4 mr-2" />
-              )}
-              Try Again
-            </Button>
-          </div>
+          <p className="text-sm text-red-600">{error}</p>
         </CardContent>
       </Card>
     );
@@ -177,39 +127,23 @@ export function ProductRecommendations({ recommendationId }: ProductRecommendati
 
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
+      <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <ShoppingCart className="h-5 w-5" />
           Recommended Products
         </CardTitle>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => fetchProducts(true)}
-          disabled={refreshing}
-        >
-          {refreshing ? (
-            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-          ) : (
-            <RefreshCw className="h-4 w-4 mr-2" />
-          )}
-          Refresh
-        </Button>
       </CardHeader>
       <CardContent>
         {products.length === 0 ? (
           <div className="text-center py-8">
             <Package className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-            <p className="text-gray-500 mb-4">
-              No product recommendations found yet
+            <p className="text-gray-500 mb-4 text-sm">
+              No precomputed product recommendations are available for this recommendation yet.
             </p>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => fetchProducts(true)}
-              disabled={refreshing}
-            >
-              Search for Products
+            <Button variant="outline" size="sm" asChild>
+              <Link href="/products">
+                Browse Product Catalog
+              </Link>
             </Button>
           </div>
         ) : (

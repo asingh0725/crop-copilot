@@ -8,7 +8,7 @@
 import SwiftUI
 
 enum AppTab: Int {
-    case dashboard, diagnose, history, products, settings
+    case dashboard, diagnose, recommendations, products, settings
 }
 
 struct MainTabView: View {
@@ -31,9 +31,9 @@ struct MainTabView: View {
 
             RecommendationsListView()
                 .tabItem {
-                    Label("History", systemImage: "clock.fill")
+                    Label("Recommendations", systemImage: "list.bullet.rectangle.fill")
                 }
-                .tag(AppTab.history)
+                .tag(AppTab.recommendations)
 
             Text("Products")
                 .tabItem {

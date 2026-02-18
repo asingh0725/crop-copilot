@@ -105,7 +105,7 @@ struct DashboardView: View {
                     .font(.headline)
                 Spacer()
                 Button("See All") {
-                    selectedTab = .history
+                    selectedTab = .recommendations
                 }
                 .font(.subheadline)
                 .foregroundColor(.appPrimary)

@@ -8,7 +8,6 @@ import {
   Camera,
   ClipboardList,
   MoreHorizontal,
-  History,
   Settings,
   User,
   LogOut,
@@ -40,7 +39,6 @@ const primaryNavItems: NavItem[] = [
 
 const moreNavItems: NavItem[] = [
   { title: "Products", href: "/products", icon: Package },
-  { title: "History", href: "/history", icon: History },
   { title: "Settings", href: "/settings", icon: Settings },
   { title: "Profile", href: "/settings/profile", icon: User },
 ];
