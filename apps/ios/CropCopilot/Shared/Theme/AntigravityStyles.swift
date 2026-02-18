@@ -20,27 +20,11 @@ struct AntigravityGlassModifier: ViewModifier {
 }
 
 struct AntigravityFloatModifier: ViewModifier {
-    @EnvironmentObject private var motionManager: MotionManager
-    @State private var duration = Double.random(in: 4...6)
     let amplitude: CGFloat
     let parallaxScale: CGFloat
 
     func body(content: Content) -> some View {
         content
-            .phaseAnimator([false, true]) { view, phase in
-                view
-                    .offset(y: phase ? amplitude : -amplitude)
-                    .rotation3DEffect(
-                        .degrees(phase ? 1 : -1),
-                        axis: (x: 1, y: 0, z: 0)
-                    )
-                    .offset(
-                        x: CGFloat(motionManager.roll) * parallaxScale,
-                        y: CGFloat(motionManager.pitch) * parallaxScale
-                    )
-            } animation: { _ in
-                .easeInOut(duration: duration).repeatForever(autoreverses: true)
-            }
     }
 }
 

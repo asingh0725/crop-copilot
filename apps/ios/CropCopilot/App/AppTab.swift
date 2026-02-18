@@ -10,7 +10,7 @@ enum AppTab: String, CaseIterable, Identifiable {
     case diagnose
     case recommendations
     case products
-    case profile
+    case settings
 
     var id: String { rawValue }
 
@@ -24,8 +24,8 @@ enum AppTab: String, CaseIterable, Identifiable {
             return "Recommendations"
         case .products:
             return "Products"
-        case .profile:
-            return "Profile"
+        case .settings:
+            return "Settings"
         }
     }
 
@@ -39,8 +39,8 @@ enum AppTab: String, CaseIterable, Identifiable {
             return "list.bullet.rectangle.fill"
         case .products:
             return "leaf.fill"
-        case .profile:
-            return "person.crop.circle.fill"
+        case .settings:
+            return "gearshape.fill"
         }
     }
 }
