@@ -44,6 +44,7 @@ enum APIEndpoint {
 
     // Upload
     case uploadImage
+    case getUploadViewUrl(objectUrl: String)
 
     // Feedback
     case getFeedback(recommendationId: String)
@@ -71,6 +72,7 @@ enum APIEndpoint {
         case .compareProducts: return "/products/compare"
         case .getProductPricing: return "/products/pricing/batch"
         case .uploadImage: return "/upload"
+        case .getUploadViewUrl: return "/upload/view"
         case .getFeedback, .submitFeedback: return "/feedback"
         }
     }
@@ -85,6 +87,7 @@ enum APIEndpoint {
              .getRecommendation,
              .deleteRecommendation,
              .uploadImage,
+             .getUploadViewUrl,
              .getFeedback,
              .submitFeedback:
             return .runtimePreferred
@@ -130,9 +133,12 @@ enum APIEndpoint {
                 items.append(URLQueryItem(name: "search", value: search))
             }
             if let type = type {
-                items.append(URLQueryItem(name: "type", value: type))
+                items.append(URLQueryItem(name: "types", value: type))
             }
             return items.isEmpty ? nil : items
+
+        case .getUploadViewUrl(let objectUrl):
+            return [URLQueryItem(name: "objectUrl", value: objectUrl)]
 
         case .getFeedback(let recommendationId):
             return [URLQueryItem(name: "recommendationId", value: recommendationId)]

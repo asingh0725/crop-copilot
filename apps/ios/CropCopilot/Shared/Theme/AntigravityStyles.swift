@@ -10,12 +10,13 @@ struct AntigravityGlassModifier: ViewModifier {
 
     func body(content: Content) -> some View {
         content
-            .background(Color.appSecondaryBackground)
+            .background(Color.appCardBackground)
             .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
             .overlay(
                 RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
                     .strokeBorder(.black.opacity(0.08), lineWidth: 0.8)
             )
+            .shadow(color: .black.opacity(0.04), radius: 14, x: 0, y: 6)
     }
 }
 

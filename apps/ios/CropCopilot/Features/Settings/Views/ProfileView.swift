@@ -52,7 +52,7 @@ struct ProfileView: View {
 
                         GlassSection(title: "Crops of Interest") {
                             TagGridSelector(
-                                tags: viewModel.availableCrops.map { $0.value },
+                                options: viewModel.availableCrops,
                                 selectedTags: $viewModel.selectedCrops
                             )
                         }

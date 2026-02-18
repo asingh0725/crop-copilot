@@ -14,10 +14,6 @@ struct RecommendationCard: View {
     let recommendation: RecommendationSummary
     var style: LayoutStyle = .row
 
-    private var inputImageURL: URL? {
-        Configuration.resolveMediaURL(recommendation.input.imageUrl)
-    }
-
     private var timestampLabel: String {
         guard let parsed = DateParsing.iso8601(recommendation.createdAt) else {
             return recommendation.createdAt
@@ -39,7 +35,7 @@ struct RecommendationCard: View {
 
     private var rowBody: some View {
         HStack(spacing: 12) {
-            RecommendationThumbnail(url: inputImageURL, size: 68)
+            RecommendationThumbnail(source: recommendation.input.imageUrl, size: 68)
 
             VStack(alignment: .leading, spacing: 6) {
                 Text(AppConstants.cropLabel(for: recommendation.input.crop ?? "Unknown"))
@@ -61,7 +57,12 @@ struct RecommendationCard: View {
 
             Spacer(minLength: 8)
 
-            CanvasConfidenceArc(confidence: recommendation.confidence, style: .compact)
+            VStack(alignment: .trailing, spacing: 10) {
+                CanvasConfidenceArc(confidence: recommendation.confidence, style: .compact)
+                Image(systemName: "chevron.right")
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(.secondary)
+            }
         }
         .padding(14)
         .antigravityGlass(cornerRadius: 16)
@@ -70,7 +71,7 @@ struct RecommendationCard: View {
     private var compactBody: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(alignment: .top, spacing: 8) {
-                RecommendationThumbnail(url: inputImageURL, size: 56)
+                RecommendationThumbnail(source: recommendation.input.imageUrl, size: 56)
 
                 Spacer(minLength: 6)
 
@@ -101,38 +102,35 @@ struct RecommendationCard: View {
 }
 
 private struct RecommendationThumbnail: View {
-    let url: URL?
+    let source: String?
     let size: CGFloat
 
     var body: some View {
         ZStack {
-            AsyncImage(url: url) { phase in
-                switch phase {
-                case .success(let image):
-                    image
-                        .resizable()
-                        .scaledToFill()
-                case .empty:
-                    ProgressView()
-                        .tint(Color.appPrimary)
-                default:
-                    fallback
-                }
+            SecureAsyncImage(source: source) { image in
+                image
+                    .resizable()
+                    .scaledToFill()
+            } placeholder: {
+                ProgressView()
+                    .tint(Color.appPrimary)
+            } failure: {
+                fallback
             }
         }
         .frame(width: size, height: size)
-        .background(Color.appSecondaryBackground)
+        .background(Color.appBackground)
         .clipped()
         .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .stroke(.black.opacity(0.08), lineWidth: 0.8)
+                .stroke(.black.opacity(0.10), lineWidth: 0.8)
         )
     }
 
     private var fallback: some View {
         ZStack {
-            Color.appSecondaryBackground
+            Color.appBackground
             Image(systemName: "photo")
                 .font(.title3)
                 .foregroundStyle(.secondary)

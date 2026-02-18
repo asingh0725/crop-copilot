@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		001595072A9707B6455F3F08 /* AntigravityStyles.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53DC18350615EF65C1EE17B6 /* AntigravityStyles.swift */; };
+		05FE3EFB3EF6C055B7D474E8 /* ProductsListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5EC925A4957D69ABDEE77394 /* ProductsListView.swift */; };
 		0D3431BF3A0D5D4EB0300720 /* AppTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = 018C55173280DE30AEE1895F /* AppTab.swift */; };
 		0EF6541BBC95D909DC318002 /* RecommendationsViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C313989FAF64B840D0B15F1 /* RecommendationsViewModelTests.swift */; };
 		1AEC1F43870CD7CF23EAEE97 /* DashboardViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F09E311A5BD8E06A7B8DBA46 /* DashboardViewModel.swift */; };
@@ -21,6 +22,7 @@
 		308742749EA7D33BCBC00900 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = D9773EDAC381949EF5FD606A /* AppDelegate.swift */; };
 		342DF49836F0E65F6337DA43 /* AuthViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF6F2629799BDDAAD0CF7D39 /* AuthViewModel.swift */; };
 		3689B0121C4C53A163655EFF /* SignupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 752D76CD1AC4BB52FBC4FAC1 /* SignupView.swift */; };
+		3FC563124C77002FBA9CCBB4 /* ProductsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FE8D1A7D2F184ED588BFBBC /* ProductsViewModel.swift */; };
 		4B27B16D2A9BE68ADD75589C /* CropCopilotApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1ADE3D9D67F44A94A71DAEFF /* CropCopilotApp.swift */; };
 		4C1AD74B21C4EC007BCBB098 /* DashboardViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5371024F9FA2EFFA5C41AD6E /* DashboardViewModelTests.swift */; };
 		4C7DF5C45F550435C2BD190E /* ProfileViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3721E9E39DAC726C39F60BF0 /* ProfileViewModel.swift */; };
@@ -60,9 +62,11 @@
 		CDB1644B268DD92232397F78 /* CanvasConfidenceArc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7006FF7BFD2FAD90B8DF17A1 /* CanvasConfidenceArc.swift */; };
 		D5B2961D61F17252D2B661E3 /* Input.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C081E140344A67671AF0811 /* Input.swift */; };
 		D7093D72179DFBF5285D40D9 /* LabReportViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D4AFCCFD2A668659369CE3F /* LabReportViewModelTests.swift */; };
+		D88C1CEB921D87A7B78BDD78 /* SecureAsyncImage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A989DCFD0CDD5DDB501F30E /* SecureAsyncImage.swift */; };
 		D913B50B668F663ACFACAF6E /* UserProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0C69D2C2696F2D730C050E1 /* UserProfile.swift */; };
 		E244A1517508BB2DE606ECB8 /* APIEndpoint.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88A9F3585BF1872F92BD3A8F /* APIEndpoint.swift */; };
 		E3D6523C9EE6E6AAE0AD5F32 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 1A9DF51806372361A5FC7919 /* Assets.xcassets */; };
+		E537223F3F5BA369920A6C7E /* CropCopilotLogoMark.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C4F5955C9FF01282CF7CA84 /* CropCopilotLogoMark.swift */; };
 		E69DD3D1A41B0E995946A1E6 /* View+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2CA5E6B6A02C06DF6F4D25FA /* View+Extensions.swift */; };
 		EC8DEC5BBDFFAD4AD7805C37 /* LabReportViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C6CB29576CBC901EA094318B /* LabReportViewModel.swift */; };
 		F04F074BCB88460A65556160 /* CameraView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E050E2F2E1D7FDDAC1B0C92A /* CameraView.swift */; };
@@ -106,6 +110,7 @@
 		44632BD7381F4DBC21CFD56D /* APIResponseDecodingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIResponseDecodingTests.swift; sourceTree = "<group>"; };
 		4712637C2DCA5FBBCC7BCCC9 /* RecommendationsListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecommendationsListView.swift; sourceTree = "<group>"; };
 		49B687D90312131839A0C884 /* DiagnoseTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiagnoseTabView.swift; sourceTree = "<group>"; };
+		4FE8D1A7D2F184ED588BFBBC /* ProductsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProductsViewModel.swift; sourceTree = "<group>"; };
 		5371024F9FA2EFFA5C41AD6E /* DashboardViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardViewModelTests.swift; sourceTree = "<group>"; };
 		53A872178FB8AA112454F9D5 /* Colors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Colors.swift; sourceTree = "<group>"; };
 		53DC18350615EF65C1EE17B6 /* AntigravityStyles.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AntigravityStyles.swift; sourceTree = "<group>"; };
@@ -113,13 +118,16 @@
 		5792965C1B2E02372DBDD0B1 /* AuthViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthViewModelTests.swift; sourceTree = "<group>"; };
 		58C8A23C344B245B8B911BE5 /* CoreDataStack.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoreDataStack.swift; sourceTree = "<group>"; };
 		5C081E140344A67671AF0811 /* Input.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Input.swift; sourceTree = "<group>"; };
+		5C4F5955C9FF01282CF7CA84 /* CropCopilotLogoMark.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CropCopilotLogoMark.swift; sourceTree = "<group>"; };
 		5D6C130D1707923522FD453D /* CropCopilot.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = CropCopilot.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		5E074CAEE0C7A7E0A5FE9BCA /* APIResponses.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIResponses.swift; sourceTree = "<group>"; };
+		5EC925A4957D69ABDEE77394 /* ProductsListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProductsListView.swift; sourceTree = "<group>"; };
 		682F31C6BAA0796434E4CD4B /* TagGridSelector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TagGridSelector.swift; sourceTree = "<group>"; };
 		6E259A1017359E477BB7150C /* RecommendationsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecommendationsViewModel.swift; sourceTree = "<group>"; };
 		7006FF7BFD2FAD90B8DF17A1 /* CanvasConfidenceArc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasConfidenceArc.swift; sourceTree = "<group>"; };
 		752D76CD1AC4BB52FBC4FAC1 /* SignupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignupView.swift; sourceTree = "<group>"; };
 		753D90981F670F4AFC5192AE /* CameraManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraManager.swift; sourceTree = "<group>"; };
+		7A989DCFD0CDD5DDB501F30E /* SecureAsyncImage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SecureAsyncImage.swift; sourceTree = "<group>"; };
 		80EB98051D053CA3F580C2C2 /* Fonts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Fonts.swift; sourceTree = "<group>"; };
 		88A9F3585BF1872F92BD3A8F /* APIEndpoint.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIEndpoint.swift; sourceTree = "<group>"; };
 		8AAB51EA009A128345F930D0 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
@@ -256,6 +264,14 @@
 			path = ViewModels;
 			sourceTree = "<group>";
 		};
+		684E6083DF4918E069CA8796 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				5EC925A4957D69ABDEE77394 /* ProductsListView.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
 		6A7589F48EB73FE93D572CAA /* Network */ = {
 			isa = PBXGroup;
 			children = (
@@ -266,6 +282,14 @@
 				F248AA4F9DD0317F20319E57 /* NetworkMonitor.swift */,
 			);
 			path = Network;
+			sourceTree = "<group>";
+		};
+		7238DBFB414545C88847DD55 /* ViewModels */ = {
+			isa = PBXGroup;
+			children = (
+				4FE8D1A7D2F184ED588BFBBC /* ProductsViewModel.swift */,
+			);
+			path = ViewModels;
 			sourceTree = "<group>";
 		};
 		7276BD3AE5C2E5CF6E4A603E /* Config */ = {
@@ -399,6 +423,15 @@
 			path = Constants;
 			sourceTree = "<group>";
 		};
+		B7665C69185C815045EB076B /* Components */ = {
+			isa = PBXGroup;
+			children = (
+				5C4F5955C9FF01282CF7CA84 /* CropCopilotLogoMark.swift */,
+				7A989DCFD0CDD5DDB501F30E /* SecureAsyncImage.swift */,
+			);
+			path = Components;
+			sourceTree = "<group>";
+		};
 		C87D05FE4C374B368388ED58 /* Views */ = {
 			isa = PBXGroup;
 			children = (
@@ -424,6 +457,7 @@
 				9D19F5F68D20721719B71D17 /* Auth */,
 				E1260B3FBBDE7335570D5175 /* Dashboard */,
 				4D68B152E9FF5DCFA47D425E /* Diagnose */,
+				F9246BA6EA71104076639946 /* Products */,
 				F17AB0C3B3BA72A95D5F8F9B /* Recommendations */,
 				74CCD318680CE10EA4D28948 /* Settings */,
 			);
@@ -463,6 +497,7 @@
 		E32BA9D82A9E601CA32C776E /* Shared */ = {
 			isa = PBXGroup;
 			children = (
+				B7665C69185C815045EB076B /* Components */,
 				B585748CA698656C7421FFF0 /* Constants */,
 				76F066B071BC636AEB5D30A2 /* Extensions */,
 				8E26EF25E3746E91E5392286 /* Theme */,
@@ -503,6 +538,15 @@
 				26E5BE949234F33C15EFE21F /* MotionManager.swift */,
 			);
 			path = Motion;
+			sourceTree = "<group>";
+		};
+		F9246BA6EA71104076639946 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				7238DBFB414545C88847DD55 /* ViewModels */,
+				684E6083DF4918E069CA8796 /* Views */,
+			);
+			path = Products;
 			sourceTree = "<group>";
 		};
 		FC84A41B13747A9F62F8ACFC /* ViewModels */ = {
@@ -635,6 +679,7 @@
 				1DDAB4DA1F70D175559283B2 /* CoreDataStack.swift in Sources */,
 				99CD1814F9FDA072BBE84F20 /* CropCopilot.xcdatamodeld in Sources */,
 				4B27B16D2A9BE68ADD75589C /* CropCopilotApp.swift in Sources */,
+				E537223F3F5BA369920A6C7E /* CropCopilotLogoMark.swift in Sources */,
 				931DBA0B41850752FE967C3B /* DashboardView.swift in Sources */,
 				1AEC1F43870CD7CF23EAEE97 /* DashboardViewModel.swift in Sources */,
 				783191455E37B85C50F52EF3 /* DiagnoseTabView.swift in Sources */,
@@ -652,6 +697,8 @@
 				B6AC0488A15570DF052C67FA /* NetworkMonitor.swift in Sources */,
 				A43AD623281E8025EF7BDD76 /* PhotoReviewView.swift in Sources */,
 				7D1F9F9DFEAD688A8651B903 /* Product.swift in Sources */,
+				05FE3EFB3EF6C055B7D474E8 /* ProductsListView.swift in Sources */,
+				3FC563124C77002FBA9CCBB4 /* ProductsViewModel.swift in Sources */,
 				F21E14B4C16C1AAE3752B94F /* ProfileView.swift in Sources */,
 				4C7DF5C45F550435C2BD190E /* ProfileViewModel.swift in Sources */,
 				8D2B0B1FDBA90C8564BAA6DB /* Recommendation.swift in Sources */,
@@ -659,6 +706,7 @@
 				821FA56070E743D46C7EAF08 /* RecommendationDetailView.swift in Sources */,
 				70CFC9D91CA5E5250B9A780A /* RecommendationsListView.swift in Sources */,
 				1FEC784825B8488F411AF9E0 /* RecommendationsViewModel.swift in Sources */,
+				D88C1CEB921D87A7B78BDD78 /* SecureAsyncImage.swift in Sources */,
 				B9F41A64416840BD133ECED8 /* SettingsView.swift in Sources */,
 				3689B0121C4C53A163655EFF /* SignupView.swift in Sources */,
 				263F4084D922CC00506D1322 /* TagGridSelector.swift in Sources */,

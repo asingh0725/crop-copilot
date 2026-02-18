@@ -67,14 +67,12 @@ private struct AppLaunchOverlayView: View {
                 .ignoresSafeArea()
 
             VStack(spacing: 14) {
-                Image(systemName: "leaf.circle.fill")
-                    .font(.system(size: 70))
-                    .foregroundStyle(Color.appPrimary)
+                CropCopilotLogoMark(size: 78, color: .appPrimary)
                     .scaleEffect(animate ? 1.0 : 0.9)
                     .opacity(animate ? 1 : 0.65)
 
                 Text("Crop Copilot")
-                    .font(.system(size: 30, weight: .bold, design: .rounded))
+                    .font(.system(size: 30, weight: .bold))
                     .foregroundStyle(.white)
 
                 Text("Loading dashboard...")

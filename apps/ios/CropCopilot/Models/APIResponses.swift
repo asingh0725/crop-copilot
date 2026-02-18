@@ -183,6 +183,29 @@ struct UploadUrlResponse: Codable {
     let expiresInSeconds: Int
 }
 
+struct UploadViewUrlResponse: Decodable {
+    let downloadUrl: String
+    let expiresInSeconds: Int
+}
+
+// MARK: - Products Responses
+struct ProductsListResponse: Decodable {
+    let products: [ProductListItem]
+    let total: Int
+    let limit: Int
+    let offset: Int
+}
+
+struct ProductListItem: Decodable, Identifiable {
+    let id: String
+    let name: String
+    let brand: String?
+    let type: String
+    let description: String?
+    let applicationRate: String?
+    let crops: [String]?
+}
+
 // MARK: - Profile Response
 struct ProfileResponse: Codable {
     let profile: ProfileData

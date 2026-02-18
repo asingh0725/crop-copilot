@@ -127,7 +127,7 @@ struct RecommendationsListView: View {
                 }
             }
             .padding(.horizontal, 16)
-            .padding(.bottom, 96)
+            .padding(.bottom, 24)
         }
         .refreshable {
             await viewModel.loadRecommendations(reset: true)

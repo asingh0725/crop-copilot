@@ -6,7 +6,7 @@
 import SwiftUI
 
 struct TagGridSelector: View {
-    let tags: [String]
+    let options: [AppConstants.CropOption]
     @Binding var selectedTags: Set<String>
 
     @State private var hapticPulse = 0
@@ -17,12 +17,12 @@ struct TagGridSelector: View {
 
     var body: some View {
         LazyVGrid(columns: columns, spacing: 12) {
-            ForEach(tags, id: \.self) { tag in
+            ForEach(options) { option in
                 Button {
-                    toggle(tag)
+                    toggle(option.value)
                 } label: {
-                    let isSelected = selectedTags.contains(tag)
-                    Text(tag)
+                    let isSelected = selectedTags.contains(option.value)
+                    Text(option.label)
                         .font(.system(size: 14, weight: .medium))
                         .foregroundStyle(.primary)
                         .padding(.vertical, 12)
