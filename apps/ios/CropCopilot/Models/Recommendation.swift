@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct Recommendation: Codable, Identifiable {
+struct Recommendation: Decodable, Identifiable {
     let id: String
     let userId: String
     let inputId: String
@@ -28,15 +28,75 @@ struct Recommendation: Codable, Identifiable {
 }
 
 // Matches the structure from the recommendation agent output
-struct DiagnosisData: Codable {
+struct DiagnosisData: Decodable {
     let diagnosis: DiagnosisDetails
     let recommendations: [RecommendationAction]
     let products: [RecommendedProduct]
     let sources: [Source]
     let confidence: Double
+
+    enum CodingKeys: String, CodingKey {
+        case diagnosis
+        case recommendations
+        case products
+        case sources
+        case confidence
+        case condition
+        case conditionType
+        case conditionTypeSnake = "condition_type"
+        case severity
+        case reasoning
+        case differentialDiagnosis
+        case differentialDiagnosisSnake = "differential_diagnosis"
+        case primaryCondition
+    }
+
+    init(
+        diagnosis: DiagnosisDetails,
+        recommendations: [RecommendationAction] = [],
+        products: [RecommendedProduct] = [],
+        sources: [Source] = [],
+        confidence: Double
+    ) {
+        self.diagnosis = diagnosis
+        self.recommendations = recommendations
+        self.products = products
+        self.sources = sources
+        self.confidence = confidence
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+
+        recommendations = try container.decodeIfPresent([RecommendationAction].self, forKey: .recommendations) ?? []
+        products = try container.decodeIfPresent([RecommendedProduct].self, forKey: .products) ?? []
+        sources = try container.decodeIfPresent([Source].self, forKey: .sources) ?? []
+
+        if let nestedDiagnosis = try container.decodeIfPresent(DiagnosisDetails.self, forKey: .diagnosis) {
+            diagnosis = nestedDiagnosis
+        } else if let primaryCondition = try container.decodeIfPresent(DiagnosisDetails.self, forKey: .primaryCondition) {
+            diagnosis = primaryCondition
+        } else {
+            diagnosis = DiagnosisDetails(
+                condition: try container.decodeIfPresent(String.self, forKey: .condition) ?? "Unknown condition",
+                conditionType:
+                    try container.decodeIfPresent(String.self, forKey: .conditionType)
+                    ?? (try container.decodeIfPresent(String.self, forKey: .conditionTypeSnake))
+                    ?? "unknown",
+                severity: try container.decodeIfPresent(String.self, forKey: .severity),
+                confidence: try container.decodeIfPresent(Double.self, forKey: .confidence) ?? 0,
+                reasoning: try container.decodeIfPresent(String.self, forKey: .reasoning) ?? "No diagnostic reasoning was provided.",
+                differentialDiagnosis:
+                    try container.decodeIfPresent([String].self, forKey: .differentialDiagnosis)
+                    ?? (try container.decodeIfPresent([String].self, forKey: .differentialDiagnosisSnake))
+            )
+        }
+
+        confidence = try container.decodeIfPresent(Double.self, forKey: .confidence) ?? diagnosis.confidence
+    }
 }
 
-struct DiagnosisDetails: Codable {
+struct DiagnosisDetails: Decodable {
     let condition: String
     let conditionType: String
     let severity: String?
@@ -47,10 +107,45 @@ struct DiagnosisDetails: Codable {
     enum CodingKeys: String, CodingKey {
         case condition
         case conditionType = "condition_type"
+        case conditionTypeCamel = "conditionType"
         case severity
         case confidence
         case reasoning
         case differentialDiagnosis = "differential_diagnosis"
+        case differentialDiagnosisCamel = "differentialDiagnosis"
+    }
+
+    init(
+        condition: String,
+        conditionType: String,
+        severity: String?,
+        confidence: Double,
+        reasoning: String,
+        differentialDiagnosis: [String]?
+    ) {
+        self.condition = condition
+        self.conditionType = conditionType
+        self.severity = severity
+        self.confidence = confidence
+        self.reasoning = reasoning
+        self.differentialDiagnosis = differentialDiagnosis
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        condition =
+            try container.decodeIfPresent(String.self, forKey: .condition)
+            ?? "Unknown condition"
+        conditionType =
+            try container.decodeIfPresent(String.self, forKey: .conditionType)
+            ?? (try container.decodeIfPresent(String.self, forKey: .conditionTypeCamel))
+            ?? "unknown"
+        severity = try container.decodeIfPresent(String.self, forKey: .severity)
+        confidence = try container.decodeIfPresent(Double.self, forKey: .confidence) ?? 0
+        reasoning = try container.decodeIfPresent(String.self, forKey: .reasoning) ?? "No diagnostic reasoning was provided."
+        differentialDiagnosis =
+            try container.decodeIfPresent([String].self, forKey: .differentialDiagnosis)
+            ?? (try container.decodeIfPresent([String].self, forKey: .differentialDiagnosisCamel))
     }
 }
 

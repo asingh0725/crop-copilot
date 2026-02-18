@@ -204,16 +204,7 @@ struct DiagnosisResultView: View {
                 }
             }
             Spacer()
-            VStack(alignment: .trailing) {
-                Text("Confidence")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-                Text("\(Int(detail.confidence * 100))%")
-                    .font(.title2.bold())
-                    .foregroundColor(
-                        detail.confidence >= 0.7 ? .green : detail.confidence >= 0.4 ? .orange : .red
-                    )
-            }
+            CanvasConfidenceArc(confidence: detail.confidence, style: .detailed)
         }
         .padding()
         .background(Color.appSecondaryBackground)

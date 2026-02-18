@@ -39,13 +39,12 @@ struct RecommendationCard: View {
 
     private var rowBody: some View {
         HStack(spacing: 12) {
-            RecommendationThumbnail(url: inputImageURL)
-                .frame(width: 68, height: 68)
+            RecommendationThumbnail(url: inputImageURL, size: 68)
 
             VStack(alignment: .leading, spacing: 6) {
                 Text(AppConstants.cropLabel(for: recommendation.input.crop ?? "Unknown"))
                     .font(.system(size: 12, weight: .semibold))
-                    .foregroundStyle(Color.appPrimary)
+                    .foregroundStyle(.secondary)
                     .lineLimit(1)
                     .textCase(.uppercase)
 
@@ -62,8 +61,7 @@ struct RecommendationCard: View {
 
             Spacer(minLength: 8)
 
-            CanvasConfidenceArc(confidence: recommendation.confidence)
-                .frame(width: 62, height: 44)
+            CanvasConfidenceArc(confidence: recommendation.confidence, style: .compact)
         }
         .padding(14)
         .antigravityGlass(cornerRadius: 16)
@@ -72,19 +70,17 @@ struct RecommendationCard: View {
     private var compactBody: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(alignment: .top, spacing: 8) {
-                RecommendationThumbnail(url: inputImageURL)
-                    .frame(width: 56, height: 56)
+                RecommendationThumbnail(url: inputImageURL, size: 56)
 
                 Spacer(minLength: 6)
 
-                CanvasConfidenceArc(confidence: recommendation.confidence)
-                    .frame(width: 56, height: 38)
+                CanvasConfidenceArc(confidence: recommendation.confidence, style: .compact)
             }
 
             VStack(alignment: .leading, spacing: 6) {
                 Text(AppConstants.cropLabel(for: recommendation.input.crop ?? "Unknown"))
                     .font(.custom("Times New Roman", size: 11).weight(.semibold))
-                    .foregroundStyle(Color.appPrimary)
+                    .foregroundStyle(.secondary)
                     .lineLimit(1)
                     .textCase(.uppercase)
 
@@ -106,27 +102,31 @@ struct RecommendationCard: View {
 
 private struct RecommendationThumbnail: View {
     let url: URL?
+    let size: CGFloat
 
     var body: some View {
-        AsyncImage(url: url) { phase in
-            switch phase {
-            case .success(let image):
-                image
-                    .resizable()
-                    .scaledToFill()
-            case .empty:
-                ProgressView()
-                    .tint(Color.appPrimary)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .background(Color.appSecondaryBackground)
-            default:
-                fallback
+        ZStack {
+            AsyncImage(url: url) { phase in
+                switch phase {
+                case .success(let image):
+                    image
+                        .resizable()
+                        .scaledToFill()
+                case .empty:
+                    ProgressView()
+                        .tint(Color.appPrimary)
+                default:
+                    fallback
+                }
             }
         }
+        .frame(width: size, height: size)
+        .background(Color.appSecondaryBackground)
+        .clipped()
         .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .stroke(.white.opacity(0.18), lineWidth: 0.7)
+                .stroke(.black.opacity(0.08), lineWidth: 0.8)
         )
     }
 

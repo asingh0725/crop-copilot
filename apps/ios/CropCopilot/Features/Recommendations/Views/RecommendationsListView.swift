@@ -91,19 +91,18 @@ struct RecommendationsListView: View {
                                 Capsule()
                                     .fill(
                                         viewModel.selectedSort == option
-                                            ? Color.appPrimary
+                                            ? Color.appPrimary.opacity(0.22)
                                             : Color.appSecondaryBackground
                                     )
                             )
                             .overlay(
                                 Capsule()
-                                    .strokeBorder(.black.opacity(0.08), lineWidth: 0.8)
+                                    .strokeBorder(
+                                        viewModel.selectedSort == option ? Color.appPrimary : Color.black.opacity(0.08),
+                                        lineWidth: viewModel.selectedSort == option ? 1.0 : 0.8
+                                    )
                             )
-                            .foregroundStyle(
-                                viewModel.selectedSort == option
-                                    ? Color.black
-                                    : Color.primary
-                            )
+                            .foregroundStyle(Color.primary)
                     }
                     .buttonStyle(.plain)
                 }
@@ -128,7 +127,7 @@ struct RecommendationsListView: View {
                 }
             }
             .padding(.horizontal, 16)
-            .padding(.bottom, 10)
+            .padding(.bottom, 96)
         }
         .refreshable {
             await viewModel.loadRecommendations(reset: true)

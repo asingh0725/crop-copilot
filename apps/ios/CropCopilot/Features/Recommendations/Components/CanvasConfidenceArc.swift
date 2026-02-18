@@ -2,46 +2,103 @@
 //  CanvasConfidenceArc.swift
 //  CropCopilot
 //
-//  Created for Antigravity Revitalization
-//
 
 import SwiftUI
 
-struct CanvasConfidenceArc: View {
-    let confidence: Double // 0.0 to 1.0
-    
-    var body: some View {
-        Canvas { context, size in
-            // Center & Radius
-            let center = CGPoint(x: size.width / 2, y: size.height)
-            let radius = min(size.width, size.height) - 4
-            
-            // 1. Background Arc (dim)
-            let bgPath = Path { p in
-                p.addArc(center: center, radius: radius, startAngle: .degrees(180), endAngle: .degrees(0), clockwise: false)
-            }
-            context.stroke(bgPath, with: .color(.white.opacity(0.1)), lineWidth: 6)
-            
-            // 2. Glowing Active Arc
-            let activePath = Path { p in
-                p.addArc(center: center, radius: radius, startAngle: .degrees(180), endAngle: .degrees(180 + (180 * confidence)), clockwise: false)
-            }
-            
-            // Glow
-            var glowContext = context
-            glowContext.addFilter(.blur(radius: 5))
-            glowContext.stroke(activePath, with: .color(Color.appPrimary), lineWidth: 8)
-            
-            // Core Line
-            context.stroke(activePath, with: .color(Color.appPrimary), lineWidth: 6)
-            
+enum ConfidenceLevel: String {
+    case low
+    case medium
+    case high
+
+    static func from(_ confidence: Double) -> ConfidenceLevel {
+        if confidence < 0.6 { return .low }
+        if confidence < 0.8 { return .medium }
+        return .high
+    }
+
+    var title: String {
+        switch self {
+        case .low: return "Low Confidence"
+        case .medium: return "Medium Confidence"
+        case .high: return "High Confidence"
         }
-        .aspectRatio(2, contentMode: .fit)
-        .overlay(alignment: .bottom) {
-            Text("\(Int(confidence * 100))%")
-                .font(.system(size: 14, weight: .bold, design: .rounded))
-                .foregroundColor(Color.appPrimary)
-                .offset(y: -5)
+    }
+
+    var icon: String {
+        switch self {
+        case .low: return "questionmark.circle.fill"
+        case .medium: return "exclamationmark.circle.fill"
+        case .high: return "checkmark.circle.fill"
+        }
+    }
+
+    var foreground: Color {
+        switch self {
+        case .low: return Color(red: 0.80, green: 0.46, blue: 0.00)
+        case .medium: return Color(red: 0.15, green: 0.42, blue: 0.89)
+        case .high: return Color(red: 0.11, green: 0.47, blue: 0.16)
+        }
+    }
+
+    var background: Color {
+        switch self {
+        case .low: return Color(red: 1.0, green: 0.96, blue: 0.88)
+        case .medium: return Color(red: 0.92, green: 0.96, blue: 1.0)
+        case .high: return Color(red: 0.92, green: 0.98, blue: 0.92)
+        }
+    }
+}
+
+struct CanvasConfidenceArc: View {
+    enum Style {
+        case compact
+        case detailed
+    }
+
+    let confidence: Double
+    var style: Style = .compact
+
+    private var clampedConfidence: Double {
+        min(max(confidence, 0), 1)
+    }
+
+    private var level: ConfidenceLevel {
+        ConfidenceLevel.from(clampedConfidence)
+    }
+
+    private var percentText: String {
+        "\(Int((clampedConfidence * 100).rounded()))%"
+    }
+
+    var body: some View {
+        switch style {
+        case .compact:
+            HStack(spacing: 6) {
+                Image(systemName: level.icon)
+                    .font(.caption)
+                Text(percentText)
+                    .font(.subheadline.weight(.semibold))
+            }
+            .foregroundStyle(level.foreground)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 6)
+            .background(level.background)
+            .clipShape(Capsule())
+        case .detailed:
+            HStack(spacing: 6) {
+                Image(systemName: level.icon)
+                    .font(.footnote)
+                Text(percentText)
+                    .font(.footnote.weight(.semibold))
+                Text(level.title)
+                    .font(.footnote.weight(.medium))
+                    .lineLimit(1)
+            }
+            .foregroundStyle(level.foreground)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 7)
+            .background(level.background)
+            .clipShape(Capsule())
         }
     }
 }

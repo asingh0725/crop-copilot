@@ -39,7 +39,7 @@ struct Pagination: Codable {
 }
 
 // MARK: - Recommendation Detail Response
-struct RecommendationDetailResponse: Codable, Identifiable {
+struct RecommendationDetailResponse: Decodable, Identifiable {
     let id: String
     let createdAt: String
     let diagnosis: DiagnosisData
@@ -47,9 +47,30 @@ struct RecommendationDetailResponse: Codable, Identifiable {
     let modelUsed: String
     let input: RecommendationInputDetail
     let sources: [RecommendationSourceDetail]
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case createdAt
+        case diagnosis
+        case confidence
+        case modelUsed
+        case input
+        case sources
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(String.self, forKey: .id)
+        createdAt = try container.decodeIfPresent(String.self, forKey: .createdAt) ?? ""
+        diagnosis = try container.decode(DiagnosisData.self, forKey: .diagnosis)
+        confidence = try container.decodeIfPresent(Double.self, forKey: .confidence) ?? diagnosis.confidence
+        modelUsed = try container.decodeIfPresent(String.self, forKey: .modelUsed) ?? "unknown"
+        input = try container.decode(RecommendationInputDetail.self, forKey: .input)
+        sources = try container.decodeIfPresent([RecommendationSourceDetail].self, forKey: .sources) ?? []
+    }
 }
 
-struct RecommendationInputDetail: Codable {
+struct RecommendationInputDetail: Decodable {
     let id: String
     let type: String
     let description: String?
@@ -59,9 +80,34 @@ struct RecommendationInputDetail: Codable {
     let location: String?
     let season: String?
     let createdAt: String
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case type
+        case description
+        case imageUrl
+        case labData
+        case crop
+        case location
+        case season
+        case createdAt
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(String.self, forKey: .id)
+        type = try container.decodeIfPresent(String.self, forKey: .type) ?? "UNKNOWN"
+        description = try container.decodeIfPresent(String.self, forKey: .description)
+        imageUrl = try container.decodeIfPresent(String.self, forKey: .imageUrl)
+        labData = try container.decodeIfPresent([String: AnyCodable].self, forKey: .labData)
+        crop = try container.decodeIfPresent(String.self, forKey: .crop)
+        location = try container.decodeIfPresent(String.self, forKey: .location)
+        season = try container.decodeIfPresent(String.self, forKey: .season)
+        createdAt = try container.decodeIfPresent(String.self, forKey: .createdAt) ?? ""
+    }
 }
 
-struct RecommendationSourceDetail: Codable, Identifiable {
+struct RecommendationSourceDetail: Decodable, Identifiable {
     let id: String
     let chunkId: String?
     let type: String
@@ -69,9 +115,30 @@ struct RecommendationSourceDetail: Codable, Identifiable {
     let imageUrl: String?
     let relevanceScore: Double?
     let source: SourceReference?
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case chunkId
+        case type
+        case content
+        case imageUrl
+        case relevanceScore
+        case source
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(String.self, forKey: .id)
+        chunkId = try container.decodeIfPresent(String.self, forKey: .chunkId)
+        type = try container.decodeIfPresent(String.self, forKey: .type) ?? "text"
+        content = try container.decodeIfPresent(String.self, forKey: .content)
+        imageUrl = try container.decodeIfPresent(String.self, forKey: .imageUrl)
+        relevanceScore = try container.decodeIfPresent(Double.self, forKey: .relevanceScore)
+        source = try container.decodeIfPresent(SourceReference.self, forKey: .source)
+    }
 }
 
-struct SourceReference: Codable {
+struct SourceReference: Decodable {
     let id: String
     let title: String
     let type: String

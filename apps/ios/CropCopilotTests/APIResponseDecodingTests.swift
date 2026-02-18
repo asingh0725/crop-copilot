@@ -146,4 +146,81 @@ final class APIResponseDecodingTests: XCTestCase {
         XCTAssertNil(summary.input.location)
         XCTAssertNil(summary.input.imageUrl)
     }
+
+    func testRecommendationDetailResponseDecodingWithLegacyDiagnosisShape() throws {
+        let json = """
+        {
+            "id": "rec-legacy-1",
+            "createdAt": "2026-02-17T11:00:00.000Z",
+            "diagnosis": {
+                "condition": "probable_foliar_disease",
+                "conditionType": "disease",
+                "reasoning": "Legacy payload from earlier pipeline.",
+                "confidence": 0.78
+            },
+            "confidence": 0.78,
+            "input": {
+                "id": "input-1",
+                "type": "PHOTO",
+                "description": "Leaf symptoms",
+                "imageUrl": "/uploads/test.jpg",
+                "crop": "corn",
+                "location": "Iowa, US",
+                "season": "Vegetative",
+                "createdAt": "2026-02-17T10:59:00.000Z"
+            },
+            "sources": []
+        }
+        """.data(using: .utf8)!
+
+        let detail = try decoder.decode(RecommendationDetailResponse.self, from: json)
+        XCTAssertEqual(detail.id, "rec-legacy-1")
+        XCTAssertEqual(detail.diagnosis.diagnosis.condition, "probable_foliar_disease")
+        XCTAssertEqual(detail.diagnosis.diagnosis.conditionType, "disease")
+        XCTAssertEqual(detail.diagnosis.recommendations.count, 0)
+        XCTAssertEqual(detail.diagnosis.products.count, 0)
+    }
+
+    func testRecommendationDetailResponseDecodingWithNullSourceReference() throws {
+        let json = """
+        {
+            "id": "rec-2",
+            "createdAt": "2026-02-17T12:00:00.000Z",
+            "diagnosis": {
+                "diagnosis": {
+                    "condition": "Magnesium deficiency",
+                    "condition_type": "deficiency",
+                    "confidence": 0.65,
+                    "reasoning": "Observed interveinal chlorosis."
+                },
+                "recommendations": [],
+                "products": [],
+                "sources": [],
+                "confidence": 0.65
+            },
+            "confidence": 0.65,
+            "modelUsed": "aws-bedrock-runtime",
+            "input": {
+                "id": "input-2",
+                "type": "PHOTO",
+                "createdAt": "2026-02-17T11:59:00.000Z"
+            },
+            "sources": [
+                {
+                    "id": "src-rel-1",
+                    "chunkId": "chunk-1",
+                    "type": "text",
+                    "content": "Example source content",
+                    "imageUrl": null,
+                    "relevanceScore": 0.88,
+                    "source": null
+                }
+            ]
+        }
+        """.data(using: .utf8)!
+
+        let detail = try decoder.decode(RecommendationDetailResponse.self, from: json)
+        XCTAssertEqual(detail.sources.count, 1)
+        XCTAssertNil(detail.sources[0].source)
+    }
 }

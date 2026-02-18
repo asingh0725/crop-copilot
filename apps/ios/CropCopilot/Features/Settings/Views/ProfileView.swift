@@ -32,7 +32,7 @@ struct ProfileView: View {
                                         }
                                     }
                                     .pickerStyle(.menu)
-                                    .tint(.appPrimary)
+                                    .tint(.primary)
                                 }
 
                                 Divider().background(.separator)
@@ -45,7 +45,7 @@ struct ProfileView: View {
                                         }
                                     }
                                     .pickerStyle(.menu)
-                                    .tint(.appPrimary)
+                                    .tint(.primary)
                                 }
                             }
                         }
@@ -58,13 +58,16 @@ struct ProfileView: View {
                         }
 
                         GlassSection(title: "Experience Level") {
-                             Picker("Experience", selection: $viewModel.experienceLevel) {
-                                Text("Select...").tag(Optional<ExperienceLevel>.none)
-                                ForEach(ExperienceLevel.allCases, id: \.self) { level in
-                                    Text(level.displayName).tag(Optional(level))
+                            LabeledContent("Experience") {
+                                Picker("Experience", selection: $viewModel.experienceLevel) {
+                                    Text("Select...").tag(Optional<ExperienceLevel>.none)
+                                    ForEach(ExperienceLevel.allCases, id: \.self) { level in
+                                        Text(level.displayName).tag(Optional(level))
+                                    }
                                 }
+                                .pickerStyle(.menu)
+                                .tint(.primary)
                             }
-                            .pickerStyle(.segmented)
                         }
 
                         Button {
@@ -96,7 +99,7 @@ struct ProfileView: View {
                                 .font(.subheadline)
                         }
                         
-                        Spacer().frame(height: 40)
+                        Spacer().frame(height: 100)
                     }
                     .padding()
                 }

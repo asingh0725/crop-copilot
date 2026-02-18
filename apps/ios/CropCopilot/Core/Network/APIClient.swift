@@ -23,7 +23,7 @@ class APIClient {
     }
 
     // MARK: - Generic Request
-    func request<T: Codable>(
+    func request<T: Decodable>(
         _ endpoint: APIEndpoint,
         body: Encodable? = nil,
         retry: Bool = true
