@@ -8,6 +8,8 @@
     "lint": "turbo lint",
     "cutover:parity": "node tools/cutover/api-parity-check.mjs",
     "cutover:supabase-audit": "node tools/cutover/supabase-audit.mjs",
+    "aws:db:migrate": "node tools/aws/migrate-supabase-to-rds.mjs",
+    "aws:db:verify": "node tools/aws/verify-supabase-rds-parity.mjs",
     "infra:build": "pnpm --filter infra build",
     "infra:synth": "pnpm --filter infra synth",
     "infra:diff": "pnpm --filter infra diff",

@@ -27,6 +27,7 @@ enum APIEndpoint {
 
     // Inputs
     case createInput
+    case getJobStatus(jobId: String)
     case listInputs
     case getInput(id: String)
 
@@ -45,7 +46,13 @@ enum APIEndpoint {
     case uploadImage
 
     // Feedback
+    case getFeedback(recommendationId: String)
     case submitFeedback
+
+    private enum HostTarget {
+        case primary
+        case runtimePreferred
+    }
 
     var path: String {
         switch self {
@@ -54,6 +61,7 @@ enum APIEndpoint {
         case .refreshToken: return "/auth/refresh"
         case .getProfile, .updateProfile: return "/profile"
         case .createInput, .listInputs: return "/inputs"
+        case .getJobStatus(let jobId): return "/jobs/\(jobId)"
         case .getInput(let id): return "/inputs/\(id)"
         case .listRecommendations: return "/recommendations"
         case .getRecommendation(let id): return "/recommendations/\(id)"
@@ -63,7 +71,25 @@ enum APIEndpoint {
         case .compareProducts: return "/products/compare"
         case .getProductPricing: return "/products/pricing/batch"
         case .uploadImage: return "/upload"
-        case .submitFeedback: return "/feedback"
+        case .getFeedback, .submitFeedback: return "/feedback"
+        }
+    }
+
+    private var hostTarget: HostTarget {
+        switch self {
+        case .getProfile,
+             .updateProfile,
+             .createInput,
+             .getJobStatus,
+             .listRecommendations,
+             .getRecommendation,
+             .deleteRecommendation,
+             .uploadImage,
+             .getFeedback,
+             .submitFeedback:
+            return .runtimePreferred
+        default:
+            return .primary
         }
     }
 
@@ -108,14 +134,45 @@ enum APIEndpoint {
             }
             return items.isEmpty ? nil : items
 
+        case .getFeedback(let recommendationId):
+            return [URLQueryItem(name: "recommendationId", value: recommendationId)]
+
         default:
             return nil
         }
     }
 
-    func url(baseURL: String) -> URL? {
-        var components = URLComponents(string: baseURL + path)
+    private func normalizeBaseURL(_ value: String) -> String {
+        let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        let withoutTrailingSlash =
+            trimmed.hasSuffix("/") ? String(trimmed.dropLast()) : trimmed
+
+        if withoutTrailingSlash.lowercased().hasSuffix("/api/v1") {
+            return withoutTrailingSlash
+        }
+
+        return withoutTrailingSlash + "/api/v1"
+    }
+
+    func url(primaryBaseURL: String, runtimeBaseURL: String?) -> URL? {
+        let baseURL: String
+        switch hostTarget {
+        case .runtimePreferred:
+            guard let runtimeBaseURL,
+                  !runtimeBaseURL.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+                return nil
+            }
+            baseURL = runtimeBaseURL
+        case .primary:
+            baseURL = primaryBaseURL
+        }
+
+        var components = URLComponents(string: normalizeBaseURL(baseURL) + path)
         components?.queryItems = queryItems
         return components?.url
+    }
+
+    func url(baseURL: String) -> URL? {
+        url(primaryBaseURL: baseURL, runtimeBaseURL: nil)
     }
 }

@@ -36,14 +36,45 @@ struct CropCopilotApp: App {
 
 // MARK: - Configuration
 struct Configuration {
+    private static func isValidHttpUrl(_ value: String) -> Bool {
+        guard let components = URLComponents(string: value),
+              let scheme = components.scheme?.lowercased(),
+              (scheme == "http" || scheme == "https"),
+              components.host != nil else {
+            return false
+        }
+
+        return true
+    }
+
+    private static func resolvedConfigValue(for key: String) -> String? {
+        guard let raw = Bundle.main.infoDictionary?[key] as? String else {
+            return nil
+        }
+
+        let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmed.isEmpty || trimmed.contains("$(") {
+            return nil
+        }
+
+        return trimmed
+    }
+
     static let supabaseURL: String = {
-        Bundle.main.infoDictionary?["SUPABASE_URL"] as? String ?? "https://your-project.supabase.co"
+        resolvedConfigValue(for: "SUPABASE_URL") ?? "https://your-project.supabase.co"
     }()
     static let supabaseAnonKey: String = {
-        Bundle.main.infoDictionary?["SUPABASE_ANON_KEY"] as? String ?? ""
+        resolvedConfigValue(for: "SUPABASE_ANON_KEY") ?? ""
     }()
     static let apiBaseURL: String = {
-        Bundle.main.infoDictionary?["API_BASE_URL"] as? String ?? "http://localhost:3000/api/v1"
+        resolvedConfigValue(for: "API_BASE_URL") ?? "http://localhost:3000/api/v1"
+    }()
+    static let apiRuntimeBaseURL: String? = {
+        resolvedConfigValue(for: "API_RUNTIME_BASE_URL")
+    }()
+    static let isRuntimeApiConfigured: Bool = {
+        guard let value = apiRuntimeBaseURL else { return false }
+        return isValidHttpUrl(value)
     }()
 
 }

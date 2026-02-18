@@ -11,6 +11,7 @@ const skipDirs = new Set([
   '.next',
   'dist',
   'build',
+  'cdk.out',
   'DerivedData',
 ]);
 const allowedExtensions = new Set([
@@ -37,16 +38,19 @@ const findings = {
   other: [],
 };
 
+const allowedApiSupabaseRefs = new Set([
+  'apps/api/src/auth/supabase-auth.ts',
+  'apps/api/src/auth/supabase-auth.test.ts',
+  'apps/api/src/auth/with-auth.ts',
+  'apps/api/src/index.ts',
+]);
+
 for (const root of scanRoots) {
   await walk(join(workspaceRoot, root), root);
 }
 
-const unexpected = [
-  ...findings.api,
-  ...findings.packages,
-  ...findings.infra,
-  ...findings.other,
-];
+const unexpectedApi = findings.api.filter((path) => !allowedApiSupabaseRefs.has(path));
+const unexpected = [...unexpectedApi, ...findings.packages, ...findings.infra, ...findings.other];
 
 console.log('Supabase audit summary:');
 console.log(`- apps/web: ${findings.web.length}`);

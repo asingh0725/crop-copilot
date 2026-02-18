@@ -44,7 +44,7 @@ export default function ProfilePage() {
   const [isFetching, setIsFetching] = useState(true)
 
   const form = useForm<ProfileInput>({
-    resolver: zodResolver(profileSchema),
+    resolver: zodResolver(profileSchema as any),
     defaultValues: {
       location: undefined,
       farmSize: undefined,

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Camera, ClipboardList, History } from "lucide-react";
+import { Camera, ClipboardList } from "lucide-react";
 
 const actions = [
   {
@@ -18,20 +18,13 @@ const actions = [
     href: "/recommendations",
     primary: false,
   },
-  {
-    title: "History",
-    description: "Browse past diagnoses",
-    icon: History,
-    href: "/history",
-    primary: false,
-  },
 ];
 
 export function QuickActions() {
   return (
     <div>
       <h2 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h2>
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {actions.map((action, i) => (
           <div
             key={action.href}

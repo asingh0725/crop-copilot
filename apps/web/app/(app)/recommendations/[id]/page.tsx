@@ -8,13 +8,151 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
-import Image from "next/image";
-import type { FullRecommendation } from "@/lib/utils/format-diagnosis";
+import { SecureImage } from "@/components/recommendations/secure-image";
+import type {
+  ActionItem,
+  ConditionType,
+  Diagnosis,
+  FullRecommendation,
+  ProductSuggestion,
+} from "@/lib/utils/format-diagnosis";
 
 interface RecommendationPageProps {
   params: {
     id: string;
   };
+}
+
+interface RecommendationSourceView {
+  id: string;
+  chunkId: string | null;
+  type: string;
+  content?: string | null;
+  imageUrl?: string | null;
+  relevanceScore: number | null;
+  source: {
+    id: string;
+    title: string;
+    type: string;
+    url: string | null;
+    publisher?: string | null;
+    publishedDate?: string | null;
+  } | null;
+}
+
+function inferConditionType(
+  maybeType: unknown,
+  condition: string
+): ConditionType {
+  if (
+    maybeType === "deficiency" ||
+    maybeType === "disease" ||
+    maybeType === "pest" ||
+    maybeType === "environmental" ||
+    maybeType === "unknown"
+  ) {
+    return maybeType;
+  }
+
+  const lowered = condition.toLowerCase();
+  if (/(deficien|chlorosis|nutrient)/.test(lowered)) {
+    return "deficiency";
+  }
+  if (/(pest|insect|mite|aphid|worm|beetle|bug)/.test(lowered)) {
+    return "pest";
+  }
+  if (/(drought|heat|cold|frost|water|environment)/.test(lowered)) {
+    return "environmental";
+  }
+  if (/(disease|blight|rust|mold|fung|bacter|viral|pathogen)/.test(lowered)) {
+    return "disease";
+  }
+
+  return "unknown";
+}
+
+function normalizeDiagnosisPayload(
+  rawDiagnosis: unknown,
+  confidence: number
+): FullRecommendation {
+  const record =
+    rawDiagnosis && typeof rawDiagnosis === "object"
+      ? (rawDiagnosis as Record<string, unknown>)
+      : {};
+
+  const diagnosisRecord =
+    record.diagnosis && typeof record.diagnosis === "object"
+      ? (record.diagnosis as Record<string, unknown>)
+      : record;
+
+  const condition =
+    (diagnosisRecord.condition as string | undefined) ||
+    (record.condition as string | undefined) ||
+    "Unknown condition";
+  const reasoning =
+    (diagnosisRecord.reasoning as string | undefined) ||
+    (diagnosisRecord.summary as string | undefined) ||
+    (record.summary as string | undefined) ||
+    "No diagnostic reasoning was generated.";
+
+  const diagnosis: Diagnosis = {
+    condition,
+    conditionType: inferConditionType(diagnosisRecord.conditionType, condition),
+    confidence,
+    reasoning,
+  };
+
+  const recommendations: ActionItem[] = Array.isArray(record.recommendations)
+    ? (record.recommendations as ActionItem[])
+    : [];
+  const products: ProductSuggestion[] = Array.isArray(record.products)
+    ? (record.products as ProductSuggestion[])
+    : [];
+
+  return {
+    diagnosis,
+    recommendations,
+    products,
+    confidence,
+  };
+}
+
+function buildFallbackSources(rawDiagnosis: unknown): RecommendationSourceView[] {
+  const record =
+    rawDiagnosis && typeof rawDiagnosis === "object"
+      ? (rawDiagnosis as Record<string, unknown>)
+      : {};
+
+  const evidencePreview = Array.isArray(record.evidencePreview)
+    ? (record.evidencePreview as unknown[])
+    : [];
+
+  const fallbackSources: RecommendationSourceView[] = [];
+  for (let index = 0; index < evidencePreview.length; index += 1) {
+    const entry = evidencePreview[index];
+    if (typeof entry !== "string" || entry.trim().length === 0) {
+      continue;
+    }
+
+    fallbackSources.push({
+      id: `fallback-source-${index + 1}`,
+      chunkId: null,
+      type: "text",
+      content: entry,
+      imageUrl: null,
+      relevanceScore: null,
+      source: {
+        id: `fallback-source-doc-${index + 1}`,
+        title: `Evidence ${index + 1}`,
+        type: "GENERATED",
+        url: null,
+        publisher: "AWS Runtime",
+        publishedDate: null,
+      },
+    });
+  }
+
+  return fallbackSources;
 }
 
 async function getRecommendation(id: string) {
@@ -153,11 +291,17 @@ export default async function RecommendationPage({
     notFound();
   }
 
-  // Parse the diagnosis field which contains the full recommendation
-  const fullRecommendation = recommendation.diagnosis as unknown as FullRecommendation;
-  const diagnosis = fullRecommendation.diagnosis || recommendation.diagnosis;
+  const fullRecommendation = normalizeDiagnosisPayload(
+    recommendation.diagnosis,
+    recommendation.confidence
+  );
+  const diagnosis = fullRecommendation.diagnosis;
   const actionItems = fullRecommendation.recommendations || [];
   const products = fullRecommendation.products || [];
+  const displaySources =
+    recommendation.sources.length > 0
+      ? recommendation.sources
+      : buildFallbackSources(recommendation.diagnosis);
 
   return (
     <div className="container max-w-4xl mx-auto py-8 px-4 print:max-w-none print:px-0">
@@ -197,7 +341,7 @@ export default async function RecommendationPage({
 
         <RecommendationContent
           actionItems={actionItems}
-          sources={recommendation.sources}
+          sources={displaySources}
           products={products}
           recommendationId={recommendation.id}
         />
@@ -266,7 +410,7 @@ export default async function RecommendationPage({
                     Submitted Image
                   </h3>
                   <div className="relative max-w-md">
-                    <Image
+                    <SecureImage
                       src={recommendation.input.imageUrl}
                       alt="Submitted field image"
                       width={500}

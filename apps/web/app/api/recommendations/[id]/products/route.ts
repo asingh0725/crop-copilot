@@ -7,11 +7,10 @@ export const dynamic = "force-dynamic";
 
 /**
  * GET /api/recommendations/[id]/products
- * Get product recommendations for a specific recommendation
- * Uses multi-tier caching: Redis → Database → LLM
+ * Get precomputed product recommendations for a specific recommendation.
  */
 export async function GET(
-  request: NextRequest,
+  _request: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
   try {
@@ -29,9 +28,6 @@ export async function GET(
     // Get the recommendation with input context
     const recommendation = await prisma.recommendation.findUnique({
       where: { id: recommendationId },
-      include: {
-        input: true,
-      },
     });
 
     if (!recommendation) {
@@ -46,22 +42,7 @@ export async function GET(
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    // Extract diagnosis text from recommendation
-    const diagnosis = recommendation.diagnosis as {
-      summary?: string;
-      problem?: string;
-      issue?: string;
-    };
-    const diagnosisText =
-      diagnosis?.summary || diagnosis?.problem || diagnosis?.issue || "General agricultural issue";
-
-    // Get product recommendations with caching
-    const products = await productCacheService.getProductRecommendations(
-      recommendationId,
-      diagnosisText,
-      recommendation.input?.crop || undefined,
-      recommendation.input?.location || undefined
-    );
+    const products = await productCacheService.getProductRecommendations(recommendationId);
 
     return NextResponse.json({
       products,
@@ -80,76 +61,17 @@ export async function GET(
   }
 }
 
-/**
- * POST /api/recommendations/[id]/products
- * Refresh product recommendations (force new LLM search)
- */
 export async function POST(
-  request: NextRequest,
+  _request: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
-  try {
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const { id: recommendationId } = await context.params;
-
-    // Get the recommendation with input context
-    const recommendation = await prisma.recommendation.findUnique({
-      where: { id: recommendationId },
-      include: {
-        input: true,
-      },
-    });
-
-    if (!recommendation) {
-      return NextResponse.json(
-        { error: "Recommendation not found" },
-        { status: 404 }
-      );
-    }
-
-    // Verify user owns this recommendation
-    if (recommendation.userId !== user.id) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
-
-    // Extract diagnosis text from recommendation
-    const diagnosis = recommendation.diagnosis as {
-      summary?: string;
-      problem?: string;
-      issue?: string;
-    };
-    const diagnosisText =
-      diagnosis?.summary || diagnosis?.problem || diagnosis?.issue || "General agricultural issue";
-
-    // Force refresh product recommendations
-    const products = await productCacheService.refreshProductRecommendations(
+  const { id: recommendationId } = await context.params;
+  return NextResponse.json(
+    {
+      error:
+        "Refreshing product recommendations from the recommendation view is disabled. Products are precomputed at recommendation generation time.",
       recommendationId,
-      diagnosisText,
-      recommendation.input?.crop || undefined,
-      recommendation.input?.location || undefined
-    );
-
-    return NextResponse.json({
-      products,
-      meta: {
-        recommendationId,
-        count: products.length,
-        refreshed: true,
-      },
-    });
-  } catch (error) {
-    console.error("Error refreshing product recommendations:", error);
-    return NextResponse.json(
-      { error: "Failed to refresh product recommendations" },
-      { status: 500 }
-    );
-  }
+    },
+    { status: 405 }
+  );
 }

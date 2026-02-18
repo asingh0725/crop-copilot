@@ -105,7 +105,7 @@ struct DashboardView: View {
                     .font(.headline)
                 Spacer()
                 Button("See All") {
-                    selectedTab = .history
+                    selectedTab = .recommendations
                 }
                 .font(.subheadline)
                 .foregroundColor(.appPrimary)
@@ -150,7 +150,7 @@ struct DashboardView: View {
                     .lineLimit(1)
                 HStack {
                     if let crop = rec.input.crop {
-                        Text(crop)
+                        Text(AppConstants.cropLabel(for: crop))
                             .font(.caption)
                             .foregroundColor(.secondary)
                     }

@@ -1,51 +1,15 @@
 import type { APIGatewayProxyEventV2 } from 'aws-lambda';
-import { createRemoteJWKSet, jwtVerify, type JWTVerifyGetKey, type JWTPayload } from 'jose';
 import { AuthError } from './errors';
 import type { AuthContext } from './types';
 
-export interface CognitoJwtConfig {
-  region: string;
-  userPoolId: string;
-  clientId?: string;
+interface SupabaseAuthConfig {
+  baseUrl: string;
+  anonKey: string;
 }
 
 interface SupabaseUserResponse {
   id?: string;
   email?: string;
-}
-
-function assertClientBinding(
-  payload: JWTPayload,
-  tokenUse: string | undefined,
-  clientId: string
-): void {
-  if (tokenUse === 'access') {
-    const tokenClientId =
-      typeof payload.client_id === 'string' ? payload.client_id : undefined;
-    if (tokenClientId !== clientId) {
-      throw new AuthError('Token client claim does not match app client', 401, 'INVALID_TOKEN');
-    }
-    return;
-  }
-
-  if (tokenUse === 'id') {
-    const audience = payload.aud;
-    const matchesAudience =
-      typeof audience === 'string'
-        ? audience === clientId
-        : Array.isArray(audience) && audience.includes(clientId);
-    if (!matchesAudience) {
-      throw new AuthError('Token audience claim does not match app client', 401, 'INVALID_TOKEN');
-    }
-  }
-}
-
-function resolveIssuer(config: CognitoJwtConfig): string {
-  return `https://cognito-idp.${config.region}.amazonaws.com/${config.userPoolId}`;
-}
-
-function resolveJwksUri(config: CognitoJwtConfig): URL {
-  return new URL(`${resolveIssuer(config)}/.well-known/jwks.json`);
 }
 
 function normalizeBaseUrl(value: string): string {
@@ -175,7 +139,7 @@ function resolveAccessToken(event: APIGatewayProxyEventV2): string {
   }
 }
 
-async function verifySupabaseAccessToken(token: string): Promise<AuthContext | null> {
+function resolveSupabaseAuthConfig(): SupabaseAuthConfig | null {
   const supabaseUrl = process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseAnonKey =
     process.env.SUPABASE_ANON_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -184,11 +148,21 @@ async function verifySupabaseAccessToken(token: string): Promise<AuthContext | n
     return null;
   }
 
-  const response = await fetch(`${normalizeBaseUrl(supabaseUrl)}/auth/v1/user`, {
+  return {
+    baseUrl: normalizeBaseUrl(supabaseUrl),
+    anonKey: supabaseAnonKey,
+  };
+}
+
+async function verifySupabaseAccessToken(
+  token: string,
+  config: SupabaseAuthConfig
+): Promise<AuthContext> {
+  const response = await fetch(`${config.baseUrl}/auth/v1/user`, {
     method: 'GET',
     headers: {
       authorization: `Bearer ${token}`,
-      apikey: supabaseAnonKey,
+      apikey: config.anonKey,
     },
   });
 
@@ -227,89 +201,23 @@ export function getBearerToken(headers: Record<string, string | undefined>): str
   return token;
 }
 
-export async function verifyJwtToken(
-  token: string,
-  config: CognitoJwtConfig,
-  getKey?: JWTVerifyGetKey
-): Promise<AuthContext> {
-  const issuer = resolveIssuer(config);
-  const keyResolver = getKey ?? createRemoteJWKSet(resolveJwksUri(config));
-
-  const verified = await jwtVerify(token, keyResolver, {
-    issuer,
-  });
-  const tokenUse =
-    typeof verified.payload.token_use === 'string' ? verified.payload.token_use : undefined;
-  if (config.clientId) {
-    assertClientBinding(verified.payload, tokenUse, config.clientId);
-  }
-
-  return payloadToAuthContext(verified.payload);
-}
-
-function payloadToAuthContext(payload: JWTPayload): AuthContext {
-  if (!payload.sub) {
-    throw new AuthError('Token subject claim is missing');
-  }
-
-  const scopes = typeof payload.scope === 'string' ? payload.scope.split(' ') : [];
-  const email = typeof payload.email === 'string' ? payload.email : undefined;
-
-  return {
-    userId: payload.sub,
-    email,
-    scopes,
-    tokenUse: typeof payload.token_use === 'string' ? payload.token_use : undefined,
-  };
-}
-
 export async function verifyAccessTokenFromEvent(
-  event: APIGatewayProxyEventV2,
-  getKey?: JWTVerifyGetKey
+  event: APIGatewayProxyEventV2
 ): Promise<AuthContext> {
   const token = resolveAccessToken(event);
-  const region = process.env.COGNITO_REGION;
-  const userPoolId = process.env.COGNITO_USER_POOL_ID;
-  const clientId = process.env.COGNITO_APP_CLIENT_ID;
+  const config = resolveSupabaseAuthConfig();
 
-  if (!region || !userPoolId) {
-    const supabaseAuth = await verifySupabaseAccessToken(token);
-    if (supabaseAuth) {
-      return supabaseAuth;
-    }
-
+  if (!config) {
     throw new AuthError(
-      'Auth verifier is not configured. Configure Cognito or Supabase verifier.',
+      'Supabase auth verifier is not configured. Set SUPABASE_URL and SUPABASE_ANON_KEY.',
       500,
       'AUTH_CONFIG_ERROR'
     );
   }
 
   try {
-    const auth = await verifyJwtToken(
-      token,
-      {
-        region,
-        userPoolId,
-        clientId,
-      },
-      getKey
-    );
-    if (auth.tokenUse !== 'access') {
-      throw new AuthError(
-        'Access token is required for API requests',
-        401,
-        'INVALID_TOKEN_USE'
-      );
-    }
-
-    return auth;
+    return await verifySupabaseAccessToken(token, config);
   } catch (error) {
-    const supabaseAuth = await verifySupabaseAccessToken(token);
-    if (supabaseAuth) {
-      return supabaseAuth;
-    }
-
     if (error instanceof AuthError) {
       throw error;
     }

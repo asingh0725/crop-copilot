@@ -78,6 +78,25 @@ export interface GetRecommendationResult {
   }>;
 }
 
+function inferConditionType(conditionType: unknown, condition: string): string {
+  if (
+    conditionType === 'deficiency' ||
+    conditionType === 'disease' ||
+    conditionType === 'pest' ||
+    conditionType === 'environmental' ||
+    conditionType === 'unknown'
+  ) {
+    return conditionType;
+  }
+
+  const lowered = condition.toLowerCase();
+  if (/(deficien|chlorosis|nutrient)/.test(lowered)) return 'deficiency';
+  if (/(pest|insect|mite|aphid|worm|beetle|bug)/.test(lowered)) return 'pest';
+  if (/(drought|heat|cold|frost|water|environment)/.test(lowered)) return 'environmental';
+  if (/(disease|blight|rust|mold|fung|bacter|viral|pathogen)/.test(lowered)) return 'disease';
+  return 'unknown';
+}
+
 /**
  * List recommendations for a user with search, sorting, and pagination
  */
@@ -160,12 +179,19 @@ export async function listRecommendations(
   // Format response
   const formattedRecommendations = recommendations.map((rec) => {
     const diagnosis = rec.diagnosis as any;
+    const condition =
+      diagnosis?.diagnosis?.condition ??
+      diagnosis?.condition ??
+      'Unknown';
     return {
       id: rec.id,
       createdAt: rec.createdAt,
       confidence: rec.confidence,
-      condition: diagnosis?.diagnosis?.condition || 'Unknown',
-      conditionType: diagnosis?.diagnosis?.conditionType || 'unknown',
+      condition,
+      conditionType: inferConditionType(
+        diagnosis?.diagnosis?.conditionType ?? diagnosis?.conditionType,
+        condition
+      ),
       firstAction: diagnosis?.recommendations?.[0]?.action || null,
       input: {
         id: rec.input.id,

@@ -5,6 +5,16 @@ type CutoverMode = 'legacy' | 'canary' | 'aws'
 
 const CUTOVER_PATH_PREFIX = '/api/v1/'
 const DEFAULT_PROXY_TIMEOUT_MS = 15000
+const ALWAYS_ENABLED_CUTOVER_PREFIXES = ['/api/v1/upload/view', '/api/v1/feedback']
+const DEFAULT_CUTOVER_PATHS = [
+  '/api/v1/health',
+  '/api/v1/upload',
+  '/api/v1/inputs',
+  '/api/v1/jobs',
+  '/api/v1/sync/pull',
+  '/api/v1/profile',
+  '/api/v1/recommendations',
+]
 
 interface ResolvedBackend {
   backend: 'legacy' | 'aws'
@@ -21,6 +31,10 @@ export async function maybeProxyToAwsApi(
   }
 
   if (!request.nextUrl.pathname.startsWith(CUTOVER_PATH_PREFIX)) {
+    return null
+  }
+
+  if (!isCutoverPathEnabled(request.nextUrl.pathname)) {
     return null
   }
 
@@ -201,4 +215,22 @@ function buildTargetUrl(baseUrl: string, pathname: string, search: string): URL 
   const normalizedBase = baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`
   const relativePath = pathname.replace(/^\/+/, '')
   return new URL(`${relativePath}${search}`, normalizedBase)
+}
+
+function isCutoverPathEnabled(pathname: string): boolean {
+  if (
+    ALWAYS_ENABLED_CUTOVER_PREFIXES.some(
+      (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)
+    )
+  ) {
+    return true
+  }
+
+  const configured = process.env.AWS_API_CUTOVER_PATHS
+    ?.split(',')
+    .map((entry) => entry.trim())
+    .filter(Boolean)
+  const activePrefixes = configured && configured.length > 0 ? configured : DEFAULT_CUTOVER_PATHS
+
+  return activePrefixes.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`))
 }

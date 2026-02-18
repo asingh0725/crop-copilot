@@ -2,9 +2,9 @@ import Anthropic from "@anthropic-ai/sdk";
 import { ProductType } from "@prisma/client";
 
 // Retry configuration for rate limits
-const MAX_RETRIES = 3;
-const INITIAL_BACKOFF_MS = 2000; // Start with 2 seconds
-const MAX_BACKOFF_MS = 30000; // Max 30 seconds
+const MAX_RETRIES = 2;
+const INITIAL_BACKOFF_MS = 1200;
+const MAX_BACKOFF_MS = 6000;
 
 /**
  * Helper to check if error is a rate limit error
@@ -139,12 +139,12 @@ Return ONLY a valid JSON array with this structure (no additional text):
       () =>
         anthropic.messages.create({
           model: "claude-sonnet-4-20250514",
-          max_tokens: 4096,
+          max_tokens: 1800,
           tools: [
             {
               type: "web_search_20250305",
               name: "web_search",
-              max_uses: 5,
+              max_uses: 2,
             },
           ],
           system: systemPrompt,

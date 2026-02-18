@@ -6,6 +6,7 @@ import { SourcesPanel } from "./sources-panel";
 import { SourcesDisplay } from "./sources-display";
 import { ProductSuggestions } from "./product-suggestions";
 import { ProductRecommendations } from "./product-recommendations";
+import { RecommendationFeedbackFlow } from "./recommendation-feedback-flow";
 import { Button } from "@/components/ui/button";
 import { BookOpen } from "lucide-react";
 import type { ActionItem, ProductSuggestion } from "@/lib/utils/format-diagnosis";
@@ -119,6 +120,11 @@ export function RecommendationContent({
             View Sources ({sources.length})
           </Button>
         </div>
+      )}
+
+      {/* Feedback */}
+      {recommendationId && (
+        <RecommendationFeedbackFlow recommendationId={recommendationId} />
       )}
 
       {/* Product Suggestions from diagnosis */}

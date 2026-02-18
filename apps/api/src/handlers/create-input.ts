@@ -69,7 +69,9 @@ export function buildCreateInputHandler(
 
     let enqueueResponse: EnqueueInputResult;
     try {
-      enqueueResponse = await getRecommendationStore().enqueueInput(auth.userId, command);
+      enqueueResponse = await getRecommendationStore().enqueueInput(auth.userId, command, {
+        email: auth.email,
+      });
     } catch (error) {
       console.error('Failed to persist recommendation command', error);
 

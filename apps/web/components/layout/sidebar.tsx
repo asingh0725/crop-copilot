@@ -7,7 +7,6 @@ import {
   LayoutDashboard,
   Camera,
   ClipboardList,
-  History,
   Settings,
   LogOut,
   ChevronLeft,
@@ -37,7 +36,6 @@ const mainNavItems: NavItem[] = [
   { title: "Diagnose", href: "/diagnose", icon: Camera },
   { title: "Recommendations", href: "/recommendations", icon: ClipboardList },
   { title: "Products", href: "/products", icon: Package },
-  { title: "History", href: "/history", icon: History },
 ];
 
 const bottomNavItems: NavItem[] = [

@@ -20,17 +20,26 @@ This project uses Swift Package Manager for dependencies:
 
 Dependencies are managed in the Xcode project. Open `CropCopilot.xcodeproj` and Xcode will automatically fetch the packages.
 
-### 2. Configure Environment Variables
+### 2. Configure Secrets
 
-Create a `.env` file in the `apps/ios` directory with the following:
+Copy the example config and fill in your values:
 
-```
-SUPABASE_URL=https://your-project.supabase.co
-SUPABASE_ANON_KEY=your-anon-key
-API_BASE_URL=http://localhost:3000/api/v1
+```bash
+cp Config/Secrets.xcconfig.example Config/Secrets.xcconfig
 ```
 
-For production builds, update these in the Xcode scheme settings.
+Set values in `Config/Secrets.xcconfig`:
+
+```xcconfig
+SUPABASE_URL = https:/$()/your-project.supabase.co
+SUPABASE_ANON_KEY = your-anon-key
+API_BASE_URL = https:/$()/your-web-api.example.com/api/v1
+API_RUNTIME_BASE_URL = https:/$()/your-api-id.execute-api.ca-west-1.amazonaws.com
+```
+
+Important: use `https:/$()/...` format in `.xcconfig` files so `//` is preserved.
+
+`API_RUNTIME_BASE_URL` is required for AWS parity. iOS uses it for profile, recommendations, inputs, jobs, upload, and feedback endpoints.
 
 ### 3. Open in Xcode
 

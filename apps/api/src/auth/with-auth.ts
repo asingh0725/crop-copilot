@@ -6,7 +6,7 @@ import type {
 import { jsonResponse } from '../lib/http';
 import { AuthError } from './errors';
 import type { AuthContext, AuthVerifier } from './types';
-import { verifyAccessTokenFromEvent } from './cognito-jwt';
+import { verifyAccessTokenFromEvent } from './supabase-auth';
 
 export type AuthenticatedHandler = (
   event: APIGatewayProxyEventV2,

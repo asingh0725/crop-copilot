@@ -26,9 +26,9 @@ final class DiagnosisViewModelTests: XCTestCase {
     func testCropOptionsMatchWebApp() {
         let viewModel = DiagnosisViewModel()
         XCTAssertFalse(viewModel.cropOptions.isEmpty)
-        XCTAssertTrue(viewModel.cropOptions.contains("Corn"))
-        XCTAssertTrue(viewModel.cropOptions.contains("Tomatoes"))
-        XCTAssertTrue(viewModel.cropOptions.contains("Soybeans"))
+        XCTAssertTrue(viewModel.cropOptions.contains(where: { $0.value == "corn" && $0.label == "Corn" }))
+        XCTAssertTrue(viewModel.cropOptions.contains(where: { $0.value == "tomatoes" && $0.label == "Tomatoes" }))
+        XCTAssertTrue(viewModel.cropOptions.contains(where: { $0.value == "soybeans" && $0.label == "Soybeans" }))
         XCTAssertEqual(viewModel.cropOptions.count, 31)
     }
 

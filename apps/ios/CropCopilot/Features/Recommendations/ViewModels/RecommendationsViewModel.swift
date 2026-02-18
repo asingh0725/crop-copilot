@@ -36,15 +36,24 @@ class RecommendationsViewModel: ObservableObject {
     private var currentPage = 1
     private let pageSize = 20
     private let apiClient = APIClient.shared
+    private var requestGeneration = 0
 
     func loadRecommendations(reset: Bool = false) async {
+        requestGeneration += 1
+        let generation = requestGeneration
+
         if reset {
             currentPage = 1
-            recommendations = []
+            hasMorePages = false
         }
 
         isLoading = recommendations.isEmpty
         errorMessage = nil
+        defer {
+            if generation == requestGeneration {
+                isLoading = false
+            }
+        }
 
         do {
             let response: RecommendationsListResponse = try await apiClient.request(
@@ -55,18 +64,35 @@ class RecommendationsViewModel: ObservableObject {
                     sort: selectedSort.rawValue
                 )
             )
+            guard generation == requestGeneration else {
+                return
+            }
             recommendations = response.recommendations
             hasMorePages = response.pagination.page < response.pagination.totalPages
+        } catch let error as NetworkError {
+            guard generation == requestGeneration else {
+                return
+            }
+            if case .cancelled = error {
+                return
+            }
+            errorMessage = error.localizedDescription
+        } catch is CancellationError {
+            return
         } catch {
+            guard generation == requestGeneration else {
+                return
+            }
             errorMessage = error.localizedDescription
         }
 
-        isLoading = false
     }
 
     func loadNextPage() async {
-        guard hasMorePages, !isLoadingMore else { return }
+        let generation = requestGeneration
+        guard hasMorePages, !isLoadingMore, !isLoading else { return }
         isLoadingMore = true
+        defer { isLoadingMore = false }
         currentPage += 1
 
         do {
@@ -78,14 +104,32 @@ class RecommendationsViewModel: ObservableObject {
                     sort: selectedSort.rawValue
                 )
             )
+            guard generation == requestGeneration else {
+                return
+            }
             recommendations.append(contentsOf: response.recommendations)
             hasMorePages = response.pagination.page < response.pagination.totalPages
+        } catch let error as NetworkError {
+            guard generation == requestGeneration else {
+                return
+            }
+            if case .cancelled = error {
+                currentPage -= 1
+                return
+            }
+            errorMessage = error.localizedDescription
+            currentPage -= 1
+        } catch is CancellationError {
+            currentPage -= 1
+            return
         } catch {
+            guard generation == requestGeneration else {
+                return
+            }
             errorMessage = error.localizedDescription
             currentPage -= 1
         }
 
-        isLoadingMore = false
     }
 
     func deleteRecommendations(at offsets: IndexSet) async {
@@ -95,6 +139,13 @@ class RecommendationsViewModel: ObservableObject {
                 struct EmptyResponse: Codable {}
                 let _: EmptyResponse = try await apiClient.request(.deleteRecommendation(id: rec.id))
                 recommendations.remove(at: index)
+            } catch let error as NetworkError {
+                if case .cancelled = error {
+                    continue
+                }
+                errorMessage = "Failed to delete: \(error.localizedDescription)"
+            } catch is CancellationError {
+                continue
             } catch {
                 errorMessage = "Failed to delete: \(error.localizedDescription)"
             }

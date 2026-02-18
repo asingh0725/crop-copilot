@@ -11,6 +11,7 @@ class APIClient {
     static let shared = APIClient()
 
     private let baseURL = Configuration.apiBaseURL
+    private let runtimeBaseURL = Configuration.apiRuntimeBaseURL
     private let authInterceptor = AuthInterceptor()
     private let session: URLSession
 
@@ -27,8 +28,17 @@ class APIClient {
         body: Encodable? = nil,
         retry: Bool = true
     ) async throws -> T {
-        guard let url = endpoint.url(baseURL: baseURL) else {
-            throw NetworkError.unknown(NSError(domain: "Invalid URL", code: -1))
+        guard let url = endpoint.url(primaryBaseURL: baseURL, runtimeBaseURL: runtimeBaseURL) else {
+            throw NetworkError.unknown(
+                NSError(
+                    domain: "Configuration",
+                    code: -1,
+                    userInfo: [
+                        NSLocalizedDescriptionKey:
+                            "API runtime URL is not configured. Set API_RUNTIME_BASE_URL in Config/Secrets.xcconfig."
+                    ]
+                )
+            )
         }
 
         var request = URLRequest(url: url)
@@ -51,7 +61,17 @@ class APIClient {
         }
 
         // Execute request
-        let (data, response) = try await session.data(for: request)
+        let data: Data
+        let response: URLResponse
+        do {
+            (data, response) = try await session.data(for: request)
+        } catch is CancellationError {
+            throw NetworkError.cancelled
+        } catch let urlError as URLError where urlError.code == .cancelled {
+            throw NetworkError.cancelled
+        } catch {
+            throw NetworkError.unknown(error)
+        }
 
         guard let httpResponse = response as? HTTPURLResponse else {
             throw NetworkError.unknown(NSError(domain: "Invalid response", code: -1))
@@ -103,46 +123,88 @@ class APIClient {
 
     // MARK: - Upload Image
     func uploadImage(imageData: Data, fileName: String) async throws -> String {
-        guard let url = URL(string: baseURL + "/upload") else {
-            throw NetworkError.unknown(NSError(domain: "Invalid URL", code: -1))
+        struct UploadUrlRequest: Encodable {
+            let fileName: String
+            let contentType: String
+            let contentLength: Int
         }
 
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
+        let uploadUrlResponse: UploadUrlResponse = try await request(
+            .uploadImage,
+            body: UploadUrlRequest(
+                fileName: fileName,
+                contentType: "image/jpeg",
+                contentLength: imageData.count
+            )
+        )
 
-        // Add auth header
-        if let token = await authInterceptor.getAccessToken() {
-            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        guard let directUploadUrl = URL(string: uploadUrlResponse.uploadUrl) else {
+            throw NetworkError.unknown(NSError(domain: "Invalid upload URL", code: -1))
         }
 
-        // Create multipart form data
-        let boundary = UUID().uuidString
-        request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+        var uploadRequest = URLRequest(url: directUploadUrl)
+        uploadRequest.httpMethod = "PUT"
+        uploadRequest.setValue("image/jpeg", forHTTPHeaderField: "Content-Type")
+        uploadRequest.httpBody = imageData
 
-        var body = Data()
-
-        // Add image data
-        body.append(Data("--\(boundary)\r\n".utf8))
-        body.append(Data("Content-Disposition: form-data; name=\"file\"; filename=\"\(fileName)\"\r\n".utf8))
-        body.append(Data("Content-Type: image/jpeg\r\n\r\n".utf8))
-        body.append(imageData)
-        body.append(Data("\r\n".utf8))
-        body.append(Data("--\(boundary)--\r\n".utf8))
-
-        request.httpBody = body
-
-        let (data, response) = try await session.data(for: request)
-
-        guard let httpResponse = response as? HTTPURLResponse,
-              (200...201).contains(httpResponse.statusCode) else {
-            throw NetworkError.serverError(statusCode: (response as? HTTPURLResponse)?.statusCode ?? 500)
+        let uploadResponse: URLResponse
+        do {
+            (_, uploadResponse) = try await session.data(for: uploadRequest)
+        } catch is CancellationError {
+            throw NetworkError.cancelled
+        } catch let urlError as URLError where urlError.code == .cancelled {
+            throw NetworkError.cancelled
+        } catch {
+            throw NetworkError.unknown(error)
+        }
+        guard let httpResponse = uploadResponse as? HTTPURLResponse,
+              (200...299).contains(httpResponse.statusCode) else {
+            throw NetworkError.serverError(statusCode: (uploadResponse as? HTTPURLResponse)?.statusCode ?? 500)
         }
 
-        struct UploadResponse: Codable {
-            let url: String
+        if let objectUrl = uploadUrlResponse.uploadUrl.split(separator: "?").first {
+            return String(objectUrl)
         }
 
-        let uploadResponse = try JSONDecoder().decode(UploadResponse.self, from: data)
-        return uploadResponse.url
+        return uploadUrlResponse.uploadUrl
+    }
+
+    // MARK: - Recommendation Job Polling
+    func waitForRecommendation(
+        jobId: String,
+        timeoutSeconds: TimeInterval = 120,
+        pollIntervalSeconds: TimeInterval = 2
+    ) async throws -> RecommendationJobStatusResponse {
+        let startedAt = Date()
+
+        while Date().timeIntervalSince(startedAt) < timeoutSeconds {
+            do {
+                try await Task.sleep(nanoseconds: UInt64(pollIntervalSeconds * 1_000_000_000))
+            } catch {
+                throw NetworkError.cancelled
+            }
+
+            let status: RecommendationJobStatusResponse = try await request(
+                .getJobStatus(jobId: jobId)
+            )
+            if status.status == "completed" {
+                return status
+            }
+
+            if status.status == "failed" {
+                throw NetworkError.unknown(
+                    NSError(
+                        domain: "RecommendationJobFailed",
+                        code: -1,
+                        userInfo: [
+                            NSLocalizedDescriptionKey:
+                                status.failureReason ?? "Recommendation job failed"
+                        ]
+                    )
+                )
+            }
+        }
+
+        throw NetworkError.timeout
     }
 }

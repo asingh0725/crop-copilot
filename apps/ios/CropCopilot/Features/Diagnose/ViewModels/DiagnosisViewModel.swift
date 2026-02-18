@@ -19,7 +19,7 @@ class DiagnosisViewModel: ObservableObject {
     @Published var showResult = false
     @Published var resultRecommendationId: String?
 
-    let cropOptions = AppConstants.cropLabels
+    let cropOptions = AppConstants.cropOptions
     let growthStageOptions = AppConstants.growthStages
 
     private let apiClient = APIClient.shared
@@ -29,12 +29,12 @@ class DiagnosisViewModel: ObservableObject {
         isSubmitting = true
         errorMessage = nil
         submissionStatus = "Uploading image..."
+        defer { isSubmitting = false }
 
         do {
             // 1. Compress and upload image
             guard let imageData = cameraManager.compressImage(image) else {
                 errorMessage = "Failed to compress image"
-                isSubmitting = false
                 return
             }
 
@@ -45,6 +45,7 @@ class DiagnosisViewModel: ObservableObject {
             submissionStatus = "Analyzing..."
 
             struct CreateInputBody: Encodable {
+                let idempotencyKey: String
                 let type: String
                 let imageUrl: String
                 let description: String?
@@ -54,21 +55,41 @@ class DiagnosisViewModel: ObservableObject {
             }
 
             let body = CreateInputBody(
+                idempotencyKey: "ios-photo-\(UUID().uuidString)",
                 type: "PHOTO",
                 imageUrl: imageUrl,
                 description: description.isEmpty ? nil : description,
-                crop: selectedCrop.isEmpty ? nil : selectedCrop,
-                location: location.isEmpty ? nil : location,
+                crop: selectedCrop.isEmpty ? nil : AppConstants.cropValue(from: selectedCrop),
+                location: location.isEmpty ? nil : AppConstants.locationWithCountry(location),
                 season: growthStage.isEmpty ? nil : growthStage
             )
 
-            let response: CreateInputResponse = try await apiClient.request(.createInput, body: body)
-            resultRecommendationId = response.recommendationId
+            let accepted: CreateInputAcceptedResponse = try await apiClient.request(
+                .createInput,
+                body: body
+            )
+            let job = try await apiClient.waitForRecommendation(jobId: accepted.jobId)
+            resultRecommendationId = job.result?.recommendationId
+            if resultRecommendationId == nil {
+                throw NetworkError.unknown(
+                    NSError(
+                        domain: "RecommendationMissing",
+                        code: -1,
+                        userInfo: [NSLocalizedDescriptionKey: "Recommendation completed without an ID"]
+                    )
+                )
+            }
             showResult = true
+        } catch let error as NetworkError {
+            if case .cancelled = error {
+                return
+            }
+            errorMessage = error.localizedDescription
+        } catch is CancellationError {
+            return
         } catch {
             errorMessage = error.localizedDescription
         }
 
-        isSubmitting = false
     }
 }

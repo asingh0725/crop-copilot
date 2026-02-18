@@ -8,19 +8,21 @@ import * as lambdaNodejs from 'aws-cdk-lib/aws-lambda-nodejs';
 import * as ssm from 'aws-cdk-lib/aws-ssm';
 import type { Construct } from 'constructs';
 import type { EnvironmentConfig } from '../config';
+import type { DatabaseStack } from './database-stack';
 import type { FoundationStack } from './foundation-stack';
 
 export interface ApiRuntimeStackProps extends StackProps {
   config: EnvironmentConfig;
   foundation: FoundationStack;
+  database?: DatabaseStack;
 }
 
 export class ApiRuntimeStack extends Stack {
   constructor(scope: Construct, id: string, props: ApiRuntimeStackProps) {
     super(scope, id, props);
 
-    const { config, foundation } = props;
-    const environment = buildApiEnvironment(config, foundation);
+    const { config, foundation, database } = props;
+    const environment = buildApiEnvironment(config, foundation, database);
 
     const httpApi = new apigwv2.HttpApi(this, 'ApiGateway', {
       apiName: `${config.projectSlug}-${config.envName}-api`,
@@ -54,6 +56,41 @@ export class ApiRuntimeStack extends Stack {
       entry: 'handlers/create-upload-url.ts',
       environment,
     });
+    const getUploadViewUrlHandler = createApiFunction(this, {
+      id: 'GetUploadViewUrlHandler',
+      entry: 'handlers/get-upload-view-url.ts',
+      environment,
+    });
+    const submitFeedbackHandler = createApiFunction(this, {
+      id: 'SubmitFeedbackHandler',
+      entry: 'handlers/submit-feedback.ts',
+      environment,
+    });
+    const getFeedbackHandler = createApiFunction(this, {
+      id: 'GetFeedbackHandler',
+      entry: 'handlers/get-feedback.ts',
+      environment,
+    });
+    const profileHandler = createApiFunction(this, {
+      id: 'ProfileHandler',
+      entry: 'handlers/profile.ts',
+      environment,
+    });
+    const listRecommendationsHandler = createApiFunction(this, {
+      id: 'ListRecommendationsHandler',
+      entry: 'handlers/list-recommendations.ts',
+      environment,
+    });
+    const getRecommendationHandler = createApiFunction(this, {
+      id: 'GetRecommendationHandler',
+      entry: 'handlers/get-recommendation.ts',
+      environment,
+    });
+    const deleteRecommendationHandler = createApiFunction(this, {
+      id: 'DeleteRecommendationHandler',
+      entry: 'handlers/delete-recommendation.ts',
+      environment,
+    });
 
     const syncPullHandler = createApiFunction(this, {
       id: 'SyncPullHandler',
@@ -79,6 +116,7 @@ export class ApiRuntimeStack extends Stack {
 
     foundation.recommendationQueue.grantSendMessages(createInputHandler);
     foundation.artifactsBucket.grantPut(createUploadUrlHandler);
+    foundation.artifactsBucket.grantRead(getUploadViewUrlHandler);
     foundation.pushEventsTopic.grantPublish(processRecommendationJobWorker);
 
     processRecommendationJobWorker.addEventSource(
@@ -125,6 +163,64 @@ export class ApiRuntimeStack extends Stack {
       integration: new integrations.HttpLambdaIntegration(
         'CreateUploadUrlIntegration',
         createUploadUrlHandler
+      ),
+    });
+    httpApi.addRoutes({
+      path: '/api/v1/upload/view',
+      methods: [apigwv2.HttpMethod.GET],
+      integration: new integrations.HttpLambdaIntegration(
+        'GetUploadViewUrlIntegration',
+        getUploadViewUrlHandler
+      ),
+    });
+
+    httpApi.addRoutes({
+      path: '/api/v1/feedback',
+      methods: [apigwv2.HttpMethod.POST],
+      integration: new integrations.HttpLambdaIntegration(
+        'SubmitFeedbackIntegration',
+        submitFeedbackHandler
+      ),
+    });
+    httpApi.addRoutes({
+      path: '/api/v1/feedback',
+      methods: [apigwv2.HttpMethod.GET],
+      integration: new integrations.HttpLambdaIntegration(
+        'GetFeedbackIntegration',
+        getFeedbackHandler
+      ),
+    });
+
+    httpApi.addRoutes({
+      path: '/api/v1/profile',
+      methods: [apigwv2.HttpMethod.GET, apigwv2.HttpMethod.PUT],
+      integration: new integrations.HttpLambdaIntegration('ProfileIntegration', profileHandler),
+    });
+
+    httpApi.addRoutes({
+      path: '/api/v1/recommendations',
+      methods: [apigwv2.HttpMethod.GET],
+      integration: new integrations.HttpLambdaIntegration(
+        'ListRecommendationsIntegration',
+        listRecommendationsHandler
+      ),
+    });
+
+    httpApi.addRoutes({
+      path: '/api/v1/recommendations/{id}',
+      methods: [apigwv2.HttpMethod.GET],
+      integration: new integrations.HttpLambdaIntegration(
+        'GetRecommendationIntegration',
+        getRecommendationHandler
+      ),
+    });
+
+    httpApi.addRoutes({
+      path: '/api/v1/recommendations/{id}',
+      methods: [apigwv2.HttpMethod.DELETE],
+      integration: new integrations.HttpLambdaIntegration(
+        'DeleteRecommendationIntegration',
+        deleteRecommendationHandler
       ),
     });
 
@@ -185,12 +281,17 @@ function createApiFunction(scope: Construct, props: ApiFunctionProps): lambdaNod
 
 function buildApiEnvironment(
   config: EnvironmentConfig,
-  foundation: FoundationStack
+  foundation: FoundationStack,
+  database?: DatabaseStack
 ): Record<string, string> {
   const dataBackend = process.env.DATA_BACKEND ?? 'postgres';
-  const databaseUrl = process.env.DATABASE_URL;
+  const databaseMode = process.env.API_DATABASE_MODE ?? 'external';
+  const databaseUrl =
+    databaseMode === 'aws' ? database?.runtimeDatabaseUrl : process.env.DATABASE_URL;
   if (dataBackend === 'postgres' && !databaseUrl) {
-    throw new Error('DATABASE_URL is required when DATA_BACKEND=postgres.');
+    throw new Error(
+      'DATABASE_URL is required when DATA_BACKEND=postgres (or enable API_DATABASE_MODE=aws with PROVISION_AWS_DATABASE).'
+    );
   }
 
   const supabaseUrl = process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -219,6 +320,12 @@ function buildApiEnvironment(
     METRICS_NAMESPACE: config.metricsNamespace,
     RECOMMENDATION_COST_USD: process.env.RECOMMENDATION_COST_USD ?? '0.81',
     RECOMMENDATION_COST_BY_MODEL_JSON: process.env.RECOMMENDATION_COST_BY_MODEL_JSON ?? '{}',
+    ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY ?? '',
+    ANTHROPIC_AUTH_TOKEN: process.env.ANTHROPIC_AUTH_TOKEN ?? '',
+    ANTHROPIC_MODEL: process.env.ANTHROPIC_MODEL ?? '',
+    OPENAI_API_KEY: process.env.OPENAI_API_KEY ?? '',
+    OPENAI_EMBEDDING_MODEL: process.env.OPENAI_EMBEDDING_MODEL ?? '',
+    RAG_RETRIEVAL_LIMIT: process.env.RAG_RETRIEVAL_LIMIT ?? '18',
     COGNITO_REGION: cognitoRegion ?? '',
     COGNITO_USER_POOL_ID: cognitoUserPoolId ?? '',
     COGNITO_APP_CLIENT_ID: process.env.COGNITO_APP_CLIENT_ID ?? '',

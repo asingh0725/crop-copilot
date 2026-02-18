@@ -8,6 +8,7 @@ export type SourceAuthorityType =
 
 export interface RetrievedCandidate {
   chunkId: string;
+  sourceId?: string;
   content: string;
   similarity: number;
   sourceType: SourceAuthorityType;
