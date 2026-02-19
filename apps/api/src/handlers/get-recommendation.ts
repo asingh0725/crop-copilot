@@ -199,10 +199,35 @@ function normalizeDiagnosisPayload(
     confidence: 0,
   };
 
+  const parseStringifiedDiagnosis = (
+    value: unknown
+  ): Record<string, unknown> | null => {
+    if (!value || typeof value !== 'string') {
+      return null;
+    }
+
+    const trimmed = value.trim();
+    if (!trimmed.startsWith('{') && !trimmed.startsWith('[')) {
+      return null;
+    }
+
+    try {
+      const parsed = JSON.parse(trimmed);
+      if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+        return parsed as Record<string, unknown>;
+      }
+      return null;
+    } catch {
+      return null;
+    }
+  };
+
+  const parsedStringDiagnosis = parseStringifiedDiagnosis(diagnosis);
+
   const base =
     diagnosis && typeof diagnosis === 'object'
       ? { ...(diagnosis as Record<string, unknown>) }
-      : fallback;
+      : parsedStringDiagnosis ?? fallback;
   const products = Array.isArray(base.products) ? base.products : [];
 
   if (products.length === 0 && productRows.length > 0) {

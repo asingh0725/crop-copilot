@@ -514,14 +514,16 @@ struct DiagnosisResultView: View {
                 }
                 .buttonStyle(GlowSkeuomorphicButtonStyle())
 
-                Button("Later") {
+                Button {
                     if let stage = viewModel.nextSuggestedStage {
                         viewModel.setSnooze(stage: stage, recommendationId: recommendationId, days: 2)
                     } else {
                         viewModel.setSnooze(stage: .basic, recommendationId: recommendationId, days: 2)
                     }
+                } label: {
+                    secondaryActionLabel("Later")
                 }
-                .buttonStyle(.bordered)
+                .buttonStyle(.plain)
             }
 
             if let feedbackSuccessMessage {
@@ -627,46 +629,81 @@ struct DiagnosisResultView: View {
         VStack {
             Spacer()
 
-            VStack(spacing: 0) {
-                Capsule()
-                    .fill(Color.secondary.opacity(0.5))
-                    .frame(width: 38, height: 5)
-                    .padding(.top, 10)
-                    .padding(.bottom, 12)
-
-                HStack {
-                    Text(modalTitle(stage))
-                        .font(.title3.weight(.semibold))
-                        .foregroundStyle(.primary)
-                    Spacer()
-                    Button {
-                        activeFeedbackStage = nil
-                    } label: {
-                        Image(systemName: "xmark")
-                            .font(.subheadline.weight(.bold))
-                            .foregroundStyle(.secondary)
-                            .frame(width: 30, height: 30)
-                            .background(Color.appSecondaryBackground)
-                            .clipShape(Circle())
+            if usesScrollableFeedbackSheet(stage) {
+                feedbackModalShell(stage: stage) {
+                    ScrollView {
+                        feedbackSheet(for: stage)
+                            .padding(.horizontal, 20)
+                            .padding(.top, 10)
+                            .padding(.bottom, 20)
                     }
-                    .buttonStyle(.plain)
                 }
-                .padding(.horizontal, 20)
-
-                ScrollView {
+                .frame(maxHeight: feedbackModalMaxHeight(for: stage))
+            } else {
+                feedbackModalShell(stage: stage) {
                     feedbackSheet(for: stage)
                         .padding(.horizontal, 20)
                         .padding(.top, 10)
                         .padding(.bottom, 20)
                 }
             }
-            .frame(maxWidth: .infinity)
-            .frame(maxHeight: UIScreen.main.bounds.height * 0.78)
-            .background(.ultraThinMaterial)
-            .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
-            .padding(.horizontal, 12)
-            .padding(.bottom, 10)
         }
+    }
+
+    private func feedbackModalMaxHeight(for stage: FeedbackStage) -> CGFloat {
+        let screenHeight = UIScreen.main.bounds.height
+        switch stage {
+        case .basic:
+            return min(screenHeight * 0.66, 560)
+        case .detailed:
+            return min(screenHeight * 0.80, 700)
+        case .outcome:
+            return min(screenHeight * 0.70, 600)
+        }
+    }
+
+    private func usesScrollableFeedbackSheet(_ stage: FeedbackStage) -> Bool {
+        stage == .detailed
+    }
+
+    @ViewBuilder
+    private func feedbackModalShell<Content: View>(
+        stage: FeedbackStage,
+        @ViewBuilder content: () -> Content
+    ) -> some View {
+        VStack(spacing: 0) {
+            Capsule()
+                .fill(Color.secondary.opacity(0.5))
+                .frame(width: 38, height: 5)
+                .padding(.top, 10)
+                .padding(.bottom, 12)
+
+            HStack {
+                Text(modalTitle(stage))
+                    .font(.title3.weight(.semibold))
+                    .foregroundStyle(.primary)
+                Spacer()
+                Button {
+                    activeFeedbackStage = nil
+                } label: {
+                    Image(systemName: "xmark")
+                        .font(.subheadline.weight(.bold))
+                        .foregroundStyle(.secondary)
+                        .frame(width: 30, height: 30)
+                        .background(Color.appSecondaryBackground)
+                        .clipShape(Circle())
+                }
+                .buttonStyle(.plain)
+            }
+            .padding(.horizontal, 20)
+
+            content()
+        }
+        .frame(maxWidth: .infinity)
+        .background(.ultraThinMaterial)
+        .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .padding(.horizontal, 12)
+        .padding(.bottom, 10)
     }
 
     private func modalTitle(_ stage: FeedbackStage) -> String {
@@ -748,11 +785,13 @@ struct DiagnosisResultView: View {
             }
 
             HStack(spacing: 10) {
-                Button("Later") {
+                Button {
                     viewModel.setSnooze(stage: .basic, recommendationId: recommendationId, days: 2)
                     activeFeedbackStage = nil
+                } label: {
+                    secondaryActionLabel("Later")
                 }
-                .buttonStyle(.bordered)
+                .buttonStyle(.plain)
                 .disabled(isSubmittingFeedback)
 
                 Spacer()
@@ -846,11 +885,13 @@ struct DiagnosisResultView: View {
             }
 
             HStack(spacing: 10) {
-                Button("Later") {
+                Button {
                     viewModel.setSnooze(stage: .detailed, recommendationId: recommendationId, days: 1)
                     activeFeedbackStage = nil
+                } label: {
+                    secondaryActionLabel("Later")
                 }
-                .buttonStyle(.bordered)
+                .buttonStyle(.plain)
                 .disabled(isSubmittingFeedback)
 
                 Spacer()
@@ -911,11 +952,13 @@ struct DiagnosisResultView: View {
             }
 
             HStack(spacing: 10) {
-                Button("Not Yet") {
+                Button {
                     viewModel.setSnooze(stage: .outcome, recommendationId: recommendationId, days: 3)
                     activeFeedbackStage = nil
+                } label: {
+                    secondaryActionLabel("Not Yet")
                 }
-                .buttonStyle(.bordered)
+                .buttonStyle(.plain)
                 .disabled(isSubmittingFeedback)
 
                 Spacer()
@@ -945,6 +988,20 @@ struct DiagnosisResultView: View {
                 .buttonStyle(.plain)
             }
         }
+    }
+
+    private func secondaryActionLabel(_ text: String) -> some View {
+        Text(text)
+            .font(.headline)
+            .foregroundStyle(.primary)
+            .padding(.horizontal, 18)
+            .padding(.vertical, 12)
+            .background(Color.appSecondaryBackground)
+            .clipShape(Capsule())
+            .overlay(
+                Capsule()
+                    .stroke(Color.black.opacity(0.10), lineWidth: 0.8)
+            )
     }
 
     private func isExpanded(_ section: RecommendationSection) -> Bool {
