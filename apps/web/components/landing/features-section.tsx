@@ -9,7 +9,9 @@ import {
   BookOpen,
 } from "lucide-react";
 import { motion } from "framer-motion";
-import { MotionDiv, MotionStagger, staggerItem } from "./motion-wrapper";
+import { MotionDiv, MotionStagger, staggerItem, Float } from "./motion-wrapper";
+
+// ... imports
 
 const features = [
   {
@@ -56,6 +58,8 @@ const features = [
   },
 ];
 
+// ... features array remains the same
+
 function AnimatedCounter({ target, label }: { target: number; label: string }) {
   return (
     <motion.div
@@ -65,7 +69,7 @@ function AnimatedCounter({ target, label }: { target: number; label: string }) {
       className="text-center"
     >
       <motion.span
-        className="text-3xl font-bold text-lime-400 block"
+        className="text-3xl font-bold text-lime-400 block drop-shadow-[0_0_10px_rgba(163,230,53,0.5)]"
         initial={{ opacity: 0, y: 10 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
@@ -73,7 +77,7 @@ function AnimatedCounter({ target, label }: { target: number; label: string }) {
       >
         {target.toLocaleString()}+
       </motion.span>
-      <span className="text-sm text-earth-700">{label}</span>
+      <span className="text-sm text-lime-100/60">{label}</span>
     </motion.div>
   );
 }
@@ -83,82 +87,87 @@ export function FeaturesSection() {
   const smallFeatures = features.filter((f) => f.size === "small");
 
   return (
-    <section id="features" className="py-20 lg:py-28 bg-cream-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <section id="features" className="relative overflow-hidden bg-earth-950 py-24 lg:py-32">
+      <div className="pointer-events-none absolute inset-0">
+        <div className="absolute -right-16 top-[-26%] h-[520px] w-[520px] rounded-full bg-lime-400/10 blur-[120px]" />
+        <div className="absolute -left-20 bottom-[-18%] h-[520px] w-[520px] rounded-full bg-amber-warm/10 blur-[110px]" />
+        <div className="topo-pattern absolute inset-0 opacity-[0.07]" />
+      </div>
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <MotionDiv className="text-center mb-16">
-          <span className="inline-block px-4 py-1.5 bg-lime-400/10 text-earth-700 rounded-full text-sm font-medium mb-4">
-            Features
+          <span className="mb-4 inline-block rounded-full border border-white/10 bg-white/[0.08] px-4 py-1.5 text-sm font-medium text-lime-200">
+            Capabilities
           </span>
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-6">
-            Everything You{" "}
-            <span className="font-serif italic text-lime-400">Need</span>
+          <h2 className="mb-6 text-3xl font-bold tracking-tight text-white sm:text-4xl lg:text-5xl">
+            Floating Glass Panels for{" "}
+            <span className="font-serif italic text-transparent bg-clip-text bg-[linear-gradient(120deg,#f5c76d_8%,#a3e635_50%,#dff3a8_95%)]">
+              Precision Decisions
+            </span>
           </h2>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            Powerful features designed specifically for modern farmers who want
-            data-driven decisions.
+          <p className="mx-auto max-w-2xl text-lg text-white/[0.6]">
+            Crop Copilot combines retrieval evidence, agronomy context, and automation into one
+            cohesive zero-gravity control surface.
           </p>
         </MotionDiv>
 
-        {/* Bento Grid */}
-        <MotionStagger className="space-y-4">
-          {/* Top row — 2 large cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <MotionStagger className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 relative z-10">
             {largeFeatures.map((feature, index) => (
-              <motion.div
-                key={index}
-                variants={staggerItem}
-                className="group relative p-8 lg:p-10 bg-cream-100 rounded-2xl border border-gray-200/60 hover:border-lime-400/30 hover:shadow-xl hover:shadow-lime-400/5 transition-all duration-300 overflow-hidden"
-              >
-                {/* Accent glow on hover */}
-                <div className="absolute top-0 right-0 w-32 h-32 bg-lime-400/5 rounded-full blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-
-                <div className="relative">
-                  <div className="w-14 h-14 bg-lime-400/10 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-lime-400/20 transition-colors">
-                    <feature.icon className="w-7 h-7 text-lime-400" />
-                  </div>
-                  <h3 className="text-xl lg:text-2xl font-semibold text-gray-900 mb-3">
-                    {feature.title}
-                  </h3>
-                  <p className="text-gray-600 leading-relaxed max-w-sm">
-                    {feature.description}
-                  </p>
-
-                  {/* Mini stats for large cards */}
-                  {index === 0 && (
-                    <div className="mt-8 flex gap-8">
-                      <AnimatedCounter target={30} label="Second analysis" />
-                      <AnimatedCounter target={500} label="Research sources" />
+              <Float key={index} delay={index * 0.18} amplitude={6} className="h-full">
+                <MotionDiv tilt hoverScale={1.015} className="h-full">
+                  <motion.div
+                    variants={staggerItem}
+                    custom={index}
+                    className="group relative h-full overflow-hidden rounded-[28px] border border-white/12 bg-white/[0.09] p-8 backdrop-blur-2xl transition-all duration-500 hover:border-lime-300/35"
+                  >
+                    <div className="pointer-events-none absolute -right-12 -top-12 h-48 w-48 rounded-full bg-lime-300/18 blur-[80px] opacity-0 transition-opacity duration-700 group-hover:opacity-100" />
+                    <div className="relative z-10">
+                      <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-2xl border border-white/12 bg-white/[0.08]">
+                        <feature.icon className="h-7 w-7 text-lime-300 drop-shadow-[0_0_10px_rgba(163,230,53,0.35)]" />
+                      </div>
+                      <h3 className="mb-3 text-xl font-bold tracking-tight text-white lg:text-3xl">
+                        {feature.title}
+                      </h3>
+                      <p className="max-w-sm text-lg leading-relaxed text-white/[0.65]">
+                        {feature.description}
+                      </p>
+                      {index === 0 && (
+                        <div className="relative z-20 mt-8 flex gap-8 border-t border-white/10 pt-6">
+                          <AnimatedCounter target={30} label="Second analysis" />
+                          <AnimatedCounter target={500} label="Research sources" />
+                        </div>
+                      )}
+                      {index === 1 && (
+                        <div className="relative z-20 mt-8 flex gap-8 border-t border-white/10 pt-6">
+                          <AnimatedCounter target={15} label="Universities" />
+                          <AnimatedCounter target={4000} label="Research chunks" />
+                        </div>
+                      )}
                     </div>
-                  )}
-                  {index === 1 && (
-                    <div className="mt-8 flex gap-8">
-                      <AnimatedCounter target={15} label="Universities" />
-                      <AnimatedCounter target={4000} label="Research chunks" />
-                    </div>
-                  )}
-                </div>
-              </motion.div>
+                  </motion.div>
+                </MotionDiv>
+              </Float>
             ))}
           </div>
 
-          {/* Bottom row — 4 small cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 relative z-10">
             {smallFeatures.map((feature, index) => (
-              <motion.div
-                key={index}
-                variants={staggerItem}
-                className="group p-6 bg-cream-100 rounded-2xl border border-gray-200/60 hover:border-lime-400/30 hover:shadow-lg hover:shadow-lime-400/5 hover:-translate-y-1 transition-all duration-300"
-              >
-                <div className="w-12 h-12 bg-lime-400/10 rounded-xl flex items-center justify-center mb-4 group-hover:bg-lime-400/20 transition-colors">
-                  <feature.icon className="w-6 h-6 text-lime-400" />
-                </div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                  {feature.title}
-                </h3>
-                <p className="text-gray-600 text-sm leading-relaxed">
-                  {feature.description}
-                </p>
-              </motion.div>
+              <Float key={index} delay={0.5 + index * 0.08} amplitude={4} className="h-full">
+                <MotionDiv tilt hoverScale={1.02} className="h-full">
+                  <motion.div
+                    variants={staggerItem}
+                    custom={index + 2}
+                    className="group z-10 h-full rounded-[24px] border border-white/12 bg-white/[0.08] p-6 backdrop-blur-2xl transition-all duration-400 hover:border-lime-300/30 hover:bg-white/[0.11]"
+                  >
+                    <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl border border-white/12 bg-white/[0.08] transition-colors duration-300 group-hover:bg-lime-300/22">
+                      <feature.icon className="h-6 w-6 text-lime-300" />
+                    </div>
+                    <h3 className="mb-2 text-lg font-bold text-white">{feature.title}</h3>
+                    <p className="text-sm leading-relaxed text-white/[0.58]">{feature.description}</p>
+                  </motion.div>
+                </MotionDiv>
+               </Float>
             ))}
           </div>
         </MotionStagger>
