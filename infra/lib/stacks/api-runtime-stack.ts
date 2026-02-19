@@ -91,6 +91,26 @@ export class ApiRuntimeStack extends Stack {
       entry: 'handlers/delete-recommendation.ts',
       environment,
     });
+    const listProductsHandler = createApiFunction(this, {
+      id: 'ListProductsHandler',
+      entry: 'handlers/list-products.ts',
+      environment,
+    });
+    const getProductHandler = createApiFunction(this, {
+      id: 'GetProductHandler',
+      entry: 'handlers/get-product.ts',
+      environment,
+    });
+    const compareProductsHandler = createApiFunction(this, {
+      id: 'CompareProductsHandler',
+      entry: 'handlers/compare-products.ts',
+      environment,
+    });
+    const getProductPricingBatchHandler = createApiFunction(this, {
+      id: 'GetProductPricingBatchHandler',
+      entry: 'handlers/get-product-pricing-batch.ts',
+      environment,
+    });
 
     const syncPullHandler = createApiFunction(this, {
       id: 'SyncPullHandler',
@@ -225,6 +245,42 @@ export class ApiRuntimeStack extends Stack {
     });
 
     httpApi.addRoutes({
+      path: '/api/v1/products',
+      methods: [apigwv2.HttpMethod.GET],
+      integration: new integrations.HttpLambdaIntegration(
+        'ListProductsIntegration',
+        listProductsHandler
+      ),
+    });
+
+    httpApi.addRoutes({
+      path: '/api/v1/products/{id}',
+      methods: [apigwv2.HttpMethod.GET],
+      integration: new integrations.HttpLambdaIntegration(
+        'GetProductIntegration',
+        getProductHandler
+      ),
+    });
+
+    httpApi.addRoutes({
+      path: '/api/v1/products/compare',
+      methods: [apigwv2.HttpMethod.POST],
+      integration: new integrations.HttpLambdaIntegration(
+        'CompareProductsIntegration',
+        compareProductsHandler
+      ),
+    });
+
+    httpApi.addRoutes({
+      path: '/api/v1/products/pricing/batch',
+      methods: [apigwv2.HttpMethod.POST],
+      integration: new integrations.HttpLambdaIntegration(
+        'GetProductPricingBatchIntegration',
+        getProductPricingBatchHandler
+      ),
+    });
+
+    httpApi.addRoutes({
       path: '/api/v1/sync/pull',
       methods: [apigwv2.HttpMethod.GET],
       integration: new integrations.HttpLambdaIntegration('SyncPullIntegration', syncPullHandler),
@@ -326,6 +382,7 @@ function buildApiEnvironment(
     OPENAI_API_KEY: process.env.OPENAI_API_KEY ?? '',
     OPENAI_EMBEDDING_MODEL: process.env.OPENAI_EMBEDDING_MODEL ?? '',
     RAG_RETRIEVAL_LIMIT: process.env.RAG_RETRIEVAL_LIMIT ?? '18',
+    PG_POOL_MAX: process.env.PG_POOL_MAX ?? '6',
     COGNITO_REGION: cognitoRegion ?? '',
     COGNITO_USER_POOL_ID: cognitoUserPoolId ?? '',
     COGNITO_APP_CLIENT_ID: process.env.COGNITO_APP_CLIENT_ID ?? '',

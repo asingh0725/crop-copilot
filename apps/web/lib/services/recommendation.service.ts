@@ -51,6 +51,15 @@ export interface GetRecommendationResult {
   diagnosis: any;
   confidence: number;
   modelUsed: string;
+  recommendedProducts: Array<{
+    id: string;
+    name: string;
+    brand: string | null;
+    type: string;
+    reason: string | null;
+    applicationRate: string | null;
+    priority: number;
+  }>;
   input: {
     id: string;
     type: string;
@@ -76,6 +85,77 @@ export interface GetRecommendationResult {
       url: string | null;
     } | null;
   }>;
+}
+
+function normalizeRecommendationDiagnosis(
+  diagnosis: unknown,
+  productRows: Array<{
+    id: string;
+    name: string;
+    brand: string | null;
+    type: string;
+    reason: string | null;
+    applicationRate: string | null;
+    priority: number;
+  }>
+): Record<string, unknown> {
+  const fallback: Record<string, unknown> = {
+    diagnosis: {
+      condition: 'Unknown condition',
+      conditionType: 'unknown',
+      confidence: 0,
+      reasoning: 'No diagnostic reasoning was returned yet.',
+    },
+    recommendations: [],
+    products: [],
+    confidence: 0,
+  };
+
+  const parseStringified = (value: unknown): Record<string, unknown> | null => {
+    if (!value || typeof value !== 'string') {
+      return null;
+    }
+
+    const trimmed = value.trim();
+    if (!trimmed.startsWith('{') && !trimmed.startsWith('[')) {
+      return null;
+    }
+
+    try {
+      const parsed = JSON.parse(trimmed);
+      if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+        return parsed as Record<string, unknown>;
+      }
+      return null;
+    } catch {
+      return null;
+    }
+  };
+
+  const base =
+    diagnosis && typeof diagnosis === 'object'
+      ? { ...(diagnosis as Record<string, unknown>) }
+      : parseStringified(diagnosis) ?? fallback;
+
+  const products = Array.isArray(base.products) ? base.products : [];
+  if (products.length === 0 && productRows.length > 0) {
+    base.products = productRows.map((row) => ({
+      productId: row.id,
+      productName: row.name,
+      productType: row.type,
+      applicationRate: row.applicationRate,
+      reasoning:
+        row.reason ?? `Recommended for ${row.type.toLowerCase()} management.`,
+      priority: row.priority,
+      brand: row.brand,
+    }));
+  }
+
+  if (!Array.isArray(base.recommendations)) {
+    base.recommendations = [];
+  }
+
+  return base;
 }
 
 function inferConditionType(conditionType: unknown, condition: string): string {
@@ -249,6 +329,12 @@ export async function getRecommendation(
           },
         },
       },
+      products: {
+        include: {
+          product: true,
+        },
+        orderBy: [{ priority: 'asc' }, { createdAt: 'asc' }],
+      },
     },
   });
 
@@ -280,6 +366,12 @@ export async function getRecommendation(
             },
           },
         },
+        products: {
+          include: {
+            product: true,
+          },
+          orderBy: [{ priority: 'asc' }, { createdAt: 'asc' }],
+        },
       },
     });
   }
@@ -292,13 +384,28 @@ export async function getRecommendation(
     throw new Error('Forbidden: Recommendation does not belong to user');
   }
 
+  const recommendedProducts = recommendation.products.map((entry) => ({
+    id: entry.product.id,
+    name: entry.product.name,
+    brand: entry.product.brand,
+    type: entry.product.type,
+    reason: entry.reason,
+    applicationRate: entry.applicationRate,
+    priority: entry.priority,
+  }));
+  const normalizedDiagnosis = normalizeRecommendationDiagnosis(
+    recommendation.diagnosis,
+    recommendedProducts
+  );
+
   // Format response with all necessary data
   const response = {
     id: recommendation.id,
     createdAt: recommendation.createdAt,
-    diagnosis: recommendation.diagnosis,
+    diagnosis: normalizedDiagnosis,
     confidence: recommendation.confidence,
     modelUsed: recommendation.modelUsed,
+    recommendedProducts,
     input: {
       id: recommendation.input.id,
       type: recommendation.input.type,

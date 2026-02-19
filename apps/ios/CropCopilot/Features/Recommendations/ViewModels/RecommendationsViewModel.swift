@@ -37,6 +37,20 @@ class RecommendationsViewModel: ObservableObject {
     private let pageSize = 20
     private let apiClient = APIClient.shared
     private var requestGeneration = 0
+    private var hasLoadedOnce = false
+
+    func loadIfNeeded() async {
+        if hasLoadedOnce {
+            return
+        }
+        hasLoadedOnce = true
+        await loadRecommendations(reset: true)
+    }
+
+    func refreshRecommendations() async {
+        hasLoadedOnce = true
+        await loadRecommendations(reset: true)
+    }
 
     func loadRecommendations(reset: Bool = false) async {
         requestGeneration += 1
@@ -69,6 +83,7 @@ class RecommendationsViewModel: ObservableObject {
             }
             recommendations = response.recommendations
             hasMorePages = response.pagination.page < response.pagination.totalPages
+            hasLoadedOnce = true
         } catch let error as NetworkError {
             guard generation == requestGeneration else {
                 return

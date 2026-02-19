@@ -39,7 +39,7 @@ API_RUNTIME_BASE_URL = https:/$()/your-api-id.execute-api.ca-west-1.amazonaws.co
 
 Important: use `https:/$()/...` format in `.xcconfig` files so `//` is preserved.
 
-`API_RUNTIME_BASE_URL` is required for AWS parity. iOS uses it for profile, recommendations, inputs, jobs, upload, and feedback endpoints.
+`API_RUNTIME_BASE_URL` is required for AWS parity. iOS uses it for profile, recommendations, products, inputs, jobs, upload, and feedback endpoints.
 
 ### 3. Open in Xcode
 

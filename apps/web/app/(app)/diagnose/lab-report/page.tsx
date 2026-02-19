@@ -92,7 +92,7 @@ export default function LabReportPage() {
   useEffect(() => {
     async function fetchProfile() {
       try {
-        const response = await fetch('/api/profile')
+        const response = await fetch('/api/v1/profile')
         if (response.ok) {
           const { profile } = await response.json()
           if (profile?.location) {

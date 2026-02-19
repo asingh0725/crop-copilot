@@ -14,6 +14,7 @@ interface FeedbackRow {
   accuracy: number | null;
   comments: string | null;
   issues: unknown;
+  detailed_completed_at: Date | string | null;
   outcome_applied: boolean | null;
   outcome_success: boolean | null;
   outcome_notes: string | null;
@@ -96,6 +97,7 @@ function toFeedbackResponse(row: FeedbackRow) {
     accuracy: row.accuracy,
     comments: row.comments,
     issues: normalizeIssues(row.issues),
+    detailedCompletedAt: row.detailed_completed_at ? toIsoString(row.detailed_completed_at) : null,
     outcomeApplied: row.outcome_applied,
     outcomeSuccess: row.outcome_success,
     outcomeNotes: row.outcome_notes,
@@ -147,6 +149,7 @@ async function getFeedbackFromDatabase(
         accuracy,
         comments,
         issues,
+        "detailedCompletedAt" AS detailed_completed_at,
         "outcomeApplied" AS outcome_applied,
         "outcomeSuccess" AS outcome_success,
         "outcomeNotes" AS outcome_notes,

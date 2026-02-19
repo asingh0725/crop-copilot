@@ -36,7 +36,7 @@ function getRecommendationsPool(): Pool {
 
     recommendationsPool = new Pool({
       connectionString: sanitizeDatabaseUrlForPool(databaseUrl),
-      max: 4,
+      max: Number(process.env.PG_POOL_MAX ?? 6),
       ssl: resolvePoolSslConfig(),
     });
   }

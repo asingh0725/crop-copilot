@@ -20,18 +20,49 @@ private enum OutcomeSelection {
     case failure
 }
 
+private enum RecommendationSection: String, Hashable {
+    case input
+    case diagnosis
+    case actions
+    case products
+}
+
+private enum CitationSheetDetent: CGFloat, CaseIterable {
+    case compact = 0.42
+    case medium = 0.66
+    case expanded = 0.9
+}
+
+private struct CitationItem: Identifiable, Hashable {
+    let id: String
+    let title: String
+    let url: String?
+    let excerpt: String?
+    let relevance: Double?
+}
+
+private struct MergedRecommendationProduct: Identifiable {
+    let id: String
+    let productId: String?
+    let name: String
+    let type: String
+    let applicationRate: String?
+    let reason: String?
+}
+
 private let feedbackIssues = [
     "Recommendations felt too generic",
     "Diagnosis did not match symptoms",
     "Actions were unclear",
     "Sources were weak or irrelevant",
-    "Timing guidance was unrealistic"
+    "Timing guidance was unrealistic",
 ]
 
 struct DiagnosisResultView: View {
     let recommendationId: String
 
     @StateObject private var viewModel = DiagnosisResultViewModel()
+    @Environment(\.openURL) private var openURL
 
     @State private var activeFeedbackStage: FeedbackStage?
     @State private var quickHelpful: Bool?
@@ -45,15 +76,45 @@ struct DiagnosisResultView: View {
     @State private var isSubmittingFeedback = false
     @State private var feedbackErrorMessage: String?
     @State private var feedbackSuccessMessage: String?
+    @State private var expandedSections: Set<RecommendationSection> = [
+        .input,
+        .diagnosis,
+        .actions,
+    ]
+    @State private var showCitationsModal = false
+    @State private var citationDetent: CitationSheetDetent = .medium
+
+    private var hasActiveModal: Bool {
+        activeFeedbackStage != nil || showCitationsModal
+    }
 
     var body: some View {
-        Group {
-            if viewModel.isLoading {
-                loadingView
-            } else if let detail = viewModel.recommendation {
-                resultContent(detail)
-            } else if let error = viewModel.errorMessage {
-                errorView(error)
+        ZStack {
+            Group {
+                if viewModel.isLoading {
+                    loadingView
+                } else if let detail = viewModel.recommendation {
+                    resultContent(detail)
+                } else if let error = viewModel.errorMessage {
+                    errorView(error)
+                }
+            }
+
+            if hasActiveModal {
+                Color.black.opacity(0.38)
+                    .ignoresSafeArea()
+                    .onTapGesture {}
+                    .transition(.opacity)
+            }
+
+            if showCitationsModal {
+                citationsModal
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
+
+            if let stage = activeFeedbackStage {
+                feedbackModalContainer(for: stage)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
             }
         }
         .navigationTitle("Diagnosis Result")
@@ -69,17 +130,17 @@ struct DiagnosisResultView: View {
         .onChange(of: viewModel.nextSuggestedStage?.rawValue ?? "") { _ in
             presentSuggestedModalIfNeeded()
         }
-        .sheet(item: $activeFeedbackStage) { stage in
-            feedbackSheet(for: stage)
-        }
+        .animation(.easeInOut(duration: 0.18), value: activeFeedbackStage?.rawValue ?? "")
+        .animation(.easeInOut(duration: 0.18), value: showCitationsModal)
     }
 
     private var loadingView: some View {
         VStack(spacing: 16) {
             ProgressView()
-                .scaleEffect(1.5)
+                .scaleEffect(1.4)
             Text("Loading recommendation...")
-                .foregroundColor(.secondary)
+                .font(.body)
+                .foregroundStyle(.secondary)
         }
     }
 
@@ -89,7 +150,8 @@ struct DiagnosisResultView: View {
                 .font(.largeTitle)
                 .foregroundColor(.orange)
             Text(error)
-                .foregroundColor(.secondary)
+                .font(.body)
+                .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
             Button("Retry") {
                 Task { await viewModel.loadRecommendation(id: recommendationId) }
@@ -101,199 +163,572 @@ struct DiagnosisResultView: View {
 
     private func resultContent(_ detail: RecommendationDetailResponse) -> some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
+            VStack(alignment: .leading, spacing: 16) {
                 confidenceHeader(detail)
 
-                sectionCard("Diagnosis") {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text(detail.diagnosis.diagnosis.condition)
-                            .font(.headline)
-                        Text(detail.diagnosis.diagnosis.reasoning)
-                            .font(.subheadline)
-                            .foregroundColor(.secondary)
-                        if let severity = detail.diagnosis.diagnosis.severity {
-                            HStack {
-                                Text("Severity:")
-                                    .font(.caption.bold())
-                                Text(severity)
-                                    .font(.caption)
-                            }
-                        }
-                    }
+                collapsibleSection(
+                    "Input",
+                    section: .input
+                ) {
+                    inputSummaryContent(detail)
                 }
 
-                if !detail.diagnosis.recommendations.isEmpty {
-                    sectionCard("Recommended Actions") {
-                        ForEach(detail.diagnosis.recommendations) { action in
-                            VStack(alignment: .leading, spacing: 4) {
-                                HStack {
-                                    priorityBadge(action.priority)
-                                    Text(action.action)
-                                        .font(.subheadline.bold())
-                                }
-                                Text(action.details)
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
-                                Text("Timing: \(action.timing)")
-                                    .font(.caption2)
-                                    .foregroundColor(.appPrimary)
-                            }
-                            .padding(.vertical, 4)
-                            if action.id != detail.diagnosis.recommendations.last?.id {
-                                Divider()
-                            }
-                        }
-                    }
+                collapsibleSection(
+                    "Diagnosis",
+                    section: .diagnosis,
+                    accessory: citationsButton(detail)
+                ) {
+                    diagnosisContent(detail)
                 }
 
-                if !detail.diagnosis.products.isEmpty {
-                    sectionCard("Recommended Products") {
-                        ForEach(detail.diagnosis.products) { product in
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text(product.productName)
-                                    .font(.subheadline.bold())
-                                Text(product.productType)
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
-                                if let rate = product.applicationRate {
-                                    Text("Rate: \(rate)")
-                                        .font(.caption)
-                                        .foregroundColor(.appPrimary)
-                                }
-                            }
-                            .padding(.vertical, 4)
-                        }
-                    }
+                collapsibleSection(
+                    "Recommended Actions",
+                    section: .actions,
+                    accessory: citationsButton(detail)
+                ) {
+                    actionsContent(detail)
                 }
 
-                if !detail.sources.isEmpty {
-                    sectionCard("Sources") {
-                        ForEach(detail.sources) { source in
-                            if let ref = source.source {
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text(ref.title)
-                                        .font(.caption.bold())
-                                    if let url = ref.url {
-                                        Text(url)
-                                            .font(.caption2)
-                                            .foregroundColor(.blue)
-                                            .lineLimit(1)
-                                    }
-                                }
-                                .padding(.vertical, 2)
-                            }
-                        }
-                    }
+                collapsibleSection(
+                    "Product Recommendations",
+                    section: .products
+                ) {
+                    productsContent(detail)
                 }
-
-                shareButton(detail)
             }
             .padding()
+            .padding(.bottom, 24)
         }
     }
 
     private func confidenceHeader(_ detail: RecommendationDetailResponse) -> some View {
-        HStack {
-            VStack(alignment: .leading) {
-                Text(detail.diagnosis.diagnosis.conditionType.capitalized)
-                    .font(.caption)
-                    .foregroundColor(.secondary)
+        HStack(alignment: .center, spacing: 10) {
+            VStack(alignment: .leading, spacing: 6) {
+                Text(prettyConditionType(detail.diagnosis.diagnosis.conditionType))
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(.secondary)
                 if let crop = detail.input.crop {
                     Text(AppConstants.cropLabel(for: crop))
-                        .font(.subheadline)
+                        .font(.title2.weight(.semibold))
+                        .foregroundStyle(.primary)
                 }
             }
-            Spacer()
-            VStack(alignment: .trailing) {
-                Text("Confidence")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-                Text("\(Int(detail.confidence * 100))%")
-                    .font(.title2.bold())
-                    .foregroundColor(
-                        detail.confidence >= 0.7 ? .green : detail.confidence >= 0.4 ? .orange : .red
-                    )
+
+            Spacer(minLength: 12)
+            CanvasConfidenceArc(confidence: detail.confidence, style: .detailed)
+        }
+        .padding(16)
+        .antigravityGlass(cornerRadius: 14)
+    }
+
+    @ViewBuilder
+    private func collapsibleSection<Content: View>(
+        _ title: String,
+        section: RecommendationSection,
+        accessory: some View = EmptyView(),
+        @ViewBuilder content: () -> Content
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Button {
+                toggle(section: section)
+            } label: {
+                HStack(spacing: 10) {
+                    Text(title)
+                        .font(.title3.weight(.semibold))
+                        .foregroundStyle(.primary)
+                    Spacer()
+                    accessory
+                    Image(systemName: "chevron.right")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                        .rotationEffect(.degrees(isExpanded(section) ? 90 : 0))
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 14)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+
+            if isExpanded(section) {
+                Divider().padding(.horizontal, 16)
+                VStack(alignment: .leading, spacing: 12) {
+                    content()
+                }
+                .padding(16)
+                .transition(.opacity.combined(with: .move(edge: .top)))
             }
         }
-        .padding()
-        .background(Color.appSecondaryBackground)
-        .cornerRadius(12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .antigravityGlass(cornerRadius: 14)
     }
 
-    private func sectionCard<Content: View>(_ title: String, @ViewBuilder content: () -> Content) -> some View {
+    private func inputSummaryContent(_ detail: RecommendationDetailResponse) -> some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text(title)
-                .font(.headline)
+            HStack(alignment: .top, spacing: 12) {
+                if let imageUrl = detail.input.imageUrl {
+                    SecureAsyncImage(source: imageUrl) { image in
+                        image
+                            .resizable()
+                            .scaledToFill()
+                    } placeholder: {
+                        ProgressView().tint(Color.appPrimary)
+                    } failure: {
+                        ZStack {
+                            Color.appSecondaryBackground
+                            Image(systemName: "photo")
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    .frame(width: 96, height: 96)
+                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            .stroke(.black.opacity(0.08), lineWidth: 0.8)
+                    )
+                }
+
+                VStack(alignment: .leading, spacing: 6) {
+                    if let crop = detail.input.crop {
+                        Text("Crop: \(AppConstants.cropLabel(for: crop))")
+                            .font(.body.weight(.semibold))
+                            .foregroundStyle(.primary)
+                    }
+                    if let location = detail.input.location {
+                        Text("Location: \(location)")
+                            .font(.body)
+                            .foregroundStyle(.secondary)
+                    }
+                    if let season = detail.input.season {
+                        Text("Season: \(season)")
+                            .font(.body)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                Spacer()
+            }
+
+            if let description = detail.input.description, !description.isEmpty {
+                Text(description)
+                    .font(.body)
+                    .foregroundStyle(.secondary)
+                    .lineSpacing(3)
+            }
+        }
+    }
+
+    private func diagnosisContent(_ detail: RecommendationDetailResponse) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text(detail.diagnosis.diagnosis.condition)
+                .font(.title3.weight(.semibold))
+                .foregroundStyle(.primary)
+
+            Text(detail.diagnosis.diagnosis.reasoning)
+                .font(.body)
+                .foregroundStyle(.secondary)
+                .lineSpacing(4)
+
+            if let severity = detail.diagnosis.diagnosis.severity,
+               !severity.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                Text("Severity: \(severity)")
+                    .font(.body.weight(.medium))
+                    .foregroundStyle(.primary)
+            }
+
+            if let differential = detail.diagnosis.diagnosis.differentialDiagnosis,
+               !differential.isEmpty {
+                Text("Differential: \(differential.joined(separator: ", "))")
+                    .font(.body)
+                    .foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    private func actionsContent(_ detail: RecommendationDetailResponse) -> some View {
+        let actions = detail.diagnosis.recommendations
+        return VStack(alignment: .leading, spacing: 12) {
+            if actions.isEmpty {
+                Text("No specific action set was generated for this recommendation.")
+                    .font(.body)
+                    .foregroundStyle(.secondary)
+            } else {
+                ForEach(actions) { action in
+                    VStack(alignment: .leading, spacing: 9) {
+                        Text(action.action)
+                            .font(.headline)
+                            .foregroundStyle(.primary)
+
+                        Text(action.details)
+                            .font(.body)
+                            .foregroundStyle(.secondary)
+                            .lineSpacing(3)
+
+                        HStack(spacing: 8) {
+                            timingChip(action.timing)
+                            priorityChip(action.priority)
+                        }
+                    }
+                    .padding(12)
+                    .background(Color.appSecondaryBackground)
+                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                }
+            }
+        }
+    }
+
+    private func productsContent(_ detail: RecommendationDetailResponse) -> some View {
+        let products = mergedProducts(detail)
+
+        return VStack(alignment: .leading, spacing: 10) {
+            if products.isEmpty {
+                Text("No product recommendations were attached to this run yet.")
+                    .font(.body)
+                    .foregroundStyle(.secondary)
+            } else {
+                ForEach(products) { product in
+                    if let productId = product.productId {
+                        NavigationLink {
+                            ProductDetailView(productId: productId)
+                        } label: {
+                            productRow(product, showChevron: true)
+                        }
+                        .buttonStyle(.plain)
+                    } else {
+                        productRow(product, showChevron: false)
+                    }
+                }
+            }
+        }
+    }
+
+    private func productRow(_ product: MergedRecommendationProduct, showChevron: Bool) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(alignment: .top, spacing: 8) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(product.name)
+                        .font(.body.weight(.semibold))
+                        .foregroundStyle(.primary)
+                        .lineLimit(2)
+                    Text(product.type.replacingOccurrences(of: "_", with: " ").capitalized)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+
+                Spacer(minLength: 6)
+
+                if showChevron {
+                    Image(systemName: "chevron.right")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            if let rate = product.applicationRate, !rate.isEmpty {
+                Text("Rate: \(rate)")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+
+            if let reason = product.reason, !reason.isEmpty {
+                Text(reason)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .lineSpacing(2)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(12)
+        .background(Color.appSecondaryBackground)
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+    }
+
+    private func timingChip(_ timing: String) -> some View {
+        Label(timing, systemImage: "clock")
+            .font(.caption.weight(.semibold))
+            .foregroundStyle(.primary)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 6)
+            .background(Color.appBackground)
+            .clipShape(Capsule())
+            .overlay(
+                Capsule()
+                    .stroke(.black.opacity(0.10), lineWidth: 0.8)
+            )
+    }
+
+    private func priorityChip(_ priority: String) -> some View {
+        let normalized = priority
+            .replacingOccurrences(of: "_", with: " ")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+
+        let label = normalized.isEmpty ? "Standard" : normalized.capitalized
+
+        return Text(label)
+            .font(.caption.weight(.semibold))
+            .foregroundStyle(.secondary)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 6)
+            .background(Color.appBackground)
+            .clipShape(Capsule())
+            .overlay(
+                Capsule()
+                    .stroke(.black.opacity(0.08), lineWidth: 0.8)
+            )
+    }
+
+    @ViewBuilder
+    private func citationsButton(_ detail: RecommendationDetailResponse) -> some View {
+        let citations = citationItems(detail)
+        Button {
+            activeFeedbackStage = nil
+            showCitationsModal = true
+        } label: {
+            Text(citations.isEmpty ? "Citations" : "Citations (\(citations.count))")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(citations.isEmpty ? .secondary : Color.appSecondary)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 6)
+                .background(
+                    citations.isEmpty
+                        ? Color.appSecondaryBackground
+                        : Color.appPrimary.opacity(0.16)
+                )
+                .clipShape(Capsule())
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var citationsModal: some View {
+        let sheetHeight = citationSheetHeight
+
+        return VStack {
+            Spacer()
+
+            VStack(alignment: .leading, spacing: 14) {
+                Capsule()
+                    .fill(Color.secondary.opacity(0.45))
+                    .frame(width: 38, height: 5)
+                    .frame(maxWidth: .infinity)
+                    .padding(.top, 10)
+                    .padding(.bottom, 4)
+
+                HStack {
+                    Text("Cited Sources")
+                        .font(.title3.weight(.semibold))
+                        .foregroundStyle(.primary)
+                    Spacer()
+                    Button {
+                        showCitationsModal = false
+                    } label: {
+                        Image(systemName: "xmark")
+                            .font(.subheadline.weight(.bold))
+                            .foregroundStyle(.secondary)
+                            .frame(width: 30, height: 30)
+                            .background(Color.appSecondaryBackground)
+                            .clipShape(Circle())
+                    }
+                    .buttonStyle(.plain)
+                }
+
+                let citations = currentCitationItems
+                if citations.isEmpty {
+                    Text("No citations are attached to this recommendation yet.")
+                        .font(.body)
+                        .foregroundStyle(.secondary)
+                        .padding(.bottom, 12)
+                } else {
+                    ScrollView {
+                        VStack(alignment: .leading, spacing: 10) {
+                            ForEach(citations) { citation in
+                                VStack(alignment: .leading, spacing: 8) {
+                                    Text(citation.title)
+                                        .font(.subheadline.weight(.semibold))
+                                        .foregroundStyle(.primary)
+
+                                    if let excerpt = citation.excerpt,
+                                       !excerpt.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                                        Text(excerpt)
+                                            .font(.subheadline)
+                                            .foregroundStyle(.secondary)
+                                            .lineLimit(4)
+                                    }
+
+                                    HStack {
+                                        if let relevance = citation.relevance {
+                                            Text("Relevance: \(Int((relevance * 100).rounded()))%")
+                                                .font(.caption)
+                                                .foregroundStyle(.secondary)
+                                        }
+
+                                        Spacer()
+
+                                        if let link = citation.url,
+                                           let url = URL(string: link) {
+                                            Button("Open") {
+                                                openURL(url)
+                                            }
+                                            .font(.caption.weight(.semibold))
+                                            .foregroundStyle(Color.appSecondary)
+                                        }
+                                    }
+                                }
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding(12)
+                                .background(Color.appSecondaryBackground)
+                                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                            }
+                        }
+                    }
+                }
+            }
+            .padding(20)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .frame(height: sheetHeight, alignment: .top)
+            .background(Color.appBackground)
+            .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+            .gesture(citationDetentDragGesture)
+            .padding(.horizontal, 12)
+            .padding(.bottom, 10)
+        }
+    }
+
+    private func feedbackModalContainer(for stage: FeedbackStage) -> some View {
+        VStack {
+            Spacer()
+
+            if usesScrollableFeedbackSheet(stage) {
+                feedbackModalShell(stage: stage) {
+                    ScrollView {
+                        feedbackSheet(for: stage)
+                            .padding(.horizontal, 20)
+                            .padding(.top, 10)
+                            .padding(.bottom, 20)
+                    }
+                }
+                .frame(maxHeight: feedbackModalMaxHeight(for: stage))
+            } else {
+                feedbackModalShell(stage: stage) {
+                    feedbackSheet(for: stage)
+                        .padding(.horizontal, 20)
+                        .padding(.top, 10)
+                        .padding(.bottom, 20)
+                }
+            }
+        }
+    }
+
+    private func feedbackModalMaxHeight(for stage: FeedbackStage) -> CGFloat {
+        let screenHeight = UIScreen.main.bounds.height
+        switch stage {
+        case .basic:
+            return min(screenHeight * 0.66, 560)
+        case .detailed:
+            return min(screenHeight * 0.80, 700)
+        case .outcome:
+            return min(screenHeight * 0.70, 600)
+        }
+    }
+
+    private func usesScrollableFeedbackSheet(_ stage: FeedbackStage) -> Bool {
+        stage == .detailed
+    }
+
+    @ViewBuilder
+    private func feedbackModalShell<Content: View>(
+        stage: FeedbackStage,
+        @ViewBuilder content: () -> Content
+    ) -> some View {
+        VStack(spacing: 0) {
+            Capsule()
+                .fill(Color.secondary.opacity(0.5))
+                .frame(width: 38, height: 5)
+                .padding(.top, 10)
+                .padding(.bottom, 12)
+
+            HStack {
+                Text(modalTitle(stage))
+                    .font(.title3.weight(.semibold))
+                    .foregroundStyle(.primary)
+                Spacer()
+                Button {
+                    activeFeedbackStage = nil
+                } label: {
+                    Image(systemName: "xmark")
+                        .font(.subheadline.weight(.bold))
+                        .foregroundStyle(.secondary)
+                        .frame(width: 30, height: 30)
+                        .background(Color.appSecondaryBackground)
+                        .clipShape(Circle())
+                }
+                .buttonStyle(.plain)
+            }
+            .padding(.horizontal, 20)
+
             content()
         }
-        .padding()
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.appSecondaryBackground)
-        .cornerRadius(12)
+        .frame(maxWidth: .infinity)
+        .background(Color.appBackground)
+        .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .padding(.horizontal, 12)
+        .padding(.bottom, 10)
     }
 
-    private func priorityBadge(_ priority: String) -> some View {
-        Text(priority.uppercased())
-            .font(.caption2.bold())
-            .foregroundColor(
-                priority.lowercased() == "high" ? .red : priority.lowercased() == "medium" ? .orange : .green
-            )
-            .padding(.horizontal, 6)
-            .padding(.vertical, 2)
-            .background(
-                (priority.lowercased() == "high" ? Color.red :
-                    priority.lowercased() == "medium" ? Color.orange : Color.green).opacity(0.1)
-            )
-            .cornerRadius(4)
+    private func modalTitle(_ stage: FeedbackStage) -> String {
+        switch stage {
+        case .basic:
+            return "Quick Feedback"
+        case .detailed:
+            return "Detailed Feedback"
+        case .outcome:
+            return "Implementation Follow-up"
+        }
     }
 
     @ViewBuilder
     private func feedbackSheet(for stage: FeedbackStage) -> some View {
         switch stage {
         case .basic:
-            basicFeedbackSheet
+            basicFeedbackContent
         case .detailed:
-            detailedFeedbackSheet
+            detailedFeedbackContent
         case .outcome:
-            outcomeFeedbackSheet
+            outcomeFeedbackContent
         }
     }
 
-    private var basicFeedbackSheet: some View {
+    private var basicFeedbackContent: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text("Quick Feedback")
-                .font(.title3.bold())
             Text("Share an immediate signal on usefulness.")
-                .font(.subheadline)
-                .foregroundColor(.secondary)
+                .font(.body)
+                .foregroundStyle(.secondary)
 
             VStack(alignment: .leading, spacing: 8) {
                 Text("Was this recommendation helpful?")
-                    .font(.subheadline.bold())
-                HStack(spacing: 12) {
-                    Button {
-                        quickHelpful = true
-                    } label: {
-                        Label("Helpful", systemImage: quickHelpful == true ? "hand.thumbsup.fill" : "hand.thumbsup")
-                            .frame(maxWidth: .infinity)
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .tint(quickHelpful == true ? .green : .gray)
+                    .font(.headline)
+                    .foregroundStyle(.primary)
 
-                    Button {
-                        quickHelpful = false
-                    } label: {
-                        Label("Not Helpful", systemImage: quickHelpful == false ? "hand.thumbsdown.fill" : "hand.thumbsdown")
-                            .frame(maxWidth: .infinity)
+                HStack(spacing: 10) {
+                    feedbackChoiceButton(
+                        title: "Helpful",
+                        icon: quickHelpful == true ? "hand.thumbsup.fill" : "hand.thumbsup",
+                        isSelected: quickHelpful == true
+                    ) {
+                        quickHelpful = true
                     }
-                    .buttonStyle(.borderedProminent)
-                    .tint(quickHelpful == false ? .red : .gray)
+
+                    feedbackChoiceButton(
+                        title: "Not Helpful",
+                        icon: quickHelpful == false ? "hand.thumbsdown.fill" : "hand.thumbsdown",
+                        isSelected: quickHelpful == false
+                    ) {
+                        quickHelpful = false
+                    }
                 }
             }
 
             VStack(alignment: .leading, spacing: 8) {
                 Text("Helpfulness Rating")
-                    .font(.subheadline.bold())
+                    .font(.headline)
+                    .foregroundStyle(.primary)
                 ratingSelector(selectedValue: quickRating) { value in
                     quickRating = value
                 }
@@ -301,20 +736,28 @@ struct DiagnosisResultView: View {
 
             VStack(alignment: .leading, spacing: 8) {
                 Text("Comment")
-                    .font(.subheadline.bold())
+                    .font(.headline)
+                    .foregroundStyle(.primary)
                 TextEditor(text: $quickComments)
-                    .frame(minHeight: 90)
+                    .font(.body)
+                    .frame(minHeight: 110)
                     .padding(8)
-                    .background(Color.appSecondaryBackground)
-                    .cornerRadius(8)
+                    .background(Color.appBackground)
+                    .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+                            .stroke(Color.black.opacity(0.08), lineWidth: 0.8)
+                    )
             }
 
-            HStack {
-                Button("Later") {
+            HStack(spacing: 10) {
+                Button {
                     viewModel.setSnooze(stage: .basic, recommendationId: recommendationId, days: 2)
                     activeFeedbackStage = nil
+                } label: {
+                    secondaryActionLabel("Later")
                 }
-                .buttonStyle(.bordered)
+                .buttonStyle(.plain)
                 .disabled(isSubmittingFeedback)
 
                 Spacer()
@@ -322,25 +765,44 @@ struct DiagnosisResultView: View {
                 Button(isSubmittingFeedback ? "Saving..." : "Save & Continue") {
                     submitBasicFeedback()
                 }
-                .buttonStyle(.borderedProminent)
+                .buttonStyle(GlowSkeuomorphicButtonStyle())
                 .disabled(isSubmittingFeedback)
             }
         }
-        .padding()
-        .presentationDetents([.medium, .large])
     }
 
-    private var detailedFeedbackSheet: some View {
+    private func feedbackChoiceButton(
+        title: String,
+        icon: String,
+        isSelected: Bool,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            Label(title, systemImage: icon)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(.primary)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 10)
+                .background(isSelected ? Color.appPrimary.opacity(0.24) : Color.appSecondaryBackground)
+                .clipShape(Capsule())
+                .overlay(
+                    Capsule()
+                        .stroke(isSelected ? Color.appPrimary : Color.black.opacity(0.12), lineWidth: 0.9)
+                )
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var detailedFeedbackContent: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text("Detailed Feedback")
-                .font(.title3.bold())
             Text("Add quality details to improve future recommendations.")
-                .font(.subheadline)
-                .foregroundColor(.secondary)
+                .font(.body)
+                .foregroundStyle(.secondary)
 
             VStack(alignment: .leading, spacing: 8) {
                 Text("Accuracy Rating")
-                    .font(.subheadline.bold())
+                    .font(.headline)
+                    .foregroundStyle(.primary)
                 ratingSelector(selectedValue: detailedAccuracy) { value in
                     detailedAccuracy = value
                 }
@@ -348,7 +810,9 @@ struct DiagnosisResultView: View {
 
             VStack(alignment: .leading, spacing: 8) {
                 Text("What needs improvement?")
-                    .font(.subheadline.bold())
+                    .font(.headline)
+                    .foregroundStyle(.primary)
+
                 ForEach(feedbackIssues, id: \.self) { issue in
                     Button {
                         if selectedIssues.contains(issue) {
@@ -357,34 +821,43 @@ struct DiagnosisResultView: View {
                             selectedIssues.insert(issue)
                         }
                     } label: {
-                        HStack {
+                        HStack(spacing: 8) {
                             Image(systemName: selectedIssues.contains(issue) ? "checkmark.square.fill" : "square")
+                                .foregroundStyle(selectedIssues.contains(issue) ? Color.appSecondary : Color.secondary)
                             Text(issue)
-                                .font(.footnote)
+                                .font(.body)
+                                .foregroundStyle(.primary)
                             Spacer()
                         }
                     }
                     .buttonStyle(.plain)
-                    .foregroundColor(.primary)
                 }
             }
 
             VStack(alignment: .leading, spacing: 8) {
                 Text("Additional Notes")
-                    .font(.subheadline.bold())
+                    .font(.headline)
+                    .foregroundStyle(.primary)
                 TextEditor(text: $detailedNotes)
-                    .frame(minHeight: 90)
+                    .font(.body)
+                    .frame(minHeight: 110)
                     .padding(8)
-                    .background(Color.appSecondaryBackground)
-                    .cornerRadius(8)
+                    .background(Color.appBackground)
+                    .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+                            .stroke(Color.black.opacity(0.08), lineWidth: 0.8)
+                    )
             }
 
-            HStack {
-                Button("Later") {
+            HStack(spacing: 10) {
+                Button {
                     viewModel.setSnooze(stage: .detailed, recommendationId: recommendationId, days: 1)
                     activeFeedbackStage = nil
+                } label: {
+                    secondaryActionLabel("Later")
                 }
-                .buttonStyle(.bordered)
+                .buttonStyle(.plain)
                 .disabled(isSubmittingFeedback)
 
                 Spacer()
@@ -392,56 +865,66 @@ struct DiagnosisResultView: View {
                 Button(isSubmittingFeedback ? "Saving..." : "Save Detailed Feedback") {
                     submitDetailedFeedback()
                 }
-                .buttonStyle(.borderedProminent)
+                .buttonStyle(GlowSkeuomorphicButtonStyle())
                 .disabled(isSubmittingFeedback)
             }
         }
-        .padding()
-        .presentationDetents([.large])
     }
 
-    private var outcomeFeedbackSheet: some View {
+    private var outcomeFeedbackContent: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text("Implementation Follow-up")
-                .font(.title3.bold())
             Text("After applying this recommendation, what happened?")
-                .font(.subheadline)
-                .foregroundColor(.secondary)
+                .font(.body)
+                .foregroundStyle(.secondary)
 
             VStack(alignment: .leading, spacing: 8) {
                 Text("Outcome")
-                    .font(.subheadline.bold())
-                HStack(spacing: 12) {
-                    Button("Worked") {
+                    .font(.headline)
+                    .foregroundStyle(.primary)
+
+                HStack(spacing: 10) {
+                    feedbackChoiceButton(
+                        title: "Worked",
+                        icon: "checkmark.circle",
+                        isSelected: outcomeSelection == .success
+                    ) {
                         outcomeSelection = .success
                     }
-                    .buttonStyle(.borderedProminent)
-                    .tint(outcomeSelection == .success ? .green : .gray)
 
-                    Button("Didn't Work") {
+                    feedbackChoiceButton(
+                        title: "Did Not Work",
+                        icon: "xmark.circle",
+                        isSelected: outcomeSelection == .failure
+                    ) {
                         outcomeSelection = .failure
                     }
-                    .buttonStyle(.borderedProminent)
-                    .tint(outcomeSelection == .failure ? .red : .gray)
                 }
             }
 
             VStack(alignment: .leading, spacing: 8) {
                 Text("Outcome Notes")
-                    .font(.subheadline.bold())
+                    .font(.headline)
+                    .foregroundStyle(.primary)
                 TextEditor(text: $outcomeNotes)
-                    .frame(minHeight: 90)
+                    .font(.body)
+                    .frame(minHeight: 110)
                     .padding(8)
-                    .background(Color.appSecondaryBackground)
-                    .cornerRadius(8)
+                    .background(Color.appBackground)
+                    .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+                            .stroke(Color.black.opacity(0.08), lineWidth: 0.8)
+                    )
             }
 
-            HStack {
-                Button("Not Yet") {
+            HStack(spacing: 10) {
+                Button {
                     viewModel.setSnooze(stage: .outcome, recommendationId: recommendationId, days: 3)
                     activeFeedbackStage = nil
+                } label: {
+                    secondaryActionLabel("Not Yet")
                 }
-                .buttonStyle(.bordered)
+                .buttonStyle(.plain)
                 .disabled(isSubmittingFeedback)
 
                 Spacer()
@@ -449,24 +932,23 @@ struct DiagnosisResultView: View {
                 Button(isSubmittingFeedback ? "Saving..." : "Save Outcome") {
                     submitOutcomeFeedback()
                 }
-                .buttonStyle(.borderedProminent)
+                .buttonStyle(GlowSkeuomorphicButtonStyle())
                 .disabled(isSubmittingFeedback)
             }
         }
-        .padding()
-        .presentationDetents([.medium, .large])
     }
 
     private func ratingSelector(
         selectedValue: Int,
         onSelect: @escaping (Int) -> Void
     ) -> some View {
-        HStack(spacing: 6) {
+        HStack(spacing: 8) {
             ForEach(1...5, id: \.self) { value in
                 Button {
                     onSelect(value)
                 } label: {
                     Image(systemName: selectedValue >= value ? "star.fill" : "star")
+                        .font(.title3)
                         .foregroundColor(selectedValue >= value ? .yellow : .secondary)
                 }
                 .buttonStyle(.plain)
@@ -474,17 +956,169 @@ struct DiagnosisResultView: View {
         }
     }
 
-    private func shareButton(_ detail: RecommendationDetailResponse) -> some View {
-        ShareLink(
-            item: "Crop Copilot Diagnosis: \(detail.diagnosis.diagnosis.condition) - Confidence: \(Int(detail.confidence * 100))%",
-            subject: Text("Crop Copilot Diagnosis"),
-            message: Text(detail.diagnosis.diagnosis.reasoning)
-        ) {
-            Label("Share Result", systemImage: "square.and.arrow.up")
-                .frame(maxWidth: .infinity)
-                .padding()
-                .background(Color.appPrimary.opacity(0.1))
-                .cornerRadius(12)
+    private func secondaryActionLabel(_ text: String) -> some View {
+        Text(text)
+            .font(.headline)
+            .foregroundStyle(.primary)
+            .padding(.horizontal, 18)
+            .padding(.vertical, 12)
+            .background(Color.appSecondaryBackground)
+            .clipShape(Capsule())
+            .overlay(
+                Capsule()
+                    .stroke(Color.black.opacity(0.10), lineWidth: 0.8)
+            )
+    }
+
+    private func isExpanded(_ section: RecommendationSection) -> Bool {
+        expandedSections.contains(section)
+    }
+
+    private func toggle(section: RecommendationSection) {
+        if expandedSections.contains(section) {
+            expandedSections.remove(section)
+        } else {
+            expandedSections.insert(section)
+        }
+    }
+
+    private var currentCitationItems: [CitationItem] {
+        guard let detail = viewModel.recommendation else {
+            return []
+        }
+        return citationItems(detail)
+    }
+
+    private func citationItems(_ detail: RecommendationDetailResponse) -> [CitationItem] {
+        var items: [CitationItem] = []
+
+        items.append(contentsOf: detail.sources.map { source in
+            let title = source.source?.title
+                ?? source.content
+                ?? "Source excerpt"
+
+            return CitationItem(
+                id: source.id,
+                title: title,
+                url: source.source?.url,
+                excerpt: source.content,
+                relevance: source.relevanceScore
+            )
+        })
+
+        items.append(contentsOf: detail.diagnosis.sources.map { source in
+            CitationItem(
+                id: source.chunkId,
+                title: source.title,
+                url: source.url,
+                excerpt: nil,
+                relevance: source.relevance
+            )
+        })
+
+        var seenKeys = Set<String>()
+        var deduped: [CitationItem] = []
+        for item in items {
+            let key = "\(item.id.lowercased())::\(item.title.lowercased())"
+            if seenKeys.contains(key) {
+                continue
+            }
+            seenKeys.insert(key)
+            deduped.append(item)
+        }
+
+        return deduped.sorted { (lhs, rhs) -> Bool in
+            (lhs.relevance ?? -1) > (rhs.relevance ?? -1)
+        }
+    }
+
+    private func mergedProducts(_ detail: RecommendationDetailResponse) -> [MergedRecommendationProduct] {
+        var merged: [MergedRecommendationProduct] = []
+        var seenKeys = Set<String>()
+
+        for product in detail.recommendedProducts {
+            let normalized = product.name.trimmingCharacters(in: .whitespacesAndNewlines)
+            let key = normalized.lowercased()
+            if seenKeys.contains(key) {
+                continue
+            }
+            seenKeys.insert(key)
+
+            merged.append(
+                MergedRecommendationProduct(
+                    id: product.id,
+                    productId: product.catalogProductId,
+                    name: normalized,
+                    type: product.type,
+                    applicationRate: product.applicationRate,
+                    reason: product.reason
+                )
+            )
+        }
+
+        for product in detail.diagnosis.products {
+            let normalized = product.productName.trimmingCharacters(in: .whitespacesAndNewlines)
+            let key = normalized.lowercased()
+            if seenKeys.contains(key) {
+                continue
+            }
+            seenKeys.insert(key)
+
+            merged.append(
+                MergedRecommendationProduct(
+                    id: product.id,
+                    productId: product.productId,
+                    name: normalized,
+                    type: product.productType,
+                    applicationRate: product.applicationRate,
+                    reason: product.reasoning
+                )
+            )
+        }
+
+        return merged
+    }
+
+    private func prettyConditionType(_ value: String) -> String {
+        value.replacingOccurrences(of: "_", with: " ").capitalized
+    }
+
+    private var citationSheetHeight: CGFloat {
+        let screenHeight = UIScreen.main.bounds.height
+        return max(320, screenHeight * citationDetent.rawValue)
+    }
+
+    private var citationDetentDragGesture: some Gesture {
+        DragGesture(minimumDistance: 12, coordinateSpace: .local)
+            .onEnded { value in
+                let verticalDelta = value.translation.height
+                if verticalDelta < -30 {
+                    citationDetent = nextLargerCitationDetent(from: citationDetent)
+                } else if verticalDelta > 30 {
+                    citationDetent = nextSmallerCitationDetent(from: citationDetent)
+                }
+            }
+    }
+
+    private func nextLargerCitationDetent(from current: CitationSheetDetent) -> CitationSheetDetent {
+        switch current {
+        case .compact:
+            return .medium
+        case .medium:
+            return .expanded
+        case .expanded:
+            return .expanded
+        }
+    }
+
+    private func nextSmallerCitationDetent(from current: CitationSheetDetent) -> CitationSheetDetent {
+        switch current {
+        case .compact:
+            return .compact
+        case .medium:
+            return .compact
+        case .expanded:
+            return .medium
         }
     }
 
@@ -502,6 +1136,9 @@ struct DiagnosisResultView: View {
                 return
             }
             activeFeedbackStage = stage
+            feedbackErrorMessage = nil
+            feedbackSuccessMessage = nil
+            showCitationsModal = false
             viewModel.consumeSuggestedStage()
         }
     }

@@ -15,15 +15,24 @@ class APIClient {
     private let authInterceptor = AuthInterceptor()
     private let session: URLSession
 
+    private struct ResponseEnvelope<T: Decodable>: Decodable {
+        let data: T?
+        let recommendation: T?
+        let product: T?
+        let result: T?
+    }
+
     private init() {
         let configuration = URLSessionConfiguration.default
+        configuration.requestCachePolicy = .reloadIgnoringLocalCacheData
+        configuration.urlCache = nil
         configuration.timeoutIntervalForRequest = 30
         configuration.timeoutIntervalForResource = 60
         self.session = URLSession(configuration: configuration)
     }
 
     // MARK: - Generic Request
-    func request<T: Codable>(
+    func request<T: Decodable>(
         _ endpoint: APIEndpoint,
         body: Encodable? = nil,
         retry: Bool = true
@@ -43,6 +52,7 @@ class APIClient {
 
         var request = URLRequest(url: url)
         request.httpMethod = endpoint.method.rawValue
+        request.cachePolicy = .reloadIgnoringLocalCacheData
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("application/json", forHTTPHeaderField: "Accept")
 
@@ -84,7 +94,19 @@ class APIClient {
             do {
                 let decoder = JSONDecoder()
                 decoder.dateDecodingStrategy = .iso8601
-                return try decoder.decode(T.self, from: data)
+                do {
+                    return try decoder.decode(T.self, from: data)
+                } catch {
+                    if let envelope = try? decoder.decode(ResponseEnvelope<T>.self, from: data),
+                       let unwrapped =
+                        envelope.data
+                        ?? envelope.recommendation
+                        ?? envelope.product
+                        ?? envelope.result {
+                        return unwrapped
+                    }
+                    throw error
+                }
             } catch {
                 throw NetworkError.decodingError(error)
             }

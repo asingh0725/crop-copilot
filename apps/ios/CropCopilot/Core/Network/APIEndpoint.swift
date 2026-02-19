@@ -37,13 +37,21 @@ enum APIEndpoint {
     case deleteRecommendation(id: String)
 
     // Products
-    case listProducts(search: String?, type: String?)
+    case listProducts(
+        search: String?,
+        type: String?,
+        limit: Int?,
+        offset: Int?,
+        sortBy: String?,
+        sortOrder: String?
+    )
     case getProduct(id: String)
     case compareProducts
     case getProductPricing
 
     // Upload
     case uploadImage
+    case getUploadViewUrl(objectUrl: String)
 
     // Feedback
     case getFeedback(recommendationId: String)
@@ -71,6 +79,7 @@ enum APIEndpoint {
         case .compareProducts: return "/products/compare"
         case .getProductPricing: return "/products/pricing/batch"
         case .uploadImage: return "/upload"
+        case .getUploadViewUrl: return "/upload/view"
         case .getFeedback, .submitFeedback: return "/feedback"
         }
     }
@@ -84,7 +93,12 @@ enum APIEndpoint {
              .listRecommendations,
              .getRecommendation,
              .deleteRecommendation,
+             .listProducts,
+             .getProduct,
+             .compareProducts,
+             .getProductPricing,
              .uploadImage,
+             .getUploadViewUrl,
              .getFeedback,
              .submitFeedback:
             return .runtimePreferred
@@ -124,15 +138,30 @@ enum APIEndpoint {
             }
             return items
 
-        case .listProducts(let search, let type):
+        case .listProducts(let search, let type, let limit, let offset, let sortBy, let sortOrder):
             var items: [URLQueryItem] = []
             if let search = search {
                 items.append(URLQueryItem(name: "search", value: search))
             }
             if let type = type {
-                items.append(URLQueryItem(name: "type", value: type))
+                items.append(URLQueryItem(name: "types", value: type))
+            }
+            if let limit {
+                items.append(URLQueryItem(name: "limit", value: "\(limit)"))
+            }
+            if let offset {
+                items.append(URLQueryItem(name: "offset", value: "\(offset)"))
+            }
+            if let sortBy {
+                items.append(URLQueryItem(name: "sortBy", value: sortBy))
+            }
+            if let sortOrder {
+                items.append(URLQueryItem(name: "sortOrder", value: sortOrder))
             }
             return items.isEmpty ? nil : items
+
+        case .getUploadViewUrl(let objectUrl):
+            return [URLQueryItem(name: "objectUrl", value: objectUrl)]
 
         case .getFeedback(let recommendationId):
             return [URLQueryItem(name: "recommendationId", value: recommendationId)]
@@ -158,11 +187,12 @@ enum APIEndpoint {
         let baseURL: String
         switch hostTarget {
         case .runtimePreferred:
-            guard let runtimeBaseURL,
-                  !runtimeBaseURL.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
-                return nil
+            let runtime = runtimeBaseURL?.trimmingCharacters(in: .whitespacesAndNewlines)
+            if let runtime, !runtime.isEmpty {
+                baseURL = runtime
+            } else {
+                baseURL = primaryBaseURL
             }
-            baseURL = runtimeBaseURL
         case .primary:
             baseURL = primaryBaseURL
         }

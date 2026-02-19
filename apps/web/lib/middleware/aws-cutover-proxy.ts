@@ -14,12 +14,14 @@ const DEFAULT_CUTOVER_PATHS = [
   '/api/v1/sync/pull',
   '/api/v1/profile',
   '/api/v1/recommendations',
+  '/api/v1/products',
 ]
 
 interface ResolvedBackend {
   backend: 'legacy' | 'aws'
   mode: CutoverMode
   reason: string
+  includeCookieTraffic: boolean
 }
 
 export async function maybeProxyToAwsApi(
@@ -48,7 +50,11 @@ export async function maybeProxyToAwsApi(
     request.nextUrl.pathname,
     request.nextUrl.search
   )
-  const requestHeaders = buildForwardHeaders(request.headers, resolution.mode)
+  const requestHeaders = buildForwardHeaders(
+    request.headers,
+    resolution.mode,
+    resolution.includeCookieTraffic
+  )
   const init: RequestInit = {
     method: request.method,
     headers: requestHeaders,
@@ -96,26 +102,36 @@ export async function maybeProxyToAwsApi(
 
 function resolveBackend(request: NextRequest): ResolvedBackend {
   const mode = parseCutoverMode(process.env.AWS_API_CUTOVER_MODE)
+  const includeCookieTraffic = shouldIncludeCookieTraffic(mode)
   if (mode === 'legacy') {
-    return { backend: 'legacy', mode, reason: 'mode_legacy' }
+    return { backend: 'legacy', mode, reason: 'mode_legacy', includeCookieTraffic }
   }
 
   const authHeader = request.headers.get('authorization')
-  const includeCookieTraffic = process.env.AWS_API_PROXY_INCLUDE_COOKIE_TRAFFIC === 'true'
 
   if (!includeCookieTraffic && !authHeader?.startsWith('Bearer ')) {
-    return { backend: 'legacy', mode, reason: 'missing_bearer_token' }
+    return {
+      backend: 'legacy',
+      mode,
+      reason: 'missing_bearer_token',
+      includeCookieTraffic,
+    }
   }
 
   if (mode === 'aws') {
-    return { backend: 'aws', mode, reason: 'mode_forced_aws' }
+    return { backend: 'aws', mode, reason: 'mode_forced_aws', includeCookieTraffic }
   }
 
   const canaryPercent = clampPercent(
     parseNonNegativeInt(process.env.AWS_API_CUTOVER_PERCENT, 10)
   )
   if (canaryPercent <= 0) {
-    return { backend: 'legacy', mode, reason: 'canary_zero_percent' }
+    return {
+      backend: 'legacy',
+      mode,
+      reason: 'canary_zero_percent',
+      includeCookieTraffic,
+    }
   }
 
   const cohortKey =
@@ -129,7 +145,22 @@ function resolveBackend(request: NextRequest): ResolvedBackend {
     backend: inCanary ? 'aws' : 'legacy',
     mode,
     reason: `canary_${bucket}_lt_${canaryPercent}`,
+    includeCookieTraffic,
   }
+}
+
+function shouldIncludeCookieTraffic(mode: CutoverMode): boolean {
+  const raw = process.env.AWS_API_PROXY_INCLUDE_COOKIE_TRAFFIC?.trim().toLowerCase()
+  if (raw === 'true') {
+    return true
+  }
+  if (raw === 'false') {
+    return false
+  }
+
+  // In forced AWS mode, default cookie traffic to enabled so web and iOS stay
+  // on the same backend unless explicitly disabled.
+  return mode === 'aws'
 }
 
 function parseCutoverMode(raw: string | undefined): CutoverMode {
@@ -184,7 +215,8 @@ function stableBucket(input: string): number {
 
 function buildForwardHeaders(
   headers: Headers,
-  mode: CutoverMode
+  mode: CutoverMode,
+  includeCookieTraffic: boolean
 ): Record<string, string> {
   const forwarded: Record<string, string> = {}
   const passthrough = [
@@ -194,7 +226,7 @@ function buildForwardHeaders(
     'x-request-id',
     'x-correlation-id',
   ]
-  if (process.env.AWS_API_PROXY_INCLUDE_COOKIE_TRAFFIC === 'true') {
+  if (includeCookieTraffic) {
     passthrough.push('cookie')
   }
 

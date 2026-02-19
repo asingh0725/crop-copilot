@@ -2,7 +2,7 @@ name: CropCopilot
 options:
   bundleIdPrefix: com.cropcopilot
   deploymentTarget:
-    iOS: "16.0"
+    iOS: "17.0"
   xcodeVersion: "15.0"
   generateEmptyDirectories: true
 
@@ -28,7 +28,7 @@ targets:
   CropCopilot:
     type: application
     platform: iOS
-    deploymentTarget: "16.0"
+    deploymentTarget: "17.0"
     sources:
       - path: CropCopilot
         excludes:
@@ -52,7 +52,7 @@ targets:
   CropCopilotTests:
     type: bundle.unit-test
     platform: iOS
-    deploymentTarget: "16.0"
+    deploymentTarget: "17.0"
     sources:
       - path: CropCopilotTests
         excludes:

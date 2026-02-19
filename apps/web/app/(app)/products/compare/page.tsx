@@ -76,7 +76,7 @@ export default function ProductComparePage() {
       }
 
       try {
-        const response = await fetch("/api/products/compare", {
+        const response = await fetch("/api/v1/products/compare", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ productIds }),

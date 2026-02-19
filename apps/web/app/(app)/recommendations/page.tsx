@@ -92,7 +92,7 @@ function RecommendationsContent() {
       params.set("page", page.toString());
       params.set("pageSize", "20");
 
-      const res = await fetch(`/api/recommendations?${params.toString()}`);
+      const res = await fetch(`/api/v1/recommendations?${params.toString()}`);
       if (!res.ok) throw new Error("Failed to fetch recommendations");
 
       const data = await res.json();

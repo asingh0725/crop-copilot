@@ -2,8 +2,6 @@
 //  RecommendationsListView.swift
 //  CropCopilot
 //
-//  Created by Claude Code on Phase 2
-//
 
 import SwiftUI
 
@@ -12,72 +10,68 @@ struct RecommendationsListView: View {
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: 0) {
-                if !Configuration.isRuntimeApiConfigured {
-                    Text("AWS runtime API is not configured on iOS. Set API_RUNTIME_BASE_URL to keep recommendations/profile in sync with web.")
-                        .font(.caption)
-                        .foregroundColor(.orange)
-                        .padding(.horizontal)
-                        .padding(.top, 6)
-                }
-
-                // Search bar
+            VStack(spacing: 12) {
                 searchBar
-
-                // Sort picker
                 sortPicker
 
-                // Content
                 if viewModel.isLoading && viewModel.recommendations.isEmpty {
                     loadingView
                 } else if viewModel.recommendations.isEmpty {
                     emptyView
                 } else {
-                    listContent
+                    recommendationsList
                 }
 
                 if let error = viewModel.errorMessage {
                     Text(error)
                         .font(.caption)
-                        .foregroundColor(.red)
-                        .padding()
+                        .foregroundStyle(.red)
+                        .padding(.vertical, 8)
                 }
             }
             .navigationTitle("Recommendations")
+            .navigationDestination(for: String.self) { recommendationId in
+                RecommendationDetailView(recommendationId: recommendationId)
+            }
+            .task {
+                await viewModel.loadIfNeeded()
+            }
             .onAppear {
-                Task { await viewModel.loadRecommendations(reset: true) }
+                Task {
+                    await viewModel.refreshRecommendations()
+                }
             }
         }
     }
 
-    // MARK: - Search
     private var searchBar: some View {
         HStack {
             Image(systemName: "magnifyingglass")
-                .foregroundColor(.secondary)
+                .foregroundStyle(.secondary)
             TextField("Search by crop or condition...", text: $viewModel.searchText)
                 .textFieldStyle(.plain)
+                .foregroundStyle(.primary)
                 .onSubmit {
                     Task { await viewModel.loadRecommendations(reset: true) }
                 }
+
             if !viewModel.searchText.isEmpty {
                 Button {
                     viewModel.searchText = ""
                     Task { await viewModel.loadRecommendations(reset: true) }
                 } label: {
                     Image(systemName: "xmark.circle.fill")
-                        .foregroundColor(.secondary)
+                        .foregroundStyle(.secondary)
                 }
             }
         }
-        .padding(10)
-        .background(Color.appSecondaryBackground)
-        .cornerRadius(10)
-        .padding(.horizontal)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
+        .antigravityGlass(cornerRadius: 14)
+        .padding(.horizontal, 16)
         .padding(.top, 8)
     }
 
-    // MARK: - Sort
     private var sortPicker: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
@@ -87,108 +81,108 @@ struct RecommendationsListView: View {
                         Task { await viewModel.loadRecommendations(reset: true) }
                     } label: {
                         Text(option.displayName)
-                            .font(.caption)
+                            .font(.caption.weight(.semibold))
                             .padding(.horizontal, 12)
-                            .padding(.vertical, 6)
-                            .background(viewModel.selectedSort == option ? Color.appPrimary : Color.appSecondaryBackground)
-                            .foregroundColor(viewModel.selectedSort == option ? .white : .primary)
-                            .cornerRadius(16)
+                            .padding(.vertical, 8)
+                            .background(
+                                Capsule()
+                                    .fill(
+                                        viewModel.selectedSort == option
+                                            ? Color.appPrimary.opacity(0.22)
+                                            : Color.appSecondaryBackground
+                                    )
+                            )
+                            .overlay(
+                                Capsule()
+                                    .strokeBorder(
+                                        viewModel.selectedSort == option ? Color.appPrimary : Color.black.opacity(0.08),
+                                        lineWidth: viewModel.selectedSort == option ? 1.0 : 0.8
+                                    )
+                            )
+                            .foregroundStyle(Color.primary)
                     }
+                    .buttonStyle(.plain)
                 }
             }
-            .padding(.horizontal)
-            .padding(.vertical, 8)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
         }
     }
 
-    // MARK: - List
-    private var listContent: some View {
-        List {
-            ForEach(viewModel.recommendations) { rec in
-                NavigationLink {
-                    RecommendationDetailView(recommendationId: rec.id)
-                } label: {
-                    recommendationRow(rec)
-                }
-            }
-            .onDelete { indexSet in
-                Task { await viewModel.deleteRecommendations(at: indexSet) }
-            }
-
-            // Load more
-            if viewModel.hasMorePages {
-                HStack {
-                    Spacer()
-                    if viewModel.isLoadingMore {
-                        ProgressView()
-                    } else {
-                        Button("Load More") {
+    private var recommendationsList: some View {
+        ScrollView {
+            LazyVStack(spacing: 10) {
+                ForEach(Array(viewModel.recommendations.enumerated()), id: \.element.id) { index, recommendation in
+                    NavigationLink(value: recommendation.id) {
+                        RecommendationCard(recommendation: recommendation, style: .row)
+                    }
+                    .buttonStyle(.plain)
+                    .onAppear {
+                        let preloadThreshold = max(viewModel.recommendations.count - 3, 0)
+                        if index >= preloadThreshold {
                             Task { await viewModel.loadNextPage() }
                         }
                     }
-                    Spacer()
                 }
-                .listRowSeparator(.hidden)
+
+                if viewModel.hasMorePages {
+                    loadMoreButton
+                }
             }
+            .padding(.horizontal, 16)
+            .padding(.bottom, 24)
         }
-        .listStyle(.plain)
         .refreshable {
-            await viewModel.loadRecommendations(reset: true)
+            await viewModel.refreshRecommendations()
         }
     }
 
-    private func recommendationRow(_ rec: RecommendationSummary) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack {
-                Text(rec.condition)
-                    .font(.subheadline.bold())
-                    .lineLimit(1)
-                Spacer()
-                Text("\(Int(rec.confidence * 100))%")
-                    .font(.caption.bold())
-                    .foregroundColor(rec.confidence >= 0.7 ? .green : .orange)
-            }
-            HStack {
-                if let crop = rec.input.crop {
-                    Label(AppConstants.cropLabel(for: crop), systemImage: "leaf")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
+    private var loadMoreButton: some View {
+        Button {
+            Task { await viewModel.loadNextPage() }
+        } label: {
+            HStack(spacing: 10) {
+                if viewModel.isLoadingMore {
+                    ProgressView()
+                        .tint(Color.appPrimary)
+                } else {
+                    Image(systemName: "arrow.right.circle.fill")
+                        .font(.system(size: 22))
+                        .foregroundStyle(Color.appPrimary)
+                    Text("Load More")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.primary)
                 }
-                Spacer()
-                Text(rec.createdAt.prefix(10))
-                    .font(.caption)
-                    .foregroundColor(.secondary)
             }
-            if let action = rec.firstAction {
-                Text(action)
-                    .font(.caption)
-                    .foregroundColor(.appPrimary)
-                    .lineLimit(1)
-            }
+            .frame(maxWidth: .infinity, alignment: .center)
+            .padding(.vertical, 12)
+            .antigravityGlass(cornerRadius: 14)
         }
-        .padding(.vertical, 4)
+        .buttonStyle(.plain)
     }
 
-    // MARK: - States
     private var loadingView: some View {
-        VStack {
+        VStack(spacing: 16) {
             Spacer()
             ProgressView("Loading recommendations...")
+                .tint(Color.appPrimary)
+                .foregroundStyle(.primary)
             Spacer()
         }
     }
 
     private var emptyView: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: 14) {
             Spacer()
             Image(systemName: "doc.text.magnifyingglass")
                 .font(.system(size: 50))
-                .foregroundColor(.secondary)
+                .foregroundStyle(.secondary)
             Text("No recommendations yet")
                 .font(.headline)
+                .foregroundStyle(.primary)
             Text("Submit a photo or lab report to get started.")
                 .font(.subheadline)
-                .foregroundColor(.secondary)
+                .foregroundStyle(.secondary)
             Spacer()
         }
     }

@@ -18,7 +18,6 @@ import {
 } from "@/components/ui/table";
 import {
   ArrowLeft,
-  ExternalLink,
   Package,
   Scale,
   Beaker,
@@ -29,6 +28,7 @@ import {
   Loader2,
   DollarSign,
   MapPin,
+  ExternalLink,
 } from "lucide-react";
 import { ProductType } from "@prisma/client";
 
@@ -66,16 +66,22 @@ interface ProductPricing {
   lastUpdated: string;
 }
 
-interface PricingResponse {
+interface BatchPricingEntry {
   productId: string;
   productName: string;
   brand: string | null;
-  pricing: ProductPricing[];
-  meta: {
-    count: number;
-    region: string;
-    fetchedAt: string;
+  pricing: {
+    currency: string;
+    retailPrice: number | null;
+    wholesalePrice: number | null;
+    unit: string | null;
+    availability: string | null;
+    lastUpdated: string | null;
   };
+}
+
+interface BatchPricingResponse {
+  pricing: BatchPricingEntry[];
 }
 
 const typeConfig: Record<ProductType, { icon: typeof Beaker; color: string; label: string }> = {
@@ -104,7 +110,7 @@ export default function ProductDetailPage() {
   useEffect(() => {
     async function fetchProduct() {
       try {
-        const response = await fetch(`/api/products/${params.id}`);
+        const response = await fetch(`/api/v1/products/${params.id}`);
         if (!response.ok) {
           if (response.status === 404) {
             setError("Product not found");
@@ -135,16 +141,45 @@ export default function ProductDetailPage() {
     setPricingLoading(true);
     setPricingFetched(true);
     try {
-      const response = await fetch(`/api/products/${params.id}/pricing`, {
+      const response = await fetch(`/api/v1/products/pricing/batch`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({}), // Will use user's profile location
+        body: JSON.stringify({ productIds: [params.id] }),
       });
 
       if (response.ok) {
-        const data: PricingResponse = await response.json();
-        setPricing(data.pricing);
-        setPricingRegion(data.meta.region);
+        const data: BatchPricingResponse = await response.json();
+        const entry = data.pricing.find((item) => item.productId === params.id) ?? data.pricing[0];
+
+        if (!entry) {
+          setPricing([]);
+          setPricingRegion(null);
+          return;
+        }
+
+        const unit = entry.pricing.unit ?? "unit";
+        const fallbackTimestamp = new Date().toISOString();
+        const normalizedPricing: ProductPricing[] = [
+          {
+            price: entry.pricing.retailPrice,
+            unit,
+            retailer: "Retail",
+            url: null,
+            region: "United States",
+            lastUpdated: entry.pricing.lastUpdated ?? fallbackTimestamp,
+          },
+          {
+            price: entry.pricing.wholesalePrice,
+            unit,
+            retailer: "Wholesale",
+            url: null,
+            region: "United States",
+            lastUpdated: entry.pricing.lastUpdated ?? fallbackTimestamp,
+          },
+        ];
+
+        setPricing(normalizedPricing);
+        setPricingRegion("United States");
       }
     } catch (err) {
       console.error("Failed to fetch pricing:", err);

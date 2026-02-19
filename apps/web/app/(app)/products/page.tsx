@@ -68,7 +68,7 @@ export default function ProductsPage() {
       params.set("limit", ITEMS_PER_PAGE.toString());
       params.set("offset", ((page - 1) * ITEMS_PER_PAGE).toString());
 
-      const response = await fetch(`/api/products?${params.toString()}`);
+      const response = await fetch(`/api/v1/products?${params.toString()}`);
       if (!response.ok) throw new Error("Failed to fetch products");
 
       const data: ProductsResponse = await response.json();

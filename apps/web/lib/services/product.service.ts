@@ -62,6 +62,12 @@ export interface GetProductResult {
     crops: string[];
   }>;
   usedInRecommendations: number;
+  recommendations: Array<{
+    recommendationId: string;
+    condition: string;
+    crop: string | null;
+    createdAt: string;
+  }>;
 }
 
 export interface CompareProductsParams {
@@ -190,11 +196,25 @@ export async function getProduct(params: GetProductParams): Promise<GetProductRe
     where: { id },
     include: {
       recommendations: {
+        orderBy: {
+          createdAt: 'desc',
+        },
+        take: 8,
         select: {
-          id: true,
           recommendationId: true,
-          reason: true,
-          priority: true,
+          createdAt: true,
+          recommendation: {
+            select: {
+              id: true,
+              createdAt: true,
+              diagnosis: true,
+              input: {
+                select: {
+                  crop: true,
+                },
+              },
+            },
+          },
         },
       },
     },
@@ -206,6 +226,20 @@ export async function getProduct(params: GetProductParams): Promise<GetProductRe
 
   // Get count of recommendations using this product
   const usedInRecommendations = product.recommendations.length;
+  const recommendationRefs = product.recommendations.map((entry) => {
+    const diagnosis = entry.recommendation.diagnosis as any;
+    const condition =
+      diagnosis?.diagnosis?.condition ??
+      diagnosis?.condition ??
+      'Recommendation';
+
+    return {
+      recommendationId: entry.recommendationId,
+      condition,
+      crop: entry.recommendation.input.crop,
+      createdAt: entry.recommendation.createdAt.toISOString(),
+    };
+  });
 
   // Find related products (same type, different product)
   const relatedProducts = await prisma.product.findMany({
@@ -238,6 +272,7 @@ export async function getProduct(params: GetProductParams): Promise<GetProductRe
       crops: rp.crops,
     })),
     usedInRecommendations,
+    recommendations: recommendationRefs,
   };
 
   return response;

@@ -14,6 +14,7 @@ import { processLearningSignal } from '../learning/feedback-learning';
 
 interface SubmitFeedbackPayload {
   recommendationId: string;
+  stage?: FeedbackStage;
   helpful?: boolean;
   rating?: number;
   accuracy?: number;
@@ -33,6 +34,7 @@ interface FeedbackRow {
   accuracy: number | null;
   comments: string | null;
   issues: unknown;
+  detailed_completed_at: Date | null;
   outcome_applied: boolean | null;
   outcome_success: boolean | null;
   outcome_notes: string | null;
@@ -44,6 +46,8 @@ interface FeedbackRow {
 interface RecommendationOwnerRow {
   user_id: string;
 }
+
+type FeedbackStage = 'basic' | 'detailed' | 'outcome';
 
 interface FeedbackSubmitter {
   (userId: string, payload: SubmitFeedbackPayload): Promise<{
@@ -95,6 +99,7 @@ function parseSubmitFeedbackPayload(input: unknown): SubmitFeedbackPayload {
     payload.recommendationId,
     'recommendationId is required'
   );
+  const stage = normalizeOptionalStage(payload.stage);
 
   const helpful = normalizeOptionalBoolean(payload.helpful, 'helpful');
   const rating = normalizeOptionalRating(payload.rating, 'rating');
@@ -107,6 +112,7 @@ function parseSubmitFeedbackPayload(input: unknown): SubmitFeedbackPayload {
 
   return {
     recommendationId,
+    stage,
     helpful,
     rating,
     accuracy,
@@ -151,6 +157,7 @@ async function submitFeedbackToDatabase(
         accuracy,
         comments,
         issues,
+        "detailedCompletedAt" AS detailed_completed_at,
         "outcomeApplied" AS outcome_applied,
         "outcomeSuccess" AS outcome_success,
         "outcomeNotes" AS outcome_notes,
@@ -165,12 +172,22 @@ async function submitFeedbackToDatabase(
   );
 
   const previous = existingFeedback.rows[0];
+  const isDetailedSubmission =
+    payload.stage === 'detailed' ||
+    payload.accuracy !== undefined ||
+    (payload.issues !== undefined && payload.issues.length > 0);
+
+  const detailedCompletedAt =
+    isDetailedSubmission
+      ? new Date()
+      : previous?.detailed_completed_at ?? null;
   const merged = {
     helpful: payload.helpful ?? previous?.helpful ?? null,
     rating: payload.rating ?? previous?.rating ?? null,
     accuracy: payload.accuracy ?? previous?.accuracy ?? null,
     comments: payload.comments ?? previous?.comments ?? null,
     issues: payload.issues ?? normalizeIssues(previous?.issues),
+    detailedCompletedAt,
     outcomeApplied: payload.outcomeApplied ?? previous?.outcome_applied ?? null,
     outcomeSuccess: payload.outcomeSuccess ?? previous?.outcome_success ?? null,
     outcomeNotes: payload.outcomeNotes ?? previous?.outcome_notes ?? null,
@@ -189,6 +206,7 @@ async function submitFeedbackToDatabase(
         accuracy,
         comments,
         issues,
+        "detailedCompletedAt",
         "outcomeApplied",
         "outcomeSuccess",
         "outcomeNotes",
@@ -209,6 +227,7 @@ async function submitFeedbackToDatabase(
         $10,
         $11,
         $12,
+        $13,
         NOW(),
         NOW()
       )
@@ -219,6 +238,7 @@ async function submitFeedbackToDatabase(
           accuracy = EXCLUDED.accuracy,
           comments = EXCLUDED.comments,
           issues = EXCLUDED.issues,
+          "detailedCompletedAt" = EXCLUDED."detailedCompletedAt",
           "outcomeApplied" = EXCLUDED."outcomeApplied",
           "outcomeSuccess" = EXCLUDED."outcomeSuccess",
           "outcomeNotes" = EXCLUDED."outcomeNotes",
@@ -233,6 +253,7 @@ async function submitFeedbackToDatabase(
         accuracy,
         comments,
         issues,
+        "detailedCompletedAt" AS detailed_completed_at,
         "outcomeApplied" AS outcome_applied,
         "outcomeSuccess" AS outcome_success,
         "outcomeNotes" AS outcome_notes,
@@ -249,6 +270,7 @@ async function submitFeedbackToDatabase(
       merged.accuracy,
       merged.comments,
       JSON.stringify(merged.issues),
+      merged.detailedCompletedAt,
       merged.outcomeApplied,
       merged.outcomeSuccess,
       merged.outcomeNotes,
@@ -287,6 +309,7 @@ function toFeedbackResponse(row: FeedbackRow) {
     accuracy: row.accuracy,
     comments: row.comments,
     issues: normalizeIssues(row.issues),
+    detailedCompletedAt: row.detailed_completed_at?.toISOString() ?? null,
     outcomeApplied: row.outcome_applied,
     outcomeSuccess: row.outcome_success,
     outcomeNotes: row.outcome_notes,
@@ -310,6 +333,18 @@ function normalizeRequiredString(value: unknown, message: string): string {
   }
 
   return value.trim();
+}
+
+function normalizeOptionalStage(value: unknown): FeedbackStage | undefined {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  if (value === 'basic' || value === 'detailed' || value === 'outcome') {
+    return value;
+  }
+
+  throw new Error('stage must be one of: basic, detailed, outcome');
 }
 
 function normalizeOptionalString(

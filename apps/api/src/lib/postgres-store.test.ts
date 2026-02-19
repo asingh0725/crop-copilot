@@ -295,6 +295,10 @@ test('PostgresRecommendationStore persists recommendation payload into legacy ta
       includes: 'SELECT id, name, brand, type::text AS type',
       rows: [],
     },
+    {
+      includes: 'ORDER BY "updatedAt" DESC LIMIT \\$1',
+      rows: [],
+    },
     { includes: '^COMMIT$', rows: [] },
   ]);
 
@@ -390,5 +394,79 @@ test('PostgresRecommendationStore persists precomputed product recommendations',
       modelUsed: 'rag-v2-scaffold',
       sources: [],
     }
+  );
+});
+
+test('PostgresRecommendationStore resolves diagnosis products by product name aliases', async () => {
+  const pool = createScriptedPool([
+    { includes: '^BEGIN$', rows: [] },
+    {
+      includes: 'UPDATE app_recommendation_job',
+      rows: [{ input_id: '9f2644c5-a906-4739-9fca-a6f4078dc8c7' }],
+    },
+    {
+      includes: 'SELECT id FROM "Recommendation" WHERE "inputId"',
+      rows: [{ id: '1d57059e-e6ce-4f89-a061-937eddf591d4' }],
+    },
+    {
+      includes: 'UPDATE "Recommendation"',
+      rows: [],
+    },
+    {
+      includes: 'DELETE FROM "RecommendationSource"',
+      rows: [],
+    },
+    {
+      includes: 'DELETE FROM "ProductRecommendation"',
+      rows: [],
+    },
+    {
+      includes: 'SELECT crop FROM "Input"',
+      rows: [{ crop: 'corn' }],
+    },
+    {
+      includes: 'WHERE lower\\(name\\) = ANY\\(\\$1::text\\[\\]\\)',
+      rows: [
+        {
+          id: 'prod-2',
+          name: 'Corn Guard',
+          brand: 'Acme',
+          type: 'FUNGICIDE',
+          application_rate: '1.5 qt/ac',
+          description: 'Broad-spectrum disease management',
+        },
+      ],
+    },
+    {
+      includes: 'INSERT INTO "ProductRecommendation"',
+      rows: [],
+    },
+    { includes: '^COMMIT$', rows: [] },
+  ]);
+
+  const store = new PostgresRecommendationStore(pool);
+
+  await store.saveRecommendationResult(
+    'deab17cf-f109-43f2-b95b-7d2f328a7720',
+    '11111111-1111-1111-1111-111111111111',
+    {
+      recommendationId: '1d57059e-e6ce-4f89-a061-937eddf591d4',
+      confidence: 0.79,
+      diagnosis: {
+        diagnosis: {
+          condition: 'northern corn leaf blight',
+          conditionType: 'disease',
+        },
+        productRecommendations: [
+          {
+            product_name: 'Corn Guard',
+            reason: 'Matches foliar disease pressure.',
+            application_rate: '1.5 qt/ac',
+          },
+        ],
+      },
+      modelUsed: 'rag-v2-scaffold',
+      sources: [],
+    } as any
   );
 });

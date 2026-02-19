@@ -56,7 +56,7 @@ export default function ProfilePage() {
   useEffect(() => {
     async function fetchProfile() {
       try {
-        const response = await fetch('/api/profile')
+        const response = await fetch('/api/v1/profile')
         if (response.ok) {
           const { profile } = await response.json()
           if (profile) {
@@ -83,7 +83,7 @@ export default function ProfilePage() {
     setIsLoading(true)
 
     try {
-      const response = await fetch('/api/profile', {
+      const response = await fetch('/api/v1/profile', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),

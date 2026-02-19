@@ -14,6 +14,15 @@ class DashboardViewModel: ObservableObject {
     @Published var errorMessage: String?
 
     private let apiClient = APIClient.shared
+    private var hasLoadedOnce = false
+
+    func loadIfNeeded() async {
+        if hasLoadedOnce {
+            return
+        }
+        hasLoadedOnce = true
+        await loadRecentRecommendations()
+    }
 
     func loadRecentRecommendations() async {
         isLoading = true
@@ -25,6 +34,7 @@ class DashboardViewModel: ObservableObject {
                 .listRecommendations(page: 1, pageSize: 5, search: nil, sort: "date_desc")
             )
             recentRecommendations = response.recommendations
+            hasLoadedOnce = true
         } catch let error as NetworkError {
             if case .cancelled = error {
                 return

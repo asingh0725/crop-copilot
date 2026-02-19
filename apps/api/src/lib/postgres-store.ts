@@ -68,7 +68,8 @@ interface CatalogProductRow {
 }
 
 interface ParsedDiagnosisProduct {
-  productId: string;
+  productId: string | null;
+  productName: string | null;
   reason: string | null;
   applicationRate: string | null;
   alternatives: string[];
@@ -559,7 +560,7 @@ export class PostgresRecommendationStore implements RecommendationStore {
           $2,
           NULL,
           'UNIVERSITY_EXTENSION',
-          'AWS Runtime',
+          'Crop Copilot Knowledge Base',
           'ready',
           1,
           NULL,
@@ -699,58 +700,132 @@ export class PostgresRecommendationStore implements RecommendationStore {
 
     const candidateIds: string[] = [];
     const seenIds = new Set<string>();
+    const candidateNames: string[] = [];
+    const seenNames = new Set<string>();
     for (const product of context.products) {
       for (const id of [product.productId, ...product.alternatives]) {
-        if (seenIds.has(id)) {
+        if (!id || seenIds.has(id)) {
           continue;
         }
         seenIds.add(id);
         candidateIds.push(id);
       }
+
+      if (product.productName) {
+        const normalizedName = product.productName.toLowerCase();
+        if (!seenNames.has(normalizedName)) {
+          seenNames.add(normalizedName);
+          candidateNames.push(normalizedName);
+        }
+      }
     }
 
-    if (candidateIds.length === 0) {
+    if (candidateIds.length === 0 && candidateNames.length === 0) {
       return [];
     }
 
-    const productResult = await client.query<CatalogProductRow>(
-      `
-        SELECT
-          id,
-          name,
-          brand,
-          type::text AS type,
-          "applicationRate" AS application_rate,
-          description
-        FROM "Product"
-        WHERE id = ANY($1::text[])
-      `,
-      [candidateIds]
+    const baseSelect = `
+      SELECT
+        id,
+        name,
+        brand,
+        type::text AS type,
+        "applicationRate" AS application_rate,
+        description
+      FROM "Product"
+    `;
+
+    const idMatches =
+      candidateIds.length > 0
+        ? await client.query<CatalogProductRow>(
+            `
+              ${baseSelect}
+              WHERE id = ANY($1::text[])
+            `,
+            [candidateIds]
+          )
+        : { rows: [] as CatalogProductRow[] };
+
+    const nameMatches =
+      candidateNames.length > 0
+        ? await client.query<CatalogProductRow>(
+            `
+              ${baseSelect}
+              WHERE lower(name) = ANY($1::text[])
+            `,
+            [candidateNames]
+          )
+        : { rows: [] as CatalogProductRow[] };
+
+    const fallbackNameMatches =
+      candidateNames.length > 0 && idMatches.rows.length + nameMatches.rows.length === 0
+        ? await client.query<CatalogProductRow>(
+            `
+              ${baseSelect}
+              WHERE EXISTS (
+                SELECT 1
+                FROM unnest($1::text[]) AS candidate_name
+                WHERE lower(name) LIKE '%' || candidate_name || '%'
+              )
+              ORDER BY "updatedAt" DESC
+              LIMIT 20
+            `,
+            [candidateNames]
+          )
+        : { rows: [] as CatalogProductRow[] };
+
+    const mergedCatalogRows = dedupeCatalogRows([
+      ...idMatches.rows,
+      ...nameMatches.rows,
+      ...fallbackNameMatches.rows,
+    ]);
+
+    if (mergedCatalogRows.length === 0) {
+      return [];
+    }
+
+    const productById = new Map(mergedCatalogRows.map((row) => [row.id, row]));
+    const productByName = new Map(
+      mergedCatalogRows.map((row) => [row.name.trim().toLowerCase(), row])
     );
-
-    if (productResult.rows.length === 0) {
-      return [];
-    }
-
-    const productById = new Map(productResult.rows.map((row) => [row.id, row]));
     const resolved: ProductRecommendationCandidate[] = [];
     const usedProductIds = new Set<string>();
 
     for (const product of context.products) {
-      const options = [product.productId, ...product.alternatives];
-      const matchedId = options.find((id) => productById.has(id) && !usedProductIds.has(id));
-      if (!matchedId) {
-        continue;
+      const options = [product.productId, ...product.alternatives].filter(
+        (entry): entry is string => Boolean(entry)
+      );
+      let matchedProduct = options
+        .map((id) => productById.get(id))
+        .find(
+          (entry): entry is CatalogProductRow =>
+            entry !== undefined && !usedProductIds.has(entry.id)
+        );
+
+      if (!matchedProduct && product.productName) {
+        const normalizedName = product.productName.trim().toLowerCase();
+        const exact = productByName.get(normalizedName);
+        if (exact && !usedProductIds.has(exact.id)) {
+          matchedProduct = exact;
+        } else {
+          const fuzzy = mergedCatalogRows.find(
+            (entry) =>
+              !usedProductIds.has(entry.id) &&
+              entry.name.trim().toLowerCase().includes(normalizedName)
+          );
+          if (fuzzy) {
+            matchedProduct = fuzzy;
+          }
+        }
       }
 
-      usedProductIds.add(matchedId);
-      const matchedProduct = productById.get(matchedId);
       if (!matchedProduct) {
         continue;
       }
 
+      usedProductIds.add(matchedProduct.id);
       resolved.push({
-        productId: matchedId,
+        productId: matchedProduct.id,
         reason:
           product.reason ??
           buildFallbackProductReason(matchedProduct, context, null),
@@ -777,16 +852,20 @@ export class PostgresRecommendationStore implements RecommendationStore {
       context.recommendationActions
     );
 
+    const baseSelect = `
+      SELECT
+        id,
+        name,
+        brand,
+        type::text AS type,
+        "applicationRate" AS application_rate,
+        description
+      FROM "Product"
+    `;
+
     const catalogResult = await client.query<CatalogProductRow>(
       `
-        SELECT
-          id,
-          name,
-          brand,
-          type::text AS type,
-          "applicationRate" AS application_rate,
-          description
-        FROM "Product"
+        ${baseSelect}
         WHERE (
           CARDINALITY($2::text[]) = 0
           OR type::text = ANY($2::text[])
@@ -817,7 +896,21 @@ export class PostgresRecommendationStore implements RecommendationStore {
       [crop, preferredTypes, MAX_PRODUCT_RECOMMENDATIONS]
     );
 
-    return catalogResult.rows.map((row) => ({
+    const relaxedRows =
+      catalogResult.rows.length > 0
+        ? catalogResult.rows
+        : (
+            await client.query<CatalogProductRow>(
+              `
+                ${baseSelect}
+                ORDER BY "updatedAt" DESC
+                LIMIT $1
+              `,
+              [MAX_PRODUCT_RECOMMENDATIONS]
+            )
+          ).rows;
+
+    return relaxedRows.map((row) => ({
       productId: row.id,
       reason: buildFallbackProductReason(row, context, crop),
       applicationRate: row.application_rate,
@@ -902,6 +995,52 @@ function asStringArray(value: unknown): string[] {
   return values;
 }
 
+function asStringCandidate(value: unknown): string | null {
+  if (typeof value === 'string') {
+    return asNonEmptyString(value);
+  }
+  if (typeof value === 'number' || typeof value === 'boolean') {
+    return String(value);
+  }
+  return null;
+}
+
+function resolveDiagnosisProductsArray(
+  root: Record<string, unknown>,
+  diagnosisNode: Record<string, unknown>
+): unknown[] {
+  const candidates = [
+    root.products,
+    root.recommendedProducts,
+    root.productRecommendations,
+    diagnosisNode.products,
+    diagnosisNode.recommendedProducts,
+    diagnosisNode.productRecommendations,
+  ];
+
+  for (const value of candidates) {
+    if (Array.isArray(value)) {
+      return value;
+    }
+  }
+
+  return [];
+}
+
+function dedupeCatalogRows(rows: CatalogProductRow[]): CatalogProductRow[] {
+  const deduped: CatalogProductRow[] = [];
+  const seen = new Set<string>();
+  for (const row of rows) {
+    if (seen.has(row.id)) {
+      continue;
+    }
+    seen.add(row.id);
+    deduped.push(row);
+  }
+
+  return deduped;
+}
+
 function inferConditionType(
   rawConditionType: string | null,
   condition: string | null,
@@ -972,7 +1111,7 @@ function extractDiagnosisContext(diagnosisPayload: unknown): DiagnosisContext {
   const root = asRecord(diagnosisPayload) ?? {};
   const diagnosisNode = asRecord(root.diagnosis) ?? root;
   const recommendations = Array.isArray(root.recommendations) ? root.recommendations : [];
-  const products = Array.isArray(root.products) ? root.products : [];
+  const products = resolveDiagnosisProductsArray(root, diagnosisNode);
 
   const recommendationActions = recommendations
     .map((recommendation) => asNonEmptyString(asRecord(recommendation)?.action))
@@ -986,16 +1125,37 @@ function extractDiagnosisContext(diagnosisPayload: unknown): DiagnosisContext {
         return null;
       }
 
-      const productId = asNonEmptyString(item.productId);
-      if (!productId) {
+      const nestedProduct = asRecord(item.product);
+      const productId =
+        asStringCandidate(item.productId) ??
+        asStringCandidate(item.product_id) ??
+        asStringCandidate(item.id) ??
+        asStringCandidate(nestedProduct?.id);
+      const productName =
+        asStringCandidate(item.productName) ??
+        asStringCandidate(item.product_name) ??
+        asStringCandidate(item.name) ??
+        asStringCandidate(nestedProduct?.name);
+
+      if (!productId && !productName) {
         return null;
       }
 
+      const alternatives = [
+        ...asStringArray(item.alternatives),
+        ...asStringArray(item.alternativeIds),
+      ];
+
       return {
         productId,
-        reason: asNonEmptyString(item.reason),
-        applicationRate: asNonEmptyString(item.applicationRate),
-        alternatives: asStringArray(item.alternatives),
+        productName,
+        reason:
+          asStringCandidate(item.reason) ??
+          asStringCandidate(item.reasoning),
+        applicationRate:
+          asStringCandidate(item.applicationRate) ??
+          asStringCandidate(item.application_rate),
+        alternatives,
       } satisfies ParsedDiagnosisProduct;
     })
     .filter((product): product is ParsedDiagnosisProduct => Boolean(product));

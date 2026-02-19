@@ -20,7 +20,8 @@ const token = process.env.API_PARITY_BEARER_TOKEN;
 const defaultChecks = [
   'GET:/api/v1/profile',
   'GET:/api/v1/inputs?limit=5',
-  'GET:/api/v1/recommendations?limit=5',
+  'GET:/api/v1/recommendations?pageSize=5',
+  'GET:/api/v1/products?limit=5',
 ];
 
 const checks = (process.env.API_PARITY_ENDPOINTS || defaultChecks.join(','))

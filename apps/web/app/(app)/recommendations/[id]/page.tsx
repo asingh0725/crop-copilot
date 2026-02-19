@@ -343,7 +343,6 @@ export default async function RecommendationPage({
           actionItems={actionItems}
           sources={displaySources}
           products={products}
-          recommendationId={recommendation.id}
         />
 
         {recommendation.input && (
