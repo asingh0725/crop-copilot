@@ -52,7 +52,13 @@ export function ProductCard({ product, selectable, selected, onSelect }: Product
     : null;
 
   return (
-    <Card className="group hover:shadow-lg transition-shadow">
+    <Card
+      className="group hover:shadow-lg transition-shadow"
+      style={{
+        contentVisibility: "auto",
+        containIntrinsicSize: "320px",
+      }}
+    >
       <CardContent className="p-4">
         {/* Header with checkbox */}
         <div className="flex items-start justify-between mb-3">

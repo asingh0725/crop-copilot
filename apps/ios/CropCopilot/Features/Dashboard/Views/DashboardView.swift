@@ -29,11 +29,6 @@ struct DashboardView: View {
             .task {
                 await viewModel.loadIfNeeded()
             }
-            .onAppear {
-                Task {
-                    await viewModel.loadRecentRecommendations()
-                }
-            }
         }
     }
 
@@ -51,15 +46,16 @@ struct DashboardView: View {
                 .foregroundStyle(.secondary)
 
             Button {
-                selectedTab = .diagnose
+                selectedTab = .recommendations
             } label: {
-                Label("Start New Diagnosis", systemImage: "arrow.up.right")
+                Label("Open Recommendations", systemImage: "arrow.up.right")
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(.black)
                     .padding(.horizontal, 14)
                     .padding(.vertical, 10)
                     .background(Color.appPrimary)
                     .clipShape(Capsule())
+                    .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
         }
@@ -81,23 +77,39 @@ struct DashboardView: View {
     }
 
     private var insightCards: some View {
-        HStack(spacing: 10) {
-            metricCard(
-                title: "Recent",
-                value: "\(viewModel.recentRecommendations.count)",
-                subtitle: "recommendations"
-            )
-            metricCard(
-                title: "Average",
-                value: averageConfidenceLabel,
-                subtitle: "confidence"
-            )
-            metricCard(
-                title: "High",
-                value: highConfidenceCountLabel,
-                subtitle: ">= 80%"
-            )
+        VStack(spacing: 10) {
+            HStack(spacing: 10) {
+                metricCard(
+                    title: "Recent",
+                    value: "\(viewModel.recentRecommendations.count)",
+                    subtitle: "recommendations"
+                )
+                metricCard(
+                    title: "Average",
+                    value: averageConfidenceLabel,
+                    subtitle: "confidence"
+                )
+            }
+
+            HStack(spacing: 10) {
+                metricCard(
+                    title: "High",
+                    value: highConfidenceCountLabel,
+                    subtitle: ">= 80%"
+                )
+                metricCard(
+                    title: "Low",
+                    value: lowConfidenceCountLabel,
+                    subtitle: "< 60%"
+                )
+            }
         }
+    }
+
+    private var lowConfidenceCountLabel: String {
+        guard !viewModel.recentRecommendations.isEmpty else { return "0" }
+        let lowCount = viewModel.recentRecommendations.filter { $0.confidence < 0.6 }.count
+        return "\(lowCount)"
     }
 
     private var averageConfidenceLabel: String {
@@ -113,23 +125,6 @@ struct DashboardView: View {
         return "\(highCount)"
     }
 
-    private func metricCard(title: String, value: String, subtitle: String) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text(title.uppercased())
-                .font(.caption2.weight(.semibold))
-                .foregroundStyle(.secondary)
-            Text(value)
-                .font(.title3.weight(.bold))
-                .foregroundStyle(.primary)
-            Text(subtitle)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(14)
-        .antigravityGlass(cornerRadius: 16)
-    }
-
     private var quickActions: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Quick Actions")
@@ -140,18 +135,36 @@ struct DashboardView: View {
                 Button {
                     selectedTab = .diagnose
                 } label: {
-                    quickActionCard(icon: "camera.fill", title: "Photo Diagnosis", color: .appPrimary)
+                    quickActionCard(icon: "camera.fill", title: "New Diagnosis", color: .appPrimary)
                 }
                 .buttonStyle(AntigravityScaleButtonStyle())
 
                 Button {
-                    selectedTab = .diagnose
+                    selectedTab = .products
                 } label: {
-                    quickActionCard(icon: "doc.text.fill", title: "Lab Report", color: .blue)
+                    quickActionCard(icon: "shippingbox.fill", title: "Browse Products", color: .blue)
                 }
                 .buttonStyle(AntigravityScaleButtonStyle())
             }
         }
+    }
+
+    private func metricCard(title: String, value: String, subtitle: String) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(title.uppercased())
+                .font(.caption2.weight(.semibold))
+                .foregroundStyle(.secondary)
+            Text(value)
+                .font(.title3.weight(.bold))
+                .foregroundStyle(.primary)
+                .monospacedDigit()
+            Text(subtitle)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(14)
+        .antigravityGlass(cornerRadius: 16)
     }
 
     private var statusStrip: some View {
@@ -195,6 +208,7 @@ struct DashboardView: View {
         .padding(.vertical, 14)
         .padding(.horizontal, 12)
         .antigravityGlass(cornerRadius: 14)
+        .contentShape(Rectangle())
     }
 
     private var recentRecommendationsSection: some View {
@@ -222,6 +236,7 @@ struct DashboardView: View {
                             RecommendationDetailView(recommendationId: recommendation.id)
                         } label: {
                             RecommendationCard(recommendation: recommendation, style: .row)
+                                .contentShape(Rectangle())
                         }
                         .buttonStyle(.plain)
                     }

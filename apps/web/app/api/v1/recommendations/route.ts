@@ -21,12 +21,23 @@ export const GET = withAuth(async (request) => {
   try {
     const { searchParams } = new URL(request.url)
     const search = searchParams.get('search') || ''
+    const ids = (searchParams.get('ids') || '')
+      .split(',')
+      .map((value) => value.trim())
+      .filter((value) => value.length > 0)
+      .slice(0, 200)
     const sort = searchParams.get('sort') as 'date_asc' | 'date_desc' | 'confidence_high' | 'confidence_low' | undefined
-    const page = parseInt(searchParams.get('page') || '1', 10)
-    const pageSize = parseInt(searchParams.get('pageSize') || '20', 10)
+    const rawPage = parseInt(searchParams.get('page') || '1', 10)
+    const rawPageSize = parseInt(searchParams.get('pageSize') || '20', 10)
+    const page = Number.isFinite(rawPage) && rawPage > 0 ? rawPage : 1
+    const pageSize =
+      Number.isFinite(rawPageSize) && rawPageSize > 0
+        ? Math.min(rawPageSize, 100)
+        : 20
 
     const result = await listRecommendations({
       userId: request.user.id,
+      ids,
       search,
       sort,
       page,

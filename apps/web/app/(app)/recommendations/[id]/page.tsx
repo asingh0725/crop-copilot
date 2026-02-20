@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { SecureImage } from "@/components/recommendations/secure-image";
+import { upsertRecommendationProductsFromDiagnosis } from "@/lib/services/recommendation-products";
 import type {
   ActionItem,
   ConditionType,
@@ -73,7 +74,16 @@ function inferConditionType(
 
 function normalizeDiagnosisPayload(
   rawDiagnosis: unknown,
-  confidence: number
+  confidence: number,
+  directRecommendedProducts: Array<{
+    id: string;
+    catalogProductId?: string;
+    productId?: string;
+    name: string;
+    type: string;
+    reason: string | null;
+    applicationRate: string | null;
+  }> = []
 ): FullRecommendation {
   const record =
     rawDiagnosis && typeof rawDiagnosis === "object"
@@ -105,9 +115,89 @@ function normalizeDiagnosisPayload(
   const recommendations: ActionItem[] = Array.isArray(record.recommendations)
     ? (record.recommendations as ActionItem[])
     : [];
-  const products: ProductSuggestion[] = Array.isArray(record.products)
-    ? (record.products as ProductSuggestion[])
+
+  const normalizeProduct = (entry: unknown): ProductSuggestion | null => {
+    if (!entry || typeof entry !== "object") {
+      return null;
+    }
+
+    const record = entry as Record<string, unknown>;
+    const nestedString =
+      typeof record.product === "string" ? record.product.trim() : null;
+    const nested =
+      record.product && typeof record.product === "object"
+        ? (record.product as Record<string, unknown>)
+        : null;
+
+    const productId =
+      (record.productId as string | undefined) ??
+      (record.product_id as string | undefined) ??
+      (record.id as string | undefined) ??
+      (nested?.id as string | undefined);
+    const productName =
+      (record.productName as string | undefined) ??
+      (record.product_name as string | undefined) ??
+      (record.name as string | undefined) ??
+      nestedString ??
+      (nested?.name as string | undefined) ??
+      "Suggested product";
+    const reason =
+      (record.reason as string | undefined) ??
+      (record.reasoning as string | undefined) ??
+      `Recommended for ${String(
+        (record.productType as string | undefined) ??
+          (record.product_type as string | undefined) ??
+          (nested?.type as string | undefined) ??
+          "crop"
+      ).toLowerCase()} management.`;
+    const applicationRate =
+      (record.applicationRate as string | undefined) ??
+      (record.application_rate as string | undefined) ??
+      (nested?.applicationRate as string | undefined) ??
+      (nested?.application_rate as string | undefined);
+
+    return {
+      productId,
+      catalogProductId:
+        typeof productId === "string" && productId.trim().length > 0
+          ? productId
+          : null,
+      productName,
+      name: productName,
+      reason,
+      applicationRate,
+    };
+  };
+
+  const diagnosisProducts = Array.isArray(record.products)
+    ? (record.products as unknown[]).map(normalizeProduct).filter(Boolean) as ProductSuggestion[]
     : [];
+
+  const directProducts = directRecommendedProducts.map((product) => ({
+    productId: product.productId ?? product.id,
+    catalogProductId: product.catalogProductId ?? product.productId ?? product.id,
+    productName: product.name,
+    name: product.name,
+    reason:
+      product.reason ??
+      `Recommended for ${product.type.toLowerCase()} management.`,
+    applicationRate: product.applicationRate ?? undefined,
+  }));
+
+  const productsByKey = new Map<string, ProductSuggestion>();
+  [...directProducts, ...diagnosisProducts].forEach((product) => {
+    const key =
+      product.catalogProductId ||
+      product.productId ||
+      product.productName ||
+      product.name ||
+      `product-${productsByKey.size + 1}`;
+    if (!productsByKey.has(key)) {
+      productsByKey.set(key, product);
+    }
+  });
+
+  const products = Array.from(productsByKey.values());
 
   return {
     diagnosis,
@@ -141,18 +231,34 @@ function buildFallbackSources(rawDiagnosis: unknown): RecommendationSourceView[]
       content: entry,
       imageUrl: null,
       relevanceScore: null,
-      source: {
-        id: `fallback-source-doc-${index + 1}`,
-        title: `Evidence ${index + 1}`,
-        type: "GENERATED",
-        url: null,
-        publisher: "AWS Runtime",
-        publishedDate: null,
-      },
-    });
+        source: {
+          id: `fallback-source-doc-${index + 1}`,
+          title: `Evidence ${index + 1}`,
+          type: "GENERATED",
+          url: null,
+          publisher: "Research Source",
+          publishedDate: null,
+        },
+      });
   }
 
   return fallbackSources;
+}
+
+function isGenericProductLabel(value: string | null | undefined): boolean {
+  if (!value) return true;
+  const normalized = value
+    .trim()
+    .toLowerCase()
+    .replace(/[_-]+/g, " ")
+    .replace(/\s+/g, " ");
+  return (
+    normalized.length === 0 ||
+    normalized === "suggested product" ||
+    normalized === "unspecified" ||
+    normalized === "unknown product" ||
+    normalized === "product"
+  );
 }
 
 async function getRecommendation(id: string) {
@@ -192,6 +298,12 @@ async function getRecommendation(id: string) {
           },
         },
       },
+      products: {
+        include: {
+          product: true,
+        },
+        orderBy: [{ priority: "asc" }, { createdAt: "asc" }],
+      },
     },
   });
 
@@ -223,6 +335,12 @@ async function getRecommendation(id: string) {
             },
           },
         },
+        products: {
+          include: {
+            product: true,
+          },
+          orderBy: [{ priority: "asc" }, { createdAt: "asc" }],
+        },
       },
     });
   }
@@ -236,13 +354,84 @@ async function getRecommendation(id: string) {
     return null;
   }
 
+  type RecommendationProductRow = {
+    reason: string | null;
+    applicationRate: string | null;
+    priority: number;
+    product: {
+      id: string;
+      name: string;
+      brand: string | null;
+      type: string;
+    };
+  };
+
+  let productRows: RecommendationProductRow[] = recommendation.products.map((entry) => ({
+    reason: entry.reason,
+    applicationRate: entry.applicationRate,
+    priority: entry.priority,
+    product: {
+      id: entry.product.id,
+      name: entry.product.name,
+      brand: entry.product.brand,
+      type: entry.product.type,
+    },
+  }));
+  const hasSpecificProductRow = productRows.some(
+    (entry) => !isGenericProductLabel(entry.product?.name)
+  );
+  if (hasSpecificProductRow) {
+    productRows = productRows.filter(
+      (entry) => !isGenericProductLabel(entry.product?.name)
+    );
+  }
+  const shouldBackfillProducts =
+    productRows.length === 0 ||
+    productRows.every((entry) => isGenericProductLabel(entry.product?.name));
+
+  if (shouldBackfillProducts) {
+    try {
+      const backfilled = await upsertRecommendationProductsFromDiagnosis({
+        recommendationId: recommendation.id,
+        diagnosis: recommendation.diagnosis,
+        crop: recommendation.input.crop,
+      });
+      if (backfilled.length > 0) {
+        productRows = backfilled.map((entry) => ({
+          reason: entry.reason,
+          applicationRate: entry.applicationRate,
+          priority: entry.priority,
+          product: {
+            id: entry.product.id,
+            name: entry.product.name,
+            brand: entry.product.brand,
+            type: entry.product.type,
+          },
+        }));
+      }
+    } catch (error) {
+      console.error("Recommendation product backfill failed (page):", error);
+    }
+  }
+
   // Format response with all necessary data
+  const recommendedProducts = productRows.map((entry) => ({
+    id: entry.product.id,
+    catalogProductId: entry.product.id,
+    productId: entry.product.id,
+    name: entry.product.name,
+    type: entry.product.type,
+    reason: entry.reason,
+    applicationRate: entry.applicationRate,
+  }));
+
   return {
     id: recommendation.id,
     createdAt: recommendation.createdAt,
     diagnosis: recommendation.diagnosis,
     confidence: recommendation.confidence,
     modelUsed: recommendation.modelUsed,
+    recommendedProducts,
     input: {
       id: recommendation.input.id,
       type: recommendation.input.type,
@@ -293,7 +482,8 @@ export default async function RecommendationPage({
 
   const fullRecommendation = normalizeDiagnosisPayload(
     recommendation.diagnosis,
-    recommendation.confidence
+    recommendation.confidence,
+    recommendation.recommendedProducts
   );
   const diagnosis = fullRecommendation.diagnosis;
   const actionItems = fullRecommendation.recommendations || [];

@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Input } from "@/components/ui/input";
 import {
   Table,
   TableBody,
@@ -55,6 +56,12 @@ interface ProductDetail {
   updatedAt: string;
   relatedProducts: RelatedProduct[];
   usedInRecommendations: number;
+  recommendations: Array<{
+    recommendationId: string;
+    condition: string;
+    crop: string | null;
+    createdAt: string;
+  }>;
 }
 
 interface ProductPricing {
@@ -75,13 +82,18 @@ interface BatchPricingEntry {
     retailPrice: number | null;
     wholesalePrice: number | null;
     unit: string | null;
-    availability: string | null;
-    lastUpdated: string | null;
-  };
+      availability: string | null;
+      lastUpdated: string | null;
+    };
+  offers: ProductPricing[];
 }
 
 interface BatchPricingResponse {
   pricing: BatchPricingEntry[];
+  meta?: {
+    region?: string;
+    fetchedAt?: string;
+  };
 }
 
 const typeConfig: Record<ProductType, { icon: typeof Beaker; color: string; label: string }> = {
@@ -102,10 +114,41 @@ export default function ProductDetailPage() {
   const [product, setProduct] = useState<ProductDetail | null>(null);
   const [pricing, setPricing] = useState<ProductPricing[]>([]);
   const [pricingRegion, setPricingRegion] = useState<string | null>(null);
+  const [pricingLocation, setPricingLocation] = useState("");
   const [loading, setLoading] = useState(true);
   const [pricingLoading, setPricingLoading] = useState(false);
   const [pricingFetched, setPricingFetched] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const savedLocation =
+      typeof window !== "undefined"
+        ? window.localStorage.getItem("cropcopilot.pricing.location")
+        : null;
+    if (savedLocation && savedLocation.trim().length > 0) {
+      setPricingLocation(savedLocation.trim());
+      return;
+    }
+
+    async function fetchProfileLocation() {
+      try {
+        const response = await fetch("/api/v1/profile");
+        if (!response.ok) return;
+        const data = await response.json();
+        const profileLocation =
+          data?.profile?.location && typeof data.profile.location === "string"
+            ? data.profile.location.trim()
+            : "";
+        if (profileLocation) {
+          setPricingLocation(profileLocation);
+        }
+      } catch {
+        // Ignore profile lookup errors for pricing entrypoint.
+      }
+    }
+
+    fetchProfileLocation();
+  }, []);
 
   useEffect(() => {
     async function fetchProduct() {
@@ -137,6 +180,36 @@ export default function ProductDetailPage() {
   // Fetch pricing on-demand only (POST)
   const fetchPricing = async () => {
     if (!params.id) return;
+    const productId = String(params.id);
+    const region = pricingLocation.trim();
+    if (!region) {
+      setPricing([]);
+      setPricingRegion(null);
+      return;
+    }
+
+    const cacheKey = `cropcopilot.pricing.${productId}.${region.toLowerCase()}`;
+    if (typeof window !== "undefined") {
+      const cachedRaw = window.localStorage.getItem(cacheKey);
+      if (cachedRaw) {
+        try {
+          const cached = JSON.parse(cachedRaw) as {
+            pricing: ProductPricing[];
+            region: string;
+            fetchedAt: string;
+          };
+          const ageMs = Date.now() - new Date(cached.fetchedAt).getTime();
+          if (ageMs <= 30 * 60 * 1000) {
+            setPricing(cached.pricing);
+            setPricingRegion(cached.region);
+            setPricingFetched(true);
+            return;
+          }
+        } catch {
+          // Ignore malformed cache entry.
+        }
+      }
+    }
 
     setPricingLoading(true);
     setPricingFetched(true);
@@ -144,12 +217,12 @@ export default function ProductDetailPage() {
       const response = await fetch(`/api/v1/products/pricing/batch`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ productIds: [params.id] }),
+        body: JSON.stringify({ productIds: [productId], region }),
       });
 
       if (response.ok) {
         const data: BatchPricingResponse = await response.json();
-        const entry = data.pricing.find((item) => item.productId === params.id) ?? data.pricing[0];
+        const entry = data.pricing.find((item) => item.productId === productId) ?? data.pricing[0];
 
         if (!entry) {
           setPricing([]);
@@ -157,29 +230,45 @@ export default function ProductDetailPage() {
           return;
         }
 
-        const unit = entry.pricing.unit ?? "unit";
         const fallbackTimestamp = new Date().toISOString();
-        const normalizedPricing: ProductPricing[] = [
-          {
-            price: entry.pricing.retailPrice,
-            unit,
-            retailer: "Retail",
-            url: null,
-            region: "United States",
-            lastUpdated: entry.pricing.lastUpdated ?? fallbackTimestamp,
-          },
-          {
-            price: entry.pricing.wholesalePrice,
-            unit,
-            retailer: "Wholesale",
-            url: null,
-            region: "United States",
-            lastUpdated: entry.pricing.lastUpdated ?? fallbackTimestamp,
-          },
-        ];
+        const normalizedPricing: ProductPricing[] =
+          entry.offers && entry.offers.length > 0
+            ? entry.offers
+            : [
+                {
+                  price: entry.pricing.retailPrice,
+                  unit: entry.pricing.unit ?? "unit",
+                  retailer: "Retail",
+                  url: null,
+                  region: data.meta?.region ?? region,
+                  lastUpdated: entry.pricing.lastUpdated ?? fallbackTimestamp,
+                },
+                {
+                  price: entry.pricing.wholesalePrice,
+                  unit: entry.pricing.unit ?? "unit",
+                  retailer: "Wholesale",
+                  url: null,
+                  region: data.meta?.region ?? region,
+                  lastUpdated: entry.pricing.lastUpdated ?? fallbackTimestamp,
+                },
+              ].filter((row) => row.price !== null);
 
+        const resolvedRegion =
+          data.meta?.region ?? normalizedPricing[0]?.region ?? region;
         setPricing(normalizedPricing);
-        setPricingRegion("United States");
+        setPricingRegion(resolvedRegion);
+
+        if (typeof window !== "undefined") {
+          window.localStorage.setItem("cropcopilot.pricing.location", region);
+          window.localStorage.setItem(
+            cacheKey,
+            JSON.stringify({
+              pricing: normalizedPricing,
+              region: resolvedRegion,
+              fetchedAt: new Date().toISOString(),
+            })
+          );
+        }
       }
     } catch (err) {
       console.error("Failed to fetch pricing:", err);
@@ -313,6 +402,28 @@ export default function ProductDetailPage() {
           </CardTitle>
         </CardHeader>
         <CardContent>
+          {pricingFetched && (
+            <div className="mb-4 rounded-lg border bg-gray-50 p-3">
+              <p className="text-xs font-medium text-gray-600 mb-2">
+                Pricing location
+              </p>
+              <div className="flex flex-col sm:flex-row gap-2">
+                <Input
+                  value={pricingLocation}
+                  onChange={(event) => setPricingLocation(event.target.value)}
+                  placeholder="City, region, country"
+                />
+                <Button
+                  variant="outline"
+                  onClick={fetchPricing}
+                  disabled={pricingLoading || pricingLocation.trim().length === 0}
+                >
+                  Refresh
+                </Button>
+              </div>
+            </div>
+          )}
+
           {!pricingFetched ? (
             // Initial state - show "Show Pricing" button
             <div className="text-center py-8">
@@ -321,11 +432,21 @@ export default function ProductDetailPage() {
                 Search for current prices from retailers in your area
               </p>
               <p className="text-xs text-gray-400 mb-4">
-                Pricing data is fetched from online retailers and may vary by location
+                Confirm your location first. Results are cached by product + location for faster repeat loads.
               </p>
+              <div className="mx-auto mb-4 w-full max-w-md text-left space-y-2">
+                <label className="text-xs font-medium text-gray-600">
+                  Location for live pricing
+                </label>
+                <Input
+                  value={pricingLocation}
+                  onChange={(event) => setPricingLocation(event.target.value)}
+                  placeholder="City, region, country"
+                />
+              </div>
               <Button
                 onClick={fetchPricing}
-                disabled={pricingLoading}
+                disabled={pricingLoading || pricingLocation.trim().length === 0}
                 className="bg-[#76C043] hover:bg-[#5a9c2e]"
               >
                 {pricingLoading ? (
@@ -423,46 +544,83 @@ export default function ProductDetailPage() {
       </Card>
 
       {/* Related products */}
-      {product.relatedProducts.length > 0 && (
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>Related Products</CardTitle>
-            <Button variant="outline" size="sm" asChild>
-              <Link
-                href={`/products/compare?ids=${product.id},${product.relatedProducts
-                  .slice(0, 2)
-                  .map((p) => p.id)
-                  .join(",")}`}
-              >
-                <Scale className="h-4 w-4 mr-1" />
-                Compare
-              </Link>
-            </Button>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {product.relatedProducts.map((related) => (
-                <Link
-                  key={related.id}
-                  href={`/products/${related.id}`}
-                  className="block p-4 border rounded-lg hover:border-[#76C043] hover:shadow-sm transition-all"
-                >
-                  <h4 className="font-medium text-gray-900 line-clamp-1">
-                    {related.name}
-                  </h4>
-                  {related.brand && (
-                    <p className="text-sm text-gray-500">{related.brand}</p>
-                  )}
-                  {related.analysis && (
-                    <p className="mt-2 text-sm font-medium text-gray-700">
-                      {formatAnalysis(related.analysis, related.type)}
-                    </p>
-                  )}
-                </Link>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+      {(product.relatedProducts.length > 0 || product.recommendations.length > 0) && (
+        <div className="space-y-6">
+          {product.relatedProducts.length > 0 && (
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle>Related Products</CardTitle>
+                <Button variant="outline" size="sm" asChild>
+                  <Link
+                    href={`/products/compare?ids=${product.id},${product.relatedProducts
+                      .slice(0, 2)
+                      .map((p) => p.id)
+                      .join(",")}`}
+                  >
+                    <Scale className="h-4 w-4 mr-1" />
+                    Compare
+                  </Link>
+                </Button>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  {product.relatedProducts.map((related) => (
+                    <Link
+                      key={related.id}
+                      href={`/products/${related.id}`}
+                      className="block p-4 border rounded-lg hover:border-[#76C043] hover:shadow-sm transition-all"
+                    >
+                      <h4 className="font-medium text-gray-900 line-clamp-1">
+                        {related.name}
+                      </h4>
+                      {related.brand && (
+                        <p className="text-sm text-gray-500">{related.brand}</p>
+                      )}
+                      {related.analysis && (
+                        <p className="mt-2 text-sm font-medium text-gray-700">
+                          {formatAnalysis(related.analysis, related.type)}
+                        </p>
+                      )}
+                    </Link>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {product.recommendations.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Recommendations Using This Product</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {product.recommendations.map((recommendation) => (
+                    <Link
+                      key={recommendation.recommendationId}
+                      href={`/recommendations/${recommendation.recommendationId}`}
+                      className="block rounded-lg border p-3 hover:border-[#76C043] hover:bg-[#f8fbf5] transition-colors"
+                    >
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="min-w-0">
+                          <p className="font-medium text-gray-900 line-clamp-2">
+                            {recommendation.condition}
+                          </p>
+                          <p className="mt-1 text-sm text-gray-500">
+                            {[recommendation.crop, new Date(recommendation.createdAt).toLocaleString()]
+                              .filter(Boolean)
+                              .join(" • ")}
+                          </p>
+                        </div>
+                        <span className="text-sm text-gray-500">Open</span>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </div>
       )}
     </div>
   );

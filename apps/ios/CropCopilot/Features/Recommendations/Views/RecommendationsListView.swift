@@ -16,6 +16,8 @@ struct RecommendationsListView: View {
 
                 if viewModel.isLoading && viewModel.recommendations.isEmpty {
                     loadingView
+                } else if let error = viewModel.errorMessage, viewModel.recommendations.isEmpty {
+                    errorView(error)
                 } else if viewModel.recommendations.isEmpty {
                     emptyView
                 } else {
@@ -35,11 +37,6 @@ struct RecommendationsListView: View {
             }
             .task {
                 await viewModel.loadIfNeeded()
-            }
-            .onAppear {
-                Task {
-                    await viewModel.refreshRecommendations()
-                }
             }
         }
     }
@@ -100,6 +97,7 @@ struct RecommendationsListView: View {
                                     )
                             )
                             .foregroundStyle(Color.primary)
+                            .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
                 }
@@ -115,6 +113,8 @@ struct RecommendationsListView: View {
                 ForEach(Array(viewModel.recommendations.enumerated()), id: \.element.id) { index, recommendation in
                     NavigationLink(value: recommendation.id) {
                         RecommendationCard(recommendation: recommendation, style: .row)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
                     .onAppear {
@@ -183,6 +183,28 @@ struct RecommendationsListView: View {
             Text("Submit a photo or lab report to get started.")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
+            Spacer()
+        }
+    }
+
+    private func errorView(_ message: String) -> some View {
+        VStack(spacing: 14) {
+            Spacer()
+            Image(systemName: "exclamationmark.triangle")
+                .font(.system(size: 48))
+                .foregroundStyle(.orange)
+            Text("Could not load recommendations")
+                .font(.headline)
+                .foregroundStyle(.primary)
+            Text(message)
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 20)
+            Button("Retry") {
+                Task { await viewModel.refreshRecommendations() }
+            }
+            .buttonStyle(GlowSkeuomorphicButtonStyle())
             Spacer()
         }
     }

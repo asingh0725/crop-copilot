@@ -17,6 +17,7 @@ import { resolveSourceHints } from '@/lib/retrieval/source-hints';
 import { generateWithRetry, ValidationError } from '@/lib/validation/retry';
 import { CLAUDE_MODEL } from '@/lib/ai/claude';
 import { logRetrievalAudit } from '@/lib/retrieval/audit';
+import { upsertRecommendationProductsFromDiagnosis } from '@/lib/services/recommendation-products';
 
 export interface CreateInputParams {
   userId: string;
@@ -198,6 +199,17 @@ export async function createInput(
     citedChunkIds: recommendation.sources.map((s: any) => s.chunkId),
   });
 
+  // Backfill recommendation -> product links from model output when available.
+  try {
+    await upsertRecommendationProductsFromDiagnosis({
+      recommendationId: savedRecommendation.id,
+      diagnosis: recommendation,
+      crop: input.crop,
+    });
+  } catch (error) {
+    console.error('Product recommendation backfill failed (createInput):', error);
+  }
+
   return {
     input,
     recommendationId: savedRecommendation.id,
@@ -332,6 +344,17 @@ export async function generateRecommendation(
       });
     })
   );
+
+  // Backfill recommendation -> product links from model output when available.
+  try {
+    await upsertRecommendationProductsFromDiagnosis({
+      recommendationId: savedRecommendation.id,
+      diagnosis: recommendation,
+      crop: input.crop,
+    });
+  } catch (error) {
+    console.error('Product recommendation backfill failed (generateRecommendation):', error);
+  }
 
   const latency = Date.now() - startTime;
 

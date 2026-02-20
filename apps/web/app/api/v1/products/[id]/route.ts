@@ -15,7 +15,10 @@ export const GET = withAuth(async (request, { params }) => {
   try {
     const { id } = await params
 
-    const product = await getProduct({ id })
+    const product = await getProduct({
+      id,
+      userId: request.user.id,
+    })
 
     return NextResponse.json(product)
   } catch (error: any) {

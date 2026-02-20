@@ -7,9 +7,11 @@
 
 import { prisma } from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
+import { upsertRecommendationProductsFromDiagnosis } from '@/lib/services/recommendation-products';
 
 export interface ListRecommendationsParams {
   userId: string;
+  ids?: string[];
   search?: string;
   sort?: 'date_asc' | 'date_desc' | 'confidence_high' | 'confidence_low';
   page?: number;
@@ -53,6 +55,8 @@ export interface GetRecommendationResult {
   modelUsed: string;
   recommendedProducts: Array<{
     id: string;
+    catalogProductId: string;
+    productId: string;
     name: string;
     brand: string | null;
     type: string;
@@ -91,6 +95,8 @@ function normalizeRecommendationDiagnosis(
   diagnosis: unknown,
   productRows: Array<{
     id: string;
+    catalogProductId?: string;
+    productId?: string;
     name: string;
     brand: string | null;
     type: string;
@@ -137,25 +143,147 @@ function normalizeRecommendationDiagnosis(
       ? { ...(diagnosis as Record<string, unknown>) }
       : parseStringified(diagnosis) ?? fallback;
 
-  const products = Array.isArray(base.products) ? base.products : [];
-  if (products.length === 0 && productRows.length > 0) {
-    base.products = productRows.map((row) => ({
-      productId: row.id,
-      productName: row.name,
-      productType: row.type,
-      applicationRate: row.applicationRate,
-      reasoning:
-        row.reason ?? `Recommended for ${row.type.toLowerCase()} management.`,
-      priority: row.priority,
-      brand: row.brand,
-    }));
+  const normalizeNameKey = (value: unknown): string => {
+    if (typeof value !== 'string') return ''
+    return value
+      .trim()
+      .toLowerCase()
+      .replace(/[_-]+/g, ' ')
+      .replace(/\s+/g, ' ')
   }
+
+  const normalizeProductId = (value: unknown): string | undefined => {
+    if (typeof value !== 'string') {
+      return undefined
+    }
+    const trimmed = value.trim()
+    if (!trimmed) {
+      return undefined
+    }
+    const lowered = trimmed.toLowerCase()
+    if (lowered === 'null' || lowered === 'undefined') {
+      return undefined
+    }
+    return trimmed
+  }
+
+  const catalogProducts = productRows.map((row) => ({
+    productId: row.catalogProductId ?? row.productId ?? row.id,
+    productName: row.name,
+    productType: row.type,
+    applicationRate: row.applicationRate,
+    reasoning:
+      row.reason ?? `Recommended for ${row.type.toLowerCase()} management.`,
+    priority: row.priority,
+    brand: row.brand,
+  }))
+
+  const catalogByName = new Map<string, (typeof catalogProducts)[number]>()
+  for (const item of catalogProducts) {
+    const key = normalizeNameKey(item.productName)
+    if (!key || catalogByName.has(key)) continue
+    catalogByName.set(key, item)
+  }
+
+  const existingProducts = Array.isArray(base.products)
+    ? (base.products as Array<Record<string, unknown>>)
+    : []
+
+  const enrichedExisting = existingProducts.map((item) => {
+    const nestedProduct =
+      item.product && typeof item.product === 'object' && !Array.isArray(item.product)
+        ? (item.product as Record<string, unknown>)
+        : null
+    const nestedProductName =
+      typeof item.product === 'string' ? item.product : undefined
+    const productName =
+      item.productName ?? item.product_name ?? item.name
+        ?? nestedProductName
+        ?? nestedProduct?.name
+    const key = normalizeNameKey(productName)
+    const matched = key ? catalogByName.get(key) : undefined
+
+    const productId =
+      item.productId ??
+      item.product_id ??
+      item.catalogProductId ??
+      item.catalog_product_id ??
+      nestedProduct?.id
+
+    return {
+      ...item,
+      productId:
+        normalizeProductId(productId) ??
+        matched?.productId ??
+        undefined,
+      productName:
+        (typeof productName === 'string' && productName.trim().length > 0
+          ? productName
+          : undefined) ?? matched?.productName ?? 'Suggested product',
+      productType:
+        (typeof item.productType === 'string' && item.productType.length > 0
+          ? item.productType
+          : typeof item.product_type === 'string' && item.product_type.length > 0
+            ? item.product_type
+            : typeof nestedProduct?.type === 'string' && nestedProduct.type.length > 0
+              ? nestedProduct.type
+              : undefined) ?? matched?.productType ?? 'OTHER',
+      applicationRate:
+        (typeof item.applicationRate === 'string' && item.applicationRate.length > 0
+          ? item.applicationRate
+          : typeof item.application_rate === 'string' && item.application_rate.length > 0
+            ? item.application_rate
+            : typeof nestedProduct?.applicationRate === 'string' && nestedProduct.applicationRate.length > 0
+              ? nestedProduct.applicationRate
+              : typeof nestedProduct?.application_rate === 'string' && nestedProduct.application_rate.length > 0
+                ? nestedProduct.application_rate
+            : undefined) ?? matched?.applicationRate,
+      reasoning:
+        (typeof item.reasoning === 'string' && item.reasoning.length > 0
+          ? item.reasoning
+          : typeof item.reason === 'string' && item.reason.length > 0
+            ? item.reason
+            : undefined) ??
+        matched?.reasoning ??
+        'No product rationale provided.',
+    }
+  })
+
+  const existingKeys = new Set(
+    enrichedExisting
+      .map((item) => normalizeNameKey(item.productName))
+      .filter((key) => key.length > 0)
+  )
+  const missingCatalogProducts = catalogProducts.filter(
+    (item) => !existingKeys.has(normalizeNameKey(item.productName))
+  )
+
+  base.products =
+    existingProducts.length === 0
+      ? catalogProducts
+      : [...enrichedExisting, ...missingCatalogProducts]
 
   if (!Array.isArray(base.recommendations)) {
     base.recommendations = [];
   }
 
   return base;
+}
+
+function isGenericProductLabel(value: string | null | undefined): boolean {
+  if (!value) return true
+  const normalized = value
+    .trim()
+    .toLowerCase()
+    .replace(/[_-]+/g, ' ')
+    .replace(/\s+/g, ' ')
+  return (
+    normalized.length === 0 ||
+    normalized === 'suggested product' ||
+    normalized === 'unspecified' ||
+    normalized === 'unknown product' ||
+    normalized === 'product'
+  )
 }
 
 function inferConditionType(conditionType: unknown, condition: string): string {
@@ -185,16 +313,26 @@ export async function listRecommendations(
 ): Promise<ListRecommendationsResult> {
   const {
     userId,
+    ids = [],
     search = '',
     sort = 'date_desc',
     page = 1,
     pageSize = 20,
   } = params;
+  const safePage = Number.isFinite(page) && page > 0 ? Math.floor(page) : 1
+  const safePageSize =
+    Number.isFinite(pageSize) && pageSize > 0
+      ? Math.min(Math.floor(pageSize), 100)
+      : 20
 
   // Build where clause
   const where: Prisma.RecommendationWhereInput = {
     userId,
   };
+
+  if (ids.length > 0) {
+    where.id = { in: ids.slice(0, 200) };
+  }
 
   // Search by crop or condition (in diagnosis JSON)
   if (search) {
@@ -240,8 +378,8 @@ export async function listRecommendations(
   const recommendations = await prisma.recommendation.findMany({
     where,
     orderBy,
-    skip: (page - 1) * pageSize,
-    take: pageSize,
+    skip: (safePage - 1) * safePageSize,
+    take: safePageSize,
     include: {
       input: {
         select: {
@@ -286,10 +424,10 @@ export async function listRecommendations(
   return {
     recommendations: formattedRecommendations,
     pagination: {
-      page,
-      pageSize,
+      page: safePage,
+      pageSize: safePageSize,
       total,
-      totalPages: Math.ceil(total / pageSize),
+      totalPages: Math.max(1, Math.ceil(total / safePageSize)),
     },
   };
 }
@@ -384,8 +522,72 @@ export async function getRecommendation(
     throw new Error('Forbidden: Recommendation does not belong to user');
   }
 
-  const recommendedProducts = recommendation.products.map((entry) => ({
+  type RecommendationProductRow = {
+    reason: string | null
+    applicationRate: string | null
+    priority: number
+    product: {
+      id: string
+      name: string
+      brand: string | null
+      type: string
+    }
+  }
+
+  let productRows: RecommendationProductRow[] = recommendation.products.map((entry) => ({
+    reason: entry.reason,
+    applicationRate: entry.applicationRate,
+    priority: entry.priority,
+    product: {
+      id: entry.product.id,
+      name: entry.product.name,
+      brand: entry.product.brand,
+      type: entry.product.type,
+    },
+  }))
+
+  const hasSpecificProductRow = productRows.some(
+    (entry) => !isGenericProductLabel(entry.product?.name)
+  )
+  if (hasSpecificProductRow) {
+    productRows = productRows.filter(
+      (entry) => !isGenericProductLabel(entry.product?.name)
+    )
+  }
+
+  const shouldBackfillProducts =
+    productRows.length === 0 ||
+    productRows.every((entry) => isGenericProductLabel(entry.product?.name))
+
+  if (shouldBackfillProducts) {
+    try {
+      const backfilled = await upsertRecommendationProductsFromDiagnosis({
+        recommendationId: recommendation.id,
+        diagnosis: recommendation.diagnosis,
+        crop: recommendation.input.crop,
+      })
+      if (backfilled.length > 0) {
+        productRows = backfilled.map((entry) => ({
+          reason: entry.reason,
+          applicationRate: entry.applicationRate,
+          priority: entry.priority,
+          product: {
+            id: entry.product.id,
+            name: entry.product.name,
+            brand: entry.product.brand,
+            type: entry.product.type,
+          },
+        }))
+      }
+    } catch (error) {
+      console.error('Recommendation product backfill failed:', error)
+    }
+  }
+
+  const recommendedProducts = productRows.map((entry) => ({
     id: entry.product.id,
+    catalogProductId: entry.product.id,
+    productId: entry.product.id,
     name: entry.product.name,
     brand: entry.product.brand,
     type: entry.product.type,

@@ -379,78 +379,117 @@ export function DashboardPreview() {
   const scene = useMemo(() => scenes[sceneIndex], [sceneIndex]);
 
   return (
-    <div className="mx-auto w-full max-w-6xl px-4">
-      <div className="flex items-center gap-3 rounded-t-2xl border border-white/[0.12] bg-white/[0.1] px-4 py-3 backdrop-blur-xl">
-        <div className="flex gap-2">
-          <div className="h-3 w-3 rounded-full bg-[#ff5f57]" />
-          <div className="h-3 w-3 rounded-full bg-[#febc2e]" />
-          <div className="h-3 w-3 rounded-full bg-[#28c840]" />
-        </div>
-        <div className="flex flex-1 justify-center">
-          <div className="flex w-full max-w-xs items-center justify-center gap-2 rounded-md border border-white/[0.12] bg-white/[0.08] px-4 py-1 text-xs text-white/[0.7]">
-            <span className="h-1.5 w-1.5 rounded-full bg-lime-300" />
-            cropcopilot.app{scene.route}
+    <div className="mx-auto w-full max-w-6xl px-2 sm:px-4">
+      <div className="md:hidden">
+        <div className="mx-auto w-full max-w-[360px] overflow-hidden rounded-[28px] border border-white/[0.16] bg-white/[0.08] backdrop-blur-2xl">
+          <div className="flex items-center justify-between border-b border-white/[0.14] bg-white/[0.1] px-4 py-3">
+            <span className="text-xs font-medium tracking-wide text-white/80">
+              cropcopilot.app
+            </span>
+            <span className="text-xs text-lime-300">{scene.label}</span>
           </div>
-        </div>
-        <div className="w-16" />
-      </div>
 
-      <div className="overflow-hidden rounded-b-2xl border border-t-0 border-white/[0.12] bg-white/[0.06] backdrop-blur-2xl">
-        <div className="grid min-h-[500px] grid-cols-1 md:grid-cols-[180px_1fr]">
-          <aside className="hidden border-r border-white/[0.12] bg-earth-950 p-3 md:block">
-            <Link href="/" className="mb-4 flex items-center gap-2 rounded-lg border border-white/10 bg-white/[0.04] p-2">
-              <div className="flex h-7 w-7 items-center justify-center rounded-md bg-lime-400 text-earth-950">
-                <Leaf className="h-4 w-4" />
-              </div>
-              <span className="text-xs font-semibold text-white">Crop Copilot</span>
-            </Link>
-
-            <nav className="space-y-1">
-              {scenes.map((item, index) => {
-                const Icon = navIconByScene[item.id];
-                const active = index === sceneIndex;
-                return (
-                  <div
-                    key={item.id}
-                    className={`flex items-center gap-2 rounded-lg px-2 py-2 text-xs font-medium transition-colors ${
-                      active
-                        ? "bg-lime-400/10 text-lime-400"
-                        : "text-white/55"
-                    }`}
-                  >
-                    <Icon className="h-4 w-4" />
-                    {item.label}
-                  </div>
-                );
-              })}
-            </nav>
-          </aside>
-
-          <main className="bg-gray-50 p-4">
+          <div className="h-[460px] overflow-hidden bg-gray-50 p-3">
             <AnimatePresence mode="wait">
               <motion.div
-                key={scene.id}
-                initial={{ opacity: 0, y: 10 }}
+                key={`mobile-${scene.id}`}
+                initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -8 }}
+                exit={{ opacity: 0, y: -6 }}
                 transition={{ type: "spring", stiffness: 100, damping: 20 }}
-                className="h-full"
+                className="h-full overflow-y-auto pr-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
               >
                 <SceneContent sceneId={scene.id} />
               </motion.div>
             </AnimatePresence>
-          </main>
+          </div>
+
+          <div className="grid grid-cols-5 gap-2 border-t border-white/[0.14] bg-white/[0.08] px-4 py-3">
+            {scenes.map((item, index) => (
+              <div
+                key={`mobile-progress-${item.id}`}
+                className={`h-1.5 rounded-full transition-all ${
+                  index === sceneIndex ? "bg-lime-300" : "bg-white/[0.25]"
+                }`}
+              />
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div className="hidden md:block">
+        <div className="flex items-center gap-3 rounded-t-2xl border border-white/[0.12] bg-white/[0.1] px-4 py-3 backdrop-blur-xl">
+          <div className="flex gap-2">
+            <div className="h-3 w-3 rounded-full bg-[#ff5f57]" />
+            <div className="h-3 w-3 rounded-full bg-[#febc2e]" />
+            <div className="h-3 w-3 rounded-full bg-[#28c840]" />
+          </div>
+          <div className="flex flex-1 justify-center">
+            <div className="flex w-full max-w-xs items-center justify-center gap-2 rounded-md border border-white/[0.12] bg-white/[0.08] px-4 py-1 text-xs text-white/[0.7]">
+              <span className="h-1.5 w-1.5 rounded-full bg-lime-300" />
+              cropcopilot.app{scene.route}
+            </div>
+          </div>
+          <div className="w-16" />
         </div>
 
-        <div className="grid grid-cols-5 gap-2 border-t border-white/[0.12] bg-white/[0.08] px-4 py-3">
-          {scenes.map((item, index) => (
-            <div
-              key={`progress-${item.id}`}
-              className={`h-1.5 rounded-full transition-all ${
-                index === sceneIndex ? "bg-lime-300" : "bg-white/[0.25]"
-              }`}
-            />
-          ))}
+        <div className="overflow-hidden rounded-b-2xl border border-t-0 border-white/[0.12] bg-white/[0.06] backdrop-blur-2xl">
+          <div className="grid min-h-[500px] grid-cols-1 md:grid-cols-[180px_1fr]">
+            <aside className="hidden border-r border-white/[0.12] bg-earth-950 p-3 md:block">
+              <Link href="/" className="mb-4 flex items-center gap-2 rounded-lg border border-white/10 bg-white/[0.04] p-2">
+                <div className="flex h-7 w-7 items-center justify-center rounded-md bg-lime-400 text-earth-950">
+                  <Leaf className="h-4 w-4" />
+                </div>
+                <span className="text-xs font-semibold text-white">Crop Copilot</span>
+              </Link>
+
+              <nav className="space-y-1">
+                {scenes.map((item, index) => {
+                  const Icon = navIconByScene[item.id];
+                  const active = index === sceneIndex;
+                  return (
+                    <div
+                      key={item.id}
+                      className={`flex items-center gap-2 rounded-lg px-2 py-2 text-xs font-medium transition-colors ${
+                        active
+                          ? "bg-lime-400/10 text-lime-400"
+                          : "text-white/55"
+                      }`}
+                    >
+                      <Icon className="h-4 w-4" />
+                      {item.label}
+                    </div>
+                  );
+                })}
+              </nav>
+            </aside>
+
+            <main className="bg-gray-50 p-4">
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={scene.id}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -8 }}
+                  transition={{ type: "spring", stiffness: 100, damping: 20 }}
+                  className="h-full"
+                >
+                  <SceneContent sceneId={scene.id} />
+                </motion.div>
+              </AnimatePresence>
+            </main>
+          </div>
+
+          <div className="grid grid-cols-5 gap-2 border-t border-white/[0.12] bg-white/[0.08] px-4 py-3">
+            {scenes.map((item, index) => (
+              <div
+                key={`progress-${item.id}`}
+                className={`h-1.5 rounded-full transition-all ${
+                  index === sceneIndex ? "bg-lime-300" : "bg-white/[0.25]"
+                }`}
+              />
+            ))}
+          </div>
         </div>
       </div>
     </div>

@@ -16,6 +16,8 @@ struct ProductsListView: View {
 
                 if viewModel.isLoading && viewModel.products.isEmpty {
                     loadingView
+                } else if let error = viewModel.errorMessage, viewModel.products.isEmpty {
+                    errorView(error)
                 } else if viewModel.products.isEmpty {
                     emptyView
                 } else {
@@ -28,11 +30,6 @@ struct ProductsListView: View {
             }
             .task {
                 await viewModel.loadIfNeeded()
-            }
-            .onAppear {
-                Task {
-                    await viewModel.refreshProducts()
-                }
             }
             .onChange(of: viewModel.selectedType) { _ in
                 Task { await viewModel.loadProducts(reset: true) }
@@ -96,6 +93,7 @@ struct ProductsListView: View {
                                     )
                             )
                             .foregroundStyle(.primary)
+                            .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
                 }
@@ -172,6 +170,7 @@ struct ProductsListView: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(14)
                         .antigravityGlass(cornerRadius: 16)
+                        .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
                     .onAppear {
@@ -221,6 +220,7 @@ struct ProductsListView: View {
             .frame(maxWidth: .infinity, alignment: .center)
             .padding(.vertical, 12)
             .antigravityGlass(cornerRadius: 14)
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
     }
@@ -245,6 +245,28 @@ struct ProductsListView: View {
             Text("Try a different search term.")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
+            Spacer()
+        }
+    }
+
+    private func errorView(_ message: String) -> some View {
+        VStack(spacing: 12) {
+            Spacer()
+            Image(systemName: "exclamationmark.triangle")
+                .font(.system(size: 42))
+                .foregroundStyle(.orange)
+            Text("Could not load products")
+                .font(.headline)
+            Text(message)
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 20)
+            Button("Retry") {
+                Task { await viewModel.loadProducts(reset: true) }
+            }
+            .buttonStyle(GlowSkeuomorphicButtonStyle())
+            .padding(.top, 6)
             Spacer()
         }
     }

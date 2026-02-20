@@ -7,8 +7,10 @@
 
 import { prisma } from '@/lib/prisma';
 import { ProductType, Prisma } from '@prisma/client';
+import { productCacheService } from '@/lib/cache/product-cache';
 
 export interface SearchProductsParams {
+  ids?: string[];
   search?: string;
   types?: ProductType[];
   crop?: string;
@@ -39,6 +41,7 @@ export interface SearchProductsResult {
 
 export interface GetProductParams {
   id: string;
+  userId?: string;
 }
 
 export interface GetProductResult {
@@ -104,6 +107,7 @@ export async function searchProducts(
   params: SearchProductsParams
 ): Promise<SearchProductsResult> {
   const {
+    ids = [],
     search = '',
     types = [],
     crop = '',
@@ -118,6 +122,10 @@ export async function searchProducts(
 
   // Build where clause
   const where: Prisma.ProductWhereInput = {};
+
+  if (ids.length > 0) {
+    where.id = { in: ids.slice(0, 100) };
+  }
 
   // Search across name, brand, description
   if (search) {
@@ -189,36 +197,66 @@ export async function searchProducts(
  * Get a single product by ID with related products
  */
 export async function getProduct(params: GetProductParams): Promise<GetProductResult> {
-  const { id } = params;
-
-  // Fetch product with all details
-  const product = await prisma.product.findUnique({
-    where: { id },
-    include: {
-      recommendations: {
-        orderBy: {
-          createdAt: 'desc',
-        },
-        take: 8,
-        select: {
-          recommendationId: true,
-          createdAt: true,
+  const { id, userId } = params;
+  const recommendationInclude = {
+    where: userId
+      ? {
           recommendation: {
+            userId,
+          },
+        }
+      : undefined,
+    orderBy: {
+      createdAt: 'desc' as const,
+    },
+    take: 8,
+    select: {
+      recommendationId: true,
+      createdAt: true,
+      recommendation: {
+        select: {
+          id: true,
+          createdAt: true,
+          diagnosis: true,
+          input: {
             select: {
-              id: true,
-              createdAt: true,
-              diagnosis: true,
-              input: {
-                select: {
-                  crop: true,
-                },
-              },
+              crop: true,
             },
           },
         },
       },
     },
+  };
+
+  // Fetch product with all details
+  let product = await prisma.product.findUnique({
+    where: { id },
+    include: {
+      recommendations: recommendationInclude,
+    },
   });
+
+  if (!product) {
+    const normalizedLookup = id.trim().replace(/[_-]+/g, ' ');
+    const lookupVariants = Array.from(
+      new Set([id.trim(), normalizedLookup].filter((value) => value.length > 0))
+    );
+    if (lookupVariants.length > 0) {
+      product = await prisma.product.findFirst({
+        where: {
+          OR: lookupVariants.map((value) => ({
+            name: {
+              equals: value,
+              mode: 'insensitive',
+            },
+          })),
+        },
+        include: {
+          recommendations: recommendationInclude,
+        },
+      });
+    }
+  }
 
   if (!product) {
     throw new Error('Product not found');
@@ -357,6 +395,7 @@ export async function compareProducts(
 
 export interface GetBatchPricingParams {
   productIds: string[];
+  region?: string;
 }
 
 export interface GetBatchPricingResult {
@@ -372,7 +411,19 @@ export interface GetBatchPricingResult {
       availability: string | null;
       lastUpdated: string | null;
     };
+    offers: Array<{
+      price: number | null;
+      unit: string;
+      retailer: string;
+      url: string | null;
+      region: string;
+      lastUpdated: string;
+    }>;
   }>;
+  meta: {
+    region: string;
+    fetchedAt: string;
+  };
 }
 
 /**
@@ -381,7 +432,7 @@ export interface GetBatchPricingResult {
 export async function getBatchPricing(
   params: GetBatchPricingParams
 ): Promise<GetBatchPricingResult> {
-  const { productIds } = params;
+  const { productIds, region } = params;
 
   // Validate input
   if (!Array.isArray(productIds) || productIds.length === 0) {
@@ -392,7 +443,7 @@ export async function getBatchPricing(
     throw new Error('Maximum 50 products allowed per batch request');
   }
 
-  // Fetch products with metadata that may contain pricing
+  // Fetch products with metadata that may contain fallback pricing.
   const products = await prisma.product.findMany({
     where: {
       id: { in: productIds },
@@ -405,25 +456,78 @@ export async function getBatchPricing(
     },
   });
 
-  // Transform products into pricing format
-  const pricing = products.map((product) => {
-    const metadata = product.metadata as any || {};
-    const pricingData = metadata.pricing || {};
+  const pricing = await Promise.all(
+    products.map(async (product) => {
+      const metadata = (product.metadata as any) || {};
+      const pricingData = metadata.pricing || {};
 
-    return {
-      productId: product.id,
-      productName: product.name,
-      brand: product.brand,
-      pricing: {
-        currency: pricingData.currency || 'USD',
-        retailPrice: pricingData.retailPrice || null,
-        wholesalePrice: pricingData.wholesalePrice || null,
-        unit: pricingData.unit || null,
-        availability: pricingData.availability || null,
-        lastUpdated: pricingData.lastUpdated || null,
-      },
-    };
-  });
+      let offers: Array<{
+        price: number | null;
+        unit: string;
+        retailer: string;
+        url: string | null;
+        region: string;
+        lastUpdated: string;
+      }> = [];
 
-  return { pricing };
+      try {
+        const liveOffers = await productCacheService.getProductPricing(
+          product.id,
+          product.name,
+          product.brand || undefined,
+          region
+        );
+
+        offers = liveOffers.map((offer) => ({
+          price: offer.price,
+          unit: offer.unit || 'unit',
+          retailer: offer.retailer || 'Retailer',
+          url: offer.url ?? null,
+          region: offer.region || region || 'United States',
+          lastUpdated: offer.lastUpdated.toISOString(),
+        }));
+      } catch (error) {
+        console.error(`Live pricing lookup failed for product ${product.id}:`, error);
+      }
+
+      const pricedOffers = offers
+        .filter((offer) => typeof offer.price === 'number')
+        .sort((a, b) => (a.price ?? Number.MAX_SAFE_INTEGER) - (b.price ?? Number.MAX_SAFE_INTEGER));
+
+      const bestOffer = pricedOffers[0];
+      const secondOffer = pricedOffers[1];
+      const fallbackUpdatedAt =
+        typeof pricingData.lastUpdated === 'string' ? pricingData.lastUpdated : null;
+
+      return {
+        productId: product.id,
+        productName: product.name,
+        brand: product.brand,
+        pricing: {
+          currency: pricingData.currency || 'USD',
+          retailPrice:
+            bestOffer?.price ??
+            (typeof pricingData.retailPrice === 'number' ? pricingData.retailPrice : null),
+          wholesalePrice:
+            secondOffer?.price ??
+            (typeof pricingData.wholesalePrice === 'number' ? pricingData.wholesalePrice : null),
+          unit: bestOffer?.unit ?? pricingData.unit ?? null,
+          availability:
+            offers.length > 0
+              ? `${offers.length} retailer offer${offers.length > 1 ? 's' : ''}`
+              : pricingData.availability || null,
+          lastUpdated: bestOffer?.lastUpdated ?? fallbackUpdatedAt,
+        },
+        offers,
+      };
+    })
+  );
+
+  return {
+    pricing,
+    meta: {
+      region: region || 'United States',
+      fetchedAt: new Date().toISOString(),
+    },
+  };
 }

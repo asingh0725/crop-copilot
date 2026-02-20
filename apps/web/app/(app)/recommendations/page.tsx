@@ -229,6 +229,10 @@ function RecommendationsContent() {
               <Card
                 key={rec.id}
                 className="cursor-pointer hover:bg-muted/50 transition-colors overflow-hidden"
+                style={{
+                  contentVisibility: "auto",
+                  containIntrinsicSize: "160px",
+                }}
                 onClick={() => router.push(`/recommendations/${rec.id}`)}
               >
                 <CardHeader className="flex flex-row gap-4 p-4">

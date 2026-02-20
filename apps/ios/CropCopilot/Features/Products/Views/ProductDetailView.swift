@@ -15,6 +15,7 @@ struct ProductDetailView: View {
     let productId: String
 
     @StateObject private var viewModel: ProductDetailViewModel
+    @Environment(\.openURL) private var openURL
     @State private var showPricingSheet = false
     @State private var pricingDetent: PricingSheetDetent = .medium
 
@@ -116,9 +117,7 @@ struct ProductDetailView: View {
     private var pricingRow: some View {
         Button {
             showPricingSheet = true
-            Task {
-                await viewModel.loadPricingOnDemand()
-            }
+            Task { await viewModel.preloadRegionFromProfileIfNeeded() }
         } label: {
             HStack(spacing: 10) {
                 Image(systemName: "dollarsign.circle")
@@ -243,6 +242,53 @@ struct ProductDetailView: View {
                 .font(.title3.weight(.semibold))
                 .foregroundStyle(.primary)
 
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Location")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
+
+                TextField("City, region, country", text: $viewModel.pricingRegion)
+                    .textInputAutocapitalization(.words)
+                    .disableAutocorrection(true)
+                    .font(.subheadline)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 10)
+                    .background(Color.appBackground)
+                    .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+                            .stroke(Color.black.opacity(0.08), lineWidth: 0.8)
+                    )
+
+                Button {
+                    Task {
+                        await viewModel.loadPricingOnDemand(region: viewModel.pricingRegion)
+                    }
+                } label: {
+                    Label("Fetch live pricing", systemImage: "magnifyingglass")
+                        .font(.subheadline.weight(.semibold))
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(GlowSkeuomorphicButtonStyle())
+                .disabled(
+                    viewModel.isLoadingPricing
+                        || viewModel.pricingRegion.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                )
+
+                if viewModel.pricingRegion.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                    Text("Enter your location to fetch region-specific pricing.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                if let region = viewModel.resolvedPricingRegion,
+                   !region.isEmpty {
+                    Text("Showing retailer pricing for \(region).")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+
             if viewModel.isLoadingPricing {
                 HStack(spacing: 10) {
                     ProgressView().tint(Color.appPrimary)
@@ -266,6 +312,30 @@ struct ProductDetailView: View {
                         Text("Updated: \(prettyDate(updated) ?? updated)")
                             .font(.caption)
                             .foregroundStyle(.secondary)
+                    }
+
+                    if !entry.offers.isEmpty {
+                        Divider().padding(.vertical, 2)
+                        ForEach(entry.offers.prefix(5)) { offer in
+                            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(offer.retailer)
+                                        .font(.subheadline.weight(.semibold))
+                                        .foregroundStyle(.primary)
+                                    if let price = offer.price {
+                                        Text(String(format: "$%.2f %@", price, offer.unit))
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                    }
+                                }
+                                Spacer(minLength: 8)
+                                if let raw = offer.url, let link = URL(string: raw) {
+                                    Button("Open") { openURL(link) }
+                                        .font(.caption.weight(.semibold))
+                                        .foregroundStyle(Color.appSecondary)
+                                }
+                            }
+                        }
                     }
                 }
             } else {

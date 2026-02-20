@@ -52,7 +52,7 @@ final class ProductsViewModel: ObservableObject {
 
     private let apiClient = APIClient.shared
     private var hasLoadedOnce = false
-    private let pageSize = 100
+    private let pageSize = 30
     private var offset = 0
     private var total = 0
     private var requestGeneration = 0

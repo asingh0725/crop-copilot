@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Package, Scale, ArrowRight } from "lucide-react";
+import { Package, Scale, ArrowRight, ExternalLink } from "lucide-react";
 import type { ProductSuggestion } from "@/lib/utils/format-diagnosis";
 
 interface ProductSuggestionsProps {
@@ -15,6 +15,35 @@ export function ProductSuggestions({ products }: ProductSuggestionsProps) {
   if (!products || products.length === 0) {
     return null;
   }
+
+  const normalizeCatalogId = (value?: string | null) => {
+    if (!value) return null;
+    const trimmed = value.trim();
+    if (!trimmed) return null;
+    const lowered = trimmed.toLowerCase();
+    if (lowered === "null" || lowered === "undefined") {
+      return null;
+    }
+    return trimmed;
+  };
+
+  const displayNameFor = (product: ProductSuggestion) =>
+    product.productName ||
+    product.name ||
+    product.productId ||
+    "Suggested product";
+
+  const linkFor = (product: ProductSuggestion) => {
+    const catalogId = normalizeCatalogId(
+      product.catalogProductId ?? product.productId ?? null
+    );
+    if (catalogId) {
+      return `/products/${catalogId}`;
+    }
+
+    const query = encodeURIComponent(displayNameFor(product));
+    return `/products?search=${query}`;
+  };
 
   return (
     <Card className="print:shadow-none print:border-gray-300">
@@ -39,8 +68,8 @@ export function ProductSuggestions({ products }: ProductSuggestionsProps) {
             >
               <div className="flex items-start justify-between gap-3 mb-3">
                 <div>
-                  <h3 className="font-semibold text-gray-900">
-                    {product.productId}
+                  <h3 className="font-semibold text-gray-900 break-words">
+                    {displayNameFor(product)}
                   </h3>
                   {product.applicationRate && (
                     <div className="flex items-center gap-1 text-sm text-gray-600 mt-1">
@@ -69,6 +98,14 @@ export function ProductSuggestions({ products }: ProductSuggestionsProps) {
                 </div>
               )}
 
+              <div className="pt-1">
+                <Button variant="outline" size="sm" asChild>
+                  <Link href={linkFor(product)}>
+                    View Product
+                    <ExternalLink className="ml-1 h-3 w-3" />
+                  </Link>
+                </Button>
+              </div>
             </div>
           ))}
         </div>

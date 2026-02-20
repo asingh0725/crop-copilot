@@ -7,10 +7,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { withAuth } from '@/lib/middleware/auth'
 import { getBatchPricing } from '@/lib/services'
+import { prisma } from '@/lib/prisma'
 import { z } from 'zod'
 
 const batchPricingSchema = z.object({
   productIds: z.array(z.string()).min(1).max(50),
+  region: z.string().trim().min(2).max(120).optional(),
 })
 
 /**
@@ -28,8 +30,26 @@ export const POST = withAuth(async (request) => {
       )
     }
 
+    let region = validated.data.region
+    if (!region) {
+      const profile = await prisma.userProfile.findUnique({
+        where: { userId: request.user.id },
+        select: { location: true },
+      })
+      region = profile?.location ?? undefined
+    }
+
+    const normalizedRegion = region?.trim()
+    if (!normalizedRegion) {
+      return NextResponse.json(
+        { error: 'Location is required before fetching live pricing.' },
+        { status: 400 }
+      )
+    }
+
     const result = await getBatchPricing({
       productIds: validated.data.productIds,
+      region: normalizedRegion,
     })
 
     return NextResponse.json(result)

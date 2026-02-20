@@ -3,6 +3,8 @@
  * Provides on-demand pricing information based on user region
  */
 
+import Anthropic from "@anthropic-ai/sdk";
+
 export interface ProductPricing {
   price: number | null;
   unit: string;
@@ -37,6 +39,17 @@ function isRateLimitError(status: number): boolean {
   return status === 429 || status === 503;
 }
 
+function isAnthropicRateLimitError(error: unknown): boolean {
+  if (error instanceof Anthropic.RateLimitError) {
+    return true;
+  }
+  if (error instanceof Error) {
+    const lowered = error.message.toLowerCase();
+    return lowered.includes("rate limit") || lowered.includes("429");
+  }
+  return false;
+}
+
 /**
  * Search for product pricing using Gemini 2.0 Flash Lite with Google Search grounding
  */
@@ -50,17 +63,34 @@ export async function searchProductPricing(
     maxResults = 5,
   } = options;
 
-  const apiKey = process.env.GOOGLE_AI_API_KEY;
-  if (!apiKey) {
-    console.error("[Pricing] GOOGLE_AI_API_KEY not configured");
-    return [];
+  const prompt = buildPricingPrompt({ productName, brand, region, maxResults });
+
+  const geminiResults = await searchWithGemini(prompt, region);
+  if (geminiResults.length > 0) {
+    return geminiResults.slice(0, maxResults);
   }
 
+  const anthropicResults = await searchWithAnthropic(prompt, region);
+  if (anthropicResults.length > 0) {
+    return anthropicResults.slice(0, maxResults);
+  }
+
+  return [];
+}
+
+function buildPricingPrompt(options: {
+  productName: string;
+  brand?: string;
+  region: string;
+  maxResults: number;
+}): string {
+  const { productName, brand, region, maxResults } = options;
   const searchTerm = brand ? `${brand} ${productName}` : productName;
+  const normalizedRegion = region.toLowerCase();
 
   // Determine country/region context for better retailer targeting
   const isCanada =
-    region.toLowerCase().includes("canada") ||
+    normalizedRegion.includes("canada") ||
     [
       "british columbia",
       "alberta",
@@ -87,17 +117,17 @@ export async function searchProductPricing(
       "nt",
       "yt",
       "nu",
-    ].some((prov) => region.toLowerCase().includes(prov));
+    ].some((prov) => normalizedRegion.includes(prov));
 
   const regionContext = isCanada
-    ? `Canadian retailers only. Use .ca domains (e.g., homedepot.ca, amazon.ca, canadiantire.ca). Do NOT use .com domains for US retailers.`
-    : `Retailers serving ${region}. Use appropriate regional domains.`;
+    ? `Canadian retailers only. Use .ca domains (for example homedepot.ca, amazon.ca, canadiantire.ca). Do NOT use .com domains for US retailers.`
+    : `Retailers serving ${region}. Use regionally appropriate domains.`;
 
   const retailerExamples = isCanada
     ? `Canadian retailers like: Peavey Mart, Home Hardware, Canadian Tire, Home Depot Canada (homedepot.ca), Amazon Canada (amazon.ca), UFA, Co-op Agro, Richardson Pioneer, Nutrien Ag Solutions Canada`
-    : `Agricultural retailers like: Nutrien Ag Solutions, Helena, FBN, Tractor Supply, Amazon, Home Depot, local farm supply stores`;
+    : `Agricultural retailers like: Nutrien Ag Solutions, Helena, FBN, Tractor Supply, Amazon, Home Depot, and local farm supply stores`;
 
-  const prompt = `Find current retail prices for this agricultural product: "${searchTerm}"
+  return `Find current retail prices for this agricultural product: "${searchTerm}"
 
 IMPORTANT - User Location: ${region}
 ${regionContext}
@@ -121,7 +151,18 @@ Return ONLY a valid JSON array with up to ${maxResults} pricing results. Format:
 ]
 
 If no pricing is found for ${region}, return an empty array: []
-Important: Only include real prices from retailers that actually serve ${region}. Do not include US retailers for Canadian users or vice versa.`;
+Important: only include real prices from retailers that actually serve ${region}.`;
+}
+
+async function searchWithGemini(
+  prompt: string,
+  region: string
+): Promise<ProductPricing[]> {
+  const apiKey = process.env.GOOGLE_AI_API_KEY;
+  if (!apiKey) {
+    console.warn("[Pricing] GOOGLE_AI_API_KEY not configured, trying Claude fallback");
+    return [];
+  }
 
   let lastError: Error | null = null;
 
@@ -187,6 +228,72 @@ Important: Only include real prices from retailers that actually serve ${region}
   }
 
   console.error("[Pricing] Search failed after retries:", lastError);
+  return [];
+}
+
+async function searchWithAnthropic(
+  prompt: string,
+  region: string
+): Promise<ProductPricing[]> {
+  const apiKey = process.env.ANTHROPIC_API_KEY ?? null;
+  const authToken = process.env.ANTHROPIC_AUTH_TOKEN ?? null;
+  if (!apiKey && !authToken) {
+    console.warn("[Pricing] Anthropic credentials unavailable for pricing fallback");
+    return [];
+  }
+  const anthropic = new Anthropic({
+    apiKey: apiKey ?? undefined,
+    authToken: authToken ?? undefined,
+  });
+
+  let lastError: Error | null = null;
+
+  for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+    try {
+      const response = await anthropic.messages.create({
+        model: process.env.ANTHROPIC_PRICING_MODEL || "claude-sonnet-4-20250514",
+        max_tokens: 1600,
+        tools: [
+          {
+            type: "web_search_20250305",
+            name: "web_search",
+            max_uses: 2,
+          },
+        ],
+        messages: [{ role: "user", content: prompt }],
+      });
+
+      let responseText = "";
+      for (const block of response.content) {
+        if (block.type === "text") {
+          responseText += block.text;
+        }
+      }
+
+      return parsePricingFromResponse(responseText, region);
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error(String(error));
+
+      if (isAnthropicRateLimitError(error) && attempt < MAX_RETRIES - 1) {
+        const backoffMs = INITIAL_BACKOFF_MS * Math.pow(2, attempt);
+        console.log(
+          `[Pricing] Claude rate limit hit, retrying in ${backoffMs / 1000}s (attempt ${attempt + 1}/${MAX_RETRIES})`
+        );
+        await sleep(backoffMs);
+        continue;
+      }
+
+      if (attempt < MAX_RETRIES - 1) {
+        const backoffMs = INITIAL_BACKOFF_MS * Math.pow(2, attempt);
+        console.log(
+          `[Pricing] Claude search error, retrying in ${backoffMs / 1000}s (attempt ${attempt + 1}/${MAX_RETRIES})`
+        );
+        await sleep(backoffMs);
+      }
+    }
+  }
+
+  console.error("[Pricing] Claude fallback failed after retries:", lastError);
   return [];
 }
 
