@@ -121,10 +121,8 @@ struct RecommendationCard: View {
 
     private var gridBody: some View {
         ZStack(alignment: .bottomLeading) {
-            // Background: photo or lab-themed fallback
+            // Background fills the ZStack — no frame modifier here, inherits ZStack size
             backgroundLayer
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .clipped()
 
             // Gradient overlay — darkens from mid to bottom for legibility
             LinearGradient(
@@ -150,7 +148,6 @@ struct RecommendationCard: View {
                     .foregroundStyle(.white)
                     .lineLimit(2)
                     .lineSpacing(2)
-                    .fixedSize(horizontal: false, vertical: true)
 
                 Text(timestampLabel)
                     .font(.caption2)
@@ -159,15 +156,18 @@ struct RecommendationCard: View {
             }
             .padding(Spacing.md)
         }
+        // Establish explicit width first so child views can't blow it open
+        .frame(maxWidth: .infinity)
         .aspectRatio(0.88, contentMode: .fit)
-        // Confidence pill badge pinned to top-right — outside ZStack to avoid overlap
+        // Hard clip to prevent any image or child from painting outside the card bounds
+        .clipped()
+        // Confidence pill badge pinned to top-right
         .overlay(alignment: .topTrailing) {
             gridConfidenceBadge
                 .padding(Spacing.sm)
         }
         .clipShape(RoundedRectangle(cornerRadius: CornerRadius.lg, style: .continuous))
         .overlay(alignment: .top) {
-            // Lime hairline at top — matches web card pattern
             LinearGradient(
                 colors: [.clear, level.foreground.opacity(0.55), .clear],
                 startPoint: .leading,
@@ -206,8 +206,10 @@ struct RecommendationCard: View {
                     .resizable()
                     .scaledToFill()
             } placeholder: {
-                labFallbackBackground
+                // Shimmer while the photo loads — NOT the lab fallback
+                Color.appEarth900.shimmer()
             } failure: {
+                // Only show lab fallback when the image actually fails
                 labFallbackBackground
             }
         } else {

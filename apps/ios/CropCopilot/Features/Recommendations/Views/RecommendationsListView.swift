@@ -84,36 +84,33 @@ struct RecommendationsListView: View {
         .padding(.top, Spacing.sm)
     }
 
-    // MARK: - Control Bar (sort menu + layout toggle)
+    // MARK: - Control Bar (sort picker + layout toggle)
 
     private var controlBar: some View {
         HStack(spacing: Spacing.sm) {
-            // Sort menu — shows current sort, reveals all 4 options on tap
-            Menu {
-                ForEach(RecommendationsViewModel.SortOption.allCases, id: \.self) { option in
-                    Button {
-                        viewModel.selectedSort = option
-                        Task { await viewModel.loadRecommendations(reset: true) }
-                    } label: {
+            // Sort picker — uses .menu style to avoid _UIReparentingView warnings from Menu
+            HStack(spacing: 4) {
+                Image(systemName: "arrow.up.arrow.down")
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(Color.appPrimary)
+                Picker("Sort", selection: $viewModel.selectedSort) {
+                    ForEach(RecommendationsViewModel.SortOption.allCases, id: \.self) { option in
                         Label(option.displayName, systemImage: sortIcon(for: option))
+                            .tag(option)
                     }
                 }
-            } label: {
-                HStack(spacing: 5) {
-                    Image(systemName: "arrow.up.arrow.down")
-                        .font(.caption.weight(.bold))
-                    Text(viewModel.selectedSort.displayName)
-                        .font(.subheadline.weight(.semibold))
-                    Image(systemName: "chevron.down")
-                        .font(.caption2.weight(.bold))
+                .pickerStyle(.menu)
+                .font(.subheadline.weight(.semibold))
+                .tint(Color.appPrimary)
+                .onChange(of: viewModel.selectedSort) { _ in
+                    Task { await viewModel.loadRecommendations(reset: true) }
                 }
-                .foregroundStyle(Color.appPrimary)
-                .padding(.horizontal, Spacing.md)
-                .padding(.vertical, Spacing.sm + 2)
-                .background(Color.appPrimary.opacity(0.10))
-                .clipShape(Capsule())
-                .overlay(Capsule().stroke(Color.appPrimary.opacity(0.22), lineWidth: 1))
             }
+            .padding(.horizontal, Spacing.md)
+            .padding(.vertical, Spacing.sm + 2)
+            .background(Color.appPrimary.opacity(0.10))
+            .clipShape(Capsule())
+            .overlay(Capsule().stroke(Color.appPrimary.opacity(0.22), lineWidth: 1))
 
             Spacer()
 

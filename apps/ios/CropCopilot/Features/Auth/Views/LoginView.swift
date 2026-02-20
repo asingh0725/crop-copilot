@@ -6,7 +6,6 @@
 //
 
 import SwiftUI
-import AuthenticationServices
 
 struct LoginView: View {
     @EnvironmentObject var authViewModel: AuthViewModel
@@ -15,7 +14,6 @@ struct LoginView: View {
     @State private var email = ""
     @State private var password = ""
     @State private var showingSignup = false
-    @State private var currentNonce: String?
 
     var body: some View {
         NavigationStack {
@@ -86,47 +84,6 @@ struct LoginView: View {
                     .foregroundColor(.blue)
                     .disabled(email.isEmpty)
                 }
-                .padding(.horizontal, 32)
-
-                // Divider
-                HStack {
-                    Rectangle()
-                        .frame(height: 1)
-                        .foregroundColor(.gray.opacity(0.3))
-                    Text("OR")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                    Rectangle()
-                        .frame(height: 1)
-                        .foregroundColor(.gray.opacity(0.3))
-                }
-                .padding(.horizontal, 32)
-
-                // Sign in with Apple
-                SignInWithAppleButton(.signIn) { request in
-                    let nonce = AuthRepository.randomNonceString()
-                    currentNonce = nonce
-                    request.requestedScopes = [.fullName, .email]
-                    request.nonce = AuthRepository.sha256(nonce)
-                } onCompletion: { result in
-                    switch result {
-                    case .success(let authorization):
-                        if let appleIDCredential = authorization.credential as? ASAuthorizationAppleIDCredential,
-                           let identityToken = appleIDCredential.identityToken,
-                           let tokenString = String(data: identityToken, encoding: .utf8),
-                           let nonce = currentNonce {
-                            Task {
-                                await authViewModel.handleSignInWithAppleCompletion(
-                                    idToken: tokenString,
-                                    nonce: nonce
-                                )
-                            }
-                        }
-                    case .failure(let error):
-                        authViewModel.errorMessage = error.localizedDescription
-                    }
-                }
-                .frame(height: 50)
                 .padding(.horizontal, 32)
 
                 Spacer()

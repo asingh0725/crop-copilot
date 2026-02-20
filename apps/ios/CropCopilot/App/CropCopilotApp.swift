@@ -30,59 +30,13 @@ struct CropCopilotApp: App {
 
 private struct AppLaunchGateView: View {
     @EnvironmentObject private var authViewModel: AuthViewModel
-    @State private var showLaunchOverlay = true
 
     var body: some View {
-        ZStack {
-            Group {
-                if authViewModel.isAuthenticated {
-                    AppRootView()
-                } else {
-                    LoginView()
-                }
-            }
-
-            if showLaunchOverlay {
-                AppLaunchOverlayView()
-                    .transition(.opacity)
-                    .zIndex(1)
-            }
-        }
-        .task {
-            guard showLaunchOverlay else { return }
-            try? await Task.sleep(nanoseconds: 1_200_000_000)
-            withAnimation(.easeOut(duration: 0.25)) {
-                showLaunchOverlay = false
-            }
-        }
-    }
-}
-
-private struct AppLaunchOverlayView: View {
-    @State private var animate = false
-
-    var body: some View {
-        ZStack {
-            Color("Obsidian")
-                .ignoresSafeArea()
-
-            VStack(spacing: 14) {
-                CropCopilotLogoMark(size: 78, color: .appPrimary)
-                    .scaleEffect(animate ? 1.0 : 0.9)
-                    .opacity(animate ? 1 : 0.65)
-
-                Text("Crop Copilot")
-                    .font(.system(size: 30, weight: .bold))
-                    .foregroundStyle(.white)
-
-                Text("Loading dashboard...")
-                    .font(.subheadline)
-                    .foregroundStyle(.white.opacity(0.72))
-            }
-        }
-        .onAppear {
-            withAnimation(.easeInOut(duration: 0.8)) {
-                animate = true
+        Group {
+            if authViewModel.isAuthenticated {
+                AppRootView()
+            } else {
+                LoginView()
             }
         }
     }

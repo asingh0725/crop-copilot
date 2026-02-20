@@ -560,6 +560,15 @@ struct DiagnosisResultView: View {
         let citations = citationItems(detail)
         Button {
             activeFeedbackStage = nil
+            // Set initial detent based on how many citations there are
+            let count = citations.count
+            if count == 0 {
+                citationDetent = .compact
+            } else if count <= 2 {
+                citationDetent = .expanded
+            } else {
+                citationDetent = .expanded
+            }
             showCitationsModal = true
         } label: {
             Text(citations.isEmpty ? "Citations" : "Citations (\(citations.count))")
@@ -653,7 +662,7 @@ struct DiagnosisResultView: View {
             }
             .frame(height: sheetHeight, alignment: .top)
             .frame(maxWidth: .infinity)
-            .background(Color.appBackground)
+            .background(Color.appSecondaryBackground)
             .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
             .gesture(citationDetentDragGesture)
             .padding(.horizontal, 12)
@@ -680,7 +689,7 @@ struct DiagnosisResultView: View {
                         Text(excerpt)
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
-                            .lineLimit(3)
+                            .lineSpacing(3)
                     }
                 }
             }
@@ -772,12 +781,12 @@ struct DiagnosisResultView: View {
 
             // Earth gradient header with stage icon
             HStack(alignment: .center, spacing: Spacing.sm) {
-                IconBadge(
-                    icon: modalIcon(stage),
-                    color: .white,
-                    size: 34,
-                    cornerRadius: 9
-                )
+                Image(systemName: modalIcon(stage))
+                    .font(.title3.weight(.semibold))
+                    .foregroundStyle(Color.appPrimary)
+                    .frame(width: 34, height: 34)
+                    .background(Color.appPrimary.opacity(0.15))
+                    .clipShape(RoundedRectangle(cornerRadius: 9, style: .continuous))
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(modalTitle(stage))
@@ -819,7 +828,7 @@ struct DiagnosisResultView: View {
             content()
         }
         .frame(maxWidth: .infinity)
-        .background(Color.appBackground)
+        .background(Color.appSecondaryBackground)
         .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
         .padding(.horizontal, 12)
         .padding(.bottom, 10)
@@ -910,6 +919,7 @@ struct DiagnosisResultView: View {
                 TextEditor(text: $quickComments)
                     .font(.body)
                     .frame(minHeight: 110)
+                    .scrollContentBackground(.hidden)
                     .padding(8)
                     .background(Color.appBackground)
                     .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
@@ -1010,6 +1020,7 @@ struct DiagnosisResultView: View {
                 TextEditor(text: $detailedNotes)
                     .font(.body)
                     .frame(minHeight: 110)
+                    .scrollContentBackground(.hidden)
                     .padding(8)
                     .background(Color.appBackground)
                     .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
@@ -1077,6 +1088,7 @@ struct DiagnosisResultView: View {
                 TextEditor(text: $outcomeNotes)
                     .font(.body)
                     .frame(minHeight: 110)
+                    .scrollContentBackground(.hidden)
                     .padding(8)
                     .background(Color.appBackground)
                     .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
