@@ -86,14 +86,14 @@ struct DashboardView: View {
                 value: averageConfidenceLabel,
                 subtitle: "confidence",
                 icon: "chart.bar.fill",
-                color: .semanticInfo
+                color: Color.semanticInfo
             )
             metricCard(
                 title: "High",
                 value: highConfidenceCountLabel,
                 subtitle: "≥ 80%",
                 icon: "checkmark.seal.fill",
-                color: .semanticSuccess
+                color: Color.semanticSuccess
             )
         }
     }

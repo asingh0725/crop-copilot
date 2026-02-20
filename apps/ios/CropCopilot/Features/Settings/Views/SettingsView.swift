@@ -137,7 +137,7 @@ struct SettingsView: View {
                 HStack(spacing: Spacing.md) {
                     IconBadge(
                         icon: "rectangle.portrait.and.arrow.right",
-                        color: .semanticError,
+                        color: Color.semanticError,
                         size: 36,
                         cornerRadius: 10
                     )
@@ -145,7 +145,7 @@ struct SettingsView: View {
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Sign Out")
                             .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(.semanticError)
+                            .foregroundStyle(Color.semanticError)
                         Text("You will be returned to the login screen")
                             .font(.caption)
                             .foregroundStyle(.secondary)
