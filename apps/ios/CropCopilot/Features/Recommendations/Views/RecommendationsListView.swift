@@ -9,10 +9,23 @@ struct RecommendationsListView: View {
     @StateObject private var viewModel = RecommendationsViewModel()
     @State private var showGrid = true
 
-    private let gridColumns = [
-        GridItem(.flexible(), spacing: Spacing.sm),
-        GridItem(.flexible(), spacing: Spacing.sm),
-    ]
+    // Explicit fixed column width so every card in the grid is identical.
+    // .flexible() lets image intrinsic size influence cell height — .fixed() doesn't.
+    private var gridColumnWidth: CGFloat {
+        let screenWidth = UIScreen.main.bounds.width
+        return floor((screenWidth - Spacing.lg * 2 - Spacing.sm) / 2)
+    }
+
+    private var gridCardHeight: CGFloat {
+        ceil(gridColumnWidth / 0.88)
+    }
+
+    private var gridColumns: [GridItem] {
+        [
+            GridItem(.fixed(gridColumnWidth), spacing: Spacing.sm),
+            GridItem(.fixed(gridColumnWidth), spacing: Spacing.sm),
+        ]
+    }
 
     var body: some View {
         NavigationStack {
@@ -144,11 +157,15 @@ struct RecommendationsListView: View {
     // MARK: - Grid Content
 
     private var gridContent: some View {
-        ScrollView {
+        let w = gridColumnWidth
+        let h = gridCardHeight
+
+        return ScrollView {
             LazyVGrid(columns: gridColumns, spacing: Spacing.sm) {
                 ForEach(Array(viewModel.recommendations.enumerated()), id: \.element.id) { index, recommendation in
                     NavigationLink(value: recommendation.id) {
                         RecommendationCard(recommendation: recommendation, style: .grid)
+                            .frame(width: w, height: h)  // pixel-perfect, identical for every cell
                     }
                     .buttonStyle(.plain)
                     .onAppear {
@@ -241,10 +258,14 @@ struct RecommendationsListView: View {
     // MARK: - Loading Skeleton
 
     private var loadingView: some View {
-        ScrollView {
+        let w = gridColumnWidth
+        let h = gridCardHeight
+
+        return ScrollView {
             LazyVGrid(columns: gridColumns, spacing: Spacing.sm) {
                 ForEach(0..<6, id: \.self) { _ in
-                    SkeletonCard(height: 190, cornerRadius: CornerRadius.lg)
+                    SkeletonCard(height: h, cornerRadius: CornerRadius.lg)
+                        .frame(width: w, height: h)
                 }
             }
             .padding(.horizontal, Spacing.lg)

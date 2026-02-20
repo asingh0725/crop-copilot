@@ -156,10 +156,9 @@ struct RecommendationCard: View {
             }
             .padding(Spacing.md)
         }
-        // Establish explicit width first so child views can't blow it open
-        .frame(maxWidth: .infinity)
-        .aspectRatio(0.88, contentMode: .fit)
-        // Hard clip to prevent any image or child from painting outside the card bounds
+        // Fill the exact frame the parent (NavigationLink in LazyVGrid) provides.
+        // Parent always supplies explicit width × height, so no aspect ratio needed here.
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .clipped()
         // Confidence pill badge pinned to top-right
         .overlay(alignment: .topTrailing) {
