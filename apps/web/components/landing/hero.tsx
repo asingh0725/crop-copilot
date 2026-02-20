@@ -3,9 +3,23 @@
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { ShieldCheck, ArrowRight } from "lucide-react";
-import { HeroParticles } from "./hero-particles";
-import { DashboardPreview } from "./dashboard-preview";
+import dynamic from "next/dynamic";
 import { Float, MotionDiv, MotionStagger, staggerItem } from "./motion-wrapper";
+
+const HeroParticles = dynamic(
+  () => import("./hero-particles").then((m) => ({ default: m.HeroParticles })),
+  { ssr: false }
+);
+
+const DashboardPreview = dynamic(
+  () => import("./dashboard-preview").then((m) => ({ default: m.DashboardPreview })),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="h-[420px] w-full rounded-[20px] bg-earth-950/60 md:h-[560px]" />
+    ),
+  }
+);
 
 export function HeroSection() {
   return (
@@ -22,7 +36,7 @@ export function HeroSection() {
             muted
             loop
             playsInline
-            poster="/images/soybean-hero.png"
+            preload="auto"
             className="absolute inset-0 h-full w-full object-cover"
           >
             <source src="/landing/Hyper_Realistic_Soybean_Leaf_Animation.mp4" type="video/mp4" />
