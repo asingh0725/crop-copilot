@@ -13,7 +13,7 @@ export type { ProductPricing } from "@/lib/ai/pricing-search";
 
 const MAX_PRODUCTS = 3;
 const LIVE_PRODUCT_SEARCH_TIMEOUT_MS = 12000;
-const PRICING_CACHE_TTL_MS = 12 * 60 * 60 * 1000;
+const PRICING_CACHE_TTL_MS = 6 * 60 * 60 * 1000;
 
 export interface CachedProductRecommendation {
   id: string;

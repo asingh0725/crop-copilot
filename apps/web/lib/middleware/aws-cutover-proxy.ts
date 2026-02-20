@@ -262,7 +262,17 @@ function isCutoverPathEnabled(pathname: string): boolean {
     ?.split(',')
     .map((entry) => entry.trim())
     .filter(Boolean)
-  const activePrefixes = configured && configured.length > 0 ? configured : DEFAULT_CUTOVER_PATHS
+
+  // In 'aws' mode, configured paths extend the defaults rather than replace them.
+  // This ensures /api/v1/products and /api/v1/recommendations are always routed
+  // to AWS even when AWS_API_CUTOVER_PATHS is set to a narrower list.
+  const mode = parseCutoverMode(process.env.AWS_API_CUTOVER_MODE)
+  const activePrefixes =
+    mode === 'aws'
+      ? [...new Set([...DEFAULT_CUTOVER_PATHS, ...(configured ?? [])])]
+      : configured && configured.length > 0
+        ? configured
+        : DEFAULT_CUTOVER_PATHS
 
   return activePrefixes.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`))
 }
