@@ -560,14 +560,17 @@ struct DiagnosisResultView: View {
         let citations = citationItems(detail)
         Button {
             activeFeedbackStage = nil
-            // Set initial detent based on how many citations there are
+            // Detent scales with citation count so at most ~3 are visible without scrolling.
+            // Each card is ~130pt tall with a 6-line excerpt, header is ~72pt.
             let count = citations.count
             if count == 0 {
-                citationDetent = .compact
-            } else if count <= 2 {
-                citationDetent = .expanded
+                citationDetent = .compact     // empty state — small modal
+            } else if count == 1 {
+                citationDetent = .compact     // 1 citation fits at 42% screen height
+            } else if count == 2 {
+                citationDetent = .medium      // 2 citations fit at 66% screen height
             } else {
-                citationDetent = .expanded
+                citationDetent = .expanded    // 3+ → expanded, user scrolls for more
             }
             showCitationsModal = true
         } label: {
@@ -690,6 +693,7 @@ struct DiagnosisResultView: View {
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
                             .lineSpacing(3)
+                            .lineLimit(6)  // cap excerpt so 3 citations fit without scrolling
                     }
                 }
             }

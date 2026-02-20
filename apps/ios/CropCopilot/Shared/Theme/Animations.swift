@@ -178,6 +178,85 @@ struct AnimatedParticleField: View {
     }
 }
 
+// MARK: - Botanical Particle Field (Login Background)
+
+/// Floating leaf and pollen particle canvas — used as the animated background on the login screen.
+/// Draws a mix of teardrop leaf shapes and small pollen circles drifting upward.
+/// Entirely transparent when `accessibilityReduceMotion` is enabled.
+struct BotanicalParticleField: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    var body: some View {
+        if reduceMotion {
+            Color.clear
+        } else {
+            TimelineView(.animation(minimumInterval: 1.0 / 30.0)) { timeline in
+                Canvas { context, size in
+                    guard size.width > 0, size.height > 0 else { return }
+                    let t = timeline.date.timeIntervalSinceReferenceDate
+                    let count = 32
+
+                    for i in 0..<count {
+                        let fi = Double(i)
+                        let isLeaf = i % 3 != 0  // 2/3 leaves, 1/3 pollen dots
+
+                        // X: golden-angle distribution with gentle lateral sway
+                        let baseX = (fi * 137.508).truncatingRemainder(dividingBy: size.width * 0.88) + size.width * 0.06
+                        let swayX = sin(t * 0.25 + fi * 1.05) * 20
+                        let x = baseX + swayX
+
+                        // Y: upward drift, wraps at top + a little padding
+                        let speed = 10.0 + fi.truncatingRemainder(dividingBy: 5) * 5
+                        let phase = fi * (size.height / Double(count))
+                        let rawY = size.height - (t * speed + phase).truncatingRemainder(dividingBy: size.height + 50)
+                        let y = rawY < -25 ? rawY + size.height + 50 : rawY
+
+                        // Slowly rotating over time
+                        let rotation = (t * 0.12 + fi * 0.55).truncatingRemainder(dividingBy: Double.pi * 2)
+
+                        // Subtle opacity oscillation
+                        let opacity = 0.05 + 0.06 * sin(t * 0.35 + fi * 0.8)
+                        context.opacity = opacity
+
+                        if isLeaf {
+                            // Teardrop leaf: pointed tip at bottom, rounded at top
+                            let leafW = 5.0 + fi.truncatingRemainder(dividingBy: 4) * 2.5
+                            let leafH = leafW * 1.75
+
+                            // Build and rotate the teardrop path around its center
+                            var transform = CGAffineTransform(translationX: x, y: y)
+                                .rotated(by: rotation)
+                                .translatedBy(x: -leafW / 2, y: -leafH / 2)
+
+                            var leaf = Path()
+                            leaf.move(to: CGPoint(x: leafW / 2, y: leafH))        // bottom tip
+                            leaf.addCurve(
+                                to: CGPoint(x: 0, y: 0),                          // top left
+                                control1: CGPoint(x: -leafW * 0.05, y: leafH * 0.55),
+                                control2: CGPoint(x: 0, y: leafH * 0.12)
+                            )
+                            leaf.addCurve(
+                                to: CGPoint(x: leafW / 2, y: leafH),              // back to tip
+                                control1: CGPoint(x: leafW, y: leafH * 0.12),
+                                control2: CGPoint(x: leafW * 1.05, y: leafH * 0.55)
+                            )
+                            leaf.closeSubpath()
+                            leaf = leaf.applying(transform)
+                            context.fill(leaf, with: .color(.white))
+                        } else {
+                            // Pollen dot
+                            let radius = 1.8 + fi.truncatingRemainder(dividingBy: 3) * 0.9
+                            let dot = CGRect(x: x - radius, y: y - radius, width: radius * 2, height: radius * 2)
+                            context.fill(Path(ellipseIn: dot), with: .color(.white))
+                        }
+                    }
+                }
+            }
+            .allowsHitTesting(false)
+        }
+    }
+}
+
 // MARK: - View Extensions
 
 extension View {

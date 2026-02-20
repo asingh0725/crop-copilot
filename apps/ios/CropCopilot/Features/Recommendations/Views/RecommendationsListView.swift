@@ -165,8 +165,11 @@ struct RecommendationsListView: View {
                 ForEach(Array(viewModel.recommendations.enumerated()), id: \.element.id) { index, recommendation in
                     NavigationLink(value: recommendation.id) {
                         RecommendationCard(recommendation: recommendation, style: .grid)
-                            .frame(width: w, height: h)  // pixel-perfect, identical for every cell
                     }
+                    // Frame on the link itself — GeometryReader inside the card reads this.
+                    // .clipped() prevents any visual bleed (borders, highlights) outside the cell.
+                    .frame(width: w, height: h)
+                    .clipped()
                     .buttonStyle(.plain)
                     .onAppear {
                         let preloadThreshold = max(viewModel.recommendations.count - 4, 0)

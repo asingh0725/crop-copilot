@@ -120,67 +120,75 @@ struct RecommendationCard: View {
     // MARK: - Grid Style (image-first, full-bleed with gradient overlay)
 
     private var gridBody: some View {
-        ZStack(alignment: .bottomLeading) {
-            // Background fills the ZStack — no frame modifier here, inherits ZStack size
-            backgroundLayer
+        // GeometryReader is greedy — it always fills the exact frame proposed by its parent
+        // (which is `.frame(width: w, height: h)` on the NavigationLink in the grid).
+        // This lets us explicitly size `backgroundLayer` to those exact pixel dimensions,
+        // so a scaledToFill() image can never push the ZStack larger than its cell.
+        GeometryReader { proxy in
+            let w = proxy.size.width
+            let h = proxy.size.height
 
-            // Gradient overlay — darkens from mid to bottom for legibility
-            LinearGradient(
-                stops: [
-                    .init(color: .clear, location: 0.0),
-                    .init(color: .black.opacity(0.30), location: 0.40),
-                    .init(color: .black.opacity(0.82), location: 1.0),
-                ],
-                startPoint: .top,
-                endPoint: .bottom
-            )
+            ZStack(alignment: .bottomLeading) {
+                // Explicitly frame the background so scaledToFill() is bounded
+                backgroundLayer
+                    .frame(width: w, height: h)
+                    .clipped()
 
-            // Bottom text content — positioned at bottomLeading by ZStack alignment
-            VStack(alignment: .leading, spacing: 5) {
-                Text(AppConstants.cropLabel(for: recommendation.input.crop ?? "Unknown"))
-                    .font(.system(size: 10, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.72))
-                    .textCase(.uppercase)
-                    .lineLimit(1)
+                // Gradient overlay — darkens from mid to bottom for legibility
+                LinearGradient(
+                    stops: [
+                        .init(color: .clear, location: 0.0),
+                        .init(color: .black.opacity(0.30), location: 0.40),
+                        .init(color: .black.opacity(0.82), location: 1.0),
+                    ],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
 
-                Text(recommendation.condition)
-                    .font(.system(size: 13, weight: .bold))
-                    .foregroundStyle(.white)
-                    .lineLimit(2)
-                    .lineSpacing(2)
+                // Bottom text content — positioned at bottomLeading by ZStack alignment
+                VStack(alignment: .leading, spacing: 5) {
+                    Text(AppConstants.cropLabel(for: recommendation.input.crop ?? "Unknown"))
+                        .font(.system(size: 10, weight: .semibold))
+                        .foregroundStyle(.white.opacity(0.72))
+                        .textCase(.uppercase)
+                        .lineLimit(1)
 
-                Text(timestampLabel)
-                    .font(.caption2)
-                    .foregroundStyle(.white.opacity(0.60))
-                    .lineLimit(1)
+                    Text(recommendation.condition)
+                        .font(.system(size: 13, weight: .bold))
+                        .foregroundStyle(.white)
+                        .lineLimit(2)
+                        .lineSpacing(2)
+
+                    Text(timestampLabel)
+                        .font(.caption2)
+                        .foregroundStyle(.white.opacity(0.60))
+                        .lineLimit(1)
+                }
+                .padding(Spacing.md)
             }
-            .padding(Spacing.md)
-        }
-        // Fill the exact frame the parent (NavigationLink in LazyVGrid) provides.
-        // Parent always supplies explicit width × height, so no aspect ratio needed here.
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .clipped()
-        // Confidence pill badge pinned to top-right
-        .overlay(alignment: .topTrailing) {
-            gridConfidenceBadge
-                .padding(Spacing.sm)
-        }
-        .clipShape(RoundedRectangle(cornerRadius: CornerRadius.lg, style: .continuous))
-        .overlay(alignment: .top) {
-            LinearGradient(
-                colors: [.clear, level.foreground.opacity(0.55), .clear],
-                startPoint: .leading,
-                endPoint: .trailing
+            .clipShape(RoundedRectangle(cornerRadius: CornerRadius.lg, style: .continuous))
+            // Confidence pill badge pinned to top-right
+            .overlay(alignment: .topTrailing) {
+                gridConfidenceBadge
+                    .padding(Spacing.sm)
+            }
+            // Subtle top shimmer line tinted to confidence level
+            .overlay(alignment: .top) {
+                LinearGradient(
+                    colors: [.clear, level.foreground.opacity(0.55), .clear],
+                    startPoint: .leading,
+                    endPoint: .trailing
+                )
+                .frame(height: 1.5)
+                .padding(.horizontal, CornerRadius.lg)
+            }
+            .overlay(
+                RoundedRectangle(cornerRadius: CornerRadius.lg, style: .continuous)
+                    .stroke(.white.opacity(0.12), lineWidth: 0.8)
             )
-            .frame(height: 1.5)
-            .padding(.horizontal, CornerRadius.lg)
+            // No drop shadows — radius 12 + y:6 bleeds 18pt into the next row's cell
+            // at Spacing.sm (8pt) row gap, making cards LOOK like they physically overlap.
         }
-        .overlay(
-            RoundedRectangle(cornerRadius: CornerRadius.lg, style: .continuous)
-                .stroke(.white.opacity(0.10), lineWidth: 0.8)
-        )
-        .shadow(color: .black.opacity(0.18), radius: 12, x: 0, y: 6)
-        .shadow(color: level.foreground.opacity(0.10), radius: 8, x: 0, y: 3)
         .contentShape(RoundedRectangle(cornerRadius: CornerRadius.lg, style: .continuous))
     }
 
