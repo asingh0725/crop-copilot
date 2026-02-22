@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { createApiClient } from "@/lib/api-client";
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
@@ -149,6 +150,12 @@ export default async function DiscoveryStatusPage() {
     <div className="container max-w-6xl py-6 px-4 sm:px-6 lg:px-8 space-y-8">
       {/* ── Header ─────────────────────────────────────────────────────────── */}
       <div>
+        <Link
+          href="/admin"
+          className="text-sm text-muted-foreground hover:text-foreground underline underline-offset-4 mb-3 inline-block"
+        >
+          ← Admin
+        </Link>
         <h1 className="text-2xl font-bold tracking-tight">Pipeline Dashboard</h1>
         <p className="text-muted-foreground text-sm mt-1">
           End-to-end status: source discovery → ingestion → ML training
@@ -204,7 +211,7 @@ export default async function DiscoveryStatusPage() {
           </span>
           <h2 className="text-lg font-semibold">Content Ingestion</h2>
           <Badge variant="outline" className="text-xs ml-auto">
-            Scrape → Chunk → Embed · daily 06:00 UTC
+            Scrape → Chunk → Embed · daily 12:00 PM PST
           </Badge>
         </div>
 

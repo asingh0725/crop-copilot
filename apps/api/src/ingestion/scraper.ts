@@ -13,6 +13,10 @@ const USER_AGENT =
 
 const FETCH_TIMEOUT_MS = 30_000;
 
+// HTTP status codes that indicate the site won't serve us content —
+// treat as empty (not an error) so the source doesn't stay in error state.
+const SKIP_STATUSES = new Set([403, 406, 429]);
+
 export interface ScrapedDocument {
   title: string;
   sections: Array<{ heading: string; body: string }>;
@@ -24,6 +28,8 @@ export interface ScrapedDocument {
 /**
  * Fetch and parse a source URL into a structured document.
  * Throws on non-2xx responses or network errors.
+ * PDFs are parsed via LlamaParse (requires LLAMA_CLOUD_API_KEY).
+ * Returns an empty document for sites that block scraping (403/406/429) so sources aren't stuck in error.
  */
 export async function scrapeUrl(url: string): Promise<ScrapedDocument> {
   const controller = new AbortController();
@@ -34,13 +40,18 @@ export async function scrapeUrl(url: string): Promise<ScrapedDocument> {
     const response = await fetch(url, {
       headers: {
         'User-Agent': USER_AGENT,
-        Accept: 'text/html,application/xhtml+xml',
+        // Include application/pdf so Google redirect URLs don't return 406
+        Accept: 'text/html,application/xhtml+xml,application/pdf,*/*;q=0.8',
         'Accept-Language': 'en-US,en;q=0.9',
       },
       signal: controller.signal,
     });
 
     if (!response.ok) {
+      if (SKIP_STATUSES.has(response.status)) {
+        console.warn(`[Scraper] Skipping ${url} — HTTP ${response.status} (site blocks scraping)`);
+        return emptyDocument(url);
+      }
       throw new Error(`HTTP ${response.status} ${response.statusText} fetching ${url}`);
     }
 
@@ -50,7 +61,8 @@ export async function scrapeUrl(url: string): Promise<ScrapedDocument> {
       return parsePdfWithLlamaParse(buffer, url);
     }
     if (!contentType.includes('html') && !contentType.includes('text')) {
-      throw new Error(`Unexpected content-type "${contentType}" for ${url}`);
+      console.warn(`[Scraper] Skipping unsupported content-type "${contentType}": ${url}`);
+      return emptyDocument(url);
     }
 
     html = await response.text();
@@ -59,6 +71,12 @@ export async function scrapeUrl(url: string): Promise<ScrapedDocument> {
   }
 
   return parseHtml(html, url);
+}
+
+function emptyDocument(url: string): ScrapedDocument {
+  let hostname = url;
+  try { hostname = new URL(url).hostname; } catch { /* keep raw url */ }
+  return { title: hostname, sections: [], rawText: '', url, fetchedAt: new Date().toISOString() };
 }
 
 function parseHtml(html: string, url: string): ScrapedDocument {

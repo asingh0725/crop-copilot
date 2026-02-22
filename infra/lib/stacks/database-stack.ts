@@ -77,7 +77,8 @@ export class DatabaseStack extends Stack {
       allocatedStorage: 20,
       maxAllocatedStorage: 100,
       storageType: rds.StorageType.GP3,
-      backupRetention: shouldRetainData ? Duration.days(7) : Duration.days(1),
+      backupRetention: shouldRetainData ? Duration.days(14) : Duration.days(1),
+      preferredBackupWindow: shouldRetainData ? '06:00-07:00' : undefined, // 06:00–07:00 UTC (off-peak)
       autoMinorVersionUpgrade: true,
       deleteAutomatedBackups: !shouldRetainData,
       deletionProtection: shouldRetainData,

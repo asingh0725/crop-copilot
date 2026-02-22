@@ -52,6 +52,25 @@ interface MLModelRow {
   createdAt: string;
 }
 
+interface AnalyticsRow {
+  users: string;
+  inputs: string;
+  recommendations: string;
+  avgConfidence: string | null;
+  feedback: string;
+  helpfulFeedback: string;
+  evaluations: string;
+  avgEvalScore: string | null;
+}
+
+interface ErrorSourceRow {
+  id: string;
+  title: string | null;
+  url: string;
+  errorMessage: string | null;
+  updatedAt: string;
+}
+
 let pool: Pool | null = null;
 
 function getPool(): Pool {
@@ -131,13 +150,14 @@ export function buildGetDiscoveryStatusHandler(verifier?: AuthVerifier): APIGate
           : 0;
 
       // ── Phase 2: Ingestion stats ────────────────────────────────────────────
+      // Source status values: pending → processed (chunked) → ready (embedded) | error
       const ingestionResult = await db.query<IngestionStatsRow>(`
         SELECT
           COUNT(*)::text                                            AS "totalSources",
           COALESCE(SUM("chunksCount"), 0)::text                    AS "totalChunks",
           COUNT(*) FILTER (WHERE status = 'pending')::text         AS pending,
-          COUNT(*) FILTER (WHERE status = 'active')::text          AS active,
-          COUNT(*) FILTER (WHERE status = 'completed')::text       AS completed,
+          COUNT(*) FILTER (WHERE status = 'processed')::text       AS active,
+          COUNT(*) FILTER (WHERE status = 'ready')::text           AS completed,
           COUNT(*) FILTER (WHERE status = 'error')::text           AS error
         FROM "Source"
       `);
@@ -149,6 +169,51 @@ export function buildGetDiscoveryStatusHandler(verifier?: AuthVerifier): APIGate
         active: Number(ing?.active ?? 0),
         completed: Number(ing?.completed ?? 0),
         error: Number(ing?.error ?? 0),
+      };
+
+      // ── App analytics ───────────────────────────────────────────────────────
+      const [analyticsResult, errorSourcesResult] = await Promise.all([
+        db.query<AnalyticsRow>(`
+          SELECT
+            (SELECT COUNT(*)::text FROM "User")                                   AS users,
+            (SELECT COUNT(*)::text FROM "Input")                                  AS inputs,
+            (SELECT COUNT(*)::text FROM "Recommendation")                         AS recommendations,
+            (SELECT ROUND(AVG(confidence)::numeric, 3)::text FROM "Recommendation") AS "avgConfidence",
+            (SELECT COUNT(*)::text FROM "Feedback")                               AS feedback,
+            (SELECT COUNT(*)::text FROM "Feedback" WHERE helpful = true)          AS "helpfulFeedback",
+            (SELECT COUNT(*)::text FROM "Evaluation")                             AS evaluations,
+            (SELECT ROUND(AVG(overall)::numeric, 2)::text FROM "Evaluation")      AS "avgEvalScore"
+        `),
+        db.query<ErrorSourceRow>(`
+          SELECT id, title, url, "errorMessage", "updatedAt"
+          FROM "Source"
+          WHERE status = 'error'
+          ORDER BY "updatedAt" DESC
+          LIMIT 20
+        `),
+      ]);
+
+      const an = analyticsResult.rows[0];
+      const analytics = {
+        users: Number(an?.users ?? 0),
+        inputs: Number(an?.inputs ?? 0),
+        recommendations: Number(an?.recommendations ?? 0),
+        avgConfidence: an?.avgConfidence != null ? Number(an.avgConfidence) : null,
+        feedback: Number(an?.feedback ?? 0),
+        helpfulFeedback: Number(an?.helpfulFeedback ?? 0),
+        evaluations: Number(an?.evaluations ?? 0),
+        avgEvalScore: an?.avgEvalScore != null ? Number(an.avgEvalScore) : null,
+      };
+
+      const errorSources = {
+        count: Number(ing?.error ?? 0),
+        sample: errorSourcesResult.rows.map((r) => ({
+          id: r.id,
+          title: r.title ?? null,
+          url: r.url,
+          errorMessage: r.errorMessage ?? null,
+          updatedAt: r.updatedAt,
+        })),
       };
 
       // ── Phase 3: ML model stats ─────────────────────────────────────────────
@@ -234,6 +299,10 @@ export function buildGetDiscoveryStatusHandler(verifier?: AuthVerifier): APIGate
                 s3Uri: latestModel.s3Uri ?? null,
               }
             : null,
+          // App analytics
+          analytics,
+          // Error details
+          errors: { sources: errorSources },
           rows,
           pagination: { page, pageSize, total: filteredTotal, totalPages },
         },

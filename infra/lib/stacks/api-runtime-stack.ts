@@ -214,11 +214,11 @@ export class ApiRuntimeStack extends Stack {
     // DiscoverSourcesWorker enqueues newly found sources for ingestion
     foundation.ingestionQueue.grantSendMessages(discoverSourcesWorker);
 
-    // Ingestion orchestration: fires daily at 06:00 UTC, enqueues due sources
+    // Ingestion orchestration: fires daily at 20:00 UTC (12:00 PM PST), enqueues due sources
     const runIngestionScheduleRule = new events.Rule(this, 'RunIngestionBatchScheduleRule', {
       ruleName: `${config.projectSlug}-${config.envName}-run-ingestion-schedule`,
-      schedule: events.Schedule.cron({ minute: '0', hour: '6' }),
-      description: 'Triggers ingestion batch orchestration daily at 06:00 UTC.',
+      schedule: events.Schedule.cron({ minute: '0', hour: '20' }),
+      description: 'Triggers ingestion batch orchestration daily at 20:00 UTC (12:00 PM PST).',
     });
     runIngestionScheduleRule.addTarget(new eventsTargets.LambdaFunction(runIngestionBatchWorker));
 
