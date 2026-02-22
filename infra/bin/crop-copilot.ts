@@ -1,6 +1,13 @@
 #!/usr/bin/env node
 import 'source-map-support/register';
+import * as path from 'node:path';
+import * as dotenv from 'dotenv';
 import { App } from 'aws-cdk-lib';
+
+// Load apps/web/.env so API keys (GOOGLE_AI_API_KEY, ANTHROPIC_API_KEY, OPENAI_API_KEY, etc.)
+// are automatically available to buildApiEnvironment() during cdk synth/deploy.
+// Values already set in the shell take precedence (dotenv never overwrites).
+dotenv.config({ path: path.resolve(__dirname, '..', '..', 'apps', 'web', '.env') });
 import { loadEnvironmentConfig } from '../lib/config';
 import { FoundationStack } from '../lib/stacks/foundation-stack';
 import { ApiRuntimeStack } from '../lib/stacks/api-runtime-stack';

@@ -242,11 +242,11 @@ export class ApiRuntimeStack extends Stack {
     });
     sageMakerCompleteRule.addTarget(new eventsTargets.LambdaFunction(endpointUpdaterWorker));
 
-    // Crop × region discovery: runs every 30 minutes (600 combos → ~5 days to exhaust at batch=10)
+    // Crop × region discovery: runs every 2 minutes (510 combos × batch=10 → ~102 min to exhaust)
     const discoverScheduleRule = new events.Rule(this, 'DiscoverSourcesScheduleRule', {
       ruleName: `${config.projectSlug}-${config.envName}-discover-sources-schedule`,
-      schedule: events.Schedule.rate(Duration.minutes(30)),
-      description: 'Triggers crop × region source discovery every 30 minutes via Gemini search.',
+      schedule: events.Schedule.rate(Duration.minutes(2)),
+      description: 'Triggers crop × region source discovery every 2 minutes via Gemini search.',
     });
     discoverScheduleRule.addTarget(new eventsTargets.LambdaFunction(discoverSourcesWorker));
 

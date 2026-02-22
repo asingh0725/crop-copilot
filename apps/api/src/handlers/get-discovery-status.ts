@@ -1,9 +1,10 @@
 /**
  * GET /api/v1/admin/discovery/status
  *
- * Returns the current state of the automated Gemini source-discovery pipeline.
- * Shows per-status counts, overall progress, and a paginated list of
- * crop × region combinations with their last-run timestamps.
+ * Returns the current state of the full automated pipeline:
+ *   Phase 1 — Gemini source discovery (CropRegionDiscovery)
+ *   Phase 2 — Content ingestion / chunking / embedding (Source)
+ *   Phase 3 — ML model training (MLModelVersion)
  *
  * Restricted to admin users (ADMIN_USER_IDS env var). If ADMIN_USER_IDS is
  * not set, any authenticated user can access this endpoint.
@@ -31,8 +32,24 @@ interface StatusCountRow {
   count: string;
 }
 
-interface TotalSourcesRow {
-  total: string;
+interface IngestionStatsRow {
+  totalSources: string;
+  totalChunks: string;
+  pending: string;
+  active: string;
+  completed: string;
+  error: string;
+}
+
+interface MLModelRow {
+  id: string;
+  modelType: string;
+  trainedAt: string;
+  feedbackCount: number;
+  ndcgScore: number | null;
+  s3Uri: string | null;
+  status: string;
+  createdAt: string;
 }
 
 let pool: Pool | null = null;
@@ -52,7 +69,7 @@ function getPool(): Pool {
 
 function isAdminUser(userId: string): boolean {
   const adminIds = process.env.ADMIN_USER_IDS;
-  if (!adminIds) return true; // open if env var not configured
+  if (!adminIds) return true;
   return adminIds
     .split(',')
     .map((id) => id.trim())
@@ -85,32 +102,65 @@ export function buildGetDiscoveryStatusHandler(verifier?: AuthVerifier): APIGate
     const db = getPool();
 
     try {
-      // ── Status counts ──────────────────────────────────────────────────────
-      const [statusCounts, totalSources] = await Promise.all([
+      // ── Phase 1: Discovery stats ────────────────────────────────────────────
+      const [statusCounts, totalSourcesFound] = await Promise.all([
         db.query<StatusCountRow>(
           `SELECT status, COUNT(*)::text AS count FROM "CropRegionDiscovery" GROUP BY status`
         ),
-        db.query<TotalSourcesRow>(
+        db.query<{ total: string }>(
           `SELECT COALESCE(SUM("sourcesFound"), 0)::text AS total FROM "CropRegionDiscovery"`
         ),
       ]);
 
-      const stats: Record<string, number> = {
+      const discoveryStats: Record<string, number> = {
         pending: 0,
         running: 0,
         completed: 0,
         error: 0,
       };
-      let total = 0;
+      let discoveryTotal = 0;
       for (const row of statusCounts.rows) {
         const count = Number(row.count);
-        stats[row.status] = count;
-        total += count;
+        discoveryStats[row.status] = count;
+        discoveryTotal += count;
       }
-      const sourcesTotal = Number(totalSources.rows[0]?.total ?? 0);
-      const pct = total > 0 ? Math.round((stats.completed / total) * 1000) / 10 : 0;
+      const sourcesDiscovered = Number(totalSourcesFound.rows[0]?.total ?? 0);
+      const discoveryPct =
+        discoveryTotal > 0
+          ? Math.round((discoveryStats.completed / discoveryTotal) * 1000) / 10
+          : 0;
 
-      // ── Filtered rows ──────────────────────────────────────────────────────
+      // ── Phase 2: Ingestion stats ────────────────────────────────────────────
+      const ingestionResult = await db.query<IngestionStatsRow>(`
+        SELECT
+          COUNT(*)::text                                            AS "totalSources",
+          COALESCE(SUM("chunksCount"), 0)::text                    AS "totalChunks",
+          COUNT(*) FILTER (WHERE status = 'pending')::text         AS pending,
+          COUNT(*) FILTER (WHERE status = 'active')::text          AS active,
+          COUNT(*) FILTER (WHERE status = 'completed')::text       AS completed,
+          COUNT(*) FILTER (WHERE status = 'error')::text           AS error
+        FROM "Source"
+      `);
+      const ing = ingestionResult.rows[0];
+      const ingestionStats = {
+        totalSources: Number(ing?.totalSources ?? 0),
+        totalChunks: Number(ing?.totalChunks ?? 0),
+        pending: Number(ing?.pending ?? 0),
+        active: Number(ing?.active ?? 0),
+        completed: Number(ing?.completed ?? 0),
+        error: Number(ing?.error ?? 0),
+      };
+
+      // ── Phase 3: ML model stats ─────────────────────────────────────────────
+      const mlResult = await db.query<MLModelRow>(`
+        SELECT id, "modelType", "trainedAt", "feedbackCount", "ndcgScore", "s3Uri", status, "createdAt"
+        FROM "MLModelVersion"
+        ORDER BY "trainedAt" DESC
+        LIMIT 1
+      `);
+      const latestModel = mlResult.rows[0] ?? null;
+
+      // ── Filtered discovery rows ─────────────────────────────────────────────
       const conditions: string[] = [];
       const params: unknown[] = [];
 
@@ -140,7 +190,7 @@ export function buildGetDiscoveryStatusHandler(verifier?: AuthVerifier): APIGate
              crop,
              region,
              status,
-             "sourcesFound" AS "sourcesFound",
+             "sourcesFound",
              "lastDiscoveredAt",
              "createdAt"
            FROM "CropRegionDiscovery"
@@ -167,8 +217,23 @@ export function buildGetDiscoveryStatusHandler(verifier?: AuthVerifier): APIGate
 
       return jsonResponse(
         {
-          stats: { total, ...stats },
-          progress: { pct, sourcesTotal },
+          // Phase 1 — source discovery
+          stats: { total: discoveryTotal, ...discoveryStats },
+          progress: { pct: discoveryPct, sourcesTotal: sourcesDiscovered },
+          // Phase 2 — ingestion
+          ingestion: ingestionStats,
+          // Phase 3 — ML training
+          latestModel: latestModel
+            ? {
+                id: latestModel.id,
+                modelType: latestModel.modelType,
+                status: latestModel.status,
+                trainedAt: latestModel.trainedAt,
+                feedbackCount: Number(latestModel.feedbackCount),
+                ndcgScore: latestModel.ndcgScore != null ? Number(latestModel.ndcgScore) : null,
+                s3Uri: latestModel.s3Uri ?? null,
+              }
+            : null,
           rows,
           pagination: { page, pageSize, total: filteredTotal, totalPages },
         },
