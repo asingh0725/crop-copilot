@@ -25,7 +25,10 @@ export interface ActionItem {
 }
 
 export interface ProductSuggestion {
-  productId: string;
+  productId?: string;
+  catalogProductId?: string | null;
+  productName?: string;
+  name?: string;
   reason: string;
   applicationRate?: string;
   alternatives?: string[];

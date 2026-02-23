@@ -66,3 +66,39 @@ extension Color {
         }
     }
 }
+
+// MARK: - Spacing
+
+enum Spacing {
+    static let xs:   CGFloat =  4
+    static let sm:   CGFloat =  8
+    static let md:   CGFloat = 12
+    static let lg:   CGFloat = 16
+    static let xl:   CGFloat = 20
+    static let xxl:  CGFloat = 24
+    static let xxxl: CGFloat = 32
+}
+
+// MARK: - Corner Radius
+
+enum CornerRadius {
+    static let sm:  CGFloat =  8
+    static let md:  CGFloat = 12
+    static let lg:  CGFloat = 16
+    static let xl:  CGFloat = 20
+    static let xxl: CGFloat = 24
+}
+
+// MARK: - Animation Durations
+
+enum AnimationDuration {
+    static let fast:   Double = 0.18
+    static let medium: Double = 0.30
+    static let slow:   Double = 0.60
+}
+
+extension Animation {
+    static let appFast   = Animation.easeInOut(duration: AnimationDuration.fast)
+    static let appMedium = Animation.easeInOut(duration: AnimationDuration.medium)
+    static let appSpring = Animation.spring(response: 0.4, dampingFraction: 0.7)
+}

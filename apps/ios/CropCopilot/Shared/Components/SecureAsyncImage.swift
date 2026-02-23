@@ -185,10 +185,15 @@ struct SecureAsyncImage<Content: View, Placeholder: View, Failure: View>: View {
         guard let host = url.host?.lowercased() else {
             return false
         }
-        let isAws = host.contains("amazonaws.com")
+        let isS3Host =
+            host == "s3.amazonaws.com"
+            || host.hasPrefix("s3.")
+            || host.contains(".s3.")
+            || host.contains(".s3-")
+            || host.contains("s3.amazonaws.com")
         let query = url.query?.lowercased() ?? ""
         let hasSignature = query.contains("x-amz-signature")
-        return isAws && !hasSignature
+        return isS3Host && !hasSignature
     }
 }
 

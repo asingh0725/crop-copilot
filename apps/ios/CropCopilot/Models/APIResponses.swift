@@ -397,6 +397,7 @@ struct RecommendationProductSummary: Decodable, Identifiable {
 
     private enum CodingKeys: String, CodingKey {
         case id
+        case catalogProductId
         case productId
         case productIdSnake = "product_id"
         case name
@@ -410,6 +411,25 @@ struct RecommendationProductSummary: Decodable, Identifiable {
         case reasoning
         case applicationRate
         case applicationRateSnake = "application_rate"
+        case product
+    }
+
+    private struct NestedProduct: Decodable {
+        let id: String?
+        let name: String?
+        let brand: String?
+        let type: String?
+        let applicationRate: String?
+        let applicationRateSnake: String?
+
+        private enum CodingKeys: String, CodingKey {
+            case id
+            case name
+            case brand
+            case type
+            case applicationRate
+            case applicationRateSnake = "application_rate"
+        }
     }
 
     init(
@@ -432,38 +452,68 @@ struct RecommendationProductSummary: Decodable, Identifiable {
 
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
+        let nestedProduct = try? container.decodeIfPresent(NestedProduct.self, forKey: .product)
+        let nestedProductName = try? container.decodeIfPresent(String.self, forKey: .product)
+        let explicitCatalogId =
+            RecommendationProductSummary.decodeString(
+                from: container,
+                primary: .catalogProductId,
+                secondary: .productId
+            )
+            ?? RecommendationProductSummary.decodeString(
+                from: container,
+                primary: .productIdSnake
+            )
+            ?? nestedProduct?.id
         let explicitProductId =
             RecommendationProductSummary.decodeString(
                 from: container,
                 primary: .productId,
                 secondary: .productIdSnake
-            )
+            ) ?? nestedProduct?.id
         let decodedId = RecommendationProductSummary.decodeString(
             from: container,
             primary: .id
-        )
+        ) ?? nestedProduct?.id
         id =
             decodedId
             ?? explicitProductId
             ?? UUID().uuidString
-        catalogProductId = explicitProductId ?? decodedId
-        name =
+        let resolvedCatalogId = explicitCatalogId ?? explicitProductId ?? decodedId
+        catalogProductId = RecommendationProductSummary.normalizeCatalogProductId(resolvedCatalogId)
+        let decodedReason =
+            try container.decodeIfPresent(String.self, forKey: .reason)
+            ?? (try container.decodeIfPresent(String.self, forKey: .reasoning))
+        let decodedApplicationRate =
+            try container.decodeIfPresent(String.self, forKey: .applicationRate)
+            ?? (try container.decodeIfPresent(String.self, forKey: .applicationRateSnake))
+            ?? nestedProduct?.applicationRate
+            ?? nestedProduct?.applicationRateSnake
+        let decodedName =
             try container.decodeIfPresent(String.self, forKey: .name)
             ?? (try container.decodeIfPresent(String.self, forKey: .productName))
             ?? (try container.decodeIfPresent(String.self, forKey: .productNameSnake))
-            ?? "Suggested product"
-        brand = try container.decodeIfPresent(String.self, forKey: .brand)
+            ?? nestedProductName
+            ?? nestedProduct?.name
+        let inferredName = RecommendationProductSummary.inferNameFromContext(
+            applicationRate: decodedApplicationRate,
+            reason: decodedReason
+        )
+        name =
+            RecommendationProductSummary.isGenericName(decodedName)
+            ? (inferredName ?? "Suggested product")
+            : (decodedName?.trimmingCharacters(in: .whitespacesAndNewlines) ?? "Suggested product")
+        brand =
+            try container.decodeIfPresent(String.self, forKey: .brand)
+            ?? nestedProduct?.brand
         type =
             try container.decodeIfPresent(String.self, forKey: .type)
             ?? (try container.decodeIfPresent(String.self, forKey: .productType))
             ?? (try container.decodeIfPresent(String.self, forKey: .productTypeSnake))
+            ?? nestedProduct?.type
             ?? "unknown"
-        reason =
-            try container.decodeIfPresent(String.self, forKey: .reason)
-            ?? (try container.decodeIfPresent(String.self, forKey: .reasoning))
-        applicationRate =
-            try container.decodeIfPresent(String.self, forKey: .applicationRate)
-            ?? (try container.decodeIfPresent(String.self, forKey: .applicationRateSnake))
+        reason = decodedReason
+        applicationRate = decodedApplicationRate
     }
 
     private static func decodeString(
@@ -487,6 +537,108 @@ struct RecommendationProductSummary: Decodable, Identifiable {
            let intValue = ((try? container.decodeIfPresent(Int.self, forKey: secondary)) ?? nil) {
             return String(intValue)
         }
+        return nil
+    }
+
+    private static func normalizeCatalogProductId(_ value: String?) -> String? {
+        guard let value else {
+            return nil
+        }
+        let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else {
+            return nil
+        }
+        if trimmed.lowercased() == "null" || trimmed.lowercased() == "undefined" {
+            return nil
+        }
+        return trimmed
+    }
+
+    private static func isGenericName(_ value: String?) -> Bool {
+        guard let value else {
+            return true
+        }
+        let normalized = value
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .lowercased()
+            .replacingOccurrences(of: "_", with: " ")
+            .replacingOccurrences(of: "-", with: " ")
+        return normalized.isEmpty || normalized == "suggested product" || normalized == "unspecified" || normalized == "product"
+    }
+
+    private static func inferNameFromContext(
+        applicationRate: String?,
+        reason: String?
+    ) -> String? {
+        let candidates = [applicationRate, reason]
+            .compactMap { $0?.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+
+        func normalizeCandidate(_ raw: String) -> String? {
+            let cleaned = raw
+                .trimmingCharacters(in: CharacterSet(charactersIn: " ,;:.!?-"))
+                .replacingOccurrences(of: "_", with: " ")
+                .replacingOccurrences(of: "-", with: " ")
+                .split(separator: " ")
+                .map(String.init)
+                .joined(separator: " ")
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !cleaned.isEmpty else {
+                return nil
+            }
+            if isGenericName(cleaned) {
+                return nil
+            }
+            if cleaned.split(separator: " ").count > 8 {
+                return nil
+            }
+            return cleaned
+                .split(separator: " ")
+                .map { $0.capitalized }
+                .joined(separator: " ")
+        }
+
+        let quantityPattern =
+            #"(?:\d+(?:\.\d+)?(?:\s*[-–]\s*\d+(?:\.\d+)?)?\s*(?:lbs?|lb|kg|g|oz|ml|l)\s+)([A-Za-z][A-Za-z0-9\s\/-]{2,70}?)(?:\s+per\b|\s+in\b|,|;|\.|$)"#
+        let actionPattern =
+            #"(?:apply|use|consider|recommend|suggest)\s+(?:a|an|the)?\s*([A-Za-z][A-Za-z0-9\s\/-]{2,70}?)(?:\s+(?:for|to|at|on|in)\b|,|;|\.|$)"#
+
+        for text in candidates {
+            if let range = text.range(of: quantityPattern, options: [.regularExpression, .caseInsensitive]) {
+                let matched = String(text[range])
+                let reduced = matched.replacingOccurrences(
+                    of: #"^\d+(?:\.\d+)?(?:\s*[-–]\s*\d+(?:\.\d+)?)?\s*(?:lbs?|lb|kg|g|oz|ml|l)\s+"#,
+                    with: "",
+                    options: .regularExpression
+                )
+                let namePart = reduced.replacingOccurrences(
+                    of: #"\s+per\b.*$|\s+in\b.*$"#,
+                    with: "",
+                    options: .regularExpression
+                )
+                if let normalized = normalizeCandidate(namePart) {
+                    return normalized
+                }
+            }
+
+            if let range = text.range(of: actionPattern, options: [.regularExpression, .caseInsensitive]) {
+                let matched = String(text[range])
+                let reduced = matched.replacingOccurrences(
+                    of: #"^(?:apply|use|consider|recommend|suggest)\s+(?:a|an|the)?\s*"#,
+                    with: "",
+                    options: .regularExpression
+                )
+                let namePart = reduced.replacingOccurrences(
+                    of: #"\s+(?:for|to|at|on|in)\b.*$"#,
+                    with: "",
+                    options: .regularExpression
+                )
+                if let normalized = normalizeCandidate(namePart) {
+                    return normalized
+                }
+            }
+        }
+
         return nil
     }
 }
@@ -787,19 +939,42 @@ struct ProductsListResponse: Decodable {
 
     private enum CodingKeys: String, CodingKey {
         case products
+        case items
         case total
         case limit
         case offset
+        case data
+    }
+
+    private struct DataEnvelope: Decodable {
+        let products: LossyDecodingArray<ProductListItem>?
+        let items: LossyDecodingArray<ProductListItem>?
+        let total: Int?
+        let limit: Int?
+        let offset: Int?
     }
 
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
+        let dataEnvelope = try container.decodeIfPresent(DataEnvelope.self, forKey: .data)
         products =
             (try? container.decode(LossyDecodingArray<ProductListItem>.self, forKey: .products).values)
+            ?? (try? container.decode(LossyDecodingArray<ProductListItem>.self, forKey: .items).values)
+            ?? dataEnvelope?.products?.values
+            ?? dataEnvelope?.items?.values
             ?? []
-        total = (try? container.decode(Int.self, forKey: .total)) ?? products.count
-        limit = (try? container.decode(Int.self, forKey: .limit)) ?? products.count
-        offset = (try? container.decode(Int.self, forKey: .offset)) ?? 0
+        total =
+            (try? container.decode(Int.self, forKey: .total))
+            ?? dataEnvelope?.total
+            ?? products.count
+        limit =
+            (try? container.decode(Int.self, forKey: .limit))
+            ?? dataEnvelope?.limit
+            ?? products.count
+        offset =
+            (try? container.decode(Int.self, forKey: .offset))
+            ?? dataEnvelope?.offset
+            ?? 0
     }
 }
 
@@ -825,7 +1000,13 @@ struct ProductListItem: Decodable, Identifiable {
 
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        id = (try? container.decode(String.self, forKey: .id)) ?? UUID().uuidString
+        if let stringId = try? container.decode(String.self, forKey: .id) {
+            id = stringId
+        } else if let intId = try? container.decode(Int.self, forKey: .id) {
+            id = String(intId)
+        } else {
+            id = UUID().uuidString
+        }
         name = (try? container.decode(String.self, forKey: .name)) ?? "Product"
         brand = try? container.decode(String.self, forKey: .brand)
         type = (try? container.decode(String.self, forKey: .type)) ?? "UNKNOWN"
@@ -856,26 +1037,98 @@ struct ProductDetailResponse: Decodable, Identifiable {
         case type
         case description
         case applicationRate
+        case applicationRateSnake = "application_rate"
         case crops
         case usedInRecommendations
+        case usedInRecommendationsSnake = "used_in_recommendations"
         case relatedProducts
+        case relatedProductsSnake = "related_products"
         case recommendations
+        case data
+        case product
+    }
+
+    private struct DataEnvelope: Decodable {
+        let id: String?
+        let name: String?
+        let brand: String?
+        let type: String?
+        let description: String?
+        let applicationRate: String?
+        let applicationRateSnake: String?
+        let crops: [String]?
+        let usedInRecommendations: Int?
+        let usedInRecommendationsSnake: Int?
+        let relatedProducts: [RelatedProductSummary]?
+        let relatedProductsSnake: [RelatedProductSummary]?
+        let recommendations: [ProductRecommendationReference]?
+
+        private enum CodingKeys: String, CodingKey {
+            case id
+            case name
+            case brand
+            case type
+            case description
+            case applicationRate
+            case applicationRateSnake = "application_rate"
+            case crops
+            case usedInRecommendations
+            case usedInRecommendationsSnake = "used_in_recommendations"
+            case relatedProducts
+            case relatedProductsSnake = "related_products"
+            case recommendations
+        }
     }
 
     init(from decoder: Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-        id = try container.decode(String.self, forKey: .id)
-        name = try container.decode(String.self, forKey: .name)
-        brand = try container.decodeIfPresent(String.self, forKey: .brand)
-        type = try container.decodeIfPresent(String.self, forKey: .type) ?? "unknown"
-        description = try container.decodeIfPresent(String.self, forKey: .description)
-        applicationRate = try container.decodeIfPresent(String.self, forKey: .applicationRate)
-        crops = try container.decodeIfPresent([String].self, forKey: .crops) ?? []
-        usedInRecommendations = try container.decodeIfPresent(Int.self, forKey: .usedInRecommendations) ?? 0
+        let root = try decoder.container(keyedBy: CodingKeys.self)
+        let envelope =
+            try root.decodeIfPresent(DataEnvelope.self, forKey: .data)
+            ?? root.decodeIfPresent(DataEnvelope.self, forKey: .product)
+
+        id =
+            (try? root.decode(String.self, forKey: .id))
+            ?? envelope?.id
+            ?? UUID().uuidString
+        name =
+            (try? root.decode(String.self, forKey: .name))
+            ?? envelope?.name
+            ?? "Product"
+        brand =
+            (try? root.decodeIfPresent(String.self, forKey: .brand))
+            ?? envelope?.brand
+        type =
+            (try? root.decodeIfPresent(String.self, forKey: .type))
+            ?? envelope?.type
+            ?? "unknown"
+        description =
+            (try? root.decodeIfPresent(String.self, forKey: .description))
+            ?? envelope?.description
+        applicationRate =
+            (try? root.decodeIfPresent(String.self, forKey: .applicationRate))
+            ?? (try? root.decodeIfPresent(String.self, forKey: .applicationRateSnake))
+            ?? envelope?.applicationRate
+            ?? envelope?.applicationRateSnake
+        crops =
+            (try? root.decodeIfPresent([String].self, forKey: .crops))
+            ?? envelope?.crops
+            ?? []
+        usedInRecommendations =
+            (try? root.decodeIfPresent(Int.self, forKey: .usedInRecommendations))
+            ?? (try? root.decodeIfPresent(Int.self, forKey: .usedInRecommendationsSnake))
+            ?? envelope?.usedInRecommendations
+            ?? envelope?.usedInRecommendationsSnake
+            ?? 0
         relatedProducts =
-            try container.decodeIfPresent([RelatedProductSummary].self, forKey: .relatedProducts) ?? []
+            (try? root.decodeIfPresent([RelatedProductSummary].self, forKey: .relatedProducts))
+            ?? (try? root.decodeIfPresent([RelatedProductSummary].self, forKey: .relatedProductsSnake))
+            ?? envelope?.relatedProducts
+            ?? envelope?.relatedProductsSnake
+            ?? []
         recommendations =
-            try container.decodeIfPresent([ProductRecommendationReference].self, forKey: .recommendations) ?? []
+            (try? root.decodeIfPresent([ProductRecommendationReference].self, forKey: .recommendations))
+            ?? envelope?.recommendations
+            ?? []
     }
 }
 
@@ -896,6 +1149,77 @@ struct ProductRecommendationReference: Decodable, Identifiable {
 
 struct BatchPricingResponse: Decodable {
     let pricing: [ProductPricingEntry]
+    let meta: BatchPricingMeta?
+
+    private enum CodingKeys: String, CodingKey {
+        case pricing
+        case results
+        case meta
+    }
+
+    private struct LegacyResultEntry: Decodable {
+        let productId: String
+        let productName: String
+        let brand: String?
+        let pricing: [ProductPricingOffer]
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+
+        if let direct = try? container.decode([ProductPricingEntry].self, forKey: .pricing) {
+            pricing = direct
+            meta = try? container.decodeIfPresent(BatchPricingMeta.self, forKey: .meta)
+            return
+        }
+
+        if let legacy = try? container.decode([LegacyResultEntry].self, forKey: .results) {
+            pricing = legacy.map { item in
+                let sorted = item.pricing
+                    .filter { $0.price != nil }
+                    .sorted { ($0.price ?? Double.greatestFiniteMagnitude) < ($1.price ?? Double.greatestFiniteMagnitude) }
+
+                return ProductPricingEntry(
+                    productId: item.productId,
+                    productName: item.productName,
+                    brand: item.brand,
+                    pricing: ProductPricingSnapshot(
+                        currency: "USD",
+                        retailPrice: sorted.first?.price,
+                        wholesalePrice: sorted.dropFirst().first?.price,
+                        unit: sorted.first?.unit,
+                        availability: sorted.isEmpty ? nil : "\(sorted.count) retailer offers",
+                        lastUpdated: sorted.first?.lastUpdated
+                    ),
+                    offers: item.pricing
+                )
+            }
+            meta = nil
+            return
+        }
+
+        pricing = []
+        meta = try? container.decodeIfPresent(BatchPricingMeta.self, forKey: .meta)
+    }
+}
+
+struct BatchPricingMeta: Decodable {
+    let region: String?
+    let fetchedAt: String?
+
+    private enum CodingKeys: String, CodingKey {
+        case region
+        case fetchedAt
+        case fetchedAtSnake = "fetched_at"
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        region = try container.decodeIfPresent(String.self, forKey: .region)
+        fetchedAt =
+            try container.decodeIfPresent(String.self, forKey: .fetchedAt)
+            ?? (try container.decodeIfPresent(String.self, forKey: .fetchedAtSnake))
+    }
 }
 
 struct ProductPricingEntry: Decodable, Identifiable {
@@ -904,6 +1228,63 @@ struct ProductPricingEntry: Decodable, Identifiable {
     let productName: String
     let brand: String?
     let pricing: ProductPricingSnapshot
+    let offers: [ProductPricingOffer]
+
+    private enum CodingKeys: String, CodingKey {
+        case productId
+        case productName
+        case brand
+        case pricing
+        case offers
+    }
+
+    init(
+        productId: String,
+        productName: String,
+        brand: String?,
+        pricing: ProductPricingSnapshot,
+        offers: [ProductPricingOffer] = []
+    ) {
+        self.productId = productId
+        self.productName = productName
+        self.brand = brand
+        self.pricing = pricing
+        self.offers = offers
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        productId = (try? container.decode(String.self, forKey: .productId)) ?? UUID().uuidString
+        productName = (try? container.decode(String.self, forKey: .productName)) ?? "Product"
+        brand = try? container.decodeIfPresent(String.self, forKey: .brand)
+
+        let explicitOffers =
+            (try? container.decode([ProductPricingOffer].self, forKey: .offers))
+            ?? []
+
+        if let structuredPricing = try? container.decode(ProductPricingSnapshot.self, forKey: .pricing) {
+            pricing = structuredPricing
+            offers = explicitOffers
+            return
+        }
+
+        let pricingOffers =
+            (try? container.decode([ProductPricingOffer].self, forKey: .pricing))
+            ?? explicitOffers
+        let sorted = pricingOffers
+            .filter { $0.price != nil }
+            .sorted { ($0.price ?? Double.greatestFiniteMagnitude) < ($1.price ?? Double.greatestFiniteMagnitude) }
+
+        pricing = ProductPricingSnapshot(
+            currency: "USD",
+            retailPrice: sorted.first?.price,
+            wholesalePrice: sorted.dropFirst().first?.price,
+            unit: sorted.first?.unit,
+            availability: sorted.isEmpty ? nil : "\(sorted.count) retailer offers",
+            lastUpdated: sorted.first?.lastUpdated
+        )
+        offers = pricingOffers
+    }
 }
 
 struct ProductPricingSnapshot: Decodable {
@@ -913,6 +1294,62 @@ struct ProductPricingSnapshot: Decodable {
     let unit: String?
     let availability: String?
     let lastUpdated: String?
+}
+
+struct ProductPricingOffer: Decodable, Identifiable {
+    var id: String {
+        [retailer, unit, url ?? "", lastUpdated ?? ""].joined(separator: "::")
+    }
+
+    let price: Double?
+    let unit: String
+    let retailer: String
+    let url: String?
+    let region: String
+    let lastUpdated: String?
+
+    private enum CodingKeys: String, CodingKey {
+        case price
+        case unit
+        case retailer
+        case url
+        case region
+        case lastUpdated
+    }
+
+    init(
+        price: Double?,
+        unit: String,
+        retailer: String,
+        url: String?,
+        region: String,
+        lastUpdated: String?
+    ) {
+        self.price = price
+        self.unit = unit
+        self.retailer = retailer
+        self.url = url
+        self.region = region
+        self.lastUpdated = lastUpdated
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        if let numeric = try? container.decodeIfPresent(Double.self, forKey: .price) {
+            price = numeric
+        } else if let raw = try? container.decodeIfPresent(String.self, forKey: .price) {
+            let sanitized = raw.replacingOccurrences(of: "[^0-9.]", with: "", options: .regularExpression)
+            price = Double(sanitized)
+        } else {
+            price = nil
+        }
+
+        unit = (try? container.decode(String.self, forKey: .unit)) ?? "unit"
+        retailer = (try? container.decode(String.self, forKey: .retailer)) ?? "Retailer"
+        url = try? container.decodeIfPresent(String.self, forKey: .url)
+        region = (try? container.decode(String.self, forKey: .region)) ?? "United States"
+        lastUpdated = try? container.decodeIfPresent(String.self, forKey: .lastUpdated)
+    }
 }
 
 // MARK: - Profile Response

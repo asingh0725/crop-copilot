@@ -1,0 +1,167 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+# Cancel in-progress runs on the same branch when a new commit is pushed
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ── 1. TypeScript type-checks for api + infra ──────────────────────────────
+  typecheck:
+    name: TypeScript (api + infra)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build shared packages (required by api)
+        run: |
+          pnpm --filter @crop-copilot/contracts build
+          pnpm --filter @crop-copilot/domain build
+
+      - name: Typecheck api
+        run: pnpm --filter @crop-copilot/api typecheck
+
+      - name: Typecheck infra
+        run: pnpm --filter infra build
+
+  # ── 2. Next.js web build ───────────────────────────────────────────────────
+  web-build:
+    name: Web build (Next.js)
+    runs-on: ubuntu-latest
+    env:
+      # Dummy values — Next.js build does not make live requests;
+      # these satisfy module-level env reads without real credentials.
+      NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder-anon-key
+      NEXT_PUBLIC_API_GATEWAY_URL: https://placeholder.execute-api.us-west-2.amazonaws.com
+      API_GATEWAY_URL: https://placeholder.execute-api.us-west-2.amazonaws.com
+      DATABASE_URL: postgresql://ci:ci@localhost:5432/cropcopilot
+      SUPABASE_SERVICE_ROLE_KEY: placeholder-service-role-key
+      ANTHROPIC_API_KEY: placeholder-api-key
+      OPENAI_API_KEY: placeholder-api-key
+      AWS_ACCESS_KEY_ID: placeholder
+      AWS_SECRET_ACCESS_KEY: placeholder
+      AWS_REGION: us-west-2
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build web app
+        run: pnpm --filter web build
+
+  # ── 3. API unit tests ──────────────────────────────────────────────────────
+  api-test:
+    name: API unit tests
+    runs-on: ubuntu-latest
+    needs: typecheck
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build shared packages
+        run: |
+          pnpm --filter @crop-copilot/contracts build
+          pnpm --filter @crop-copilot/domain build
+
+      - name: Run API tests
+        run: pnpm --filter @crop-copilot/api test
+
+  # ── 4. iOS unit tests ─────────────────────────────────────────────────────
+  ios-test:
+    name: iOS unit tests
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create CI xcconfig (dummy secrets — unit tests do not make network calls)
+        run: |
+          cat > apps/ios/Config/Secrets.xcconfig << 'XCEOF'
+          SUPABASE_URL = https:/$()/placeholder.supabase.co
+          SUPABASE_ANON_KEY = placeholder-anon-key
+          API_BASE_URL = https:/$()/placeholder.vercel.app/api/v1
+          API_RUNTIME_BASE_URL = https:/$()/placeholder.execute-api.us-west-2.amazonaws.com
+          XCEOF
+
+      - name: Resolve Swift package dependencies
+        working-directory: apps/ios
+        run: |
+          set -o pipefail
+          xcodebuild -resolvePackageDependencies \
+            -project CropCopilot.xcodeproj \
+            -scheme CropCopilot \
+            -clonedSourcePackagesDirPath .build/spm \
+            2>&1 | tail -20
+
+      - name: Boot iOS simulator
+        run: |
+          # The runner has iOS 18.5+ runtimes (not 18.2), so we do NOT pin to
+          # Xcode 16.2 — instead we use the system default Xcode which supports
+          # the actually installed runtimes.  Find the first available iPhone 16
+          # simulator (any runtime) and boot it.
+          UDID=$(xcrun simctl list devices available | grep "iPhone 16" | grep -v "unavailable" | head -1 | grep -oE '[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}')
+          echo "SIM_UDID=$UDID" >> "$GITHUB_ENV"
+          echo "Selected simulator UDID: $UDID"
+          xcrun simctl boot "$UDID" 2>/dev/null || true
+          xcrun simctl bootstatus "$UDID" -b 2>/dev/null || true
+
+      - name: Build and run unit tests
+        working-directory: apps/ios
+        run: |
+          set -o pipefail
+          xcodebuild test \
+            -project CropCopilot.xcodeproj \
+            -scheme CropCopilot \
+            -destination "platform=iOS Simulator,id=$SIM_UDID" \
+            -clonedSourcePackagesDirPath .build/spm \
+            -resultBundlePath TestResults.xcresult \
+            CODE_SIGN_IDENTITY=- \
+            AD_HOC_CODE_SIGNING_ALLOWED=YES \
+            COMPILER_INDEX_STORE_ENABLE=NO
+
+      - name: Upload test results on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-test-results
+          path: apps/ios/TestResults.xcresult
+          retention-days: 7

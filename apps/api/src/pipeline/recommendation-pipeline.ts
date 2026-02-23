@@ -3,6 +3,9 @@ import { Pool } from 'pg';
 import type { CreateInputCommand, RecommendationResult } from '@crop-copilot/contracts';
 import { resolvePoolSslConfig, sanitizeDatabaseUrlForPool } from '../lib/store';
 import { rankCandidates } from '../rag/hybrid-ranker';
+import { rerank } from '../ml/reranker';
+import { applyMMR } from '../rag/mmr';
+import { generateHypotheticalPassage } from '../rag/hyde';
 import { expandRetrievalQuery, type QueryExpansionResult } from '../rag/query-expansion';
 import type { RankedCandidate, RetrievedCandidate, SourceAuthorityType } from '../rag/types';
 
@@ -149,13 +152,35 @@ export async function runRecommendationPipeline(
     growthStage: inputSnapshot.season,
   });
 
-  const candidates = await retrieveCandidates(inputSnapshot, queryExpansion);
+  // HyDE: generate a hypothetical document passage to use as the query embedding.
+  // Falls back to the original query if Claude is unavailable.
+  const hydePassage = await generateHypotheticalPassage({
+    query: retrievalQuery,
+    crop: inputSnapshot.crop,
+    location: inputSnapshot.location,
+    season: inputSnapshot.season,
+  });
+  const effectiveExpansion = hydePassage
+    ? expandRetrievalQuery({ query: hydePassage, crop: inputSnapshot.crop, region: inputSnapshot.location, growthStage: inputSnapshot.season })
+    : queryExpansion;
+
+  const candidates = await retrieveCandidates(inputSnapshot, effectiveExpansion);
   const ranked = rankCandidates(candidates, {
     queryTerms: queryExpansion.terms,
     crop: inputSnapshot.crop,
     region: inputSnapshot.location,
   });
-  const topCandidates = ranked.slice(0, MAX_CONTEXT_CANDIDATES);
+
+  // MMR: diversify top candidates so Claude gets varied evidence, not duplicates.
+  const diversified = applyMMR(ranked, MAX_CONTEXT_CANDIDATES * 2, 0.65);
+
+  // Rerank with learned model when SageMaker endpoint is configured;
+  // falls back to MMR-diversified order on any failure.
+  const reranked = await rerank(diversified, {
+    crop: inputSnapshot.crop,
+    queryTerms: queryExpansion.terms,
+  });
+  const topCandidates = (reranked ?? diversified).slice(0, MAX_CONTEXT_CANDIDATES);
 
   let modelResult: ModelGenerationResult | null = null;
   try {
@@ -164,6 +189,31 @@ export async function runRecommendationPipeline(
       candidates: topCandidates,
       queryExpansion,
     });
+
+    // Self-consistency: for low-confidence results, run 2 more generations
+    // and majority-vote on conditionType to reduce hallucination.
+    const confidence = modelResult?.output?.confidence ?? modelResult?.output?.diagnosis?.confidence ?? 1;
+    if (modelResult && typeof confidence === 'number' && confidence < 0.7) {
+      const [r2, r3] = await Promise.allSettled([
+        generateModelOutput({ input: inputSnapshot, candidates: topCandidates, queryExpansion }),
+        generateModelOutput({ input: inputSnapshot, candidates: topCandidates, queryExpansion }),
+      ]);
+      const allResults = [
+        modelResult,
+        r2.status === 'fulfilled' ? r2.value : null,
+        r3.status === 'fulfilled' ? r3.value : null,
+      ].filter((r): r is ModelGenerationResult => r !== null);
+
+      const votes = new Map<string, number>();
+      for (const r of allResults) {
+        const ct = r.output.diagnosis?.conditionType ?? 'unknown';
+        votes.set(ct, (votes.get(ct) ?? 0) + 1);
+      }
+      const majority = [...votes.entries()].sort((a, b) => b[1] - a[1])[0]?.[0];
+      if (majority && modelResult.output.diagnosis) {
+        modelResult.output.diagnosis.conditionType = majority as OutputDiagnosis['conditionType'];
+      }
+    }
   } catch (error) {
     console.error('Model generation failed, falling back to heuristic output', {
       inputId: input.inputId,
@@ -275,6 +325,13 @@ async function retrieveCandidatesFromKnowledgeBase(
 
   const vectorLiteral = `[${embedding.join(',')}]`;
   const cropTerm = input.crop ?? '';
+  // Apply crop metadata pre-filter when crop is specified: prefer chunks whose
+  // metadata explicitly lists the crop, then fall back to all-crop results.
+  const cropMetaFilter =
+    cropTerm.length > 0
+      ? `AND (t.metadata IS NULL OR t.metadata->'crops' IS NULL OR t.metadata @> jsonb_build_object('crops', jsonb_build_array($2::text)) OR t.metadata->'crops' = '[]'::jsonb)`
+      : '';
+
   const rows = await pool.query<CandidateRow>(
     `
       SELECT
@@ -299,6 +356,7 @@ async function retrieveCandidatesFromKnowledgeBase(
       LEFT JOIN "SourceBoost" sb ON sb."sourceId" = s.id
       WHERE t.embedding IS NOT NULL
         AND s.status IN ('ready', 'processed')
+        ${cropMetaFilter}
       ORDER BY hybrid_score DESC
       LIMIT $3
     `,
@@ -398,6 +456,7 @@ function toRetrievedCandidate(row: CandidateRow): RetrievedCandidate {
     similarity: adjustedSimilarity,
     sourceType: normalizeSourceType(row.source_type),
     sourceTitle: row.source_title,
+    sourceBoost: Number.isFinite(Number(row.source_boost)) ? Number(row.source_boost) : 0,
     metadata,
   };
 }

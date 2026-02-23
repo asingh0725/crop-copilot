@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { buildIngestionBatchMessage } from './orchestrator';
 import { InMemorySourceRegistry } from './source-registry';
 
-test('buildIngestionBatchMessage prioritizes high priority sources', () => {
+test('buildIngestionBatchMessage prioritizes high priority sources', async () => {
   const registry = new InMemorySourceRegistry([
     {
       sourceId: 'low-source',
@@ -21,7 +21,7 @@ test('buildIngestionBatchMessage prioritizes high priority sources', () => {
     },
   ]);
 
-  const batch = buildIngestionBatchMessage(
+  const batch = await buildIngestionBatchMessage(
     {
       trigger: 'scheduled',
       maxSources: 10,
@@ -35,7 +35,7 @@ test('buildIngestionBatchMessage prioritizes high priority sources', () => {
   assert.equal(batch.sources[0].sourceId, 'high-source');
 });
 
-test('buildIngestionBatchMessage returns null when no source is due', () => {
+test('buildIngestionBatchMessage returns null when no source is due', async () => {
   const registry = new InMemorySourceRegistry([
     {
       sourceId: 'high-source',
@@ -45,9 +45,9 @@ test('buildIngestionBatchMessage returns null when no source is due', () => {
       tags: [],
     },
   ]);
-  registry.markSourceProcessed('high-source', new Date('2026-02-16T11:00:00.000Z'));
+  await registry.markSourceProcessed('high-source', new Date('2026-02-16T11:00:00.000Z'));
 
-  const batch = buildIngestionBatchMessage(
+  const batch = await buildIngestionBatchMessage(
     {
       trigger: 'scheduled',
       maxSources: 10,

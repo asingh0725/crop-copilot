@@ -1,5 +1,4 @@
 import { CfnOutput, Duration, RemovalPolicy, Stack, StackProps, Tags } from 'aws-cdk-lib';
-import * as budgets from 'aws-cdk-lib/aws-budgets';
 import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import * as sns from 'aws-cdk-lib/aws-sns';
@@ -23,6 +22,7 @@ export class FoundationStack extends Stack {
   readonly recommendationQueue: sqs.IQueue;
   readonly ingestionQueue: sqs.IQueue;
   readonly pushEventsTopic: sns.ITopic;
+  readonly billingAlertsTopicArn: string;
 
   constructor(scope: Construct, id: string, props: FoundationStackProps) {
     super(scope, id, props);
@@ -35,14 +35,20 @@ export class FoundationStack extends Stack {
 
     const shouldRetainData = config.envName === 'prod';
 
+    // ── S3 Artifacts Bucket ────────────────────────────────────────────────────
     const artifactsBucket = new s3.Bucket(this, 'ArtifactsBucket', {
       encryption: s3.BucketEncryption.S3_MANAGED,
       blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
       enforceSSL: true,
       versioned: true,
+      lifecycleRules: [
+        {
+          // Prevent silent storage bloat from old object versions
+          noncurrentVersionExpiration: Duration.days(7),
+        },
+      ],
       cors: [
         {
-          // Browser clients upload directly via presigned PUT URLs.
           allowedMethods: [s3.HttpMethods.PUT, s3.HttpMethods.GET, s3.HttpMethods.HEAD],
           allowedOrigins: ['*'],
           allowedHeaders: ['*'],
@@ -55,6 +61,7 @@ export class FoundationStack extends Stack {
     });
     this.artifactsBucket = artifactsBucket;
 
+    // ── Billing Alerts SNS Topic ───────────────────────────────────────────────
     const billingAlertsTopic = new sns.Topic(this, 'BillingAlertsTopic', {
       displayName: `Crop Copilot ${config.envName} billing alerts`,
       topicName: `${config.projectSlug}-${config.envName}-billing-alerts`,
@@ -75,45 +82,11 @@ export class FoundationStack extends Stack {
       );
     }
 
-    // AWS Budgets CloudFormation is only available in selected regions.
-    if (config.region === 'us-east-1') {
-      new budgets.CfnBudget(this, 'MonthlyBudget', {
-        budget: {
-          budgetName: `${config.projectSlug}-${config.envName}-monthly`,
-          budgetType: 'COST',
-          timeUnit: 'MONTHLY',
-          budgetLimit: {
-            amount: config.monthlyBudgetUsd,
-            unit: 'USD',
-          },
-        },
-        notificationsWithSubscribers: [50, 80, 100].map((threshold) => ({
-          notification: {
-            notificationType: 'ACTUAL',
-            comparisonOperator: 'GREATER_THAN',
-            threshold,
-            thresholdType: 'PERCENTAGE',
-          },
-          subscribers: [
-            {
-              subscriptionType: 'SNS',
-              address: billingAlertsTopic.topicArn,
-            },
-            ...(config.costAlertEmail
-              ? [
-                  {
-                    subscriptionType: 'EMAIL',
-                    address: config.costAlertEmail,
-                  },
-                ]
-              : []),
-          ],
-        })),
-      });
-    }
+    this.billingAlertsTopicArn = billingAlertsTopic.topicArn;
 
     const parameterPrefix = `/${config.projectSlug}/${config.envName}`;
 
+    // ── SQS Queues ─────────────────────────────────────────────────────────────
     const recommendationDlq = new sqs.Queue(this, 'RecommendationJobDlq', {
       queueName: `${config.projectSlug}-${config.envName}-recommendation-dlq`,
       encryption: sqs.QueueEncryption.SQS_MANAGED,
@@ -154,6 +127,7 @@ export class FoundationStack extends Stack {
     });
     this.ingestionQueue = ingestionQueue;
 
+    // ── CloudWatch Metrics ─────────────────────────────────────────────────────
     const recommendationLatencyMetric = new cloudwatch.Metric({
       namespace: config.metricsNamespace,
       metricName: 'RecommendationDurationMs',
@@ -193,6 +167,7 @@ export class FoundationStack extends Stack {
       },
     });
 
+    // ── CloudWatch Alarms ──────────────────────────────────────────────────────
     const queueBacklogAlarm = new cloudwatch.Alarm(this, 'RecommendationQueueBacklogAlarm', {
       alarmName: `${config.projectSlug}-${config.envName}-recommendation-queue-backlog`,
       alarmDescription: 'Recommendation queue backlog exceeded expected threshold.',
@@ -243,44 +218,6 @@ export class FoundationStack extends Stack {
       treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
     });
 
-    const opsDashboard = new cloudwatch.Dashboard(this, 'OpsDashboard', {
-      dashboardName: `${config.projectSlug}-${config.envName}-ops`,
-    });
-
-    opsDashboard.addWidgets(
-      new cloudwatch.GraphWidget({
-        title: 'Queue backlog',
-        left: [
-          recommendationQueue.metricApproximateNumberOfMessagesVisible({
-            statistic: 'Average',
-            period: Duration.minutes(5),
-          }),
-          ingestionQueue.metricApproximateNumberOfMessagesVisible({
-            statistic: 'Average',
-            period: Duration.minutes(5),
-          }),
-        ],
-      }),
-      new cloudwatch.GraphWidget({
-        title: 'Dead-letter queues',
-        left: [
-          recommendationDlq.metricApproximateNumberOfMessagesVisible({
-            statistic: 'Maximum',
-            period: Duration.minutes(5),
-          }),
-          ingestionDlq.metricApproximateNumberOfMessagesVisible({
-            statistic: 'Maximum',
-            period: Duration.minutes(5),
-          }),
-        ],
-      }),
-      new cloudwatch.GraphWidget({
-        title: 'Recommendation performance and cost',
-        left: [recommendationLatencyMetric, recommendationCostMetric],
-        right: [recommendationFailureMetric],
-      })
-    );
-
     for (const alarm of [
       queueBacklogAlarm,
       recommendationDlqAlarm,
@@ -290,6 +227,59 @@ export class FoundationStack extends Stack {
       alarm.addAlarmAction(new cloudwatchActions.SnsAction(billingAlertsTopic));
     }
 
+    // ── CloudWatch Dashboard (prod only — saves ~$3/month per non-prod env) ────
+    if (config.envName === 'prod') {
+      const opsDashboard = new cloudwatch.Dashboard(this, 'OpsDashboard', {
+        dashboardName: `${config.projectSlug}-${config.envName}-ops`,
+      });
+
+      opsDashboard.addWidgets(
+        new cloudwatch.GraphWidget({
+          title: 'Queue backlog',
+          left: [
+            recommendationQueue.metricApproximateNumberOfMessagesVisible({
+              statistic: 'Average',
+              period: Duration.minutes(5),
+            }),
+            ingestionQueue.metricApproximateNumberOfMessagesVisible({
+              statistic: 'Average',
+              period: Duration.minutes(5),
+            }),
+          ],
+        }),
+        new cloudwatch.GraphWidget({
+          title: 'Dead-letter queues',
+          left: [
+            recommendationDlq.metricApproximateNumberOfMessagesVisible({
+              statistic: 'Maximum',
+              period: Duration.minutes(5),
+            }),
+            ingestionDlq.metricApproximateNumberOfMessagesVisible({
+              statistic: 'Maximum',
+              period: Duration.minutes(5),
+            }),
+          ],
+        }),
+        new cloudwatch.GraphWidget({
+          title: 'Recommendation performance and cost',
+          left: [recommendationLatencyMetric, recommendationCostMetric],
+          right: [recommendationFailureMetric],
+        })
+      );
+
+      new ssm.StringParameter(this, 'ParameterOpsDashboardName', {
+        parameterName: `${parameterPrefix}/ops/dashboard/name`,
+        stringValue: opsDashboard.dashboardName,
+        description: 'CloudWatch dashboard for queue, pipeline, and FinOps metrics.',
+      });
+
+      new CfnOutput(this, 'OpsDashboardName', {
+        value: opsDashboard.dashboardName,
+        description: 'CloudWatch dashboard name for operational and cost monitoring.',
+      });
+    }
+
+    // ── Step Functions — Express workflows (cheaper for short-lived pipelines) ─
     const pipelineDefinition = new sfn.Pass(this, 'RetrievingContext')
       .next(new sfn.Pass(this, 'GeneratingRecommendation'))
       .next(new sfn.Pass(this, 'ValidatingOutput'))
@@ -300,8 +290,8 @@ export class FoundationStack extends Stack {
       this,
       'RecommendationPipelineStateMachine',
       {
-        stateMachineName: `${config.projectSlug}-${config.envName}-recommendation-pipeline`,
         definitionBody: sfn.DefinitionBody.fromChainable(pipelineDefinition),
+        stateMachineType: sfn.StateMachineType.EXPRESS,
       }
     );
 
@@ -315,11 +305,12 @@ export class FoundationStack extends Stack {
       this,
       'IngestionPipelineStateMachine',
       {
-        stateMachineName: `${config.projectSlug}-${config.envName}-ingestion-pipeline`,
         definitionBody: sfn.DefinitionBody.fromChainable(ingestionPipelineDefinition),
+        stateMachineType: sfn.StateMachineType.EXPRESS,
       }
     );
 
+    // ── EventBridge Schedule ───────────────────────────────────────────────────
     const ingestionScheduleRule = new events.Rule(this, 'IngestionScheduleRule', {
       ruleName: `${config.projectSlug}-${config.envName}-ingestion-schedule`,
       schedule: events.Schedule.cron({
@@ -338,6 +329,7 @@ export class FoundationStack extends Stack {
       })
     );
 
+    // ── SSM Parameters ─────────────────────────────────────────────────────────
     new ssm.StringParameter(this, 'ParameterApiBaseUrl', {
       parameterName: `${parameterPrefix}/platform/api/base-url`,
       stringValue: 'https://api.example.com',
@@ -374,12 +366,6 @@ export class FoundationStack extends Stack {
       description: 'SNS topic ARN for recommendation-ready push event fanout.',
     });
 
-    new ssm.StringParameter(this, 'ParameterOpsDashboardName', {
-      parameterName: `${parameterPrefix}/ops/dashboard/name`,
-      stringValue: opsDashboard.dashboardName,
-      description: 'CloudWatch dashboard for queue, pipeline, and FinOps metrics.',
-    });
-
     new ssm.StringParameter(this, 'ParameterIngestionQueueUrl', {
       parameterName: `${parameterPrefix}/pipeline/ingestion-queue-url`,
       stringValue: ingestionQueue.queueUrl,
@@ -400,6 +386,7 @@ export class FoundationStack extends Stack {
       });
     }
 
+    // ── CloudFormation Outputs ─────────────────────────────────────────────────
     new CfnOutput(this, 'ArtifactsBucketName', {
       value: artifactsBucket.bucketName,
       description: 'S3 bucket for shared artifacts and uploads.',
@@ -428,11 +415,6 @@ export class FoundationStack extends Stack {
     new CfnOutput(this, 'PushEventsTopicArn', {
       value: mobilePushEventsTopic.topicArn,
       description: 'SNS topic ARN for recommendation-ready push event fanout.',
-    });
-
-    new CfnOutput(this, 'OpsDashboardName', {
-      value: opsDashboard.dashboardName,
-      description: 'CloudWatch dashboard name for operational and cost monitoring.',
     });
 
     new CfnOutput(this, 'IngestionQueueUrl', {

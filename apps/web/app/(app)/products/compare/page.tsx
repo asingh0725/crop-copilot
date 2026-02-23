@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
+import { getBrowserApiBase } from "@/lib/api-client";
 import Link from "next/link";
 import { PageHeader } from "@/components/shared/page-header";
 import { Card, CardContent } from "@/components/ui/card";
@@ -19,7 +21,7 @@ import {
   FlaskConical,
   Package,
 } from "lucide-react";
-import { ProductType } from "@prisma/client";
+import type { ProductType } from "@/lib/types/product";
 
 interface CompareProduct {
   id: string;
@@ -76,9 +78,15 @@ export default function ProductComparePage() {
       }
 
       try {
-        const response = await fetch("/api/v1/products/compare", {
+        const supabase = createClient();
+        const { data: { session } } = await supabase.auth.getSession();
+        const base = getBrowserApiBase();
+        const response = await fetch(`${base}/api/v1/products/compare`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session?.access_token ?? ""}`,
+          },
           body: JSON.stringify({ productIds }),
         });
 

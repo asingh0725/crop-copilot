@@ -307,6 +307,23 @@ struct RecommendedProduct: Decodable, Identifiable {
         case applicationRateCamel = "applicationRate"
         case reasoning
         case reason
+        case product
+    }
+
+    private struct NestedProduct: Decodable {
+        let id: String?
+        let name: String?
+        let type: String?
+        let applicationRate: String?
+        let applicationRateSnake: String?
+
+        enum CodingKeys: String, CodingKey {
+            case id
+            case name
+            case type
+            case applicationRate
+            case applicationRateSnake = "application_rate"
+        }
     }
 
     init(
@@ -325,27 +342,106 @@ struct RecommendedProduct: Decodable, Identifiable {
 
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
+        let nestedProduct = try? container.decodeIfPresent(NestedProduct.self, forKey: .product)
+        let nestedProductName = try? container.decodeIfPresent(String.self, forKey: .product)
         productId =
             try container.decodeIfPresent(String.self, forKey: .productId)
             ?? (try container.decodeIfPresent(String.self, forKey: .productIdCamel))
             ?? (try container.decodeIfPresent(String.self, forKey: .id))
-        productName =
+            ?? nestedProduct?.id
+        let decodedReason =
+            try container.decodeIfPresent(String.self, forKey: .reasoning)
+            ?? (try container.decodeIfPresent(String.self, forKey: .reason))
+            ?? "No product rationale provided."
+        let decodedApplicationRate =
+            try container.decodeIfPresent(String.self, forKey: .applicationRate)
+            ?? (try container.decodeIfPresent(String.self, forKey: .applicationRateCamel))
+            ?? nestedProduct?.applicationRate
+            ?? nestedProduct?.applicationRateSnake
+        let decodedName =
             try container.decodeIfPresent(String.self, forKey: .productName)
             ?? (try container.decodeIfPresent(String.self, forKey: .productNameCamel))
             ?? (try container.decodeIfPresent(String.self, forKey: .name))
-            ?? "Suggested product"
+            ?? nestedProductName
+            ?? nestedProduct?.name
+        let inferredName = RecommendedProduct.inferNameFromContext(
+            applicationRate: decodedApplicationRate,
+            reason: decodedReason
+        )
+        productName =
+            RecommendedProduct.isGenericName(decodedName)
+            ? (inferredName ?? "Suggested product")
+            : (decodedName?.trimmingCharacters(in: .whitespacesAndNewlines) ?? "Suggested product")
         productType =
             try container.decodeIfPresent(String.self, forKey: .productType)
             ?? (try container.decodeIfPresent(String.self, forKey: .productTypeCamel))
             ?? (try container.decodeIfPresent(String.self, forKey: .type))
+            ?? nestedProduct?.type
             ?? "unspecified"
-        applicationRate =
-            try container.decodeIfPresent(String.self, forKey: .applicationRate)
-            ?? (try container.decodeIfPresent(String.self, forKey: .applicationRateCamel))
-        reasoning =
-            try container.decodeIfPresent(String.self, forKey: .reasoning)
-            ?? (try container.decodeIfPresent(String.self, forKey: .reason))
-            ?? "No product rationale provided."
+        applicationRate = decodedApplicationRate
+        reasoning = decodedReason
+    }
+
+    private static func isGenericName(_ value: String?) -> Bool {
+        guard let value else {
+            return true
+        }
+        let normalized = value
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .lowercased()
+            .replacingOccurrences(of: "_", with: " ")
+            .replacingOccurrences(of: "-", with: " ")
+        return normalized.isEmpty || normalized == "suggested product" || normalized == "unspecified" || normalized == "product"
+    }
+
+    private static func inferNameFromContext(
+        applicationRate: String?,
+        reason: String?
+    ) -> String? {
+        let candidates = [applicationRate, reason]
+            .compactMap { $0?.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+
+        func normalize(_ raw: String) -> String? {
+            let cleaned = raw
+                .trimmingCharacters(in: CharacterSet(charactersIn: " ,;:.!?-"))
+                .replacingOccurrences(of: "_", with: " ")
+                .replacingOccurrences(of: "-", with: " ")
+                .split(separator: " ")
+                .map(String.init)
+                .joined(separator: " ")
+            guard !cleaned.isEmpty else { return nil }
+            if isGenericName(cleaned) { return nil }
+            if cleaned.split(separator: " ").count > 8 { return nil }
+            return cleaned
+                .split(separator: " ")
+                .map { $0.capitalized }
+                .joined(separator: " ")
+        }
+
+        let quantityPattern =
+            #"(?:\d+(?:\.\d+)?(?:\s*[-–]\s*\d+(?:\.\d+)?)?\s*(?:lbs?|lb|kg|g|oz|ml|l)\s+)([A-Za-z][A-Za-z0-9\s\/-]{2,70}?)(?:\s+per\b|\s+in\b|,|;|\.|$)"#
+
+        for text in candidates {
+            if let range = text.range(of: quantityPattern, options: [.regularExpression, .caseInsensitive]) {
+                let matched = String(text[range])
+                let reduced = matched.replacingOccurrences(
+                    of: #"^\d+(?:\.\d+)?(?:\s*[-–]\s*\d+(?:\.\d+)?)?\s*(?:lbs?|lb|kg|g|oz|ml|l)\s+"#,
+                    with: "",
+                    options: .regularExpression
+                )
+                let namePart = reduced.replacingOccurrences(
+                    of: #"\s+per\b.*$|\s+in\b.*$"#,
+                    with: "",
+                    options: .regularExpression
+                )
+                if let normalized = normalize(namePart) {
+                    return normalized
+                }
+            }
+        }
+
+        return nil
     }
 }
 

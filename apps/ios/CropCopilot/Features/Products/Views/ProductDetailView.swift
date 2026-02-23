@@ -166,7 +166,7 @@ struct ProductDetailView: View {
         Button {
             showPricingSheet = true
             Task {
-                await viewModel.loadPricingOnDemand()
+                await viewModel.loadPricingOnDemand(region: viewModel.pricingRegion)
             }
         } label: {
             HStack(spacing: Spacing.sm) {

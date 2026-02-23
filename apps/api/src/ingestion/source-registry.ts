@@ -41,8 +41,8 @@ const DEFAULT_SOURCES: IngestionSourceDescriptor[] = [
 ];
 
 export interface SourceRegistry {
-  listDueSources(now: Date): IngestionSourceDescriptor[];
-  markSourceProcessed(sourceId: string, processedAt: Date): void;
+  listDueSources(now: Date): Promise<IngestionSourceDescriptor[]>;
+  markSourceProcessed(sourceId: string, processedAt: Date): Promise<void>;
 }
 
 export class InMemorySourceRegistry implements SourceRegistry {
@@ -55,7 +55,7 @@ export class InMemorySourceRegistry implements SourceRegistry {
     }
   }
 
-  listDueSources(now: Date): IngestionSourceDescriptor[] {
+  async listDueSources(now: Date): Promise<IngestionSourceDescriptor[]> {
     const due: IngestionSourceDescriptor[] = [];
 
     for (const source of this.sourceById.values()) {
@@ -81,7 +81,7 @@ export class InMemorySourceRegistry implements SourceRegistry {
     });
   }
 
-  markSourceProcessed(sourceId: string, processedAt: Date): void {
+  async markSourceProcessed(sourceId: string, processedAt: Date): Promise<void> {
     if (!this.sourceById.has(sourceId)) {
       return;
     }

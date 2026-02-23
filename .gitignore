@@ -60,9 +60,12 @@ tools/data/testing/
 
 # iOS secrets
 apps/ios/Config/Secrets.xcconfig
+apps/ios/Config/Debug.xcconfig
+apps/ios/Config/Release.xcconfig
 
 # Xcode
 apps/ios/DerivedData/
+apps/ios/.build/
 apps/ios/**/*.xcuserdata
 apps/ios/**/*.xcuserdatad
 apps/ios/**/*.xcworkspace/xcuserdata
@@ -80,3 +83,46 @@ apps/ios/build/
 *.ipa
 *.dSYM.zip
 *.dSYM
+*.xcarchive
+
+# app-specific env files (root .env already covered above)
+apps/web/.env
+apps/web/.env.development
+apps/web/.env.staging
+apps/web/.env.production
+apps/api/.env
+apps/api/.env.development
+apps/api/.env.staging
+apps/api/.env.production
+infra/**/.env
+infra/**/.env.*
+
+# AWS SAM / CDK generated
+.aws-sam/
+samconfig.toml
+cdk.context.json
+
+# SageMaker / ML training artifacts
+apps/api/src/ml/training/data/
+apps/api/src/ml/training/models/
+apps/api/src/ml/training/output/
+*.pkl
+*.joblib
+*.tar.gz
+*.model
+
+# Python (ML training scripts)
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.venv/
+venv/
+.ipynb_checkpoints/
+
+# scratch / temp files
+PHASE*.md
+PLAN*.md
+TODO*.md
+*.scratch.ts
+*.scratch.js

@@ -88,5 +88,6 @@ private struct DiagnoseOptionCard: View {
         }
         .padding()
         .antigravityGlass(cornerRadius: 16)
+        .contentShape(Rectangle())
     }
 }

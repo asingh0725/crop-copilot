@@ -13,6 +13,7 @@ export interface RetrievedCandidate {
   similarity: number;
   sourceType: SourceAuthorityType;
   sourceTitle: string;
+  sourceBoost?: number;
   metadata?: {
     crops?: string[];
     topics?: string[];
