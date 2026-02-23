@@ -131,11 +131,19 @@ jobs:
       - name: Resolve Swift package dependencies
         working-directory: apps/ios
         run: |
+          set -o pipefail
           xcodebuild -resolvePackageDependencies \
             -project CropCopilot.xcodeproj \
             -scheme CropCopilot \
             -clonedSourcePackagesDirPath .build/spm \
-            2>&1 | tail -5
+            2>&1 | tail -20
+
+      - name: Boot iOS simulator
+        run: |
+          # Ensure the iPhone 16 simulator is created and booted before testing
+          xcrun simctl boot "iPhone 16" 2>/dev/null || true
+          # Wait for SpringBoard to be ready (handles "already booted" gracefully)
+          xcrun simctl bootstatus "iPhone 16" -b 2>/dev/null || true
 
       - name: Build and run unit tests
         working-directory: apps/ios
@@ -144,7 +152,7 @@ jobs:
           xcodebuild test \
             -project CropCopilot.xcodeproj \
             -scheme CropCopilot \
-            -destination 'platform=iOS Simulator,name=iPhone 16,OS=latest' \
+            -destination 'platform=iOS Simulator,name=iPhone 16' \
             -clonedSourcePackagesDirPath .build/spm \
             -resultBundlePath TestResults.xcresult \
             CODE_SIGNING_ALLOWED=NO \
