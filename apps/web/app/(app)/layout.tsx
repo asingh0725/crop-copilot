@@ -13,8 +13,14 @@ export default async function AppLayout({
 
   const userName = user?.email?.split("@")[0] || null;
 
+  const adminEmails = (process.env.ADMIN_EMAILS ?? "avirajdhooria2001@gmail.com")
+    .split(",")
+    .map((e) => e.trim())
+    .filter(Boolean);
+  const isAdmin = adminEmails.includes(user?.email ?? "");
+
   return (
-    <AppShell userName={userName} userEmail={user?.email}>
+    <AppShell userName={userName} userEmail={user?.email} isAdmin={isAdmin}>
       {children}
     </AppShell>
   );
