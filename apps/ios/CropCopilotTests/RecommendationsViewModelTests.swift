@@ -25,8 +25,8 @@ final class RecommendationsViewModelTests: XCTestCase {
     func testSortOptionDisplayNames() {
         XCTAssertEqual(RecommendationsViewModel.SortOption.dateDesc.displayName, "Newest")
         XCTAssertEqual(RecommendationsViewModel.SortOption.dateAsc.displayName, "Oldest")
-        XCTAssertEqual(RecommendationsViewModel.SortOption.confidenceHigh.displayName, "High Confidence")
-        XCTAssertEqual(RecommendationsViewModel.SortOption.confidenceLow.displayName, "Low Confidence")
+        XCTAssertEqual(RecommendationsViewModel.SortOption.confidenceHigh.displayName, "High Conf.")
+        XCTAssertEqual(RecommendationsViewModel.SortOption.confidenceLow.displayName, "Low Conf.")
     }
 
     func testSortOptionRawValues() {
