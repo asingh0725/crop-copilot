@@ -41,8 +41,10 @@ function getPool(): Pool {
 }
 
 function getRegistry() {
+  // Short-circuit to in-memory registry when no DB is configured (e.g. unit tests)
+  if (!process.env.DATABASE_URL) return getSourceRegistry();
   const pool = sharedPool ?? getPool();
-  return process.env.DATABASE_URL ? new DbSourceRegistry(pool) : getSourceRegistry();
+  return new DbSourceRegistry(pool);
 }
 
 // ─── Embedding ───────────────────────────────────────────────────────────────
@@ -245,12 +247,15 @@ function deterministicId(sourceId: string, position: number): string {
 
 async function processBatch(body: string): Promise<void> {
   const payload = IngestionBatchMessageSchema.parse(JSON.parse(body));
-  const pool = getPool();
   const registry = getRegistry();
   const processedAt = new Date(payload.requestedAt);
 
   for (const source of payload.sources) {
     try {
+      // Resolve the pool inside the per-source try so that a missing DATABASE_URL
+      // is treated as a per-source failure (logged + skipped) rather than crashing
+      // the entire batch and causing SQS redelivery.
+      const pool = getPool();
       await processSource(pool, source);
       await registry.markSourceProcessed(source.sourceId, processedAt);
     } catch (error) {
