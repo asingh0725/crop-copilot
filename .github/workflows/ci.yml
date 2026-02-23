@@ -110,11 +110,6 @@ jobs:
   ios-test:
     name: iOS unit tests
     runs-on: macos-15
-    env:
-      # Pin Xcode 16.2 for every xcrun / xcodebuild call in this job.
-      # Setting DEVELOPER_DIR is more reliable than xcode-select in CI because it
-      # applies to all child processes without requiring sudo.
-      DEVELOPER_DIR: /Applications/Xcode_16.2.app/Contents/Developer
     steps:
       - uses: actions/checkout@v4
 
@@ -137,31 +132,17 @@ jobs:
             -clonedSourcePackagesDirPath .build/spm \
             2>&1 | tail -20
 
-      - name: Prepare and boot iOS simulator
+      - name: Boot iOS simulator
         run: |
-          echo "=== Xcode version ==="
-          xcodebuild -version
-          echo "=== Available runtimes ==="
-          xcrun simctl list runtimes
-          echo "=== Available iPhone devices ==="
-          xcrun simctl list devices available | grep -E "^--|iPhone"
-
-          # On macOS 15 + Xcode 16, the iOS runtime may be a managed disk image.
-          # Registering the bundled runtime (if present) makes it visible to xcodebuild.
-          BUNDLED="$DEVELOPER_DIR/../Resources/Platforms/iPhoneOS.platform/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS.simruntime"
-          if [ -d "$BUNDLED" ]; then
-            echo "Registering bundled runtime: $BUNDLED"
-            xcrun simctl runtime add "$BUNDLED" 2>&1 || true
-          fi
-
-          # Find and boot an available iPhone 16 simulator
+          # The runner has iOS 18.5+ runtimes (not 18.2), so we do NOT pin to
+          # Xcode 16.2 — instead we use the system default Xcode which supports
+          # the actually installed runtimes.  Find the first available iPhone 16
+          # simulator (any runtime) and boot it.
           UDID=$(xcrun simctl list devices available | grep "iPhone 16" | grep -v "unavailable" | head -1 | grep -oE '[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}')
           echo "SIM_UDID=$UDID" >> "$GITHUB_ENV"
-          echo "Selected UDID: $UDID"
-          xcrun simctl boot "$UDID" 2>&1 || true
-          xcrun simctl bootstatus "$UDID" -b 2>&1 || true
-          echo "=== Booted devices ==="
-          xcrun simctl list devices booted
+          echo "Selected simulator UDID: $UDID"
+          xcrun simctl boot "$UDID" 2>/dev/null || true
+          xcrun simctl bootstatus "$UDID" -b 2>/dev/null || true
 
       - name: Build and run unit tests
         working-directory: apps/ios
