@@ -150,6 +150,7 @@ async function retrieveLexicalCandidates(
   if (terms.length === 0) return [];
 
   const likeConditions = terms.map((_, i) => `lower(t.content) LIKE '%' || $${i + 3} || '%'`);
+  const likeScores = terms.map((_, i) => `(lower(t.content) LIKE '%' || $${i + 3} || '%')::int * 0.1`);
   const typeFilter =
     sourceTypes && sourceTypes.length > 0
       ? `AND s."sourceType" = ANY($${terms.length + 3}::text[])`
@@ -169,7 +170,7 @@ async function retrieveLexicalCandidates(
        COALESCE(sb.boost, 0)::float8       AS source_boost,
        t.metadata,
        (
-         (${likeConditions.join(' + ').replace(/LIKE '%' \|\| \$\d+ \|\| '%'/g, (m) => m + '::int * 0.1')}) +
+         (${likeScores.join(' + ')}) +
          CASE WHEN $1::text <> '' AND lower(t.content) LIKE '%' || lower($1) || '%' THEN 0.08 ELSE 0 END +
          COALESCE(sb.boost, 0)
        ) AS hybrid_score

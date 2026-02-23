@@ -103,16 +103,19 @@ export function buildRegisterSourceHandler(verifier?: AuthVerifier): APIGatewayP
     let source: SourceRow;
     try {
       const result = await pool.query<SourceRow>(
-        `INSERT INTO "Source" (id, title, url, "sourceType", institution, status, "chunksCount", "createdAt", "updatedAt")
-         VALUES (gen_random_uuid(), $1, $2, $3, $4, 'pending', 0, now(), now())
+        `INSERT INTO "Source" (id, title, url, "sourceType", institution, status, "chunksCount", priority, "freshnessHours", tags, "createdAt", "updatedAt")
+         VALUES (gen_random_uuid(), $1, $2, $3, $4, 'pending', 0, $5, $6, $7::jsonb, now(), now())
          ON CONFLICT (url)
          DO UPDATE SET
-           title       = EXCLUDED.title,
-           institution = EXCLUDED.institution,
-           status      = 'pending',
-           "updatedAt" = now()
+           title           = EXCLUDED.title,
+           institution     = EXCLUDED.institution,
+           priority        = EXCLUDED.priority,
+           "freshnessHours" = EXCLUDED."freshnessHours",
+           tags            = EXCLUDED.tags,
+           status          = 'pending',
+           "updatedAt"     = now()
          RETURNING id, title, url, "sourceType", institution, status, "chunksCount", "createdAt", "updatedAt"`,
-        [title, url, sourceType, institution ?? null]
+        [title, url, sourceType, institution ?? null, priority, freshnessHours, JSON.stringify(tags)]
       );
       source = result.rows[0];
     } catch (err) {

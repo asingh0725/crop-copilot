@@ -65,8 +65,7 @@ function getPool(): Pool {
 async function searchWithGemini(crop: string, region: string): Promise<DiscoveredSource[]> {
   const apiKey = process.env.GOOGLE_AI_API_KEY?.trim();
   if (!apiKey) {
-    console.warn('[Discovery] GOOGLE_AI_API_KEY not set — skipping Gemini search');
-    return [];
+    throw new Error('GOOGLE_AI_API_KEY is not configured — cannot run Gemini discovery');
   }
 
   const prompt =

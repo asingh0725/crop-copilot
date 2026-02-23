@@ -42,6 +42,7 @@ test('submit feedback handler returns 201 for valid payload', async () => {
           accuracy: 5,
           comments: null,
           issues: [],
+          detailedCompletedAt: null,
           outcomeApplied: true,
           outcomeSuccess: true,
           outcomeNotes: null,
@@ -73,8 +74,12 @@ test('submit feedback handler returns 201 for valid payload', async () => {
   assert.equal(response.statusCode, 201);
   const body = parseBody<{ success: boolean }>(response.body);
   assert.equal(body.success, true);
-  assert.equal(captured?.userId, '11111111-1111-4111-8111-111111111111');
-  assert.equal(captured?.recommendationId, 'deab17cf-f109-43f2-b95b-7d2f328a7720');
+  // TypeScript narrows `captured` to null in static analysis (can't trace async closure
+  // assignment), so cast back to the declared type before asserting.
+  const cap = captured as { userId: string; recommendationId: string } | null;
+  assert.ok(cap, 'captured should not be null after successful handler invocation');
+  assert.equal(cap.userId, '11111111-1111-4111-8111-111111111111');
+  assert.equal(cap.recommendationId, 'deab17cf-f109-43f2-b95b-7d2f328a7720');
 });
 
 test('submit feedback handler returns 400 for invalid payload', async () => {

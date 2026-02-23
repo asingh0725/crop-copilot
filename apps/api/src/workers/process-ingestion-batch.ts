@@ -252,12 +252,13 @@ async function processBatch(body: string): Promise<void> {
   for (const source of payload.sources) {
     try {
       await processSource(pool, source);
+      await registry.markSourceProcessed(source.sourceId, processedAt);
     } catch (error) {
       console.error(`[Ingestion] Source ${source.sourceId} failed:`, (error as Error).message);
-      // Don't rethrow — continue with remaining sources, mark this one as processed
-      // so it doesn't block the queue (it will be retried on next schedule run)
+      // Don't rethrow — continue with remaining sources in the batch.
+      // Source status is already set to 'error' by processSource; skip markSourceProcessed
+      // so the scheduler picks it up again on the next cycle.
     }
-    await registry.markSourceProcessed(source.sourceId, processedAt);
   }
 }
 
