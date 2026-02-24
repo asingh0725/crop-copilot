@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { getBrowserApiBase } from "@/lib/api-client";
@@ -67,7 +67,10 @@ export default function ProductComparePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const productIds = searchParams.get("ids")?.split(",").filter(Boolean) || [];
+  const productIds = useMemo(
+    () => searchParams.get("ids")?.split(",").filter(Boolean) ?? [],
+    [searchParams]
+  );
 
   useEffect(() => {
     async function fetchComparison() {
@@ -106,7 +109,7 @@ export default function ProductComparePage() {
     }
 
     fetchComparison();
-  }, [searchParams]);
+  }, [searchParams, productIds]);
 
   const removeProduct = (id: string) => {
     const newIds = productIds.filter((pid) => pid !== id);
