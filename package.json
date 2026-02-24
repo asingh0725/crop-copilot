@@ -3,9 +3,9 @@
   "private": true,
   "packageManager": "pnpm@9.15.4",
   "scripts": {
-    "dev": "turbo dev",
-    "build": "turbo build",
-    "lint": "turbo lint",
+    "dev": "pnpm --filter web dev",
+    "build": "pnpm -r build",
+    "lint": "pnpm -r lint",
     "cutover:parity": "node tools/cutover/api-parity-check.mjs",
     "cutover:supabase-audit": "node tools/cutover/supabase-audit.mjs",
     "aws:db:migrate": "node tools/aws/migrate-supabase-to-rds.mjs",
@@ -17,7 +17,6 @@
     "infra:deploy": "pnpm --filter infra deploy"
   },
   "devDependencies": {
-    "turbo": "^2.4.4",
     "prettier": "^3.4.2",
     "prettier-plugin-tailwindcss": "^0.6.10"
   }
