@@ -591,9 +591,9 @@ struct DiagnosisResultView: View {
 
     private func priorityColor(_ priority: String) -> Color {
         switch priority.lowercased() {
-        case "critical", "immediate": return Color.semanticError
-        case "high", "urgent":        return Color.semanticWarning
-        default:                      return Color.appSecondary
+        case "critical", "immediate":        return Color.semanticError
+        case "soon", "high", "urgent":       return Color.semanticWarning
+        default:                             return Color.appSecondary
         }
     }
 
