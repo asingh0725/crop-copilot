@@ -129,7 +129,7 @@ export async function searchLivePricing(options: PricingSearchOptions): Promise<
   const prompt = buildPricingPrompt({ productName, brand, region, maxResults });
   const authHeader = apiKey ? `x-api-key` : 'authorization';
   const authValue = apiKey ?? `Bearer ${authToken}`;
-  const model = process.env.ANTHROPIC_PRICING_MODEL ?? 'claude-sonnet-4-20250514';
+  const model = process.env.ANTHROPIC_PRICING_MODEL ?? 'claude-haiku-4-5-20251001';
 
   let lastError: Error | null = null;
 
