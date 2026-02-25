@@ -175,7 +175,7 @@ export class ApiRuntimeStack extends Stack {
       entry: 'workers/discover-sources.ts',
       environment,
       memorySize: 512,
-      timeout: Duration.minutes(5),
+      timeout: Duration.minutes(15), // monthly run must drain all 510 crop×region combinations
     });
 
     foundation.recommendationQueue.grantSendMessages(createInputHandler);

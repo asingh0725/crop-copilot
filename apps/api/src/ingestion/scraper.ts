@@ -245,7 +245,14 @@ async function parsePdfWithLlamaParse(buffer: ArrayBuffer, url: string): Promise
       headers: { Authorization: `Bearer ${apiKey}` },
     });
 
-    if (!statusResponse.ok) continue;
+    if (!statusResponse.ok) {
+      // 429 during polling means rate-limited — throw immediately so the caller
+      // can fall back to pdf-parse instead of silently retrying until timeout.
+      if (statusResponse.status === 429) {
+        throw new Error('LlamaParse 429: rate limited during job status polling');
+      }
+      continue; // other transient errors — keep polling
+    }
 
     const statusPayload = (await statusResponse.json()) as { status?: string };
     const jobStatus = statusPayload.status?.toUpperCase();
