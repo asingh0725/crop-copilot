@@ -169,11 +169,19 @@ async function seedDiscoveryQueue(pool: Pool): Promise<void> {
 }
 
 async function resetStaleDiscoveries(pool: Pool): Promise<void> {
+  // Reset completed rows that are due for rediscovery
   await pool.query(
     `UPDATE "CropRegionDiscovery"
      SET status = 'pending'
      WHERE status = 'completed'
        AND "lastDiscoveredAt" < NOW() - INTERVAL '${REDISCOVERY_DAYS} days'`,
+  );
+  // Reset rows stuck in 'running' from a previous timed-out Lambda invocation.
+  // Safe to do unconditionally: SKIP LOCKED in claimNextBatch prevents two
+  // concurrent Lambdas from double-processing, so any 'running' row at the
+  // start of a new invocation must be an orphan from a prior timeout.
+  await pool.query(
+    `UPDATE "CropRegionDiscovery" SET status = 'pending' WHERE status = 'running'`,
   );
 }
 
@@ -274,55 +282,59 @@ export const handler: EventBridgeHandler<
 
     console.log(`[Discovery] Processing batch of ${batch.length} combinations (total so far: ${totalProcessed})`);
 
-    for (const { id, crop, region } of batch) {
-      console.log(`[Discovery] Searching: ${crop} × ${region}`);
-      let sourcesFound = 0;
+    // Process all combinations in this batch concurrently — reduces per-batch
+    // wall time from ~(batchSize × 4 s) to ~4 s, keeping the full 510-combo
+    // drain well within the 15-minute Lambda timeout.
+    await Promise.allSettled(
+      batch.map(async ({ id, crop, region }) => {
+        console.log(`[Discovery] Searching: ${crop} × ${region}`);
+        let sourcesFound = 0;
 
-      try {
-        const discovered = await searchWithGemini(crop, region);
+        try {
+          const discovered = await searchWithGemini(crop, region);
 
-        for (const source of discovered) {
-          const sourceId = await registerSource(pool, crop, region, source);
-          if (!sourceId) continue;
+          for (const source of discovered) {
+            const sourceId = await registerSource(pool, crop, region, source);
+            if (!sourceId) continue;
 
-          // Immediately enqueue for scraping
-          try {
-            await queue.publishIngestionBatch({
-              messageType: 'ingestion.batch.requested',
-              messageVersion: '1',
-              requestedAt: new Date().toISOString(),
-              sources: [
-                {
-                  sourceId,
-                  url: source.url,
-                  priority: 'medium',
-                  freshnessHours: 168,
-                  tags: [crop, region, 'auto-discovered'],
-                },
-              ],
-            });
-            sourcesFound++;
-          } catch (queueErr) {
-            console.warn(
-              `[Discovery] Failed to enqueue ${source.url}:`,
-              (queueErr as Error).message,
-            );
-            // Source is registered in DB; ingestion scheduler will pick it up next cycle
-            sourcesFound++;
+            try {
+              await queue.publishIngestionBatch({
+                messageType: 'ingestion.batch.requested',
+                messageVersion: '1',
+                requestedAt: new Date().toISOString(),
+                sources: [
+                  {
+                    sourceId,
+                    url: source.url,
+                    priority: 'medium',
+                    freshnessHours: 168,
+                    tags: [crop, region, 'auto-discovered'],
+                  },
+                ],
+              });
+              sourcesFound++;
+            } catch (queueErr) {
+              console.warn(
+                `[Discovery] Failed to enqueue ${source.url}:`,
+                (queueErr as Error).message,
+              );
+              // Source is registered in DB; ingestion scheduler will pick it up next cycle
+              sourcesFound++;
+            }
           }
+
+          await markCombination(pool, id, 'completed', sourcesFound);
+          console.log(`[Discovery] ${crop} × ${region}: ${sourcesFound} sources registered`);
+        } catch (error) {
+          console.error(
+            `[Discovery] Failed for ${crop} × ${region}:`,
+            (error as Error).message,
+          );
+          await markCombination(pool, id, 'error', 0);
         }
 
-        await markCombination(pool, id, 'completed', sourcesFound);
-        console.log(`[Discovery] ${crop} × ${region}: ${sourcesFound} sources registered`);
-      } catch (error) {
-        console.error(
-          `[Discovery] Failed for ${crop} × ${region}:`,
-          (error as Error).message,
-        );
-        await markCombination(pool, id, 'error', 0);
-      }
-
-      totalProcessed++;
-    }
+        totalProcessed++;
+      }),
+    );
   }
 };

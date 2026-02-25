@@ -13,6 +13,7 @@ import {
   ChevronRight,
   User,
   Package,
+  ShieldCheck,
 } from "lucide-react";
 import { LogoIcon } from "@/components/ui/logo-icon";
 import { Button } from "@/components/ui/button";
@@ -46,11 +47,12 @@ const bottomNavItems: NavItem[] = [
 interface SidebarProps {
   userName?: string | null;
   userEmail?: string | null;
+  isAdmin?: boolean;
   collapsed: boolean;
   onCollapsedChange: (collapsed: boolean) => void;
 }
 
-export function Sidebar({ userName, userEmail, collapsed, onCollapsedChange }: SidebarProps) {
+export function Sidebar({ userName, userEmail, isAdmin = false, collapsed, onCollapsedChange }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
 
@@ -143,6 +145,44 @@ export function Sidebar({ userName, userEmail, collapsed, onCollapsedChange }: S
             return NavLink;
           })}
         </nav>
+
+        {/* Admin Navigation */}
+        {isAdmin && (() => {
+          const active = isActive("/admin");
+          const NavLink = (
+            <Link
+              href="/admin"
+              className={cn(
+                "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200",
+                active
+                  ? "bg-lime-400/10 text-lime-400 border-l-2 border-lime-400 ml-0"
+                  : "text-white/50 hover:bg-white/5 hover:text-white/80",
+                collapsed && "justify-center border-l-0"
+              )}
+            >
+              <ShieldCheck
+                className={cn(
+                  "w-5 h-5 shrink-0 transition-colors",
+                  active ? "text-lime-400" : "text-white/40"
+                )}
+              />
+              {!collapsed && <span>Admin</span>}
+            </Link>
+          );
+          if (collapsed) {
+            return (
+              <nav className="px-2 pb-2">
+                <Tooltip>
+                  <TooltipTrigger asChild>{NavLink}</TooltipTrigger>
+                  <TooltipContent side="right" className="bg-earth-900 text-white border-white/10">
+                    Admin
+                  </TooltipContent>
+                </Tooltip>
+              </nav>
+            );
+          }
+          return <nav className="px-2 pb-2">{NavLink}</nav>;
+        })()}
 
         {/* Bottom Navigation */}
         <div className="px-2 py-4 border-t border-white/5 space-y-1">

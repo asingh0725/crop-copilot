@@ -1,6 +1,5 @@
 /**
- * Live product pricing search using Claude web_search tool.
- * Ported from apps/web/lib/ai/pricing-search.ts — no Gemini dependency in Lambda.
+ * Live product pricing search using Gemini 2.0 Flash with Google Search grounding.
  */
 
 export interface PricingOffer {
@@ -18,6 +17,9 @@ export interface PricingSearchOptions {
   region?: string;
   maxResults?: number;
 }
+
+const GEMINI_API_URL =
+  'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
 
 const MAX_RETRIES = 3;
 const INITIAL_BACKOFF_MS = 1000;
@@ -119,34 +121,23 @@ function parsePricingFromResponse(text: string, region: string): PricingOffer[] 
 export async function searchLivePricing(options: PricingSearchOptions): Promise<PricingOffer[]> {
   const { productName, brand, region = DEFAULT_REGION, maxResults = 5 } = options;
 
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  const authToken = process.env.ANTHROPIC_AUTH_TOKEN;
-  if (!apiKey && !authToken) {
-    console.warn('[Pricing] No Anthropic credentials — skipping live pricing search');
+  const apiKey = process.env.GOOGLE_AI_API_KEY?.trim();
+  if (!apiKey) {
+    console.warn('[Pricing] No GOOGLE_AI_API_KEY — skipping live pricing search');
     return [];
   }
 
   const prompt = buildPricingPrompt({ productName, brand, region, maxResults });
-  const authHeader = apiKey ? `x-api-key` : 'authorization';
-  const authValue = apiKey ?? `Bearer ${authToken}`;
-  const model = process.env.ANTHROPIC_PRICING_MODEL ?? 'claude-sonnet-4-20250514';
-
   let lastError: Error | null = null;
 
   for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
     try {
-      const response = await fetch('https://api.anthropic.com/v1/messages', {
+      const response = await fetch(`${GEMINI_API_URL}?key=${apiKey}`, {
         method: 'POST',
-        headers: {
-          'content-type': 'application/json',
-          'anthropic-version': '2023-06-01',
-          [authHeader]: authValue,
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          model,
-          max_tokens: 1600,
-          tools: [{ type: 'web_search_20250305', name: 'web_search', max_uses: 2 }],
-          messages: [{ role: 'user', content: prompt }],
+          contents: [{ parts: [{ text: prompt }] }],
+          tools: [{ google_search: {} }],
         }),
       });
 
@@ -156,14 +147,17 @@ export async function searchLivePricing(options: PricingSearchOptions): Promise<
           await sleep(INITIAL_BACKOFF_MS * Math.pow(2, attempt));
           continue;
         }
-        throw new Error(`Anthropic API error: ${status} ${response.statusText}`);
+        throw new Error(`Gemini API error: ${status} ${response.statusText}`);
       }
 
-      const data = (await response.json()) as { content?: Array<{ type: string; text?: string }> };
-      let responseText = '';
-      for (const block of data.content ?? []) {
-        if (block.type === 'text') responseText += block.text ?? '';
-      }
+      const data = (await response.json()) as {
+        candidates?: Array<{
+          content?: { parts?: Array<{ text?: string }> };
+        }>;
+      };
+
+      const parts = data.candidates?.[0]?.content?.parts ?? [];
+      const responseText = parts.map((p) => p.text ?? '').join('');
 
       const results = parsePricingFromResponse(responseText, region);
       if (results.length > 0) return results;

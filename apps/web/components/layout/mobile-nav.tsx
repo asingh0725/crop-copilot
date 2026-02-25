@@ -12,6 +12,7 @@ import {
   User,
   LogOut,
   Package,
+  ShieldCheck,
 } from "lucide-react";
 import { LogoIcon } from "@/components/ui/logo-icon";
 import { Button } from "@/components/ui/button";
@@ -46,9 +47,10 @@ const moreNavItems: NavItem[] = [
 interface MobileNavProps {
   userName?: string | null;
   userEmail?: string | null;
+  isAdmin?: boolean;
 }
 
-export function MobileNav({ userName, userEmail }: MobileNavProps) {
+export function MobileNav({ userName, userEmail, isAdmin = false }: MobileNavProps) {
   const pathname = usePathname();
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -120,7 +122,7 @@ export function MobileNav({ userName, userEmail }: MobileNavProps) {
             </SheetHeader>
 
             <div className="space-y-1 pb-4">
-              {moreNavItems.map((item) => {
+              {[...moreNavItems, ...(isAdmin ? [{ title: "Admin", href: "/admin", icon: ShieldCheck }] : [])].map((item) => {
                 const active = isActive(item.href);
                 return (
                   <Link

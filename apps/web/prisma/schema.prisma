@@ -97,20 +97,25 @@ model Feedback {
 }
 
 model Source {
-  id           String       @id @default(cuid())
-  title        String
-  url          String?      @unique
-  sourceType   SourceType
-  institution  String?
-  status       String       @default("pending")
-  chunksCount  Int          @default(0)
-  errorMessage String?
-  createdAt    DateTime     @default(now())
-  updatedAt    DateTime     @updatedAt
-  metadata     Json?
-  imageChunks  ImageChunk[]
-  textChunks   TextChunk[]
-  boost        SourceBoost?
+  id             String       @id @default(cuid())
+  title          String
+  url            String?      @unique
+  sourceType     SourceType
+  institution    String?
+  status         String       @default("pending")
+  chunksCount    Int          @default(0)
+  errorMessage   String?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  metadata       Json?
+  // Ingestion scheduling fields (used by API workers, not Prisma ORM)
+  priority       String       @default("medium")
+  freshnessHours Int          @default(168)
+  tags           Json         @default("[]")
+  lastScrapedAt  DateTime?
+  imageChunks    ImageChunk[]
+  textChunks     TextChunk[]
+  boost          SourceBoost?
 }
 
 model TextChunk {

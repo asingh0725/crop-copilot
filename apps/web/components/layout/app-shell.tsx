@@ -9,9 +9,10 @@ interface AppShellProps {
   children: React.ReactNode;
   userName?: string | null;
   userEmail?: string | null;
+  isAdmin?: boolean;
 }
 
-export function AppShell({ children, userName, userEmail }: AppShellProps) {
+export function AppShell({ children, userName, userEmail, isAdmin = false }: AppShellProps) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   return (
@@ -20,6 +21,7 @@ export function AppShell({ children, userName, userEmail }: AppShellProps) {
       <Sidebar
         userName={userName}
         userEmail={userEmail}
+        isAdmin={isAdmin}
         collapsed={sidebarCollapsed}
         onCollapsedChange={setSidebarCollapsed}
       />
@@ -38,7 +40,7 @@ export function AppShell({ children, userName, userEmail }: AppShellProps) {
       </main>
 
       {/* Mobile Bottom Navigation */}
-      <MobileNav userName={userName} userEmail={userEmail} />
+      <MobileNav userName={userName} userEmail={userEmail} isAdmin={isAdmin} />
     </div>
   );
 }

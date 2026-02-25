@@ -105,9 +105,13 @@ export default async function DiscoveryStatusPage() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) {
-    redirect("/login");
-  }
+  if (!user) redirect("/login");
+
+  const adminEmails = (process.env.ADMIN_EMAILS ?? "")
+    .split(",")
+    .map((e) => e.trim())
+    .filter(Boolean);
+  if (!adminEmails.includes(user.email ?? "")) redirect("/dashboard");
 
   const {
     data: { session },
