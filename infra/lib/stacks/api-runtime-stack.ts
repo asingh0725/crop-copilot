@@ -515,7 +515,6 @@ function buildApiEnvironment(
     ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY ?? '',
     ANTHROPIC_AUTH_TOKEN: process.env.ANTHROPIC_AUTH_TOKEN ?? '',
     ANTHROPIC_MODEL: process.env.ANTHROPIC_MODEL ?? '',
-    ANTHROPIC_PRICING_MODEL: process.env.ANTHROPIC_PRICING_MODEL ?? '',
     OPENAI_API_KEY: process.env.OPENAI_API_KEY ?? '',
     OPENAI_EMBEDDING_MODEL: process.env.OPENAI_EMBEDDING_MODEL ?? '',
     RAG_RETRIEVAL_LIMIT: process.env.RAG_RETRIEVAL_LIMIT ?? '18',
