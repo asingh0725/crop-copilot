@@ -140,7 +140,7 @@ export class ApiRuntimeStack extends Stack {
       entry: 'workers/process-ingestion-batch.ts',
       environment,
       memorySize: 768,
-      timeout: Duration.seconds(120),
+      timeout: Duration.seconds(300),
     });
 
     // Orchestrates which sources are due and enqueues them for processing
@@ -175,7 +175,7 @@ export class ApiRuntimeStack extends Stack {
       entry: 'workers/discover-sources.ts',
       environment,
       memorySize: 512,
-      timeout: Duration.minutes(5),
+      timeout: Duration.minutes(15), // monthly run must drain all 510 crop×region combinations
     });
 
     foundation.recommendationQueue.grantSendMessages(createInputHandler);
@@ -214,11 +214,11 @@ export class ApiRuntimeStack extends Stack {
     // DiscoverSourcesWorker enqueues newly found sources for ingestion
     foundation.ingestionQueue.grantSendMessages(discoverSourcesWorker);
 
-    // Ingestion orchestration: fires daily at 20:00 UTC (12:00 PM PST), enqueues due sources
+    // Ingestion orchestration: fires every hour to maximize LlamaParse free-tier throughput
     const runIngestionScheduleRule = new events.Rule(this, 'RunIngestionBatchScheduleRule', {
       ruleName: `${config.projectSlug}-${config.envName}-run-ingestion-schedule`,
-      schedule: events.Schedule.cron({ minute: '0', hour: '20' }),
-      description: 'Triggers ingestion batch orchestration daily at 20:00 UTC (12:00 PM PST).',
+      schedule: events.Schedule.rate(Duration.hours(1)),
+      description: 'Triggers ingestion batch orchestration every hour.',
     });
     runIngestionScheduleRule.addTarget(new eventsTargets.LambdaFunction(runIngestionBatchWorker));
 
@@ -242,11 +242,11 @@ export class ApiRuntimeStack extends Stack {
     });
     sageMakerCompleteRule.addTarget(new eventsTargets.LambdaFunction(endpointUpdaterWorker));
 
-    // Crop × region discovery: runs every 2 minutes (510 combos × batch=10 → ~102 min to exhaust)
+    // Crop × region discovery: runs on the 1st of each month — agricultural sources change slowly
     const discoverScheduleRule = new events.Rule(this, 'DiscoverSourcesScheduleRule', {
       ruleName: `${config.projectSlug}-${config.envName}-discover-sources-schedule`,
-      schedule: events.Schedule.rate(Duration.minutes(2)),
-      description: 'Triggers crop × region source discovery every 2 minutes via Gemini search.',
+      schedule: events.Schedule.cron({ minute: '0', hour: '0', day: '1', month: '*', year: '*' }),
+      description: 'Triggers crop × region source discovery on the 1st of each month at 00:00 UTC.',
     });
     discoverScheduleRule.addTarget(new eventsTargets.LambdaFunction(discoverSourcesWorker));
 
