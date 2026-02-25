@@ -107,7 +107,7 @@ export default async function DiscoveryStatusPage() {
 
   if (!user) redirect("/login");
 
-  const adminEmails = (process.env.ADMIN_EMAILS ?? "avirajdhooria2001@gmail.com")
+  const adminEmails = (process.env.ADMIN_EMAILS ?? "")
     .split(",")
     .map((e) => e.trim())
     .filter(Boolean);

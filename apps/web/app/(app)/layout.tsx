@@ -13,7 +13,7 @@ export default async function AppLayout({
 
   const userName = user?.email?.split("@")[0] || null;
 
-  const adminEmails = (process.env.ADMIN_EMAILS ?? "avirajdhooria2001@gmail.com")
+  const adminEmails = (process.env.ADMIN_EMAILS ?? "")
     .split(",")
     .map((e) => e.trim())
     .filter(Boolean);
