@@ -140,18 +140,62 @@ struct DiagnosisResultView: View {
         }
         .animation(.easeInOut(duration: 0.18), value: activeFeedbackStage?.rawValue ?? "")
         .animation(.easeInOut(duration: 0.18), value: showCitationsModal)
-        .alert("Important Notice", isPresented: $showProductNoticeAlert) {
-            Button("Not Now", role: .cancel) {}
-            Button("OK") {
-                hasAcknowledgedProductNotice = true
-                UserDefaults.standard.set(true, forKey: productNoticeKey)
-                expandedSections.insert(.products)
+        .sheet(isPresented: $showProductNoticeAlert) {
+            productNoticeSheet
+                .presentationDetents([.height(280)])
+                .presentationDragIndicator(.visible)
+        }
+    }
+
+    private var productNoticeSheet: some View {
+        VStack(alignment: .leading, spacing: Spacing.lg) {
+            HStack(spacing: Spacing.sm) {
+                Image(systemName: "exclamationmark.triangle.fill")
+                    .font(.title3)
+                    .foregroundStyle(.orange)
+                Text("Important Notice")
+                    .font(.headline)
+                    .foregroundStyle(.primary)
+                Spacer()
             }
-        } message: {
+
             Text(
                 "Product recommendations are informational only. Verify registration for your region and crop, follow label instructions, and comply with local regulations before applying any product."
             )
+            .font(.subheadline)
+            .foregroundStyle(.secondary)
+            .fixedSize(horizontal: false, vertical: true)
+
+            Spacer(minLength: 0)
+
+            HStack(spacing: Spacing.sm) {
+                Button("Not Now") {
+                    showProductNoticeAlert = false
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, Spacing.sm)
+                .background(Color.appSecondaryBackground)
+                .foregroundStyle(.primary)
+                .clipShape(RoundedRectangle(cornerRadius: CornerRadius.md, style: .continuous))
+                .buttonStyle(.plain)
+
+                Button("Understood") {
+                    showProductNoticeAlert = false
+                    hasAcknowledgedProductNotice = true
+                    UserDefaults.standard.set(true, forKey: productNoticeKey)
+                    expandedSections.insert(.products)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, Spacing.sm)
+                .background(Color.appPrimary)
+                .foregroundStyle(.black)
+                .clipShape(RoundedRectangle(cornerRadius: CornerRadius.md, style: .continuous))
+                .buttonStyle(.plain)
+            }
+            .font(.subheadline.weight(.semibold))
         }
+        .padding(Spacing.xl)
+        .padding(.top, Spacing.sm)
     }
 
     private var loadingView: some View {
@@ -1415,8 +1459,8 @@ struct DiagnosisResultView: View {
     }
 
     private func isNavigableProductId(_ value: String?) -> Bool {
-        guard let id = normalizeCatalogProductId(value) else { return false }
-        return UUID(uuidString: id) != nil
+        // Accept any non-empty, non-null ID — catalog IDs are not UUIDs
+        return normalizeCatalogProductId(value) != nil
     }
 
     private func prettyConditionType(_ value: String) -> String {
