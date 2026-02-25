@@ -48,18 +48,11 @@ jobs:
     runs-on: ubuntu-latest
     env:
       # Dummy values — Next.js build does not make live requests;
-      # these satisfy module-level env reads without real credentials.
+      # only the vars actually read by apps/web are needed here.
       NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
       NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder-anon-key
       NEXT_PUBLIC_API_GATEWAY_URL: https://placeholder.execute-api.us-west-2.amazonaws.com
       API_GATEWAY_URL: https://placeholder.execute-api.us-west-2.amazonaws.com
-      DATABASE_URL: postgresql://ci:ci@localhost:5432/cropcopilot
-      SUPABASE_SERVICE_ROLE_KEY: placeholder-service-role-key
-      ANTHROPIC_API_KEY: placeholder-api-key
-      OPENAI_API_KEY: placeholder-api-key
-      AWS_ACCESS_KEY_ID: placeholder
-      AWS_SECRET_ACCESS_KEY: placeholder
-      AWS_REGION: us-west-2
     steps:
       - uses: actions/checkout@v4
 

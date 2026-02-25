@@ -56,7 +56,6 @@ struct BiometricAuthView: View {
                 DispatchQueue.main.async {
                     if success {
                         isUnlocked = true
-                        // TODO: Proceed with app
                     } else {
                         errorMessage = authenticationError?.localizedDescription ?? "Authentication failed"
                     }
