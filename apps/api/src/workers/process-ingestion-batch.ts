@@ -120,13 +120,12 @@ async function upsertChunks(pool: Pool, chunks: ChunkToUpsert[]): Promise<void> 
       const vectorLiteral = `[${chunk.embedding.join(',')}]`;
       await pool.query(
         `
-        INSERT INTO "TextChunk" (id, content, embedding, "sourceId", metadata, "createdAt", "updatedAt")
-        VALUES ($1, $2, $3::vector, $4, $5::jsonb, NOW(), NOW())
+        INSERT INTO "TextChunk" (id, content, embedding, "sourceId", metadata, "createdAt")
+        VALUES ($1, $2, $3::vector, $4, $5::jsonb, NOW())
         ON CONFLICT (id) DO UPDATE SET
-          content    = EXCLUDED.content,
-          embedding  = EXCLUDED.embedding,
-          metadata   = EXCLUDED.metadata,
-          "updatedAt" = NOW()
+          content   = EXCLUDED.content,
+          embedding = EXCLUDED.embedding,
+          metadata  = EXCLUDED.metadata
         `,
         [chunk.id, chunk.content, vectorLiteral, chunk.sourceId, metadata],
       );
@@ -134,12 +133,11 @@ async function upsertChunks(pool: Pool, chunks: ChunkToUpsert[]): Promise<void> 
       // Store without embedding — will be excluded from vector search but visible to lexical
       await pool.query(
         `
-        INSERT INTO "TextChunk" (id, content, "sourceId", metadata, "createdAt", "updatedAt")
-        VALUES ($1, $2, $3, $4::jsonb, NOW(), NOW())
+        INSERT INTO "TextChunk" (id, content, "sourceId", metadata, "createdAt")
+        VALUES ($1, $2, $3, $4::jsonb, NOW())
         ON CONFLICT (id) DO UPDATE SET
-          content    = EXCLUDED.content,
-          metadata   = EXCLUDED.metadata,
-          "updatedAt" = NOW()
+          content  = EXCLUDED.content,
+          metadata = EXCLUDED.metadata
         `,
         [chunk.id, chunk.content, chunk.sourceId, metadata],
       );
