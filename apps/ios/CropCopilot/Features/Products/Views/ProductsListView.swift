@@ -151,7 +151,11 @@ struct ProductsListView: View {
         ScrollView {
             LazyVStack(spacing: Spacing.sm) {
                 HStack {
-                    let count = viewModel.totalCount > 0 ? viewModel.totalCount : viewModel.products.count
+                    // When a type filter is active, products is already client-side filtered —
+                    // show that filtered count instead of the unfiltered server total.
+                    let count = viewModel.selectedTypes.isEmpty
+                        ? (viewModel.totalCount > 0 ? viewModel.totalCount : viewModel.products.count)
+                        : viewModel.products.count
                     Text("\(count) product\(count == 1 ? "" : "s")")
                         .font(.appCaption.weight(.semibold))
                         .foregroundStyle(.secondary)
