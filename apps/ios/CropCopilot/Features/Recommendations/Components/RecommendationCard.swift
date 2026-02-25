@@ -47,40 +47,49 @@ struct RecommendationCard: View {
     // MARK: - Row Style
 
     private var rowBody: some View {
-        HStack(spacing: Spacing.md) {
-            RecommendationThumbnail(source: recommendation.input.imageUrl, size: 68)
+        HStack(spacing: 0) {
+            // Confidence accent bar — colored by confidence level
+            RoundedRectangle(cornerRadius: 2, style: .continuous)
+                .fill(level.foreground)
+                .frame(width: 4)
+                .padding(.vertical, Spacing.xs)
+                .padding(.leading, Spacing.xs)
 
-            VStack(alignment: .leading, spacing: 6) {
-                Text(AppConstants.cropLabel(for: recommendation.input.crop ?? "Unknown"))
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-                    .textCase(.uppercase)
+            HStack(spacing: Spacing.md) {
+                RecommendationThumbnail(source: recommendation.input.imageUrl, size: 68)
 
-                Text(recommendation.condition)
-                    .font(.system(size: 15, weight: .semibold))
-                    .foregroundStyle(.primary)
-                    .lineLimit(2)
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(AppConstants.cropLabel(for: recommendation.input.crop ?? "Unknown"))
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                        .textCase(.uppercase)
 
-                Text(timestampLabel)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
+                    Text(recommendation.condition)
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundStyle(.primary)
+                        .lineLimit(2)
+
+                    Text(timestampLabel)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                }
+
+                Spacer(minLength: Spacing.sm)
+
+                VStack(alignment: .trailing, spacing: Spacing.sm) {
+                    CanvasConfidenceArc(confidence: recommendation.confidence, style: .compact)
+                    Image(systemName: "chevron.right")
+                        .font(.caption.weight(.bold))
+                        .foregroundStyle(.secondary)
+                        .frame(width: 22, height: 22)
+                        .background(Color.appSecondaryBackground)
+                        .clipShape(Circle())
+                }
             }
-
-            Spacer(minLength: Spacing.sm)
-
-            VStack(alignment: .trailing, spacing: Spacing.sm) {
-                CanvasConfidenceArc(confidence: recommendation.confidence, style: .compact)
-                Image(systemName: "chevron.right")
-                    .font(.caption.weight(.bold))
-                    .foregroundStyle(.secondary)
-                    .frame(width: 22, height: 22)
-                    .background(Color.appSecondaryBackground)
-                    .clipShape(Circle())
-            }
+            .padding(Spacing.md)
         }
-        .padding(Spacing.md)
         .antigravityGlass(cornerRadius: CornerRadius.lg)
         .contentShape(RoundedRectangle(cornerRadius: CornerRadius.lg, style: .continuous))
     }

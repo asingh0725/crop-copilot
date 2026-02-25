@@ -4,6 +4,7 @@
 //
 
 import SwiftUI
+import UIKit
 
 extension Color {
 
@@ -16,9 +17,9 @@ extension Color {
     /// Amber warm — matches web accent (#F5A623)
     static let appAccent = Color(red: 0xF5/255, green: 0xA6/255, blue: 0x23/255)
     static let appCanvas = Color(red: 0.976, green: 0.982, blue: 0.972)
-    static let appBackground = Color.white
-    static let appCardBackground = Color.white
-    static let appSecondaryBackground = Color(red: 0.966, green: 0.972, blue: 0.964)
+    static let appBackground = Color(UIColor.systemBackground)
+    static let appCardBackground = Color(UIColor.secondarySystemBackground)
+    static let appSecondaryBackground = Color(UIColor.tertiarySystemBackground)
 
     // MARK: - Earth Gradient Palette (for hero sections — matching web earth-950/900/800)
 

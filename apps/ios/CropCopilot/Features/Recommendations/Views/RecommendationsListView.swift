@@ -101,33 +101,40 @@ struct RecommendationsListView: View {
 
     private var controlBar: some View {
         HStack(spacing: Spacing.sm) {
-            // Sort picker — uses .menu style to avoid _UIReparentingView warnings from Menu.
-            // fixedSize(horizontal: false, vertical: true) + lineLimit(1) prevents the Capsule
-            // from stretching vertically when Picker renders the selected label.
-            HStack(spacing: 4) {
-                Image(systemName: "arrow.up.arrow.down")
-                    .font(.caption.weight(.bold))
-                    .foregroundStyle(Color.appPrimary)
-                Picker("Sort", selection: $viewModel.selectedSort) {
-                    ForEach(RecommendationsViewModel.SortOption.allCases, id: \.self) { option in
-                        Label(option.displayName, systemImage: sortIcon(for: option))
-                            .tag(option)
+            // Sort menu — Menu { Button } avoids Picker layout distortion on some iOS versions
+            Menu {
+                ForEach(RecommendationsViewModel.SortOption.allCases, id: \.self) { option in
+                    Button {
+                        viewModel.selectedSort = option
+                        Task { await viewModel.loadRecommendations(reset: true) }
+                    } label: {
+                        if viewModel.selectedSort == option {
+                            Label(option.displayName, systemImage: "checkmark")
+                        } else {
+                            Label(option.displayName, systemImage: sortIcon(for: option))
+                        }
                     }
                 }
-                .pickerStyle(.menu)
-                .font(.subheadline.weight(.semibold))
-                .tint(Color.appPrimary)
-                .lineLimit(1)
-                .onChange(of: viewModel.selectedSort) { _ in
-                    Task { await viewModel.loadRecommendations(reset: true) }
+            } label: {
+                HStack(spacing: 4) {
+                    Image(systemName: "arrow.up.arrow.down")
+                        .font(.caption.weight(.bold))
+                        .foregroundStyle(Color.appPrimary)
+                    Text(viewModel.selectedSort.displayName)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.primary)
+                        .lineLimit(1)
+                    Image(systemName: "chevron.down")
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(Color.appPrimary)
                 }
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.horizontal, Spacing.md)
+                .padding(.vertical, Spacing.sm + 2)
+                .background(Color.appPrimary.opacity(0.10))
+                .clipShape(Capsule())
+                .overlay(Capsule().stroke(Color.appPrimary.opacity(0.22), lineWidth: 1))
             }
-            .fixedSize(horizontal: false, vertical: true)
-            .padding(.horizontal, Spacing.md)
-            .padding(.vertical, Spacing.sm + 2)
-            .background(Color.appPrimary.opacity(0.10))
-            .clipShape(Capsule())
-            .overlay(Capsule().stroke(Color.appPrimary.opacity(0.22), lineWidth: 1))
 
             Spacer()
 
@@ -204,7 +211,8 @@ struct RecommendationsListView: View {
             LazyVStack(spacing: Spacing.sm) {
                 if !viewModel.recommendations.isEmpty {
                     HStack {
-                        Text("\(viewModel.recommendations.count) recommendation\(viewModel.recommendations.count == 1 ? "" : "s")")
+                        let count = viewModel.totalCount > 0 ? viewModel.totalCount : viewModel.recommendations.count
+                        Text("\(count) recommendation\(count == 1 ? "" : "s")")
                             .font(.appCaption.weight(.semibold))
                             .foregroundStyle(.secondary)
                         Spacer()
