@@ -140,18 +140,62 @@ struct DiagnosisResultView: View {
         }
         .animation(.easeInOut(duration: 0.18), value: activeFeedbackStage?.rawValue ?? "")
         .animation(.easeInOut(duration: 0.18), value: showCitationsModal)
-        .alert("Important Notice", isPresented: $showProductNoticeAlert) {
-            Button("Not Now", role: .cancel) {}
-            Button("OK") {
-                hasAcknowledgedProductNotice = true
-                UserDefaults.standard.set(true, forKey: productNoticeKey)
-                expandedSections.insert(.products)
+        .sheet(isPresented: $showProductNoticeAlert) {
+            productNoticeSheet
+                .presentationDetents([.height(280)])
+                .presentationDragIndicator(.visible)
+        }
+    }
+
+    private var productNoticeSheet: some View {
+        VStack(alignment: .leading, spacing: Spacing.lg) {
+            HStack(spacing: Spacing.sm) {
+                Image(systemName: "exclamationmark.triangle.fill")
+                    .font(.title3)
+                    .foregroundStyle(.orange)
+                Text("Important Notice")
+                    .font(.headline)
+                    .foregroundStyle(.primary)
+                Spacer()
             }
-        } message: {
+
             Text(
                 "Product recommendations are informational only. Verify registration for your region and crop, follow label instructions, and comply with local regulations before applying any product."
             )
+            .font(.subheadline)
+            .foregroundStyle(.secondary)
+            .fixedSize(horizontal: false, vertical: true)
+
+            Spacer(minLength: 0)
+
+            HStack(spacing: Spacing.sm) {
+                Button("Not Now") {
+                    showProductNoticeAlert = false
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, Spacing.sm)
+                .background(Color.appSecondaryBackground)
+                .foregroundStyle(.primary)
+                .clipShape(RoundedRectangle(cornerRadius: CornerRadius.md, style: .continuous))
+                .buttonStyle(.plain)
+
+                Button("Understood") {
+                    showProductNoticeAlert = false
+                    hasAcknowledgedProductNotice = true
+                    UserDefaults.standard.set(true, forKey: productNoticeKey)
+                    expandedSections.insert(.products)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, Spacing.sm)
+                .background(Color.appPrimary)
+                .foregroundStyle(.black)
+                .clipShape(RoundedRectangle(cornerRadius: CornerRadius.md, style: .continuous))
+                .buttonStyle(.plain)
+            }
+            .font(.subheadline.weight(.semibold))
         }
+        .padding(Spacing.xl)
+        .padding(.top, Spacing.sm)
     }
 
     private var loadingView: some View {
@@ -445,28 +489,46 @@ struct DiagnosisResultView: View {
 
     private func actionsContent(_ detail: RecommendationDetailResponse) -> some View {
         let actions = detail.diagnosis.recommendations
-        return VStack(alignment: .leading, spacing: 12) {
+        return VStack(alignment: .leading, spacing: Spacing.sm) {
             if actions.isEmpty {
                 Text("No specific action set was generated for this recommendation.")
                     .font(.body)
                     .foregroundStyle(.secondary)
             } else {
                 ForEach(actions) { action in
-                    VStack(alignment: .leading, spacing: 9) {
-                        Text(action.action)
-                            .font(.headline)
-                            .foregroundStyle(.primary)
+                    HStack(spacing: 0) {
+                        // Urgency accent bar — red=Immediate, orange=Soon, earth=Monitor
+                        RoundedRectangle(cornerRadius: 2, style: .continuous)
+                            .fill(urgencyColor(timing: action.timing, priority: action.priority))
+                            .frame(width: 4)
+                            .padding(.vertical, Spacing.xs)
+                            .padding(.leading, Spacing.xs)
 
-                        Text(action.details)
-                            .font(.body)
-                            .foregroundStyle(.secondary)
-                            .lineSpacing(3)
+                        VStack(alignment: .leading, spacing: Spacing.sm) {
+                            HStack(alignment: .top, spacing: Spacing.sm) {
+                                Image(systemName: iconForAction(action.action))
+                                    .font(.body.weight(.semibold))
+                                    .foregroundStyle(urgencyColor(timing: action.timing, priority: action.priority))
+                                    .frame(width: 22, alignment: .center)
 
-                        actionMetaRow(action)
+                                Text(action.action)
+                                    .font(.subheadline.weight(.semibold))
+                                    .foregroundStyle(.primary)
+                            }
+
+                            Text(action.details)
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                                .lineSpacing(3)
+
+                            HStack(spacing: Spacing.sm) {
+                                timingChip(action.timing)
+                                priorityChip(action.priority)
+                            }
+                        }
+                        .padding(Spacing.md)
                     }
-                    .padding(12)
-                    .background(Color.appSecondaryBackground)
-                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    .antigravityGlass(cornerRadius: CornerRadius.md)
                 }
             }
         }
@@ -498,53 +560,52 @@ struct DiagnosisResultView: View {
     }
 
     private func productRow(_ product: MergedRecommendationProduct, showChevron: Bool) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(alignment: .top, spacing: 8) {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(product.name)
-                        .font(.body.weight(.semibold))
-                        .foregroundStyle(.primary)
-                        .lineLimit(2)
-                    Text(product.type.replacingOccurrences(of: "_", with: " ").capitalized)
-                        .font(.subheadline)
+        HStack(spacing: Spacing.md) {
+            IconBadge(
+                icon: iconForProductType(product.type),
+                color: .forProductType(product.type),
+                size: 40,
+                cornerRadius: 12
+            )
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(product.name)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.primary)
+                    .lineLimit(2)
+
+                ProductTypeBadge(type: product.type)
+
+                if let rate = product.applicationRate, !rate.isEmpty {
+                    Text("Rate: \(rate)")
+                        .font(.caption)
                         .foregroundStyle(.secondary)
                 }
 
-                Spacer(minLength: 6)
-
-                if showChevron {
-                    Image(systemName: "chevron.right")
-                        .font(.caption.weight(.semibold))
+                if let reason = product.reason, !reason.isEmpty {
+                    Text(reason)
+                        .font(.caption)
                         .foregroundStyle(.secondary)
+                        .lineSpacing(2)
+                        .lineLimit(3)
                 }
             }
 
-            if let rate = product.applicationRate, !rate.isEmpty {
-                Text("Rate: \(rate)")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-            }
+            Spacer(minLength: 0)
 
-            if let reason = product.reason, !reason.isEmpty {
-                Text(reason)
-                    .font(.subheadline)
+            if showChevron {
+                Image(systemName: "chevron.right")
+                    .font(.caption.weight(.bold))
                     .foregroundStyle(.secondary)
-                    .lineSpacing(2)
+                    .frame(width: 22, height: 22)
+                    .background(Color.appSecondaryBackground)
+                    .clipShape(Circle())
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(12)
-        .background(Color.appSecondaryBackground)
-        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-        .contentShape(Rectangle())
-    }
-
-    private func actionMetaRow(_ action: RecommendationAction) -> some View {
-        HStack(alignment: .top, spacing: 8) {
-            timingChip(action.timing)
-            priorityChip(action.priority)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(Spacing.md)
+        .antigravityGlass(cornerRadius: CornerRadius.md)
+        .contentShape(RoundedRectangle(cornerRadius: CornerRadius.md, style: .continuous))
     }
 
     private func timingChip(_ timing: String) -> some View {
@@ -553,38 +614,83 @@ struct DiagnosisResultView: View {
             .first?
             .trimmingCharacters(in: .whitespacesAndNewlines)
         let displayValue = (compactTiming?.isEmpty == false) ? compactTiming! : timing
-
+        let color = timingColor(timing)
         return Label(displayValue, systemImage: "clock")
-            .font(.caption.weight(.medium))
-            .foregroundStyle(.secondary)
+            .font(.caption.weight(.semibold))
+            .foregroundStyle(color)
             .padding(.horizontal, 10)
-            .padding(.vertical, 6)
-            .background(Color.appBackground)
+            .padding(.vertical, 5)
+            .background(color.opacity(0.12))
             .clipShape(Capsule())
-            .overlay(
-                Capsule()
-                    .stroke(.black.opacity(0.08), lineWidth: 0.8)
-            )
+            .overlay(Capsule().stroke(color.opacity(0.28), lineWidth: 0.8))
+    }
+
+    private func timingColor(_ timing: String) -> Color {
+        let lower = timing.lowercased()
+        if lower.contains("immediate") || lower.contains("urgent") { return Color.semanticError }
+        if lower.contains("day") || lower.contains("week") || lower.contains("soon") { return Color.semanticWarning }
+        return Color.appSecondary
     }
 
     private func priorityChip(_ priority: String) -> some View {
         let normalized = priority
             .replacingOccurrences(of: "_", with: " ")
             .trimmingCharacters(in: .whitespacesAndNewlines)
-
         let label = normalized.isEmpty ? "Standard" : normalized.capitalized
-
+        let color = priorityColor(normalized)
         return Text(label)
             .font(.caption.weight(.semibold))
-            .foregroundStyle(.secondary)
+            .foregroundStyle(color)
             .padding(.horizontal, 10)
-            .padding(.vertical, 6)
-            .background(Color.appBackground)
+            .padding(.vertical, 5)
+            .background(color.opacity(0.12))
             .clipShape(Capsule())
-            .overlay(
-                Capsule()
-                    .stroke(.black.opacity(0.08), lineWidth: 0.8)
-            )
+            .overlay(Capsule().stroke(color.opacity(0.28), lineWidth: 0.8))
+    }
+
+    private func priorityColor(_ priority: String) -> Color {
+        switch priority.lowercased() {
+        case "critical", "immediate":        return Color.semanticError
+        case "soon", "high", "urgent":       return Color.semanticWarning
+        default:                             return Color.appSecondary
+        }
+    }
+
+    private func urgencyColor(timing: String, priority: String) -> Color {
+        let combined = "\(timing) \(priority)".lowercased()
+        if combined.contains("immediate") || combined.contains("urgent") || combined.contains("critical") {
+            return Color.semanticError
+        }
+        if combined.contains("day") || combined.contains("soon") || combined.contains("high") || combined.contains("week") {
+            return Color.semanticWarning
+        }
+        return Color.appSecondary
+    }
+
+    private func iconForAction(_ action: String) -> String {
+        let lower = action.lowercased()
+        if lower.contains("spray") || lower.contains("apply") || lower.contains("treat") { return "wand.and.rays" }
+        if lower.contains("water") || lower.contains("irrigat") { return "drop.fill" }
+        if lower.contains("fertiliz") || lower.contains("nutrient") { return "leaf.fill" }
+        if lower.contains("prune") || lower.contains("remove") || lower.contains("cut") { return "scissors" }
+        if lower.contains("monitor") || lower.contains("inspect") || lower.contains("check") { return "eye.fill" }
+        if lower.contains("harvest") { return "basket.fill" }
+        if lower.contains("soil") || lower.contains("amend") { return "square.stack.3d.up.fill" }
+        return "checkmark.circle.fill"
+    }
+
+    private func iconForProductType(_ type: String) -> String {
+        switch type.uppercased() {
+        case "FERTILIZER":     return "drop.fill"
+        case "PESTICIDE":      return "shield.fill"
+        case "HERBICIDE":      return "xmark.circle.fill"
+        case "FUNGICIDE":      return "staroflife.fill"
+        case "AMENDMENT":      return "square.stack.3d.up.fill"
+        case "BIOLOGICAL":     return "leaf.fill"
+        case "INSECTICIDE":    return "ant.fill"
+        case "SEED_TREATMENT": return "circle.hexagongrid.fill"
+        default:               return "shippingbox.fill"
+        }
     }
 
     @ViewBuilder
@@ -1415,8 +1521,8 @@ struct DiagnosisResultView: View {
     }
 
     private func isNavigableProductId(_ value: String?) -> Bool {
-        guard let id = normalizeCatalogProductId(value) else { return false }
-        return UUID(uuidString: id) != nil
+        // Accept any non-empty, non-null ID — catalog IDs are not UUIDs
+        return normalizeCatalogProductId(value) != nil
     }
 
     private func prettyConditionType(_ value: String) -> String {

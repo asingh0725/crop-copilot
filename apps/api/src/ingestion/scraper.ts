@@ -58,7 +58,17 @@ export async function scrapeUrl(url: string): Promise<ScrapedDocument> {
     const contentType = response.headers.get('content-type') ?? '';
     if (contentType.includes('application/pdf')) {
       const buffer = await response.arrayBuffer();
-      return parsePdfWithLlamaParse(buffer, url);
+      if (process.env.LLAMA_CLOUD_API_KEY) {
+        try {
+          return await parsePdfWithLlamaParse(buffer, url);
+        } catch (err: unknown) {
+          const msg = err instanceof Error ? err.message : String(err);
+          // Only fall back on rate-limit (429); all other errors propagate
+          if (!msg.includes('429') && !msg.toLowerCase().includes('rate')) throw err;
+          console.warn(`[Scraper] LlamaParse rate limit hit, falling back to pdf-parse: ${url}`);
+        }
+      }
+      return await parsePdfWithPdfParse(buffer, url);
     }
     if (!contentType.includes('html') && !contentType.includes('text')) {
       console.warn(`[Scraper] Skipping unsupported content-type "${contentType}": ${url}`);
@@ -235,7 +245,14 @@ async function parsePdfWithLlamaParse(buffer: ArrayBuffer, url: string): Promise
       headers: { Authorization: `Bearer ${apiKey}` },
     });
 
-    if (!statusResponse.ok) continue;
+    if (!statusResponse.ok) {
+      // 429 during polling means rate-limited — throw immediately so the caller
+      // can fall back to pdf-parse instead of silently retrying until timeout.
+      if (statusResponse.status === 429) {
+        throw new Error('LlamaParse 429: rate limited during job status polling');
+      }
+      continue; // other transient errors — keep polling
+    }
 
     const statusPayload = (await statusResponse.json()) as { status?: string };
     const jobStatus = statusPayload.status?.toUpperCase();
@@ -320,4 +337,102 @@ function parseMarkdownToDocument(markdown: string, url: string): ScrapedDocument
 
   const rawText = sections.map((s) => `${s.heading}\n\n${s.body}`).join('\n\n');
   return { title, sections, rawText, url, fetchedAt: new Date().toISOString() };
+}
+
+// ── PDF parsing fallback via pdf-parse ──────────────────────────────────────
+
+/**
+ * Parse a PDF using the pdf-parse library (no API key required).
+ * Used as a fallback when LlamaParse is unavailable or rate-limited.
+ * Compatible with both pdf-parse v1 (function export) and v2 (class export).
+ */
+async function parsePdfWithPdfParse(buffer: ArrayBuffer, url: string): Promise<ScrapedDocument> {
+  // Dynamic import to avoid bundling issues when LLAMA_CLOUD_API_KEY is set
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const pdfParseModule: unknown = require('pdf-parse');
+
+  type PdfParseFn = (buf: Buffer) => Promise<{ text: string }>;
+  type PdfParseClass = new (opts: { data: Buffer }) => { getText(): Promise<{ text: string }> };
+
+  let text: string;
+  const buf = Buffer.from(buffer);
+
+  if (typeof pdfParseModule === 'function') {
+    // v1: module exports function directly
+    const result = await (pdfParseModule as PdfParseFn)(buf);
+    text = result.text ?? '';
+  } else if (typeof (pdfParseModule as Record<string, unknown>)?.default === 'function') {
+    // v1 ESM default
+    const result = await ((pdfParseModule as Record<string, unknown>).default as PdfParseFn)(buf);
+    text = result.text ?? '';
+  } else {
+    // v2: class-based export
+    const mod = pdfParseModule as Record<string, unknown>;
+    const PDFParse = (mod.PDFParse ?? mod.default) as PdfParseClass | undefined;
+    if (!PDFParse) throw new Error('pdf-parse: unsupported export shape');
+    const parser = new PDFParse({ data: buf });
+    const result = await parser.getText();
+    text = result.text ?? '';
+  }
+
+  if (!text.trim()) {
+    return emptyDocument(url);
+  }
+
+  const sections = splitPdfTextIntoSections(text);
+  const title = sections[0]?.heading || extractFirstLine(text) ||
+    decodeURIComponent(new URL(url).pathname.split('/').pop()?.replace(/\.pdf$/i, '') ?? 'Document');
+  const rawText = sections.map((s) => `${s.heading}\n\n${s.body}`).join('\n\n');
+  return { title, sections, rawText, url, fetchedAt: new Date().toISOString() };
+}
+
+function splitPdfTextIntoSections(text: string): Array<{ heading: string; body: string }> {
+  // pdf-parse separates pages with \f; split and group by heuristic headings
+  const pages = text.split('\f');
+  const sections: Array<{ heading: string; body: string }> = [];
+  let currentHeading = '';
+  let currentBody = '';
+
+  for (const page of pages) {
+    const lines = page.split('\n');
+    for (const rawLine of lines) {
+      const line = rawLine.trim();
+      if (!line) continue;
+
+      // Heuristic heading: short line, starts with capital, not ending with period
+      const isHeading =
+        line.length > 3 &&
+        line.length < 80 &&
+        /^[A-Z]/.test(line) &&
+        !line.endsWith('.') &&
+        !/^\d/.test(line);
+
+      if (isHeading && currentBody.trim().length > 40) {
+        sections.push({ heading: currentHeading, body: currentBody.trim() });
+        currentHeading = line;
+        currentBody = '';
+      } else if (isHeading && !currentBody) {
+        currentHeading = line;
+      } else {
+        currentBody += (currentBody ? ' ' : '') + line;
+      }
+    }
+  }
+
+  if (currentBody.trim()) {
+    sections.push({ heading: currentHeading, body: currentBody.trim() });
+  }
+
+  // Fallback: one big section
+  if (sections.length === 0) {
+    const body = text.replace(/\f/g, '\n\n').replace(/\s+/g, ' ').trim().slice(0, 8000);
+    if (body) sections.push({ heading: '', body });
+  }
+
+  return sections;
+}
+
+function extractFirstLine(text: string): string | null {
+  const line = text.trim().split('\n')[0]?.trim();
+  return line && line.length < 120 ? line : null;
 }

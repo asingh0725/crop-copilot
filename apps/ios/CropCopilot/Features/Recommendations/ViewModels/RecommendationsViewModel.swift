@@ -26,6 +26,7 @@ class RecommendationsViewModel: ObservableObject {
     }
 
     @Published var recommendations: [RecommendationSummary] = []
+    @Published var totalCount: Int = 0
     @Published var isLoading = false
     @Published var isLoadingMore = false
     @Published var errorMessage: String?
@@ -82,6 +83,7 @@ class RecommendationsViewModel: ObservableObject {
                 return
             }
             recommendations = response.recommendations
+            totalCount = response.pagination.total
             hasMorePages = response.pagination.page < response.pagination.totalPages
             hasLoadedOnce = true
         } catch let error as NetworkError {

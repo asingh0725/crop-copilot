@@ -67,9 +67,7 @@ struct ProfileView: View {
                         // Collapsible Crops of Interest
                         VStack(alignment: .leading, spacing: 12) {
                             Button {
-                                withAnimation(.easeInOut(duration: 0.25)) {
-                                    isCropsExpanded.toggle()
-                                }
+                                isCropsExpanded.toggle()
                             } label: {
                                 HStack(spacing: 10) {
                                     Text("Crops of Interest")
@@ -105,7 +103,7 @@ struct ProfileView: View {
                                 }
                                 .padding()
                                 .antigravityGlass(cornerRadius: 16)
-                                .transition(.opacity.combined(with: .move(edge: .top)))
+                                // No transition — instant open/close per user preference
                             }
                         }
 

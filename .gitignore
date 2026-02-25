@@ -101,6 +101,7 @@ infra/**/.env.*
 .aws-sam/
 samconfig.toml
 cdk.context.json
+cdk.out/
 
 # SageMaker / ML training artifacts
 apps/api/src/ml/training/data/
