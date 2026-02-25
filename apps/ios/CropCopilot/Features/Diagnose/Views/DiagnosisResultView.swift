@@ -83,6 +83,8 @@ struct DiagnosisResultView: View {
     ]
     @State private var showCitationsModal = false
     @State private var citationDetent: CitationSheetDetent = .medium
+    @State private var showProductNoticeAlert = false
+    @State private var hasAcknowledgedProductNotice = false
 
     private var hasActiveModal: Bool {
         activeFeedbackStage != nil || showCitationsModal
@@ -125,6 +127,7 @@ struct DiagnosisResultView: View {
         .navigationTitle("Diagnosis Result")
         .navigationBarTitleDisplayMode(.inline)
         .task {
+            hasAcknowledgedProductNotice = UserDefaults.standard.bool(forKey: productNoticeKey)
             await viewModel.loadRecommendation(id: recommendationId)
             applyFeedbackSnapshot(viewModel.feedback)
             presentSuggestedModalIfNeeded()
@@ -137,6 +140,62 @@ struct DiagnosisResultView: View {
         }
         .animation(.easeInOut(duration: 0.18), value: activeFeedbackStage?.rawValue ?? "")
         .animation(.easeInOut(duration: 0.18), value: showCitationsModal)
+        .sheet(isPresented: $showProductNoticeAlert) {
+            productNoticeSheet
+                .presentationDetents([.height(280)])
+                .presentationDragIndicator(.visible)
+        }
+    }
+
+    private var productNoticeSheet: some View {
+        VStack(alignment: .leading, spacing: Spacing.lg) {
+            HStack(spacing: Spacing.sm) {
+                Image(systemName: "exclamationmark.triangle.fill")
+                    .font(.title3)
+                    .foregroundStyle(.orange)
+                Text("Important Notice")
+                    .font(.headline)
+                    .foregroundStyle(.primary)
+                Spacer()
+            }
+
+            Text(
+                "Product recommendations are informational only. Verify registration for your region and crop, follow label instructions, and comply with local regulations before applying any product."
+            )
+            .font(.subheadline)
+            .foregroundStyle(.secondary)
+            .fixedSize(horizontal: false, vertical: true)
+
+            Spacer(minLength: 0)
+
+            HStack(spacing: Spacing.sm) {
+                Button("Not Now") {
+                    showProductNoticeAlert = false
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, Spacing.sm)
+                .background(Color.appSecondaryBackground)
+                .foregroundStyle(.primary)
+                .clipShape(RoundedRectangle(cornerRadius: CornerRadius.md, style: .continuous))
+                .buttonStyle(.plain)
+
+                Button("Understood") {
+                    showProductNoticeAlert = false
+                    hasAcknowledgedProductNotice = true
+                    UserDefaults.standard.set(true, forKey: productNoticeKey)
+                    expandedSections.insert(.products)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, Spacing.sm)
+                .background(Color.appPrimary)
+                .foregroundStyle(.black)
+                .clipShape(RoundedRectangle(cornerRadius: CornerRadius.md, style: .continuous))
+                .buttonStyle(.plain)
+            }
+            .font(.subheadline.weight(.semibold))
+        }
+        .padding(Spacing.xl)
+        .padding(.top, Spacing.sm)
     }
 
     private var loadingView: some View {
@@ -485,7 +544,7 @@ struct DiagnosisResultView: View {
                     .foregroundStyle(.secondary)
             } else {
                 ForEach(products) { product in
-                    if let productId = product.productId {
+                    if isNavigableProductId(product.productId), let productId = product.productId {
                         NavigationLink {
                             ProductDetailView(productId: productId)
                         } label: {
@@ -1051,6 +1110,7 @@ struct DiagnosisResultView: View {
                     Capsule()
                         .stroke(isSelected ? Color.appPrimary : Color.black.opacity(0.12), lineWidth: 0.9)
                 )
+                .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
     }
@@ -1232,6 +1292,7 @@ struct DiagnosisResultView: View {
                 Capsule()
                     .stroke(Color.black.opacity(0.10), lineWidth: 0.8)
             )
+            .contentShape(Rectangle())
     }
 
     private func isExpanded(_ section: RecommendationSection) -> Bool {
@@ -1239,11 +1300,22 @@ struct DiagnosisResultView: View {
     }
 
     private func toggle(section: RecommendationSection) {
+        if section == .products,
+           !expandedSections.contains(section),
+           !hasAcknowledgedProductNotice {
+            showProductNoticeAlert = true
+            return
+        }
+
         if expandedSections.contains(section) {
             expandedSections.remove(section)
         } else {
             expandedSections.insert(section)
         }
+    }
+
+    private var productNoticeKey: String {
+        "cropcopilot.product.notice.\(recommendationId)"
     }
 
     private var currentCitationItems: [CitationItem] {
@@ -1254,65 +1326,145 @@ struct DiagnosisResultView: View {
     }
 
     private func citationItems(_ detail: RecommendationDetailResponse) -> [CitationItem] {
-        var items: [CitationItem] = []
+        var merged: [String: CitationItem] = [:]
+        var orderedKeys: [String] = []
 
-        items.append(contentsOf: detail.sources.map { source in
-            let title = source.source?.title
-                ?? source.content
+        func normalize(_ value: String?) -> String? {
+            guard let value else {
+                return nil
+            }
+            let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+            return trimmed.isEmpty ? nil : trimmed
+        }
+
+        func isGenericTitle(_ value: String) -> Bool {
+            let normalized = value.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+            return normalized == "source excerpt" || normalized == "source"
+        }
+
+        func resolveKey(
+            id: String?,
+            url: String?,
+            title: String,
+            excerpt: String?
+        ) -> String {
+            if let id = normalize(id) {
+                return "id::\(id.lowercased())"
+            }
+            if let url = normalize(url) {
+                return "url::\(url.lowercased())"
+            }
+            if let excerpt = normalize(excerpt) {
+                return "excerpt::\(excerpt.lowercased())"
+            }
+            return "title::\(title.trimmingCharacters(in: .whitespacesAndNewlines).lowercased())"
+        }
+
+        func upsert(_ item: CitationItem) {
+            let key = resolveKey(
+                id: item.id,
+                url: item.url,
+                title: item.title,
+                excerpt: item.excerpt
+            )
+
+            guard let existing = merged[key] else {
+                merged[key] = item
+                orderedKeys.append(key)
+                return
+            }
+
+            let preferredTitle: String = {
+                if !isGenericTitle(existing.title) {
+                    return existing.title
+                }
+                if !isGenericTitle(item.title) {
+                    return item.title
+                }
+                return existing.title.count >= item.title.count ? existing.title : item.title
+            }()
+
+            let preferredExcerpt: String? = {
+                let existingExcerpt = normalize(existing.excerpt)
+                let incomingExcerpt = normalize(item.excerpt)
+                switch (existingExcerpt, incomingExcerpt) {
+                case (.some(let current), .some(let incoming)):
+                    return incoming.count > current.count ? incoming : current
+                case (.none, .some(let incoming)):
+                    return incoming
+                case (.some(let current), .none):
+                    return current
+                case (.none, .none):
+                    return nil
+                }
+            }()
+
+            merged[key] = CitationItem(
+                id: existing.id,
+                title: preferredTitle,
+                url: existing.url ?? item.url,
+                excerpt: preferredExcerpt,
+                relevance: max(existing.relevance ?? -1, item.relevance ?? -1)
+            )
+        }
+
+        for source in detail.sources {
+            let title =
+                source.source?.title
+                ?? normalize(source.content)
                 ?? "Source excerpt"
 
-            return CitationItem(
-                id: source.id,
-                title: title,
-                url: source.source?.url,
-                excerpt: source.content,
-                relevance: source.relevanceScore
+            upsert(
+                CitationItem(
+                    id: source.chunkId ?? source.source?.id ?? source.id,
+                    title: title,
+                    url: source.source?.url,
+                    excerpt: source.content,
+                    relevance: source.relevanceScore
+                )
             )
-        })
+        }
 
-        items.append(contentsOf: detail.diagnosis.sources.map { source in
-            CitationItem(
-                id: source.chunkId,
-                title: source.title,
-                url: source.url,
-                excerpt: nil,
-                relevance: source.relevance
+        for source in detail.diagnosis.sources {
+            upsert(
+                CitationItem(
+                    id: source.chunkId,
+                    title: source.title,
+                    url: source.url,
+                    excerpt: nil,
+                    relevance: source.relevance
+                )
             )
-        })
+        }
 
-        var seenKeys = Set<String>()
-        var deduped: [CitationItem] = []
-        for item in items {
-            let key = "\(item.id.lowercased())::\(item.title.lowercased())"
-            if seenKeys.contains(key) {
-                continue
+        return orderedKeys
+            .compactMap { merged[$0] }
+            .filter { item in
+                let title = item.title.trimmingCharacters(in: .whitespacesAndNewlines)
+                let excerpt = item.excerpt?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+                return !title.isEmpty && !(isGenericTitle(title) && excerpt.isEmpty)
             }
-            seenKeys.insert(key)
-            deduped.append(item)
-        }
-
-        return deduped.sorted { (lhs, rhs) -> Bool in
-            (lhs.relevance ?? -1) > (rhs.relevance ?? -1)
-        }
+            .sorted { (lhs, rhs) -> Bool in
+                (lhs.relevance ?? -1) > (rhs.relevance ?? -1)
+            }
     }
 
     private func mergedProducts(_ detail: RecommendationDetailResponse) -> [MergedRecommendationProduct] {
-        var merged: [MergedRecommendationProduct] = []
-        var seenKeys = Set<String>()
+        func isGenericName(_ value: String) -> Bool {
+            let normalized = value
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+                .lowercased()
+            return normalized.isEmpty || normalized == "suggested product" || normalized == "unspecified"
+        }
+
+        var candidates: [MergedRecommendationProduct] = []
 
         for product in detail.recommendedProducts {
-            let normalized = product.name.trimmingCharacters(in: .whitespacesAndNewlines)
-            let key = normalized.lowercased()
-            if seenKeys.contains(key) {
-                continue
-            }
-            seenKeys.insert(key)
-
-            merged.append(
+            candidates.append(
                 MergedRecommendationProduct(
                     id: product.id,
-                    productId: product.catalogProductId,
-                    name: normalized,
+                    productId: normalizeCatalogProductId(product.catalogProductId),
+                    name: product.name.trimmingCharacters(in: .whitespacesAndNewlines),
                     type: product.type,
                     applicationRate: product.applicationRate,
                     reason: product.reason
@@ -1321,18 +1473,11 @@ struct DiagnosisResultView: View {
         }
 
         for product in detail.diagnosis.products {
-            let normalized = product.productName.trimmingCharacters(in: .whitespacesAndNewlines)
-            let key = normalized.lowercased()
-            if seenKeys.contains(key) {
-                continue
-            }
-            seenKeys.insert(key)
-
-            merged.append(
+            candidates.append(
                 MergedRecommendationProduct(
                     id: product.id,
-                    productId: product.productId,
-                    name: normalized,
+                    productId: normalizeCatalogProductId(product.productId),
+                    name: product.productName.trimmingCharacters(in: .whitespacesAndNewlines),
                     type: product.productType,
                     applicationRate: product.applicationRate,
                     reason: product.reasoning
@@ -1340,7 +1485,44 @@ struct DiagnosisResultView: View {
             )
         }
 
+        let hasSpecificCandidate = candidates.contains { !isGenericName($0.name) }
+        let filteredCandidates = hasSpecificCandidate
+            ? candidates.filter { !isGenericName($0.name) }
+            : candidates
+
+        var merged: [MergedRecommendationProduct] = []
+        var seenKeys = Set<String>()
+        for product in filteredCandidates {
+            let fallbackNameKey = product.name.lowercased()
+            let key = product.productId ?? fallbackNameKey
+            if seenKeys.contains(key) {
+                continue
+            }
+            seenKeys.insert(key)
+            merged.append(product)
+        }
+
         return merged
+    }
+
+    private func normalizeCatalogProductId(_ value: String?) -> String? {
+        guard let value else {
+            return nil
+        }
+        let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else {
+            return nil
+        }
+        let lowered = trimmed.lowercased()
+        guard lowered != "null", lowered != "undefined" else {
+            return nil
+        }
+        return trimmed
+    }
+
+    private func isNavigableProductId(_ value: String?) -> Bool {
+        // Accept any non-empty, non-null ID — catalog IDs are not UUIDs
+        return normalizeCatalogProductId(value) != nil
     }
 
     private func prettyConditionType(_ value: String) -> String {

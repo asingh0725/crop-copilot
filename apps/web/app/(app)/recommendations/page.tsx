@@ -3,6 +3,8 @@
 import { Suspense, useEffect, useState, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useDebounce } from "@/hooks/use-debounce";
+import { createClient } from "@/lib/supabase/client";
+import { getBrowserApiBase } from "@/lib/api-client";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -92,7 +94,12 @@ function RecommendationsContent() {
       params.set("page", page.toString());
       params.set("pageSize", "20");
 
-      const res = await fetch(`/api/v1/recommendations?${params.toString()}`);
+      const supabase = createClient();
+      const { data: { session } } = await supabase.auth.getSession();
+      const base = getBrowserApiBase();
+      const res = await fetch(`${base}/api/v1/recommendations?${params.toString()}`, {
+        headers: { Authorization: `Bearer ${session?.access_token ?? ""}` },
+      });
       if (!res.ok) throw new Error("Failed to fetch recommendations");
 
       const data = await res.json();
@@ -229,6 +236,10 @@ function RecommendationsContent() {
               <Card
                 key={rec.id}
                 className="cursor-pointer hover:bg-muted/50 transition-colors overflow-hidden"
+                style={{
+                  contentVisibility: "auto",
+                  containIntrinsicSize: "160px",
+                }}
                 onClick={() => router.push(`/recommendations/${rec.id}`)}
               >
                 <CardHeader className="flex flex-row gap-4 p-4">

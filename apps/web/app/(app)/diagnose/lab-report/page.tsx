@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
+import { createClient } from "@/lib/supabase/client"
+import { getBrowserApiBase } from "@/lib/api-client"
 import Link from "next/link"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -92,7 +94,12 @@ export default function LabReportPage() {
   useEffect(() => {
     async function fetchProfile() {
       try {
-        const response = await fetch('/api/v1/profile')
+        const supabase = createClient()
+        const { data: { session } } = await supabase.auth.getSession()
+        const base = getBrowserApiBase()
+        const response = await fetch(`${base}/api/v1/profile`, {
+          headers: { Authorization: `Bearer ${session?.access_token ?? ''}` },
+        })
         if (response.ok) {
           const { profile } = await response.json()
           if (profile?.location) {
@@ -163,9 +170,15 @@ export default function LabReportPage() {
         sampleId: data.sampleId || null,
       }
 
-      const inputRes = await fetch('/api/v1/inputs', {
+      const supabase = createClient()
+      const { data: { session } } = await supabase.auth.getSession()
+      const base = getBrowserApiBase()
+      const inputRes = await fetch(`${base}/api/v1/inputs`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session?.access_token ?? ''}`,
+        },
         body: JSON.stringify({
           idempotencyKey: `web-lab-${crypto.randomUUID()}`,
           type: 'LAB_REPORT',
@@ -181,7 +194,7 @@ export default function LabReportPage() {
       }
 
       const accepted: CreateInputAccepted = await inputRes.json()
-      const recommendationId = await waitForRecommendation(accepted.jobId)
+      const recommendationId = await waitForRecommendation(accepted.jobId, base, session?.access_token ?? '')
       if (!recommendationId) {
         throw new Error('Recommendation completed without an ID')
       }
@@ -196,16 +209,17 @@ export default function LabReportPage() {
     }
   }
 
-  async function waitForRecommendation(jobId: string): Promise<string | null> {
+  async function waitForRecommendation(jobId: string, base: string, accessToken: string): Promise<string | null> {
     const startedAt = Date.now()
     const timeoutMs = 120000
 
     while (Date.now() - startedAt < timeoutMs) {
       await new Promise((resolve) => setTimeout(resolve, 2000))
-      const statusRes = await fetch(`/api/v1/jobs/${jobId}`, {
+      const statusRes = await fetch(`${base}/api/v1/jobs/${jobId}`, {
         method: 'GET',
         headers: {
           Accept: 'application/json',
+          Authorization: `Bearer ${accessToken}`,
         },
       })
       if (!statusRes.ok) {

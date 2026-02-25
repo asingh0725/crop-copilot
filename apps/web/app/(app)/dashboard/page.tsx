@@ -1,10 +1,27 @@
 import { createClient } from "@/lib/supabase/server";
-import { prisma } from "@/lib/prisma";
+import { createApiClient } from "@/lib/api-client";
 import { redirect } from "next/navigation";
 import { WelcomeBanner } from "@/components/dashboard/welcome-banner";
 import { QuickActions } from "@/components/dashboard/quick-actions";
 import { RecentRecommendations } from "@/components/dashboard/recent-recommendations";
 import { FarmProfileCard } from "@/components/dashboard/farm-profile-card";
+
+interface LambdaProfile {
+  userId: string;
+  location: string | null;
+  farmSize: string | null;
+  cropsOfInterest: string[];
+  experienceLevel: string | null;
+}
+
+interface LambdaRecommendation {
+  id: string;
+  createdAt: string;
+  confidence: number;
+  condition: string;
+  conditionType: string;
+  input: { crop: string | null };
+}
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -16,24 +33,32 @@ export default async function DashboardPage() {
     redirect("/login");
   }
 
-  // Fetch user profile
-  const profile = await prisma.userProfile.findUnique({
-    where: { userId: user.id },
-  });
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+  const client = createApiClient(session?.access_token ?? "");
 
-  // Fetch recent recommendations
-  const recommendations = await prisma.recommendation.findMany({
-    where: { userId: user.id },
-    orderBy: { createdAt: "desc" },
-    take: 3,
-    include: {
-      input: {
-        select: {
-          crop: true,
-        },
-      },
+  const [profileResult, recResult] = await Promise.allSettled([
+    client.get<{ profile: LambdaProfile }>("/api/v1/profile"),
+    client.get<{ recommendations: LambdaRecommendation[] }>(
+      "/api/v1/recommendations?page=1&pageSize=3&sort=date_desc"
+    ),
+  ]);
+
+  const profile =
+    profileResult.status === "fulfilled" ? profileResult.value.profile : null;
+  const rawRecs =
+    recResult.status === "fulfilled" ? recResult.value.recommendations : [];
+
+  const recommendations = rawRecs.map((r) => ({
+    id: r.id,
+    createdAt: new Date(r.createdAt),
+    confidence: r.confidence,
+    diagnosis: {
+      diagnosis: { condition: r.condition, conditionType: r.conditionType },
     },
-  });
+    input: { crop: r.input.crop },
+  }));
 
   const userName = user.email?.split("@")[0] || null;
 

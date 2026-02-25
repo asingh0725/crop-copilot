@@ -4,6 +4,7 @@
 //
 
 import SwiftUI
+import UIKit
 
 extension Color {
 
@@ -16,9 +17,9 @@ extension Color {
     /// Amber warm — matches web accent (#F5A623)
     static let appAccent = Color(red: 0xF5/255, green: 0xA6/255, blue: 0x23/255)
     static let appCanvas = Color(red: 0.976, green: 0.982, blue: 0.972)
-    static let appBackground = Color.white
-    static let appCardBackground = Color.white
-    static let appSecondaryBackground = Color(red: 0.966, green: 0.972, blue: 0.964)
+    static let appBackground = Color(UIColor.systemBackground)
+    static let appCardBackground = Color(UIColor.secondarySystemBackground)
+    static let appSecondaryBackground = Color(UIColor.tertiarySystemBackground)
 
     // MARK: - Earth Gradient Palette (for hero sections — matching web earth-950/900/800)
 
@@ -65,4 +66,40 @@ extension Color {
         default:               return .appSecondary
         }
     }
+}
+
+// MARK: - Spacing
+
+enum Spacing {
+    static let xs:   CGFloat =  4
+    static let sm:   CGFloat =  8
+    static let md:   CGFloat = 12
+    static let lg:   CGFloat = 16
+    static let xl:   CGFloat = 20
+    static let xxl:  CGFloat = 24
+    static let xxxl: CGFloat = 32
+}
+
+// MARK: - Corner Radius
+
+enum CornerRadius {
+    static let sm:  CGFloat =  8
+    static let md:  CGFloat = 12
+    static let lg:  CGFloat = 16
+    static let xl:  CGFloat = 20
+    static let xxl: CGFloat = 24
+}
+
+// MARK: - Animation Durations
+
+enum AnimationDuration {
+    static let fast:   Double = 0.18
+    static let medium: Double = 0.30
+    static let slow:   Double = 0.60
+}
+
+extension Animation {
+    static let appFast   = Animation.easeInOut(duration: AnimationDuration.fast)
+    static let appMedium = Animation.easeInOut(duration: AnimationDuration.medium)
+    static let appSpring = Animation.spring(response: 0.4, dampingFraction: 0.7)
 }

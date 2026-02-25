@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
+import { getBrowserApiBase } from "@/lib/api-client";
 import { PageHeader } from "@/components/shared/page-header";
 import {
   ProductCard,
@@ -14,7 +16,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/shared/empty-state";
 import { Package, Scale, ChevronLeft, ChevronRight } from "lucide-react";
-import { ProductType } from "@prisma/client";
+import type { ProductType } from "@/lib/types/product";
 
 interface Product {
   id: string;
@@ -68,7 +70,12 @@ export default function ProductsPage() {
       params.set("limit", ITEMS_PER_PAGE.toString());
       params.set("offset", ((page - 1) * ITEMS_PER_PAGE).toString());
 
-      const response = await fetch(`/api/v1/products?${params.toString()}`);
+      const supabase = createClient();
+      const { data: { session } } = await supabase.auth.getSession();
+      const base = getBrowserApiBase();
+      const response = await fetch(`${base}/api/v1/products?${params.toString()}`, {
+        headers: { Authorization: `Bearer ${session?.access_token ?? ""}` },
+      });
       if (!response.ok) throw new Error("Failed to fetch products");
 
       const data: ProductsResponse = await response.json();

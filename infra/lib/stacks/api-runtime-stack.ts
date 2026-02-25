@@ -6,6 +6,9 @@ import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as lambdaEventSources from 'aws-cdk-lib/aws-lambda-event-sources';
 import * as lambdaNodejs from 'aws-cdk-lib/aws-lambda-nodejs';
 import * as ssm from 'aws-cdk-lib/aws-ssm';
+import * as events from 'aws-cdk-lib/aws-events';
+import * as eventsTargets from 'aws-cdk-lib/aws-events-targets';
+import * as iam from 'aws-cdk-lib/aws-iam';
 import type { Construct } from 'constructs';
 import type { EnvironmentConfig } from '../config';
 import type { DatabaseStack } from './database-stack';
@@ -118,6 +121,12 @@ export class ApiRuntimeStack extends Stack {
       environment,
     });
 
+    const trackEventHandler = createApiFunction(this, {
+      id: 'TrackEventHandler',
+      entry: 'handlers/track-event.ts',
+      environment,
+    });
+
     const processRecommendationJobWorker = createApiFunction(this, {
       id: 'ProcessRecommendationJobWorker',
       entry: 'workers/process-recommendation-job.ts',
@@ -131,13 +140,115 @@ export class ApiRuntimeStack extends Stack {
       entry: 'workers/process-ingestion-batch.ts',
       environment,
       memorySize: 768,
-      timeout: Duration.seconds(120),
+      timeout: Duration.seconds(300),
+    });
+
+    // Orchestrates which sources are due and enqueues them for processing
+    const runIngestionBatchWorker = createApiFunction(this, {
+      id: 'RunIngestionBatchWorker',
+      entry: 'workers/run-ingestion-batch.ts',
+      environment,
+      timeout: Duration.seconds(60),
+    });
+
+    // Nightly ML model retraining: exports training data to S3, submits SageMaker job
+    const retrainTriggerWorker = createApiFunction(this, {
+      id: 'RetrainTriggerWorker',
+      entry: 'ml/training/retrain-trigger.ts',
+      environment,
+      memorySize: 512,
+      timeout: Duration.minutes(10),
+    });
+
+    // Triggered by SageMaker training completion event — promotes new model to endpoint
+    const endpointUpdaterWorker = createApiFunction(this, {
+      id: 'EndpointUpdaterWorker',
+      entry: 'ml/training/endpoint-updater.ts',
+      environment,
+      memorySize: 256,
+      timeout: Duration.seconds(60),
+    });
+
+    // Runs every 30 minutes — discovers new agricultural URLs via Gemini search grounding
+    const discoverSourcesWorker = createApiFunction(this, {
+      id: 'DiscoverSourcesWorker',
+      entry: 'workers/discover-sources.ts',
+      environment,
+      memorySize: 512,
+      timeout: Duration.minutes(15), // monthly run must drain all 510 crop×region combinations
     });
 
     foundation.recommendationQueue.grantSendMessages(createInputHandler);
     foundation.artifactsBucket.grantPut(createUploadUrlHandler);
     foundation.artifactsBucket.grantRead(getUploadViewUrlHandler);
     foundation.pushEventsTopic.grantPublish(processRecommendationJobWorker);
+
+    // RunIngestionBatchWorker enqueues due sources for scraping
+    foundation.ingestionQueue.grantSendMessages(runIngestionBatchWorker);
+
+    // RetrainTriggerWorker reads/writes training data and model artifacts
+    foundation.artifactsBucket.grantReadWrite(retrainTriggerWorker);
+    retrainTriggerWorker.addToRolePolicy(
+      new iam.PolicyStatement({
+        actions: ['sagemaker:CreateTrainingJob', 'iam:PassRole'],
+        resources: ['*'],
+      }),
+    );
+
+    // EndpointUpdaterWorker creates SageMaker model/endpoint resources
+    endpointUpdaterWorker.addToRolePolicy(
+      new iam.PolicyStatement({
+        actions: [
+          'sagemaker:DescribeTrainingJob',
+          'sagemaker:CreateModel',
+          'sagemaker:CreateEndpointConfig',
+          'sagemaker:CreateEndpoint',
+          'sagemaker:UpdateEndpoint',
+          'sagemaker:DescribeEndpoint',
+          'iam:PassRole',
+        ],
+        resources: ['*'],
+      }),
+    );
+
+    // DiscoverSourcesWorker enqueues newly found sources for ingestion
+    foundation.ingestionQueue.grantSendMessages(discoverSourcesWorker);
+
+    // Ingestion orchestration: fires every hour to maximize LlamaParse free-tier throughput
+    const runIngestionScheduleRule = new events.Rule(this, 'RunIngestionBatchScheduleRule', {
+      ruleName: `${config.projectSlug}-${config.envName}-run-ingestion-schedule`,
+      schedule: events.Schedule.rate(Duration.hours(1)),
+      description: 'Triggers ingestion batch orchestration every hour.',
+    });
+    runIngestionScheduleRule.addTarget(new eventsTargets.LambdaFunction(runIngestionBatchWorker));
+
+    // ML retraining: fires nightly at 02:00 UTC, exports CSV + submits SageMaker job
+    const retrainScheduleRule = new events.Rule(this, 'RetrainTriggerScheduleRule', {
+      ruleName: `${config.projectSlug}-${config.envName}-ml-retrain-schedule`,
+      schedule: events.Schedule.cron({ minute: '0', hour: '2' }),
+      description: 'Triggers LambdaRank model retraining check nightly at 02:00 UTC.',
+    });
+    retrainScheduleRule.addTarget(new eventsTargets.LambdaFunction(retrainTriggerWorker));
+
+    // SageMaker training completion: automatically promotes new model to inference endpoint
+    const sageMakerCompleteRule = new events.Rule(this, 'SageMakerTrainingCompleteRule', {
+      ruleName: `${config.projectSlug}-${config.envName}-sagemaker-training-complete`,
+      description: 'Triggers endpoint update when a CropCopilot SageMaker training job completes.',
+      eventPattern: {
+        source: ['aws.sagemaker'],
+        detailType: ['SageMaker Training Job State Change'],
+        detail: { TrainingJobStatus: ['Completed'] },
+      },
+    });
+    sageMakerCompleteRule.addTarget(new eventsTargets.LambdaFunction(endpointUpdaterWorker));
+
+    // Crop × region discovery: runs on the 1st of each month — agricultural sources change slowly
+    const discoverScheduleRule = new events.Rule(this, 'DiscoverSourcesScheduleRule', {
+      ruleName: `${config.projectSlug}-${config.envName}-discover-sources-schedule`,
+      schedule: events.Schedule.cron({ minute: '0', hour: '0', day: '1', month: '*', year: '*' }),
+      description: 'Triggers crop × region source discovery on the 1st of each month at 00:00 UTC.',
+    });
+    discoverScheduleRule.addTarget(new eventsTargets.LambdaFunction(discoverSourcesWorker));
 
     processRecommendationJobWorker.addEventSource(
       new lambdaEventSources.SqsEventSource(foundation.recommendationQueue, {
@@ -286,6 +397,31 @@ export class ApiRuntimeStack extends Stack {
       integration: new integrations.HttpLambdaIntegration('SyncPullIntegration', syncPullHandler),
     });
 
+    httpApi.addRoutes({
+      path: '/api/v1/events',
+      methods: [apigwv2.HttpMethod.POST],
+      integration: new integrations.HttpLambdaIntegration(
+        'TrackEventIntegration',
+        trackEventHandler,
+      ),
+    });
+
+    // Admin: discovery pipeline status dashboard
+    const getDiscoveryStatusHandler = createApiFunction(this, {
+      id: 'GetDiscoveryStatusHandler',
+      entry: 'handlers/get-discovery-status.ts',
+      environment,
+    });
+
+    httpApi.addRoutes({
+      path: '/api/v1/admin/discovery/status',
+      methods: [apigwv2.HttpMethod.GET],
+      integration: new integrations.HttpLambdaIntegration(
+        'GetDiscoveryStatusIntegration',
+        getDiscoveryStatusHandler,
+      ),
+    });
+
     const runtimeUrlParameterName = `/${config.projectSlug}/${config.envName}/platform/api/runtime-url`;
     new ssm.StringParameter(this, 'ParameterRuntimeApiBaseUrl', {
       parameterName: runtimeUrlParameterName,
@@ -383,11 +519,25 @@ function buildApiEnvironment(
     OPENAI_EMBEDDING_MODEL: process.env.OPENAI_EMBEDDING_MODEL ?? '',
     RAG_RETRIEVAL_LIMIT: process.env.RAG_RETRIEVAL_LIMIT ?? '18',
     PG_POOL_MAX: process.env.PG_POOL_MAX ?? '6',
+    // SageMaker reranker (leave empty to disable; reranker falls back to hybrid ranking)
+    SAGEMAKER_ENDPOINT_NAME: process.env.SAGEMAKER_ENDPOINT_NAME ?? '',
+    // ML retraining (leave empty to skip SageMaker job submission)
+    S3_TRAINING_BUCKET: foundation.artifactsBucket.bucketName,
+    SAGEMAKER_ROLE_ARN: process.env.SAGEMAKER_ROLE_ARN ?? '',
+    SAGEMAKER_TRAINING_IMAGE: process.env.SAGEMAKER_TRAINING_IMAGE ?? '',
+    SAGEMAKER_TRAINING_JOB_NAME: process.env.SAGEMAKER_TRAINING_JOB_NAME ?? 'cropcopilot-ltr',
+    RETRAINING_MIN_FEEDBACK: process.env.RETRAINING_MIN_FEEDBACK ?? '50',
+    // PDF parsing via LlamaParse (1000 free pages/day; leave empty to skip PDFs)
+    LLAMA_CLOUD_API_KEY: process.env.LLAMA_CLOUD_API_KEY ?? '',
+    // Gemini-powered source discovery
+    GOOGLE_AI_API_KEY: process.env.GOOGLE_AI_API_KEY ?? '',
+    DISCOVERY_BATCH_SIZE: process.env.DISCOVERY_BATCH_SIZE ?? '10',
     COGNITO_REGION: cognitoRegion ?? '',
     COGNITO_USER_POOL_ID: cognitoUserPoolId ?? '',
     COGNITO_APP_CLIENT_ID: process.env.COGNITO_APP_CLIENT_ID ?? '',
     SUPABASE_URL: supabaseUrl ?? '',
     SUPABASE_ANON_KEY: supabaseAnonKey ?? '',
+    ADMIN_USER_IDS: process.env.ADMIN_USER_IDS ?? '',
   };
 
   return environment;

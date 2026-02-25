@@ -7,13 +7,13 @@ import {
 } from '@crop-copilot/contracts';
 import type { SourceRegistry } from './source-registry';
 
-export function buildIngestionBatchMessage(
+export async function buildIngestionBatchMessage(
   trigger: IngestionScheduleTrigger,
   registry: SourceRegistry,
   now: Date
-): IngestionBatchMessage | null {
+): Promise<IngestionBatchMessage | null> {
   const parsedTrigger = IngestionScheduleTriggerSchema.parse(trigger);
-  const dueSources = registry.listDueSources(now).slice(0, parsedTrigger.maxSources);
+  const dueSources = (await registry.listDueSources(now)).slice(0, parsedTrigger.maxSources);
   if (dueSources.length === 0) {
     return null;
   }

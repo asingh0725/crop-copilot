@@ -86,9 +86,13 @@ enum APIEndpoint {
 
     private var hostTarget: HostTarget {
         switch self {
+        // All data endpoints go to API Gateway (API_RUNTIME_BASE_URL).
+        // Auth routes (login, signup, refreshToken) stay on API_BASE_URL.
         case .getProfile,
              .updateProfile,
              .createInput,
+             .listInputs,
+             .getInput,
              .getJobStatus,
              .listRecommendations,
              .getRecommendation,

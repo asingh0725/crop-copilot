@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
+import { createClient } from "@/lib/supabase/client"
+import { getBrowserApiBase } from "@/lib/api-client"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { profileSchema, type ProfileInput } from "@/lib/validations/profile"
@@ -56,7 +58,12 @@ export default function ProfilePage() {
   useEffect(() => {
     async function fetchProfile() {
       try {
-        const response = await fetch('/api/v1/profile')
+        const supabase = createClient()
+        const { data: { session } } = await supabase.auth.getSession()
+        const base = getBrowserApiBase()
+        const response = await fetch(`${base}/api/v1/profile`, {
+          headers: { Authorization: `Bearer ${session?.access_token ?? ''}` },
+        })
         if (response.ok) {
           const { profile } = await response.json()
           if (profile) {
@@ -83,9 +90,15 @@ export default function ProfilePage() {
     setIsLoading(true)
 
     try {
-      const response = await fetch('/api/v1/profile', {
+      const supabase = createClient()
+      const { data: { session } } = await supabase.auth.getSession()
+      const base = getBrowserApiBase()
+      const response = await fetch(`${base}/api/v1/profile`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session?.access_token ?? ''}`,
+        },
         body: JSON.stringify(data),
       })
 

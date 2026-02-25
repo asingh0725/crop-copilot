@@ -107,6 +107,7 @@ export function ImageUploadZone({ value, onChange, error }: ImageUploadZoneProps
         className="space-y-4"
       >
         <div className="relative rounded-2xl overflow-hidden border-2 border-lime-400/30 shadow-lg shadow-lime-400/5">
+          {/* eslint-disable-next-line @next/next/no-img-element -- preview is a local blob: URL from createObjectURL; next/image cannot optimize blob URLs */}
           <img
             src={preview}
             alt="Preview"

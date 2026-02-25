@@ -16,6 +16,7 @@ struct ProductDetailView: View {
 
     @StateObject private var viewModel: ProductDetailViewModel
     @State private var showPricingSheet = false
+    @State private var showPricingLocationConfirm = false
     @State private var pricingDetent: PricingSheetDetent = .medium
 
     init(productId: String) {
@@ -164,10 +165,7 @@ struct ProductDetailView: View {
 
     private var pricingRow: some View {
         Button {
-            showPricingSheet = true
-            Task {
-                await viewModel.loadPricingOnDemand()
-            }
+            showPricingLocationConfirm = true
         } label: {
             HStack(spacing: Spacing.sm) {
                 IconBadge(icon: "dollarsign.circle.fill", color: .appPrimary, size: 36, cornerRadius: 10)
@@ -192,6 +190,19 @@ struct ProductDetailView: View {
             .antigravityGlass(cornerRadius: CornerRadius.lg)
         }
         .buttonStyle(.plain)
+        .confirmationDialog(
+            "Fetch Pricing For \(viewModel.pricingRegion)",
+            isPresented: $showPricingLocationConfirm,
+            titleVisibility: .visible
+        ) {
+            Button("Use \(viewModel.pricingRegion)") {
+                showPricingSheet = true
+                Task { await viewModel.loadPricingOnDemand(region: viewModel.pricingRegion) }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Pricing varies by region. Confirm your location to get accurate results.")
+        }
     }
 
     // MARK: - Recommendation Links

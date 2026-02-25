@@ -34,6 +34,7 @@ test('get feedback handler returns 200 with feedback payload', async () => {
         accuracy: 4,
         comments: 'Helpful baseline recommendation.',
         issues: [],
+        detailedCompletedAt: null,
         outcomeApplied: true,
         outcomeSuccess: true,
         outcomeNotes: 'Applied after scouting two days later.',

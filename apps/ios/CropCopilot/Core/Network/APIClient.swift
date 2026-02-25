@@ -22,6 +22,11 @@ class APIClient {
         let result: T?
     }
 
+    private struct ErrorEnvelope: Decodable {
+        let error: String?
+        let message: String?
+    }
+
     private init() {
         let configuration = URLSessionConfiguration.default
         configuration.requestCachePolicy = .reloadIgnoringLocalCacheData
@@ -111,6 +116,16 @@ class APIClient {
                 throw NetworkError.decodingError(error)
             }
 
+        case 400:
+            let errorMessage = extractErrorMessage(from: data) ?? "Request validation failed."
+            throw NetworkError.unknown(
+                NSError(
+                    domain: "HTTPBadRequest",
+                    code: httpResponse.statusCode,
+                    userInfo: [NSLocalizedDescriptionKey: errorMessage]
+                )
+            )
+
         case 401:
             // Unauthorized - try to refresh token and retry
             if retry {
@@ -141,6 +156,26 @@ class APIClient {
                 userInfo: [NSLocalizedDescriptionKey: "HTTP \(httpResponse.statusCode)"]
             ))
         }
+    }
+
+    private func extractErrorMessage(from data: Data) -> String? {
+        guard !data.isEmpty else {
+            return nil
+        }
+        let decoder = JSONDecoder()
+        if let envelope = try? decoder.decode(ErrorEnvelope.self, from: data) {
+            let value = envelope.error ?? envelope.message
+            let trimmed = value?.trimmingCharacters(in: .whitespacesAndNewlines)
+            return trimmed?.isEmpty == false ? trimmed : nil
+        }
+        if let raw = String(data: data, encoding: .utf8) {
+            let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+            if trimmed.hasPrefix("{") || trimmed.hasPrefix("[") {
+                return nil
+            }
+            return trimmed.isEmpty ? nil : trimmed
+        }
+        return nil
     }
 
     // MARK: - Upload Image

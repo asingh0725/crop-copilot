@@ -65,11 +65,12 @@ final class ProductsViewModel: ObservableObject {
         }
     }
 
+    @Published var totalCount: Int = 0
+
     private let apiClient = APIClient.shared
     private var hasLoadedOnce = false
-    private let pageSize = 100
+    private let pageSize = 30
     private var offset = 0
-    private var total = 0
     private var requestGeneration = 0
     /// Unfiltered products loaded from the API — client-side filter is applied on top
     private var allLoadedProducts: [ProductListItem] = []
@@ -86,7 +87,7 @@ final class ProductsViewModel: ObservableObject {
 
         if reset {
             offset = 0
-            total = 0
+            totalCount = 0
             hasMorePages = false
         }
 
@@ -120,9 +121,9 @@ final class ProductsViewModel: ObservableObject {
                 allLoadedProducts.append(contentsOf: nextPage)
             }
 
-            total = max(response.total, allLoadedProducts.count)
+            totalCount = max(response.total, allLoadedProducts.count)
             offset = allLoadedProducts.count
-            hasMorePages = allLoadedProducts.count < total
+            hasMorePages = allLoadedProducts.count < totalCount
             hasLoadedOnce = true
 
             applyTypeFilter()

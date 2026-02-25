@@ -8,19 +8,23 @@
     "test": "pnpm --filter @crop-copilot/contracts build && pnpm --filter @crop-copilot/domain build && tsx --test src/**/*.test.ts"
   },
   "dependencies": {
-    "@aws-sdk/client-sns": "^3.971.0",
     "@aws-sdk/client-s3": "^3.971.0",
+    "@aws-sdk/client-sagemaker": "^3.971.0",
+    "@aws-sdk/client-sagemaker-runtime": "^3.995.0",
+    "@aws-sdk/client-sns": "^3.971.0",
     "@aws-sdk/client-sqs": "^3.971.0",
     "@aws-sdk/s3-request-presigner": "^3.971.0",
     "@crop-copilot/contracts": "workspace:*",
     "@crop-copilot/domain": "workspace:*",
     "jose": "^6.1.0",
+    "pdf-parse": "^2.4.5",
     "pg": "^8.16.3",
     "zod": "^4.3.5"
   },
   "devDependencies": {
     "@types/aws-lambda": "^8.10.150",
     "@types/node": "^22.13.5",
+    "@types/pdf-parse": "^1.1.5",
     "@types/pg": "^8.15.6",
     "tsx": "^4.21.0",
     "typescript": "^5.8.2"

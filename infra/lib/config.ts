@@ -1,4 +1,4 @@
-export type EnvironmentName = 'dev' | 'staging' | 'prod';
+export type EnvironmentName = 'dev' | 'prod';
 
 export interface EnvironmentConfig {
   projectName: string;
@@ -14,14 +14,12 @@ export interface EnvironmentConfig {
 }
 
 const DEFAULT_BUDGETS: Record<EnvironmentName, number> = {
-  dev: 150,
-  staging: 350,
-  prod: 1000,
+  dev: 10,
+  prod: 50,
 };
 
 const DEFAULT_MAX_RECOMMENDATION_COST_USD: Record<EnvironmentName, number> = {
   dev: 1.5,
-  staging: 1.3,
   prod: 1.1,
 };
 
@@ -30,12 +28,12 @@ function parseEnvironmentName(raw: string | undefined): EnvironmentName {
     return 'dev';
   }
 
-  if (raw === 'dev' || raw === 'staging' || raw === 'prod') {
+  if (raw === 'dev' || raw === 'prod') {
     return raw;
   }
 
   throw new Error(
-    `CROP_ENV must be one of dev, staging, or prod. Received: ${raw}`
+    `CROP_ENV must be one of dev or prod. Received: ${raw}`
   );
 }
 
@@ -68,7 +66,7 @@ function parsePositiveNumber(raw: string | undefined, fallback: number, name: st
 export function loadEnvironmentConfig(): EnvironmentConfig {
   const envName = parseEnvironmentName(process.env.CROP_ENV);
   const accountId = process.env.AWS_ACCOUNT_ID || process.env.CDK_DEFAULT_ACCOUNT;
-  const region = process.env.AWS_REGION || process.env.CDK_DEFAULT_REGION || 'ca-west-1';
+  const region = process.env.AWS_REGION || process.env.CDK_DEFAULT_REGION || 'us-west-2';
   const metricsNamespace = process.env.METRICS_NAMESPACE || 'CropCopilot/Pipeline';
 
   if (!accountId) {

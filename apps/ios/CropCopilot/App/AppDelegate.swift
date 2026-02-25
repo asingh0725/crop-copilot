@@ -32,15 +32,14 @@ class AppDelegate: NSObject, UIApplicationDelegate {
         didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data
     ) {
         let token = deviceToken.map { String(format: "%02.2hhx", $0) }.joined()
-        print("📱 Device token: \(token)")
-        // TODO: Send token to backend in Phase 3
+        // TODO: Send token to backend for push notification registration
     }
 
     func application(
         _ application: UIApplication,
         didFailToRegisterForRemoteNotificationsWithError error: Error
     ) {
-        print("❌ Failed to register for remote notifications: \(error)")
+        _ = error // registration failure is silently ignored; push notifications are optional
     }
 
     // MARK: - Deep Links
@@ -49,9 +48,6 @@ class AppDelegate: NSObject, UIApplicationDelegate {
         open url: URL,
         options: [UIApplication.OpenURLOptionsKey: Any] = [:]
     ) -> Bool {
-        // Handle OAuth callbacks and deep links
-        print("🔗 Opening URL: \(url)")
-
         // Supabase OAuth callback
         if url.scheme == "cropcopilot" && url.host == "auth" {
             // Will be handled by AuthViewModel

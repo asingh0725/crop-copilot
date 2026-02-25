@@ -16,23 +16,8 @@ const nextConfig = {
     ],
   },
   experimental: {
-    // Exclude heavy server-only packages from webpack bundling.
-    // These are used in API routes / ingestion scripts only.
-    serverComponentsExternalPackages: [
-      'cheerio',
-      'jsdom',
-      'playwright',
-      'pdf-parse',
-      'sharp',
-      '@mozilla/readability',
-      '@dqbd/tiktoken',
-      'tiktoken',
-      'ioredis',
-      '@aws-sdk/client-s3',
-      '@anthropic-ai/sdk',
-      'openai',
-      'commander',
-    ],
+    // sharp is a native binary — keep it out of the webpack bundle.
+    serverComponentsExternalPackages: ['sharp'],
   },
 };
 

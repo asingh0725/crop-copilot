@@ -326,4 +326,171 @@ final class APIResponseDecodingTests: XCTestCase {
         XCTAssertEqual(detail.recommendedProducts[0].id, "prod-good")
         XCTAssertEqual(detail.recommendedProducts[0].name, "Field Shield")
     }
+
+    func testRecommendationDetailResponseDecodingWithNestedDiagnosisProductShape() throws {
+        let json = """
+        {
+            "id": "rec-nested-products",
+            "createdAt": "2026-02-18T12:00:00.000Z",
+            "diagnosis": {
+                "diagnosis": {
+                    "condition": "magnesium deficiency",
+                    "conditionType": "deficiency",
+                    "reasoning": "Interveinal chlorosis in lower leaves.",
+                    "confidence": 0.81
+                },
+                "products": [
+                    {
+                        "product": {
+                            "id": "6f84c14d-3f7f-4a56-9f8c-2db26f89ab52",
+                            "name": "Magnesium Sulfate Foliar",
+                            "type": "FERTILIZER"
+                        },
+                        "reason": "Fast foliar correction.",
+                        "application_rate": "10-20 lbs/acre"
+                    }
+                ]
+            },
+            "input": {
+                "id": "input-12",
+                "type": "PHOTO"
+            },
+            "sources": []
+        }
+        """.data(using: .utf8)!
+
+        let detail = try decoder.decode(RecommendationDetailResponse.self, from: json)
+        XCTAssertEqual(detail.diagnosis.products.count, 1)
+        XCTAssertEqual(detail.diagnosis.products[0].productName, "Magnesium Sulfate Foliar")
+        XCTAssertEqual(detail.diagnosis.products[0].productType, "FERTILIZER")
+    }
+
+    func testRecommendationDetailResponseDecodingWithStringProductField() throws {
+        let json = """
+        {
+            "id": "rec-string-product",
+            "createdAt": "2026-02-18T12:00:00.000Z",
+            "diagnosis": {
+                "diagnosis": {
+                    "condition": "magnesium deficiency",
+                    "conditionType": "deficiency",
+                    "reasoning": "Lower-leaf interveinal chlorosis.",
+                    "confidence": 0.81
+                },
+                "products": [
+                    {
+                        "product": "magnesium_sulfate_foliar",
+                        "application_rate": "10-20 lbs/acre",
+                        "reasoning": "Fast foliar correction."
+                    }
+                ]
+            },
+            "input": {
+                "id": "input-13",
+                "type": "PHOTO"
+            },
+            "sources": []
+        }
+        """.data(using: .utf8)!
+
+        let detail = try decoder.decode(RecommendationDetailResponse.self, from: json)
+        XCTAssertEqual(detail.diagnosis.products.count, 1)
+        XCTAssertEqual(detail.diagnosis.products[0].productName, "magnesium_sulfate_foliar")
+        XCTAssertEqual(detail.diagnosis.products[0].applicationRate, "10-20 lbs/acre")
+    }
+
+    func testRecommendationDetailResponseInfersGenericProductNameFromApplicationRate() throws {
+        let json = """
+        {
+            "id": "rec-inferred-product",
+            "createdAt": "2026-02-18T12:00:00.000Z",
+            "recommendedProducts": [
+                {
+                    "name": "Suggested product",
+                    "type": "unspecified",
+                    "application_rate": "10-20 lbs magnesium sulfate per acre in 15-20 gallons water",
+                    "reasoning": "Provides immediate magnesium availability."
+                }
+            ],
+            "diagnosis": {
+                "diagnosis": {
+                    "condition": "magnesium deficiency",
+                    "conditionType": "deficiency",
+                    "reasoning": "Leaf chlorosis pattern",
+                    "confidence": 0.82
+                }
+            },
+            "input": {
+                "id": "input-14",
+                "type": "PHOTO"
+            },
+            "sources": []
+        }
+        """.data(using: .utf8)!
+
+        let detail = try decoder.decode(RecommendationDetailResponse.self, from: json)
+        XCTAssertEqual(detail.recommendedProducts.count, 1)
+        XCTAssertEqual(detail.recommendedProducts[0].name, "Magnesium Sulfate")
+    }
+
+    func testBatchPricingResponseDecodesMetaRegion() throws {
+        let json = """
+        {
+            "pricing": [],
+            "meta": {
+                "region": "British Columbia, CA",
+                "fetchedAt": "2026-02-20T14:00:00.000Z"
+            }
+        }
+        """.data(using: .utf8)!
+
+        let detail = try decoder.decode(BatchPricingResponse.self, from: json)
+        XCTAssertEqual(detail.meta?.region, "British Columbia, CA")
+        XCTAssertEqual(detail.meta?.fetchedAt, "2026-02-20T14:00:00.000Z")
+    }
+
+    func testProductsListResponseDecodingWithDataEnvelope() throws {
+        let json = """
+        {
+            "data": {
+                "products": [
+                    {
+                        "id": "prod-1",
+                        "name": "Product One",
+                        "type": "FERTILIZER"
+                    }
+                ],
+                "total": 1,
+                "limit": 20,
+                "offset": 0
+            }
+        }
+        """.data(using: .utf8)!
+
+        let response = try decoder.decode(ProductsListResponse.self, from: json)
+        XCTAssertEqual(response.products.count, 1)
+        XCTAssertEqual(response.products[0].name, "Product One")
+        XCTAssertEqual(response.total, 1)
+    }
+
+    func testProductDetailResponseDecodingSnakeCaseEnvelope() throws {
+        let json = """
+        {
+            "data": {
+                "id": "prod-9",
+                "name": "Sulfur Blend",
+                "type": "AMENDMENT",
+                "application_rate": "3 lb/acre",
+                "used_in_recommendations": 4,
+                "related_products": [],
+                "recommendations": []
+            }
+        }
+        """.data(using: .utf8)!
+
+        let detail = try decoder.decode(ProductDetailResponse.self, from: json)
+        XCTAssertEqual(detail.id, "prod-9")
+        XCTAssertEqual(detail.applicationRate, "3 lb/acre")
+        XCTAssertEqual(detail.usedInRecommendations, 4)
+    }
 }
