@@ -14,6 +14,7 @@ import {
   User,
   Package,
   ShieldCheck,
+  CreditCard,
 } from "lucide-react";
 import { LogoIcon } from "@/components/ui/logo-icon";
 import { Button } from "@/components/ui/button";
@@ -41,6 +42,7 @@ const mainNavItems: NavItem[] = [
 
 const bottomNavItems: NavItem[] = [
   { title: "Settings", href: "/settings", icon: Settings },
+  { title: "Billing", href: "/settings/billing", icon: CreditCard },
   { title: "Profile", href: "/settings/profile", icon: User },
 ];
 

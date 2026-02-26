@@ -8,6 +8,8 @@ import {
   getRecommendationQueue,
   type RecommendationQueue,
 } from '../queue/recommendation-queue';
+import { getRuntimePool } from '../lib/runtime-pool';
+import { checkRecommendationAllowance } from '../lib/entitlements';
 
 function isValidationError(error: unknown): error is Error {
   return error instanceof Error && error.name === 'ZodError';
@@ -68,6 +70,30 @@ export function buildCreateInputHandler(
     }
 
     let enqueueResponse: EnqueueInputResult;
+
+    if ((process.env.ENABLE_USAGE_GUARD ?? 'false').toLowerCase() === 'true') {
+      try {
+        const allowance = await checkRecommendationAllowance(getRuntimePool(), auth.userId);
+        if (!allowance.allowed) {
+          return jsonResponse(
+            {
+              error: {
+                code: 'USAGE_LIMIT_REACHED',
+                message: allowance.reason ?? 'Monthly recommendation limit reached',
+              },
+              usage: allowance.snapshot,
+            },
+            { statusCode: 402 }
+          );
+        }
+      } catch (error) {
+        console.error('Failed to evaluate usage guard for create-input', {
+          userId: auth.userId,
+          error: (error as Error).message,
+        });
+      }
+    }
+
     try {
       enqueueResponse = await getRecommendationStore().enqueueInput(auth.userId, command, {
         email: auth.email,

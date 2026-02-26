@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createApiClient, ApiClientError } from "@/lib/api-client";
 import { DiagnosisDisplay } from "@/components/recommendations/diagnosis-display";
 import { RecommendationContent } from "@/components/recommendations/recommendation-content";
+import { RecommendationFeedbackFlow } from "@/components/recommendations/recommendation-feedback-flow";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { ArrowLeft } from "lucide-react";
@@ -38,6 +39,73 @@ interface RecommendationSourceView {
     publisher?: string | null;
     publishedDate?: string | null;
   } | null;
+}
+
+interface PremiumRecommendationView {
+  status: "not_available" | "queued" | "processing" | "ready" | "failed";
+  riskReview: "clear_signal" | "potential_conflict" | "needs_manual_verification" | null;
+  complianceDecision?: "clear_signal" | "potential_conflict" | "needs_manual_verification" | null;
+  checks: Array<{
+    id: string;
+    title: string;
+    result: "clear_signal" | "potential_conflict" | "needs_manual_verification";
+    message: string;
+  }>;
+  costAnalysis: {
+    perAcreTotalUsd: number | null;
+    wholeFieldTotalUsd: number | null;
+    swapOptions?: Array<{
+      fromProductName: string;
+      toProductName: string;
+      estimatedSavingsPerAcreUsd: number;
+      estimatedSavingsWholeFieldUsd: number;
+    }>;
+  } | null;
+  sprayWindows: Array<{
+    startsAt: string;
+    endsAt: string;
+    score: number;
+    summary: string;
+    source: string;
+  }>;
+  report: {
+    html?: string;
+    htmlUrl?: string;
+    pdfUrl?: string;
+    generatedAt?: string;
+  } | null;
+  advisoryNotice?: string | null;
+  failureReason?: string | null;
+}
+
+function getDefaultPremiumRecommendation(): PremiumRecommendationView {
+  return {
+    status: "not_available",
+    riskReview: null,
+    complianceDecision: null,
+    checks: [],
+    costAnalysis: null,
+    sprayWindows: [],
+    report: null,
+    advisoryNotice:
+      "Decision support only. Verify label instructions and local regulations before application.",
+    failureReason: null,
+  };
+}
+
+function formatRiskReviewLabel(
+  decision: PremiumRecommendationView["riskReview"]
+): string {
+  switch (decision) {
+    case "clear_signal":
+      return "Clear Signal";
+    case "potential_conflict":
+      return "Potential Conflict";
+    case "needs_manual_verification":
+      return "Needs Manual Verification";
+    default:
+      return "N/A";
+  }
 }
 
 function inferConditionType(
@@ -275,6 +343,10 @@ async function getRecommendation(id: string) {
         crop: string | null;
         location: string | null;
         season: string | null;
+        fieldAcreage: number | null;
+        plannedApplicationDate: string | null;
+        fieldLatitude: number | null;
+        fieldLongitude: number | null;
         createdAt: string;
       };
       sources: RecommendationSourceView[];
@@ -288,6 +360,7 @@ async function getRecommendation(id: string) {
         applicationRate: string | null;
         priority: number;
       }>;
+      premium: PremiumRecommendationView;
     }>(`/api/v1/recommendations/${id}`);
 
     return {
@@ -310,6 +383,7 @@ async function getRecommendation(id: string) {
       })),
       input: rec.input,
       sources: rec.sources,
+      premium: rec.premium ?? getDefaultPremiumRecommendation(),
     };
   } catch (err) {
     if (err instanceof ApiClientError && err.status === 404) {
@@ -382,6 +456,118 @@ export default async function RecommendationPage({
           sources={displaySources}
           products={products}
         />
+        <RecommendationFeedbackFlow recommendationId={recommendation.id} />
+
+        <Card className="print:shadow-none print:border-gray-300">
+          <CardHeader>
+            <h2 className="text-xl font-semibold">Premium Insights</h2>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {recommendation.premium.status === "not_available" && (
+              <p className="text-gray-700">
+                Grower Pro unlocks application risk review, cost optimization, spray-window alerts, and a one-tap application prep packet.{" "}
+                <Link href="/settings/billing" className="text-green-700 underline">
+                  Upgrade to Pro
+                </Link>
+                .
+              </p>
+            )}
+
+            {(recommendation.premium.status === "queued" ||
+              recommendation.premium.status === "processing") && (
+              <p className="text-gray-700">
+                Premium risk review is {recommendation.premium.status}. Refresh in a few seconds.
+              </p>
+            )}
+
+            {recommendation.premium.status === "failed" && (
+              <p className="text-red-700">
+                Premium analysis failed: {recommendation.premium.failureReason ?? "Unknown error"}
+              </p>
+            )}
+
+            {recommendation.premium.status === "ready" && (
+              <>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div className="rounded-lg border border-gray-200 p-3">
+                    <p className="text-xs text-gray-500 mb-1">Application Risk Review</p>
+                    <p className="font-semibold uppercase">
+                      {formatRiskReviewLabel(recommendation.premium.riskReview)}
+                    </p>
+                  </div>
+                  <div className="rounded-lg border border-gray-200 p-3">
+                    <p className="text-xs text-gray-500 mb-1">Per-Acre Cost</p>
+                    <p className="font-semibold">
+                      {recommendation.premium.costAnalysis?.perAcreTotalUsd != null
+                        ? `$${recommendation.premium.costAnalysis.perAcreTotalUsd.toFixed(2)}`
+                        : "N/A"}
+                    </p>
+                  </div>
+                  <div className="rounded-lg border border-gray-200 p-3">
+                    <p className="text-xs text-gray-500 mb-1">Whole-Field Cost</p>
+                    <p className="font-semibold">
+                      {recommendation.premium.costAnalysis?.wholeFieldTotalUsd != null
+                        ? `$${recommendation.premium.costAnalysis.wholeFieldTotalUsd.toFixed(2)}`
+                        : "N/A"}
+                    </p>
+                  </div>
+                </div>
+
+                {recommendation.premium.checks.length > 0 && (
+                  <div className="space-y-2">
+                    <h3 className="text-sm font-semibold text-gray-800">Risk Checks (Advisory)</h3>
+                    <div className="space-y-2">
+                      {recommendation.premium.checks.map((check) => (
+                        <div key={check.id} className="rounded-md border border-gray-200 p-2">
+                          <p className="text-sm font-medium">
+                            {check.title}{" "}
+                            <span className="uppercase text-xs text-gray-500">
+                              ({formatRiskReviewLabel(check.result)})
+                            </span>
+                          </p>
+                          <p className="text-sm text-gray-600">{check.message}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <div className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+                  {recommendation.premium.advisoryNotice ??
+                    "Decision support only. Verify labels and local regulations before application."}
+                </div>
+
+                {recommendation.premium.sprayWindows.length > 0 && (
+                  <div className="space-y-2">
+                    <h3 className="text-sm font-semibold text-gray-800">Spray Windows</h3>
+                    <div className="space-y-2">
+                      {recommendation.premium.sprayWindows.slice(0, 3).map((window, idx) => (
+                        <div key={`${window.startsAt}-${idx}`} className="rounded-md border border-gray-200 p-2">
+                          <p className="text-sm font-medium">
+                            {new Date(window.startsAt).toLocaleString("en-US")} -{" "}
+                            {new Date(window.endsAt).toLocaleString("en-US")}
+                          </p>
+                          <p className="text-sm text-gray-600">
+                            Score: {window.score} · {window.summary}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {recommendation.premium.report?.html && (
+                  <details className="rounded-md border border-gray-200 p-3">
+                    <summary className="cursor-pointer text-sm font-semibold">Application Prep Packet Preview</summary>
+                    <pre className="mt-3 max-h-72 overflow-auto bg-gray-50 p-3 text-xs">
+                      {recommendation.premium.report.html}
+                    </pre>
+                  </details>
+                )}
+              </>
+            )}
+          </CardContent>
+        </Card>
 
         {recommendation.input && (
           <Card className="print:shadow-none print:border-gray-300">
@@ -428,6 +614,46 @@ export default async function RecommendationPage({
                     </p>
                   </div>
                 )}
+                {recommendation.input.fieldAcreage != null && (
+                  <div>
+                    <h3 className="text-sm font-medium text-gray-700 mb-1">
+                      Field Acreage
+                    </h3>
+                    <p className="text-gray-900">
+                      {recommendation.input.fieldAcreage.toLocaleString("en-US", {
+                        maximumFractionDigits: 2,
+                      })} acres
+                    </p>
+                  </div>
+                )}
+                {recommendation.input.plannedApplicationDate && (
+                  <div>
+                    <h3 className="text-sm font-medium text-gray-700 mb-1">
+                      Planned Application Date
+                    </h3>
+                    <p className="text-gray-900">
+                      {new Date(
+                        recommendation.input.plannedApplicationDate
+                      ).toLocaleDateString("en-US", {
+                        year: "numeric",
+                        month: "long",
+                        day: "numeric",
+                      })}
+                    </p>
+                  </div>
+                )}
+                {recommendation.input.fieldLatitude != null &&
+                  recommendation.input.fieldLongitude != null && (
+                    <div>
+                      <h3 className="text-sm font-medium text-gray-700 mb-1">
+                        Field Coordinates
+                      </h3>
+                      <p className="text-gray-900">
+                        {recommendation.input.fieldLatitude.toFixed(5)},{" "}
+                        {recommendation.input.fieldLongitude.toFixed(5)}
+                      </p>
+                    </div>
+                  )}
               </div>
 
               {recommendation.input.description && (

@@ -14,7 +14,11 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { createClient } from "@/lib/supabase/client";
+import { getBrowserApiBase } from "@/lib/api-client";
+import { emitCreditsRefresh } from "@/lib/credits-events";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 const FOLLOW_UP_DAYS = 5;
 const AUTO_PROMPT_DELAY_MS = 1200;
@@ -59,6 +63,11 @@ interface FeedbackResponseShape {
 interface FeedbackSubmitShape {
   success: boolean;
   feedback: FeedbackRecord;
+  creditReward?: {
+    granted: boolean;
+    amountUsd: number;
+    balanceUsd: number;
+  } | null;
 }
 
 type ModalStage = "basic" | "detailed" | "outcome";
@@ -179,11 +188,31 @@ export function RecommendationFeedbackFlow({
   const detailedCompleted = hasDetailedFeedback(feedback);
   const shouldAskOutcome = shouldPromptOutcome(feedback);
 
+  const authedFetch = useCallback(
+    async (path: string, init?: RequestInit): Promise<Response> => {
+      const supabase = createClient();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      const base = getBrowserApiBase();
+
+      return fetch(`${base}${path}`, {
+        ...init,
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session?.access_token ?? ""}`,
+          ...(init?.headers ?? {}),
+        },
+      });
+    },
+    []
+  );
+
   const loadFeedback = useCallback(async () => {
     setIsFeedbackLoading(true);
 
     try {
-      const response = await fetch(
+      const response = await authedFetch(
         `/api/v1/feedback?recommendationId=${encodeURIComponent(recommendationId)}`,
         {
           method: "GET",
@@ -227,7 +256,7 @@ export function RecommendationFeedbackFlow({
     } finally {
       setIsFeedbackLoading(false);
     }
-  }, [recommendationId]);
+  }, [authedFetch, recommendationId]);
 
   useEffect(() => {
     void loadFeedback();
@@ -266,12 +295,9 @@ export function RecommendationFeedbackFlow({
   ]);
 
   const submitFeedback = useCallback(
-    async (payload: Record<string, unknown>): Promise<FeedbackRecord> => {
-      const response = await fetch("/api/v1/feedback", {
+    async (payload: Record<string, unknown>): Promise<FeedbackSubmitShape> => {
+      const response = await authedFetch("/api/v1/feedback", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
         body: JSON.stringify({
           recommendationId,
           ...payload,
@@ -283,9 +309,9 @@ export function RecommendationFeedbackFlow({
       }
 
       const body = (await response.json()) as FeedbackSubmitShape;
-      return body.feedback;
+      return body;
     },
-    [recommendationId]
+    [authedFetch, recommendationId]
   );
 
   const handleBasicSubmit = useCallback(async () => {
@@ -296,14 +322,14 @@ export function RecommendationFeedbackFlow({
     setIsSubmitting(true);
 
     try {
-      const updated = await submitFeedback({
+      const result = await submitFeedback({
         stage: "basic",
         helpful,
         rating: rating ?? undefined,
         comments: toTrimmedOrUndefined(basicComments),
       });
 
-      setFeedback(updated);
+      setFeedback(result.feedback);
       clearSnooze(recommendationId, "basic");
       setIsBasicOpen(false);
       setIsDetailedOpen(true);
@@ -321,14 +347,20 @@ export function RecommendationFeedbackFlow({
     setIsSubmitting(true);
 
     try {
-      const updated = await submitFeedback({
+      const result = await submitFeedback({
         stage: "detailed",
         accuracy: accuracy ?? undefined,
         issues: selectedIssues.length > 0 ? selectedIssues : undefined,
         comments: toTrimmedOrUndefined(detailedNotes),
       });
 
-      setFeedback(updated);
+      setFeedback(result.feedback);
+      if (result.creditReward?.granted) {
+        toast.success(
+          `Detailed feedback reward earned: $${result.creditReward.amountUsd.toFixed(2)} credit added.`
+        );
+        emitCreditsRefresh("feedback_reward_granted");
+      }
       clearSnooze(recommendationId, "detailed");
       setIsDetailedOpen(false);
     } catch (error) {
@@ -349,14 +381,14 @@ export function RecommendationFeedbackFlow({
     setIsSubmitting(true);
 
     try {
-      const updated = await submitFeedback({
+      const result = await submitFeedback({
         stage: "outcome",
         outcomeApplied: true,
         outcomeSuccess: outcomeSelection === "success",
         outcomeNotes: toTrimmedOrUndefined(outcomeNotes),
       });
 
-      setFeedback(updated);
+      setFeedback(result.feedback);
       clearSnooze(recommendationId, "outcome");
       setIsOutcomeOpen(false);
     } catch (error) {

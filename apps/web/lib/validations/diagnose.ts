@@ -9,21 +9,8 @@ export const GROWTH_STAGES = [
   "Harvest",
 ];
 
-export const photoDiagnoseSchema = z.object({
-  description: z
-    .string()
-    .min(20, "Please provide at least 20 characters")
-    .max(1000),
-  crop: z.string().min(1, "Please select a crop"),
-  growthStage: z.string().min(1, "Please select a growth stage"),
-  locationState: z.string().min(1, "Please select a state/province"),
-  locationCountry: z.string().min(1, "Please select a country"),
-});
-
-export type PhotoDiagnoseInput = z.infer<typeof photoDiagnoseSchema>;
-
 // Helper for optional string number fields with validation
-const optionalStringNumber = (min = 0, max?: number) => {
+function optionalStringNumber(min = 0, max?: number) {
   let schema = z.string().refine(
     (val) => {
       if (val === "") return true;
@@ -38,7 +25,24 @@ const optionalStringNumber = (min = 0, max?: number) => {
     }
   );
   return schema.optional();
-};
+}
+
+export const photoDiagnoseSchema = z.object({
+  description: z
+    .string()
+    .min(20, "Please provide at least 20 characters")
+    .max(1000),
+  crop: z.string().min(1, "Please select a crop"),
+  growthStage: z.string().min(1, "Please select a growth stage"),
+  locationState: z.string().min(1, "Please select a state/province"),
+  locationCountry: z.string().min(1, "Please select a country"),
+  fieldAcreage: optionalStringNumber(0.01),
+  plannedApplicationDate: z.string().optional(),
+  fieldLatitude: optionalStringNumber(-90, 90),
+  fieldLongitude: optionalStringNumber(-180, 180),
+});
+
+export type PhotoDiagnoseInput = z.infer<typeof photoDiagnoseSchema>;
 
 export const labReportSchema = z.object({
   // Basic Info
@@ -73,7 +77,10 @@ export const labReportSchema = z.object({
   crop: z.string().min(1, "Please select a crop"),
   locationState: z.string().min(1),
   locationCountry: z.string().min(1),
+  fieldAcreage: optionalStringNumber(0.01),
+  plannedApplicationDate: z.string().optional(),
+  fieldLatitude: optionalStringNumber(-90, 90),
+  fieldLongitude: optionalStringNumber(-180, 180),
 });
 
 export type LabReportInput = z.infer<typeof labReportSchema>;
-

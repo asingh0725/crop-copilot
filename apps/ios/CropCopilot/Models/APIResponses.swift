@@ -269,6 +269,7 @@ struct RecommendationDetailResponse: Decodable, Identifiable {
     let input: RecommendationInputDetail
     let sources: [RecommendationSourceDetail]
     let recommendedProducts: [RecommendationProductSummary]
+    let premium: PremiumRecommendationDetail
 
     enum CodingKeys: String, CodingKey {
         case id
@@ -283,6 +284,7 @@ struct RecommendationDetailResponse: Decodable, Identifiable {
         case recommendedProducts
         case productRecommendations
         case products
+        case premium
         case recommendation
         case data
     }
@@ -346,6 +348,9 @@ struct RecommendationDetailResponse: Decodable, Identifiable {
         sources =
             (try? container.decode(LossyDecodingArray<RecommendationSourceDetail>.self, forKey: .sources).values)
             ?? []
+        premium =
+            (try? container.decode(PremiumRecommendationDetail.self, forKey: .premium))
+            ?? PremiumRecommendationDetail.defaultValue
         let directProducts =
             (try? container.decode(LossyDecodingArray<RecommendationProductSummary>.self, forKey: .recommendedProducts).values)
             ?? (try? container.decode(LossyDecodingArray<RecommendationProductSummary>.self, forKey: .productRecommendations).values)
@@ -384,6 +389,104 @@ struct RecommendationDetailResponse: Decodable, Identifiable {
 
         return try? JSONDecoder().decode(DiagnosisData.self, from: data)
     }
+}
+
+struct PremiumRecommendationCheck: Decodable, Identifiable {
+    let id: String
+    let title: String
+    let result: String
+    let message: String
+}
+
+struct PremiumCostSummary: Decodable {
+    let perAcreTotalUsd: Double?
+    let wholeFieldTotalUsd: Double?
+}
+
+struct PremiumSprayWindow: Decodable, Identifiable {
+    var id: String { startsAt + endsAt }
+    let startsAt: String
+    let endsAt: String
+    let score: Int
+    let summary: String
+    let source: String
+}
+
+struct PremiumReport: Decodable {
+    let html: String?
+    let htmlUrl: String?
+    let pdfUrl: String?
+    let generatedAt: String?
+}
+
+struct PremiumRecommendationDetail: Decodable {
+    let status: String
+    let riskReview: String?
+    let checks: [PremiumRecommendationCheck]
+    let costAnalysis: PremiumCostSummary?
+    let sprayWindows: [PremiumSprayWindow]
+    let report: PremiumReport?
+    let advisoryNotice: String?
+    let failureReason: String?
+
+    var complianceDecision: String? { riskReview }
+
+    private enum CodingKeys: String, CodingKey {
+        case status
+        case riskReview
+        case complianceDecision
+        case checks
+        case costAnalysis
+        case sprayWindows
+        case report
+        case advisoryNotice
+        case failureReason
+    }
+
+    init(
+        status: String,
+        riskReview: String?,
+        checks: [PremiumRecommendationCheck],
+        costAnalysis: PremiumCostSummary?,
+        sprayWindows: [PremiumSprayWindow],
+        report: PremiumReport?,
+        advisoryNotice: String?,
+        failureReason: String?
+    ) {
+        self.status = status
+        self.riskReview = riskReview
+        self.checks = checks
+        self.costAnalysis = costAnalysis
+        self.sprayWindows = sprayWindows
+        self.report = report
+        self.advisoryNotice = advisoryNotice
+        self.failureReason = failureReason
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        status = try container.decodeIfPresent(String.self, forKey: .status) ?? "not_available"
+        riskReview =
+            try container.decodeIfPresent(String.self, forKey: .riskReview)
+            ?? container.decodeIfPresent(String.self, forKey: .complianceDecision)
+        checks = try container.decodeIfPresent([PremiumRecommendationCheck].self, forKey: .checks) ?? []
+        costAnalysis = try container.decodeIfPresent(PremiumCostSummary.self, forKey: .costAnalysis)
+        sprayWindows = try container.decodeIfPresent([PremiumSprayWindow].self, forKey: .sprayWindows) ?? []
+        report = try container.decodeIfPresent(PremiumReport.self, forKey: .report)
+        advisoryNotice = try container.decodeIfPresent(String.self, forKey: .advisoryNotice)
+        failureReason = try container.decodeIfPresent(String.self, forKey: .failureReason)
+    }
+
+    static let defaultValue = PremiumRecommendationDetail(
+        status: "not_available",
+        riskReview: nil,
+        checks: [],
+        costAnalysis: nil,
+        sprayWindows: [],
+        report: nil,
+        advisoryNotice: nil,
+        failureReason: nil
+    )
 }
 
 struct RecommendationProductSummary: Decodable, Identifiable {
@@ -652,6 +755,10 @@ struct RecommendationInputDetail: Decodable {
     let crop: String?
     let location: String?
     let season: String?
+    let fieldAcreage: Double?
+    let plannedApplicationDate: String?
+    let fieldLatitude: Double?
+    let fieldLongitude: Double?
     let createdAt: String
 
     enum CodingKeys: String, CodingKey {
@@ -668,6 +775,10 @@ struct RecommendationInputDetail: Decodable {
         case crop
         case location
         case season
+        case fieldAcreage
+        case plannedApplicationDate
+        case fieldLatitude
+        case fieldLongitude
         case createdAt
         case createdAtSnake = "created_at"
     }
@@ -681,6 +792,10 @@ struct RecommendationInputDetail: Decodable {
         crop: nil,
         location: nil,
         season: nil,
+        fieldAcreage: nil,
+        plannedApplicationDate: nil,
+        fieldLatitude: nil,
+        fieldLongitude: nil,
         createdAt: ""
     )
 
@@ -693,6 +808,10 @@ struct RecommendationInputDetail: Decodable {
         crop: String?,
         location: String?,
         season: String?,
+        fieldAcreage: Double?,
+        plannedApplicationDate: String?,
+        fieldLatitude: Double?,
+        fieldLongitude: Double?,
         createdAt: String
     ) {
         self.id = id
@@ -703,6 +822,10 @@ struct RecommendationInputDetail: Decodable {
         self.crop = crop
         self.location = location
         self.season = season
+        self.fieldAcreage = fieldAcreage
+        self.plannedApplicationDate = plannedApplicationDate
+        self.fieldLatitude = fieldLatitude
+        self.fieldLongitude = fieldLongitude
         self.createdAt = createdAt
     }
 
@@ -728,6 +851,10 @@ struct RecommendationInputDetail: Decodable {
         crop = try container.decodeIfPresent(String.self, forKey: .crop)
         location = try container.decodeIfPresent(String.self, forKey: .location)
         season = try container.decodeIfPresent(String.self, forKey: .season)
+        fieldAcreage = try container.decodeIfPresent(Double.self, forKey: .fieldAcreage)
+        plannedApplicationDate = try container.decodeIfPresent(String.self, forKey: .plannedApplicationDate)
+        fieldLatitude = try container.decodeIfPresent(Double.self, forKey: .fieldLatitude)
+        fieldLongitude = try container.decodeIfPresent(Double.self, forKey: .fieldLongitude)
         createdAt =
             try container.decodeIfPresent(String.self, forKey: .createdAt)
             ?? (try container.decodeIfPresent(String.self, forKey: .createdAtSnake))

@@ -264,4 +264,26 @@ class APIClient {
 
         throw NetworkError.timeout
     }
+
+    // MARK: - Push Device Registration
+    func registerPushDevice(deviceToken: String, appVersion: String?) async throws {
+        struct RegisterPushBody: Encodable {
+            let platform: String
+            let deviceToken: String
+            let appVersion: String?
+        }
+
+        struct RegisterPushResponse: Decodable {
+            let success: Bool
+        }
+
+        _ = try await request(
+            .registerPushDevice,
+            body: RegisterPushBody(
+                platform: "ios",
+                deviceToken: deviceToken,
+                appVersion: appVersion
+            )
+        ) as RegisterPushResponse
+    }
 }

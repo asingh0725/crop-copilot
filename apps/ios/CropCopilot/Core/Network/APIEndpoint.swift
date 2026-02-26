@@ -57,6 +57,9 @@ enum APIEndpoint {
     case getFeedback(recommendationId: String)
     case submitFeedback
 
+    // Push
+    case registerPushDevice
+
     private enum HostTarget {
         case primary
         case runtimePreferred
@@ -81,6 +84,7 @@ enum APIEndpoint {
         case .uploadImage: return "/upload"
         case .getUploadViewUrl: return "/upload/view"
         case .getFeedback, .submitFeedback: return "/feedback"
+        case .registerPushDevice: return "/push/register"
         }
     }
 
@@ -104,7 +108,8 @@ enum APIEndpoint {
              .uploadImage,
              .getUploadViewUrl,
              .getFeedback,
-             .submitFeedback:
+             .submitFeedback,
+             .registerPushDevice:
             return .runtimePreferred
         default:
             return .primary
@@ -116,7 +121,7 @@ enum APIEndpoint {
         case .login, .signup, .refreshToken,
              .createInput, .compareProducts,
              .getProductPricing, .uploadImage,
-             .submitFeedback:
+             .submitFeedback, .registerPushDevice:
             return .post
         case .updateProfile:
             return .put

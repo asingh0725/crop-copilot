@@ -8,6 +8,23 @@ interface WorkerResponse {
   batchItemFailures: Array<{ itemIdentifier: string }>;
 }
 
+const noopPremiumQueue = {
+  publishPremiumEnrichment: async () => undefined,
+};
+
+function buildPushPublisher(overrides: Partial<{
+  publishRecommendationReady: () => Promise<void>;
+  publishRecommendationPremiumReady: () => Promise<void>;
+}> = {}) {
+  return {
+    publishRecommendationReady: async () => undefined,
+    publishRecommendationPremiumReady: async () => undefined,
+    publishSubscriptionUpdated: async () => undefined,
+    publishCreditsUpdated: async () => undefined,
+    ...overrides,
+  };
+}
+
 function asWorkerResponse(response: unknown): WorkerResponse {
   assert.ok(response && typeof response === 'object', 'worker did not return an object');
   assert.ok(
@@ -60,11 +77,12 @@ test('process-recommendation-job worker moves job to completed', async () => {
       sources: [],
       modelUsed: 'rag-v2-scaffold',
     }),
-    {
+    buildPushPublisher({
       publishRecommendationReady: async () => {
         publishedEvents += 1;
       },
-    },
+    }),
+    noopPremiumQueue,
     (payload) => {
       metrics.push(payload);
     }
@@ -113,11 +131,12 @@ test('process-recommendation-job skips processing for already completed jobs', a
         modelUsed: 'test',
       };
     },
-    {
+    buildPushPublisher({
       publishRecommendationReady: async () => {
         publishedEvents += 1;
       },
-    },
+    }),
+    noopPremiumQueue,
     (payload) => {
       metrics.push(payload);
     }
@@ -151,11 +170,12 @@ test('process-recommendation-job skips duplicate delivery after completion', asy
         modelUsed: 'rag-v2-scaffold',
       };
     },
-    {
+    buildPushPublisher({
       publishRecommendationReady: async () => {
         publishedEvents += 1;
       },
-    }
+    }),
+    noopPremiumQueue
   );
 
   const accepted = await store.enqueueInput('11111111-1111-4111-8111-111111111111', {
@@ -205,11 +225,12 @@ test('process-recommendation-job does not fail batch when push publish fails', a
       sources: [],
       modelUsed: 'rag-v2-scaffold',
     }),
-    {
+    buildPushPublisher({
       publishRecommendationReady: async () => {
         throw new Error('sns unavailable');
       },
-    },
+    }),
+    noopPremiumQueue,
     (payload) => {
       metrics.push(payload);
     }
@@ -235,9 +256,8 @@ test('process-recommendation-job reports failed metrics when pipeline throws', a
     async () => {
       throw new Error('pipeline crashed');
     },
-    {
-      publishRecommendationReady: async () => undefined,
-    },
+    buildPushPublisher(),
+    noopPremiumQueue,
     (payload) => {
       metrics.push(payload);
     }

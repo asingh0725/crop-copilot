@@ -1,10 +1,10 @@
 import { createClient } from "@/lib/supabase/server";
-import { createApiClient } from "@/lib/api-client";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { PlanOverrideCard } from "@/components/admin/plan-override-card";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -45,6 +45,44 @@ interface AdminStatusResponse {
     ndcgScore: number | null;
     feedbackCount: number;
   } | null;
+  compliance?: {
+    available: boolean;
+    discovery: {
+      total: number;
+      pending: number;
+      running: number;
+      completed: number;
+      error: number;
+      sourcesTotal: number;
+      progressPct: number;
+    };
+    ingestion: {
+      totalSources: number;
+      pending: number;
+      running: number;
+      indexed: number;
+      error: number;
+      totalChunks: number;
+      totalFacts: number;
+    };
+    coverage: {
+      totalCells: number;
+      coveredCells: number;
+      avgCoverageScore: number;
+      staleCells: number;
+    };
+    latestRun: {
+      status: string;
+      trigger: string;
+      startedAt: string;
+      endedAt: string | null;
+      sourcesQueued: number;
+      sourcesProcessed: number;
+      chunksCreated: number;
+      factsExtracted: number;
+      errors: number;
+    } | null;
+  };
   analytics: Analytics;
   errors: { sources: { count: number; sample: ErrorSource[] } };
 }
@@ -75,6 +113,33 @@ function timeAgo(iso: string): string {
   const hrs = Math.floor(mins / 60);
   if (hrs < 24) return `${hrs}h ago`;
   return `${Math.floor(hrs / 24)}d ago`;
+}
+
+async function fetchGatewayJson<T>(params: {
+  baseUrl: string;
+  path: string;
+  accessToken: string;
+  timeoutMs?: number;
+}): Promise<T> {
+  const { baseUrl, path, accessToken, timeoutMs = 8_000 } = params;
+  if (!baseUrl) {
+    throw new Error("API base URL is not configured");
+  }
+
+  const response = await fetch(`${baseUrl}${path}`, {
+    cache: "no-store",
+    signal: AbortSignal.timeout(timeoutMs),
+    headers: {
+      Accept: "application/json",
+      ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Gateway request failed (${response.status})`);
+  }
+
+  return (await response.json()) as T;
 }
 
 function StatCard({
@@ -119,14 +184,19 @@ export default async function AdminPage() {
   const {
     data: { session },
   } = await supabase.auth.getSession();
-  const client = createApiClient(session?.access_token ?? "");
-
-  // Fetch admin status + health check in parallel
-  const gatewayBase =
-    process.env.API_GATEWAY_URL ?? process.env.NEXT_PUBLIC_API_GATEWAY_URL ?? "";
+  const accessToken = session?.access_token ?? "";
+  const gatewayBase = (
+    process.env.API_GATEWAY_URL ??
+    process.env.NEXT_PUBLIC_API_GATEWAY_URL ??
+    ""
+  ).replace(/\/+$/, "");
 
   const [statusResult, healthResult] = await Promise.allSettled([
-    client.get<AdminStatusResponse>("/api/v1/admin/discovery/status?pageSize=1"),
+    fetchGatewayJson<AdminStatusResponse>({
+      baseUrl: gatewayBase,
+      path: "/api/v1/admin/discovery/status?pageSize=1",
+      accessToken,
+    }),
     (async () => {
       const start = Date.now();
       const res = await fetch(`${gatewayBase}/api/v1/health`, {
@@ -138,6 +208,13 @@ export default async function AdminPage() {
       return { ok: res.ok, latencyMs, body };
     })(),
   ]);
+
+  const statusError =
+    statusResult.status === "rejected"
+      ? statusResult.reason instanceof Error
+        ? statusResult.reason.message
+        : "Failed to load admin status"
+      : null;
 
   const data = statusResult.status === "fulfilled" ? statusResult.value : null;
   const health = healthResult.status === "fulfilled" ? healthResult.value : null;
@@ -170,6 +247,34 @@ export default async function AdminPage() {
     error: 0,
   };
   const errorSources = data?.errors?.sources ?? { count: 0, sample: [] };
+  const compliance = data?.compliance ?? {
+    available: false,
+    discovery: {
+      total: 0,
+      pending: 0,
+      running: 0,
+      completed: 0,
+      error: 0,
+      sourcesTotal: 0,
+      progressPct: 0,
+    },
+    ingestion: {
+      totalSources: 0,
+      pending: 0,
+      running: 0,
+      indexed: 0,
+      error: 0,
+      totalChunks: 0,
+      totalFacts: 0,
+    },
+    coverage: {
+      totalCells: 0,
+      coveredCells: 0,
+      avgCoverageScore: 0,
+      staleCells: 0,
+    },
+    latestRun: null,
+  };
   const helpfulRate =
     analytics.feedback > 0
       ? Math.round((analytics.helpfulFeedback / analytics.feedback) * 100)
@@ -185,10 +290,25 @@ export default async function AdminPage() {
             App health, analytics, and pipeline status
           </p>
         </div>
-        <p className="text-xs text-muted-foreground pt-1">
-          Loaded {new Date().toLocaleTimeString("en-US", { timeZoneName: "short" })}
-        </p>
+        <div className="text-right">
+          <p className="text-xs text-muted-foreground">
+            Loaded {new Date().toLocaleTimeString("en-US", { timeZoneName: "short" })}
+          </p>
+        </div>
       </div>
+
+      {statusError && (
+        <Card className="border-destructive/30 bg-destructive/5">
+          <CardContent className="pt-5">
+            <p className="text-sm font-medium text-destructive">Admin status API unavailable</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              {statusError}. Configure `API_GATEWAY_URL` / `NEXT_PUBLIC_API_GATEWAY_URL` for local data and billing visibility.
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
+      <PlanOverrideCard currentUserId={user.id} />
 
       {/* ══ API Health ═══════════════════════════════════════════════════════ */}
       <section className="space-y-3">
@@ -505,6 +625,76 @@ export default async function AdminPage() {
             </CardContent>
           </Card>
         </div>
+      </section>
+
+      <section className="space-y-3">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <h2 className="text-lg font-semibold">Compliance Ingestion</h2>
+            <Badge variant={compliance.available ? "default" : "secondary"} className="text-xs">
+              {compliance.available ? "active" : "not initialized"}
+            </Badge>
+          </div>
+          <Link
+            href="/admin/compliance"
+            className="text-sm text-muted-foreground hover:text-foreground underline underline-offset-4"
+          >
+            Open compliance dashboard →
+          </Link>
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <StatCard
+            label="Coverage Cells"
+            value={fmt(compliance.coverage.totalCells)}
+            sub={`${fmt(compliance.coverage.coveredCells)} covered`}
+          />
+          <StatCard
+            label="Indexed Sources"
+            value={fmt(compliance.ingestion.indexed)}
+            sub={`${fmt(compliance.ingestion.totalChunks)} chunks`}
+          />
+          <StatCard
+            label="Facts Extracted"
+            value={fmt(compliance.ingestion.totalFacts)}
+            sub={`${fmt(compliance.discovery.sourcesTotal)} discovered URLs`}
+          />
+          <StatCard
+            label="Stale Cells (>72h)"
+            value={fmt(compliance.coverage.staleCells)}
+            color={compliance.coverage.staleCells > 0 ? "text-yellow-600" : "text-foreground"}
+          />
+        </div>
+
+        {compliance.latestRun && (
+          <Card>
+            <CardContent className="pt-4 pb-4 px-4 text-sm">
+              <div className="flex flex-wrap items-center gap-3">
+                <Badge
+                  variant={
+                    compliance.latestRun.status === "completed"
+                      ? "default"
+                      : compliance.latestRun.status === "running"
+                      ? "outline"
+                      : "destructive"
+                  }
+                  className="text-xs"
+                >
+                  {compliance.latestRun.status}
+                </Badge>
+                <span className="text-muted-foreground">
+                  {compliance.latestRun.trigger} run {timeAgo(compliance.latestRun.startedAt)}
+                </span>
+                <span className="text-muted-foreground">
+                  {fmt(compliance.latestRun.sourcesProcessed)} / {fmt(compliance.latestRun.sourcesQueued)} processed
+                </span>
+                <span className="text-muted-foreground">
+                  {fmt(compliance.latestRun.factsExtracted)} facts
+                </span>
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </section>
     </div>
   );

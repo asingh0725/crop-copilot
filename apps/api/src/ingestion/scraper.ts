@@ -25,13 +25,17 @@ export interface ScrapedDocument {
   fetchedAt: string;
 }
 
+export interface ScrapeOptions {
+  pdfMode?: 'auto' | 'pdf_parse_only';
+}
+
 /**
  * Fetch and parse a source URL into a structured document.
  * Throws on non-2xx responses or network errors.
  * PDFs are parsed via LlamaParse (requires LLAMA_CLOUD_API_KEY).
  * Returns an empty document for sites that block scraping (403/406/429) so sources aren't stuck in error.
  */
-export async function scrapeUrl(url: string): Promise<ScrapedDocument> {
+export async function scrapeUrl(url: string, options: ScrapeOptions = {}): Promise<ScrapedDocument> {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
 
@@ -58,7 +62,8 @@ export async function scrapeUrl(url: string): Promise<ScrapedDocument> {
     const contentType = response.headers.get('content-type') ?? '';
     if (contentType.includes('application/pdf')) {
       const buffer = await response.arrayBuffer();
-      if (process.env.LLAMA_CLOUD_API_KEY) {
+      const pdfMode = options.pdfMode ?? 'auto';
+      if (pdfMode !== 'pdf_parse_only' && process.env.LLAMA_CLOUD_API_KEY) {
         try {
           return await parsePdfWithLlamaParse(buffer, url);
         } catch (err: unknown) {
@@ -344,35 +349,102 @@ function parseMarkdownToDocument(markdown: string, url: string): ScrapedDocument
 /**
  * Parse a PDF using the pdf-parse library (no API key required).
  * Used as a fallback when LlamaParse is unavailable or rate-limited.
- * Compatible with both pdf-parse v1 (function export) and v2 (class export).
+ * Compatible with both pdf-parse v1 (function export) and v2 (PDFParse class).
  */
 async function parsePdfWithPdfParse(buffer: ArrayBuffer, url: string): Promise<ScrapedDocument> {
-  // Dynamic import to avoid bundling issues when LLAMA_CLOUD_API_KEY is set
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const pdfParseModule: unknown = require('pdf-parse');
-
   type PdfParseFn = (buf: Buffer) => Promise<{ text: string }>;
-  type PdfParseClass = new (opts: { data: Buffer }) => { getText(): Promise<{ text: string }> };
+  type PdfParseInstance = {
+    getText(): Promise<{ text?: string }>;
+    destroy?: () => Promise<void> | void;
+  };
+  type PdfParseClass = new (opts: { data: Buffer }) => PdfParseInstance;
+  type UnknownModule = Record<string, unknown> | null | undefined;
+
+  function pickPdfParseV2Class(mod: UnknownModule): PdfParseClass | null {
+    const candidates: unknown[] = [
+      mod,
+      mod?.PDFParse,
+      (mod?.default as UnknownModule)?.PDFParse,
+      mod?.default,
+      (mod?.module as UnknownModule)?.exports,
+      ((mod?.module as UnknownModule)?.exports as UnknownModule)?.PDFParse,
+    ];
+
+    for (const candidate of candidates) {
+      if (
+        typeof candidate === 'function' &&
+        typeof (candidate as { prototype?: { getText?: unknown } }).prototype?.getText === 'function'
+      ) {
+        return candidate as PdfParseClass;
+      }
+    }
+    return null;
+  }
+
+  function pickPdfParseV1Function(mod: UnknownModule): PdfParseFn | null {
+    const candidates: unknown[] = [mod, mod?.default];
+    for (const candidate of candidates) {
+      if (
+        typeof candidate === 'function' &&
+        typeof (candidate as { prototype?: { getText?: unknown } }).prototype?.getText !== 'function'
+      ) {
+        return candidate as PdfParseFn;
+      }
+    }
+    return null;
+  }
+
+  const moduleCandidates: UnknownModule[] = [];
+
+  // Prefer the documented v2 usage path (import { PDFParse } from 'pdf-parse').
+  try {
+    const imported = (await import('pdf-parse')) as UnknownModule;
+    moduleCandidates.push(imported);
+  } catch {
+    // fall through to require-based loading
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const required = (() => { try { return require('pdf-parse') as UnknownModule; } catch { return null; } })();
+  if (required) {
+    moduleCandidates.push(required);
+  }
 
   let text: string;
   const buf = Buffer.from(buffer);
+  text = '';
 
-  if (typeof pdfParseModule === 'function') {
-    // v1: module exports function directly
-    const result = await (pdfParseModule as PdfParseFn)(buf);
-    text = result.text ?? '';
-  } else if (typeof (pdfParseModule as Record<string, unknown>)?.default === 'function') {
-    // v1 ESM default
-    const result = await ((pdfParseModule as Record<string, unknown>).default as PdfParseFn)(buf);
-    text = result.text ?? '';
-  } else {
-    // v2: class-based export
-    const mod = pdfParseModule as Record<string, unknown>;
-    const PDFParse = (mod.PDFParse ?? mod.default) as PdfParseClass | undefined;
-    if (!PDFParse) throw new Error('pdf-parse: unsupported export shape');
-    const parser = new PDFParse({ data: buf });
-    const result = await parser.getText();
-    text = result.text ?? '';
+  for (const candidateModule of moduleCandidates) {
+    const v2Class = pickPdfParseV2Class(candidateModule);
+    if (v2Class) {
+      const parser = new v2Class({ data: buf });
+      try {
+        const result = await parser.getText();
+        text = result.text ?? '';
+        break;
+      } finally {
+        await parser.destroy?.();
+      }
+    }
+
+    const v1Function = pickPdfParseV1Function(candidateModule);
+    if (v1Function) {
+      const result = await v1Function(buf);
+      text = result.text ?? '';
+      break;
+    }
+  }
+
+  if (!text && moduleCandidates.length === 0) {
+    throw new Error('pdf-parse module is unavailable');
+  }
+
+  if (!text) {
+    const sample = moduleCandidates
+      .slice(0, 2)
+      .map((mod) => Object.keys(mod ?? {}).slice(0, 12))
+      .flat();
+    throw new Error(`pdf-parse: unsupported export shape (${sample.join(', ')})`);
   }
 
   if (!text.trim()) {

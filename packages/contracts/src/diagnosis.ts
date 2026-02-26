@@ -22,6 +22,14 @@ export const CreateInputCommandSchema = z.object({
   location: z.string().max(120).optional(),
   crop: z.string().max(80).optional(),
   season: z.string().max(80).optional(),
+  fieldAcreage: z.number().positive().max(100_000).nullable().optional(),
+  plannedApplicationDate: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, 'plannedApplicationDate must be YYYY-MM-DD')
+    .nullable()
+    .optional(),
+  fieldLatitude: z.number().min(-90).max(90).nullable().optional(),
+  fieldLongitude: z.number().min(-180).max(180).nullable().optional(),
 });
 
 export const CreateInputAcceptedSchema = z.object({

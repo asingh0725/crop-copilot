@@ -20,7 +20,9 @@ export interface FoundationStackProps extends StackProps {
 export class FoundationStack extends Stack {
   readonly artifactsBucket: s3.IBucket;
   readonly recommendationQueue: sqs.IQueue;
+  readonly premiumEnrichmentQueue: sqs.IQueue;
   readonly ingestionQueue: sqs.IQueue;
+  readonly complianceIngestionQueue: sqs.IQueue;
   readonly pushEventsTopic: sns.ITopic;
   readonly billingAlertsTopicArn: string;
 
@@ -104,6 +106,23 @@ export class FoundationStack extends Stack {
     });
     this.recommendationQueue = recommendationQueue;
 
+    const premiumEnrichmentDlq = new sqs.Queue(this, 'PremiumEnrichmentDlq', {
+      queueName: `${config.projectSlug}-${config.envName}-premium-enrichment-dlq`,
+      encryption: sqs.QueueEncryption.SQS_MANAGED,
+      retentionPeriod: Duration.days(14),
+    });
+
+    const premiumEnrichmentQueue = new sqs.Queue(this, 'PremiumEnrichmentQueue', {
+      queueName: `${config.projectSlug}-${config.envName}-premium-enrichment`,
+      encryption: sqs.QueueEncryption.SQS_MANAGED,
+      visibilityTimeout: Duration.seconds(180),
+      deadLetterQueue: {
+        queue: premiumEnrichmentDlq,
+        maxReceiveCount: 5,
+      },
+    });
+    this.premiumEnrichmentQueue = premiumEnrichmentQueue;
+
     const mobilePushEventsTopic = new sns.Topic(this, 'MobilePushEventsTopic', {
       displayName: `Crop Copilot ${config.envName} mobile push events`,
       topicName: `${config.projectSlug}-${config.envName}-mobile-push-events`,
@@ -126,6 +145,23 @@ export class FoundationStack extends Stack {
       },
     });
     this.ingestionQueue = ingestionQueue;
+
+    const complianceIngestionDlq = new sqs.Queue(this, 'ComplianceIngestionDlq', {
+      queueName: `${config.projectSlug}-${config.envName}-compliance-ingestion-dlq`,
+      encryption: sqs.QueueEncryption.SQS_MANAGED,
+      retentionPeriod: Duration.days(14),
+    });
+
+    const complianceIngestionQueue = new sqs.Queue(this, 'ComplianceIngestionQueue', {
+      queueName: `${config.projectSlug}-${config.envName}-compliance-ingestion`,
+      encryption: sqs.QueueEncryption.SQS_MANAGED,
+      visibilityTimeout: Duration.seconds(600),
+      deadLetterQueue: {
+        queue: complianceIngestionDlq,
+        maxReceiveCount: 5,
+      },
+    });
+    this.complianceIngestionQueue = complianceIngestionQueue;
 
     // ── CloudWatch Metrics ─────────────────────────────────────────────────────
     const recommendationLatencyMetric = new cloudwatch.Metric({
@@ -218,11 +254,71 @@ export class FoundationStack extends Stack {
       treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
     });
 
+    const premiumQueueBacklogAlarm = new cloudwatch.Alarm(this, 'PremiumQueueBacklogAlarm', {
+      alarmName: `${config.projectSlug}-${config.envName}-premium-queue-backlog`,
+      alarmDescription: 'Premium enrichment queue backlog exceeded expected threshold.',
+      metric: premiumEnrichmentQueue.metricApproximateNumberOfMessagesVisible({
+        statistic: 'Average',
+        period: Duration.minutes(5),
+      }),
+      threshold: 25,
+      evaluationPeriods: 2,
+      datapointsToAlarm: 2,
+      treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
+    });
+
+    const premiumDlqAlarm = new cloudwatch.Alarm(this, 'PremiumDlqAlarm', {
+      alarmName: `${config.projectSlug}-${config.envName}-premium-enrichment-dlq-depth`,
+      alarmDescription: 'Premium enrichment DLQ has pending messages.',
+      metric: premiumEnrichmentDlq.metricApproximateNumberOfMessagesVisible({
+        statistic: 'Maximum',
+        period: Duration.minutes(5),
+      }),
+      threshold: 1,
+      evaluationPeriods: 1,
+      datapointsToAlarm: 1,
+      treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
+    });
+
+    const complianceQueueBacklogAlarm = new cloudwatch.Alarm(
+      this,
+      'ComplianceQueueBacklogAlarm',
+      {
+        alarmName: `${config.projectSlug}-${config.envName}-compliance-queue-backlog`,
+        alarmDescription: 'Compliance ingestion queue backlog exceeded expected threshold.',
+        metric: complianceIngestionQueue.metricApproximateNumberOfMessagesVisible({
+          statistic: 'Average',
+          period: Duration.minutes(5),
+        }),
+        threshold: 30,
+        evaluationPeriods: 2,
+        datapointsToAlarm: 2,
+        treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
+      }
+    );
+
+    const complianceDlqAlarm = new cloudwatch.Alarm(this, 'ComplianceDlqAlarm', {
+      alarmName: `${config.projectSlug}-${config.envName}-compliance-ingestion-dlq-depth`,
+      alarmDescription: 'Compliance ingestion DLQ has pending messages.',
+      metric: complianceIngestionDlq.metricApproximateNumberOfMessagesVisible({
+        statistic: 'Maximum',
+        period: Duration.minutes(5),
+      }),
+      threshold: 1,
+      evaluationPeriods: 1,
+      datapointsToAlarm: 1,
+      treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
+    });
+
     for (const alarm of [
       queueBacklogAlarm,
       recommendationDlqAlarm,
       recommendationFailureAlarm,
       recommendationCostAlarm,
+      premiumQueueBacklogAlarm,
+      premiumDlqAlarm,
+      complianceQueueBacklogAlarm,
+      complianceDlqAlarm,
     ]) {
       alarm.addAlarmAction(new cloudwatchActions.SnsAction(billingAlertsTopic));
     }
@@ -241,7 +337,15 @@ export class FoundationStack extends Stack {
               statistic: 'Average',
               period: Duration.minutes(5),
             }),
+            premiumEnrichmentQueue.metricApproximateNumberOfMessagesVisible({
+              statistic: 'Average',
+              period: Duration.minutes(5),
+            }),
             ingestionQueue.metricApproximateNumberOfMessagesVisible({
+              statistic: 'Average',
+              period: Duration.minutes(5),
+            }),
+            complianceIngestionQueue.metricApproximateNumberOfMessagesVisible({
               statistic: 'Average',
               period: Duration.minutes(5),
             }),
@@ -254,7 +358,15 @@ export class FoundationStack extends Stack {
               statistic: 'Maximum',
               period: Duration.minutes(5),
             }),
+            premiumEnrichmentDlq.metricApproximateNumberOfMessagesVisible({
+              statistic: 'Maximum',
+              period: Duration.minutes(5),
+            }),
             ingestionDlq.metricApproximateNumberOfMessagesVisible({
+              statistic: 'Maximum',
+              period: Duration.minutes(5),
+            }),
+            complianceIngestionDlq.metricApproximateNumberOfMessagesVisible({
               statistic: 'Maximum',
               period: Duration.minutes(5),
             }),
@@ -354,6 +466,12 @@ export class FoundationStack extends Stack {
       description: 'SQS queue URL for recommendation job requests.',
     });
 
+    new ssm.StringParameter(this, 'ParameterPremiumEnrichmentQueueUrl', {
+      parameterName: `${parameterPrefix}/pipeline/premium-enrichment-queue-url`,
+      stringValue: premiumEnrichmentQueue.queueUrl,
+      description: 'SQS queue URL for premium enrichment jobs.',
+    });
+
     new ssm.StringParameter(this, 'ParameterRecommendationStateMachineArn', {
       parameterName: `${parameterPrefix}/pipeline/recommendation-state-machine-arn`,
       stringValue: recommendationPipelineStateMachine.stateMachineArn,
@@ -370,6 +488,12 @@ export class FoundationStack extends Stack {
       parameterName: `${parameterPrefix}/pipeline/ingestion-queue-url`,
       stringValue: ingestionQueue.queueUrl,
       description: 'SQS queue URL for ingestion batch requests.',
+    });
+
+    new ssm.StringParameter(this, 'ParameterComplianceIngestionQueueUrl', {
+      parameterName: `${parameterPrefix}/pipeline/compliance-ingestion-queue-url`,
+      stringValue: complianceIngestionQueue.queueUrl,
+      description: 'SQS queue URL for compliance ingestion batch requests.',
     });
 
     new ssm.StringParameter(this, 'ParameterIngestionStateMachineArn', {
@@ -412,6 +536,11 @@ export class FoundationStack extends Stack {
       description: 'Step Functions state machine ARN for async recommendation pipeline.',
     });
 
+    new CfnOutput(this, 'PremiumEnrichmentQueueUrl', {
+      value: premiumEnrichmentQueue.queueUrl,
+      description: 'SQS queue URL for premium enrichment job requests.',
+    });
+
     new CfnOutput(this, 'PushEventsTopicArn', {
       value: mobilePushEventsTopic.topicArn,
       description: 'SNS topic ARN for recommendation-ready push event fanout.',
@@ -420,6 +549,11 @@ export class FoundationStack extends Stack {
     new CfnOutput(this, 'IngestionQueueUrl', {
       value: ingestionQueue.queueUrl,
       description: 'SQS queue URL for ingestion batch processing.',
+    });
+
+    new CfnOutput(this, 'ComplianceIngestionQueueUrl', {
+      value: complianceIngestionQueue.queueUrl,
+      description: 'SQS queue URL for compliance ingestion batch processing.',
     });
 
     new CfnOutput(this, 'IngestionStateMachineArn', {

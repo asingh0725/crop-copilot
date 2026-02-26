@@ -1,10 +1,10 @@
 import { createClient } from "@/lib/supabase/server";
-import { createApiClient } from "@/lib/api-client";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { PipelineManualControls } from "@/components/admin/pipeline-manual-controls";
 
 interface DiscoveryRow {
   id: string;
@@ -48,6 +48,79 @@ interface DiscoveryStatusResponse {
     sourcesTotal: number;
   };
   ingestion: IngestionStats;
+  compliance?: {
+    available: boolean;
+    discovery: {
+      total: number;
+      pending: number;
+      running: number;
+      completed: number;
+      error: number;
+      sourcesTotal: number;
+      progressPct: number;
+    };
+    ingestion: {
+      totalSources: number;
+      pending: number;
+      running: number;
+      indexed: number;
+      error: number;
+      totalChunks: number;
+      totalFacts: number;
+    };
+    coverage: {
+      totalCells: number;
+      coveredCells: number;
+      avgCoverageScore: number;
+      staleCells: number;
+    };
+    latestRun: {
+      status: string;
+      trigger: string;
+      startedAt: string;
+      endedAt: string | null;
+      sourcesQueued: number;
+      sourcesProcessed: number;
+      chunksCreated: number;
+      factsExtracted: number;
+      errors: number;
+    } | null;
+    recentRuns: Array<{
+      id: string;
+      status: string;
+      trigger: string;
+      startedAt: string;
+      endedAt: string | null;
+      sourcesQueued: number;
+      sourcesProcessed: number;
+      chunksCreated: number;
+      factsExtracted: number;
+      errors: number;
+    }>;
+    discoveryRows: Array<{
+      id: string;
+      state: string;
+      crop: string;
+      status: string;
+      sourcesFound: number;
+      lastDiscoveredAt: string | null;
+      createdAt: string;
+    }>;
+    sourceRows: Array<{
+      id: string;
+      title: string;
+      url: string;
+      state: string | null;
+      crop: string | null;
+      status: string;
+      chunksCount: number;
+      factsCount: number;
+      lastFetchedAt: string | null;
+      lastIndexedAt: string | null;
+      errorMessage: string | null;
+      updatedAt: string;
+    }>;
+  };
   latestModel: LatestModel | null;
   rows: DiscoveryRow[];
   pagination: {
@@ -68,6 +141,26 @@ const DISCOVERY_STATUS_BADGE: Record<
   error: { label: "Error", variant: "destructive" },
 };
 
+const COMPLIANCE_DISCOVERY_STATUS_BADGE: Record<
+  "pending" | "running" | "completed" | "error",
+  { label: string; variant: "secondary" | "outline" | "default" | "destructive" }
+> = {
+  pending: { label: "Pending", variant: "secondary" },
+  running: { label: "Running", variant: "outline" },
+  completed: { label: "Completed", variant: "default" },
+  error: { label: "Error", variant: "destructive" },
+};
+
+const COMPLIANCE_SOURCE_STATUS_BADGE: Record<
+  "pending" | "running" | "indexed" | "error",
+  { label: string; variant: "secondary" | "outline" | "default" | "destructive" }
+> = {
+  pending: { label: "Pending", variant: "secondary" },
+  running: { label: "Running", variant: "outline" },
+  indexed: { label: "Indexed", variant: "default" },
+  error: { label: "Error", variant: "destructive" },
+};
+
 function formatDate(iso: string | null): string {
   if (!iso) return "—";
   return new Date(iso).toLocaleString("en-US", {
@@ -76,6 +169,33 @@ function formatDate(iso: string | null): string {
     hour: "2-digit",
     minute: "2-digit",
   });
+}
+
+async function fetchGatewayJson<T>(params: {
+  baseUrl: string;
+  path: string;
+  accessToken: string;
+  timeoutMs?: number;
+}): Promise<T> {
+  const { baseUrl, path, accessToken, timeoutMs = 8_000 } = params;
+  if (!baseUrl) {
+    throw new Error("API base URL is not configured");
+  }
+
+  const response = await fetch(`${baseUrl}${path}`, {
+    cache: "no-store",
+    signal: AbortSignal.timeout(timeoutMs),
+    headers: {
+      Accept: "application/json",
+      ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Gateway request failed (${response.status})`);
+  }
+
+  return (await response.json()) as T;
 }
 
 function StatCard({
@@ -116,14 +236,27 @@ export default async function DiscoveryStatusPage() {
   const {
     data: { session },
   } = await supabase.auth.getSession();
-
-  const client = createApiClient(session?.access_token ?? "");
+  const accessToken = session?.access_token ?? "";
+  const gatewayBase = (
+    process.env.API_GATEWAY_URL ??
+    process.env.NEXT_PUBLIC_API_GATEWAY_URL ??
+    ""
+  ).replace(/\/+$/, "");
 
   const [statusResult] = await Promise.allSettled([
-    client.get<DiscoveryStatusResponse>(
-      "/api/v1/admin/discovery/status?pageSize=200"
-    ),
+    fetchGatewayJson<DiscoveryStatusResponse>({
+      baseUrl: gatewayBase,
+      path: "/api/v1/admin/discovery/status?pageSize=200",
+      accessToken,
+    }),
   ]);
+
+  const statusError =
+    statusResult.status === "rejected"
+      ? statusResult.reason instanceof Error
+        ? statusResult.reason.message
+        : "Failed to load discovery status"
+      : null;
 
   const data =
     statusResult.status === "fulfilled" ? statusResult.value : null;
@@ -146,6 +279,40 @@ export default async function DiscoveryStatusPage() {
   };
   const latestModel = data?.latestModel ?? null;
   const rows = data?.rows ?? [];
+  const compliance = data?.compliance ?? {
+    available: false,
+    discovery: {
+      total: 0,
+      pending: 0,
+      running: 0,
+      completed: 0,
+      error: 0,
+      sourcesTotal: 0,
+      progressPct: 0,
+    },
+    ingestion: {
+      totalSources: 0,
+      pending: 0,
+      running: 0,
+      indexed: 0,
+      error: 0,
+      totalChunks: 0,
+      totalFacts: 0,
+    },
+    coverage: {
+      totalCells: 0,
+      coveredCells: 0,
+      avgCoverageScore: 0,
+      staleCells: 0,
+    },
+    latestRun: null,
+    recentRuns: [],
+    discoveryRows: [],
+    sourceRows: [],
+  };
+  const complianceDiscoveryRows = compliance.discoveryRows ?? [];
+  const complianceSourceRows = compliance.sourceRows ?? [];
+  const complianceRecentRuns = compliance.recentRuns ?? [];
 
   // How many combinations are left ÷ batch-size-per-minute (10 per 2 min)
   const runsRemaining = Math.ceil((stats.total - stats.completed) / 10);
@@ -165,6 +332,19 @@ export default async function DiscoveryStatusPage() {
           End-to-end status: source discovery → ingestion → ML training
         </p>
       </div>
+
+      {statusError && (
+        <Card className="border-destructive/30 bg-destructive/5">
+          <CardContent className="pt-5">
+            <p className="text-sm text-destructive font-medium">Discovery status API unavailable</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              {statusError}. Set `API_GATEWAY_URL` / `NEXT_PUBLIC_API_GATEWAY_URL`, then run Manual Pipeline Controls to bootstrap local data.
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
+      <PipelineManualControls />
 
       {/* ══ Phase 1: Source Discovery ════════════════════════════════════════ */}
       <section className="space-y-4">
@@ -276,6 +456,302 @@ export default async function DiscoveryStatusPage() {
             </CardContent>
           </Card>
         )}
+      </section>
+
+      {/* ══ Phase 3: ML Model Training ═══════════════════════════════════════ */}
+      <section className="space-y-4">
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            Phase 2B
+          </span>
+          <h2 className="text-lg font-semibold">Compliance Ingestion</h2>
+          <Link
+            href="/admin/compliance"
+            className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-4 ml-auto mr-2"
+          >
+            detailed dashboard
+          </Link>
+          <Badge variant={compliance.available ? "default" : "secondary"} className="text-xs">
+            {compliance.available ? "Active" : "Not initialized"}
+          </Badge>
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
+          <StatCard label="States × Crops" value={compliance.coverage.totalCells} />
+          <StatCard label="Covered Cells" value={compliance.coverage.coveredCells} color="text-green-600" />
+          <StatCard label="Discovery Done" value={`${compliance.discovery.progressPct}%`} />
+          <StatCard label="Indexed Sources" value={compliance.ingestion.indexed} color="text-green-600" />
+          <StatCard label="Pending" value={compliance.ingestion.pending} color="text-muted-foreground" />
+          <StatCard label="Running" value={compliance.ingestion.running} color="text-blue-600" />
+          <StatCard label="Chunks" value={compliance.ingestion.totalChunks} />
+          <StatCard label="Facts" value={compliance.ingestion.totalFacts} />
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+          <Card>
+            <CardHeader className="pb-2 pt-4">
+              <CardTitle className="text-sm">Compliance Discovery Queue</CardTitle>
+            </CardHeader>
+            <CardContent className="pt-0 pb-4 space-y-2">
+              <div className="flex items-center justify-between text-xs text-muted-foreground">
+                <span>
+                  {compliance.discovery.completed} / {compliance.discovery.total} completed
+                </span>
+                <span>{compliance.discovery.sourcesTotal} URLs discovered</span>
+              </div>
+              <Progress value={compliance.discovery.progressPct} className="h-2" />
+              <div className="grid grid-cols-4 gap-2 text-xs text-muted-foreground">
+                <span>pending {compliance.discovery.pending}</span>
+                <span>running {compliance.discovery.running}</span>
+                <span>done {compliance.discovery.completed}</span>
+                <span className={compliance.discovery.error > 0 ? "text-destructive" : ""}>
+                  error {compliance.discovery.error}
+                </span>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-2 pt-4">
+              <CardTitle className="text-sm">Compliance Source Processing</CardTitle>
+            </CardHeader>
+            <CardContent className="pt-0 pb-4 space-y-2">
+              <div className="flex items-center justify-between text-xs text-muted-foreground">
+                <span>
+                  {compliance.ingestion.indexed} / {compliance.ingestion.totalSources} indexed
+                </span>
+                <span>
+                  {compliance.ingestion.totalChunks} chunks · {compliance.ingestion.totalFacts} facts
+                </span>
+              </div>
+              <Progress
+                value={
+                  compliance.ingestion.totalSources > 0
+                    ? (compliance.ingestion.indexed / compliance.ingestion.totalSources) * 100
+                    : 0
+                }
+                className="h-2"
+              />
+              <div className="grid grid-cols-4 gap-2 text-xs text-muted-foreground">
+                <span>pending {compliance.ingestion.pending}</span>
+                <span>running {compliance.ingestion.running}</span>
+                <span>indexed {compliance.ingestion.indexed}</span>
+                <span className={compliance.ingestion.error > 0 ? "text-destructive" : ""}>
+                  error {compliance.ingestion.error}
+                </span>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        <Card>
+          <CardContent className="pt-5 pb-4 space-y-2 text-sm">
+            <div className="flex flex-wrap items-center gap-3">
+              <span className="text-muted-foreground">
+                Avg coverage score:{" "}
+                <span className="font-medium text-foreground">
+                  {compliance.coverage.avgCoverageScore.toFixed(2)}
+                </span>
+              </span>
+              <span className="text-muted-foreground">
+                Stale cells (&gt;72h):{" "}
+                <span className={compliance.coverage.staleCells > 0 ? "font-medium text-yellow-600" : "font-medium text-foreground"}>
+                  {compliance.coverage.staleCells}
+                </span>
+              </span>
+            </div>
+            {compliance.latestRun && (
+              <div className="text-muted-foreground">
+                Latest run: <span className="font-medium text-foreground">{compliance.latestRun.status}</span>{" "}
+                ({compliance.latestRun.trigger}) · {compliance.latestRun.sourcesProcessed}/{compliance.latestRun.sourcesQueued} sources ·{" "}
+                {compliance.latestRun.factsExtracted} facts extracted
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">Recent Compliance Runs</CardTitle>
+          </CardHeader>
+          <CardContent className="px-0 pb-0">
+            {complianceRecentRuns.length === 0 ? (
+              <p className="text-center text-muted-foreground py-10 text-sm">
+                No compliance runs yet.
+              </p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b bg-muted/50">
+                      <th className="text-left px-4 py-2 font-medium text-muted-foreground">Status</th>
+                      <th className="text-left px-4 py-2 font-medium text-muted-foreground">Trigger</th>
+                      <th className="text-right px-4 py-2 font-medium text-muted-foreground">Sources</th>
+                      <th className="text-right px-4 py-2 font-medium text-muted-foreground">Chunks</th>
+                      <th className="text-right px-4 py-2 font-medium text-muted-foreground">Facts</th>
+                      <th className="text-right px-4 py-2 font-medium text-muted-foreground">Errors</th>
+                      <th className="text-left px-4 py-2 font-medium text-muted-foreground">Started</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {complianceRecentRuns.map((run, index) => {
+                      const status =
+                        run.status === "completed"
+                          ? { label: "Completed", variant: "default" as const }
+                          : run.status === "running"
+                          ? { label: "Running", variant: "outline" as const }
+                          : run.status === "failed"
+                          ? { label: "Failed", variant: "destructive" as const }
+                          : { label: run.status, variant: "secondary" as const };
+                      return (
+                        <tr
+                          key={run.id}
+                          className={`border-b last:border-0 ${index % 2 === 0 ? "" : "bg-muted/20"}`}
+                        >
+                          <td className="px-4 py-2">
+                            <Badge variant={status.variant} className="text-xs">
+                              {status.label}
+                            </Badge>
+                          </td>
+                          <td className="px-4 py-2 text-muted-foreground capitalize">{run.trigger}</td>
+                          <td className="px-4 py-2 text-right tabular-nums">
+                            {run.sourcesProcessed}/{run.sourcesQueued}
+                          </td>
+                          <td className="px-4 py-2 text-right tabular-nums">{run.chunksCreated}</td>
+                          <td className="px-4 py-2 text-right tabular-nums">{run.factsExtracted}</td>
+                          <td className="px-4 py-2 text-right tabular-nums">
+                            <span className={run.errors > 0 ? "text-destructive font-medium" : ""}>
+                              {run.errors}
+                            </span>
+                          </td>
+                          <td className="px-4 py-2 text-xs text-muted-foreground">
+                            {formatDate(run.startedAt)}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">Compliance Discovery Cells</CardTitle>
+          </CardHeader>
+          <CardContent className="px-0 pb-0">
+            {complianceDiscoveryRows.length === 0 ? (
+              <p className="text-center text-muted-foreground py-10 text-sm">
+                No compliance discovery rows yet.
+              </p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b bg-muted/50">
+                      <th className="text-left px-4 py-2 font-medium text-muted-foreground">State</th>
+                      <th className="text-left px-4 py-2 font-medium text-muted-foreground">Crop</th>
+                      <th className="text-left px-4 py-2 font-medium text-muted-foreground">Status</th>
+                      <th className="text-right px-4 py-2 font-medium text-muted-foreground">URLs</th>
+                      <th className="text-left px-4 py-2 font-medium text-muted-foreground">Last Run</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {complianceDiscoveryRows.map((row, index) => {
+                      const status =
+                        COMPLIANCE_DISCOVERY_STATUS_BADGE[
+                          (row.status as keyof typeof COMPLIANCE_DISCOVERY_STATUS_BADGE) ?? "pending"
+                        ] ?? COMPLIANCE_DISCOVERY_STATUS_BADGE.pending;
+                      return (
+                        <tr
+                          key={row.id}
+                          className={`border-b last:border-0 ${index % 2 === 0 ? "" : "bg-muted/20"}`}
+                        >
+                          <td className="px-4 py-2 text-muted-foreground">{row.state}</td>
+                          <td className="px-4 py-2 font-medium capitalize">{row.crop}</td>
+                          <td className="px-4 py-2">
+                            <Badge variant={status.variant} className="text-xs">
+                              {status.label}
+                            </Badge>
+                          </td>
+                          <td className="px-4 py-2 text-right tabular-nums">{row.sourcesFound}</td>
+                          <td className="px-4 py-2 text-xs text-muted-foreground">
+                            {formatDate(row.lastDiscoveredAt)}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">Compliance Sources</CardTitle>
+          </CardHeader>
+          <CardContent className="px-0 pb-0">
+            {complianceSourceRows.length === 0 ? (
+              <p className="text-center text-muted-foreground py-10 text-sm">
+                No compliance sources yet.
+              </p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b bg-muted/50">
+                      <th className="text-left px-4 py-2 font-medium text-muted-foreground">Source</th>
+                      <th className="text-left px-4 py-2 font-medium text-muted-foreground">Status</th>
+                      <th className="text-right px-4 py-2 font-medium text-muted-foreground">Chunks</th>
+                      <th className="text-right px-4 py-2 font-medium text-muted-foreground">Facts</th>
+                      <th className="text-left px-4 py-2 font-medium text-muted-foreground">Last Indexed</th>
+                      <th className="text-left px-4 py-2 font-medium text-muted-foreground hidden xl:table-cell">Error</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {complianceSourceRows.map((row, index) => {
+                      const status =
+                        COMPLIANCE_SOURCE_STATUS_BADGE[
+                          (row.status as keyof typeof COMPLIANCE_SOURCE_STATUS_BADGE) ?? "pending"
+                        ] ?? COMPLIANCE_SOURCE_STATUS_BADGE.pending;
+                      return (
+                        <tr
+                          key={row.id}
+                          className={`border-b last:border-0 ${index % 2 === 0 ? "" : "bg-muted/20"}`}
+                        >
+                          <td className="px-4 py-2 max-w-sm">
+                            <p className="font-medium truncate">{row.title}</p>
+                            <p className="text-xs text-muted-foreground truncate">{row.url}</p>
+                            <p className="text-[11px] text-muted-foreground/80">
+                              {[row.state, row.crop].filter(Boolean).join(" · ") || "—"}
+                            </p>
+                          </td>
+                          <td className="px-4 py-2">
+                            <Badge variant={status.variant} className="text-xs">
+                              {status.label}
+                            </Badge>
+                          </td>
+                          <td className="px-4 py-2 text-right tabular-nums">{row.chunksCount}</td>
+                          <td className="px-4 py-2 text-right tabular-nums">{row.factsCount}</td>
+                          <td className="px-4 py-2 text-xs text-muted-foreground">
+                            {formatDate(row.lastIndexedAt ?? row.lastFetchedAt)}
+                          </td>
+                          <td className="px-4 py-2 text-xs text-destructive hidden xl:table-cell max-w-xs">
+                            <span className="line-clamp-2">{row.errorMessage ?? "—"}</span>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </section>
 
       {/* ══ Phase 3: ML Model Training ═══════════════════════════════════════ */}

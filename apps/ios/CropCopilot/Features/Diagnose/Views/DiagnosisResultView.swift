@@ -24,6 +24,7 @@ private enum RecommendationSection: String, Hashable {
     case input
     case diagnosis
     case actions
+    case premium
     case products
 }
 
@@ -80,6 +81,7 @@ struct DiagnosisResultView: View {
         .input,
         .diagnosis,
         .actions,
+        .premium,
     ]
     @State private var showCitationsModal = false
     @State private var citationDetent: CitationSheetDetent = .medium
@@ -264,6 +266,13 @@ struct DiagnosisResultView: View {
                     accessory: citationsButton(detail)
                 ) {
                     actionsContent(detail)
+                }
+
+                collapsibleSection(
+                    "Premium Insights",
+                    section: .premium
+                ) {
+                    premiumContent(detail)
                 }
 
                 collapsibleSection(
@@ -559,6 +568,177 @@ struct DiagnosisResultView: View {
         }
     }
 
+    @ViewBuilder
+    private func premiumContent(_ detail: RecommendationDetailResponse) -> some View {
+        let premium = detail.premium
+        let normalizedStatus = premium.status.lowercased()
+
+        if normalizedStatus == "not_available" {
+            VStack(alignment: .leading, spacing: Spacing.sm) {
+                Text("Grower Pro required")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.primary)
+                Text(
+                    "Upgrade to Grower Pro to unlock application risk review, cost optimization, spray-window alerts, and a one-tap application prep packet."
+                )
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+            }
+            .padding(Spacing.md)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .antigravityGlass(cornerRadius: CornerRadius.md)
+        } else if normalizedStatus == "queued" || normalizedStatus == "processing" {
+            VStack(alignment: .leading, spacing: Spacing.sm) {
+                Label("Premium risk review is \(premium.status).", systemImage: "hourglass")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.primary)
+                ProgressView()
+                    .tint(Color.appPrimary)
+                Text("This runs asynchronously and does not block base recommendations.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            .padding(Spacing.md)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .antigravityGlass(cornerRadius: CornerRadius.md)
+        } else if normalizedStatus == "failed" {
+            VStack(alignment: .leading, spacing: Spacing.sm) {
+                Label("Premium analysis failed", systemImage: "exclamationmark.triangle.fill")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(Color.semanticError)
+                Text(premium.failureReason ?? "Unknown failure.")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+            .padding(Spacing.md)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .antigravityGlass(cornerRadius: CornerRadius.md)
+        } else if normalizedStatus == "ready" {
+            VStack(alignment: .leading, spacing: Spacing.sm) {
+                HStack(spacing: Spacing.sm) {
+                    Text("Risk review: \(riskReviewLabel(premium.riskReview))")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(premiumDecisionColor(premium.riskReview))
+                    Spacer()
+                }
+                .padding(Spacing.sm)
+                .background(premiumDecisionColor(premium.riskReview).opacity(0.12))
+                .clipShape(RoundedRectangle(cornerRadius: CornerRadius.md, style: .continuous))
+
+                if let cost = premium.costAnalysis {
+                    HStack(spacing: Spacing.md) {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Per-acre cost")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                            Text(formatUsd(cost.perAcreTotalUsd))
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(.primary)
+                        }
+                        Spacer()
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Whole-field cost")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                            Text(formatUsd(cost.wholeFieldTotalUsd))
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(.primary)
+                        }
+                    }
+                    .padding(Spacing.sm)
+                    .antigravityGlass(cornerRadius: CornerRadius.md)
+                }
+
+                if !premium.checks.isEmpty {
+                    VStack(alignment: .leading, spacing: Spacing.xs) {
+                        Text("Risk checks (advisory)")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(.secondary)
+                        ForEach(premium.checks.prefix(4)) { check in
+                            VStack(alignment: .leading, spacing: 3) {
+                                Text("\(check.title) (\(riskReviewLabel(check.result)))")
+                                    .font(.caption.weight(.semibold))
+                                    .foregroundStyle(checkResultColor(check.result))
+                                Text(check.message)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                            .padding(Spacing.sm)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .antigravityGlass(cornerRadius: CornerRadius.md)
+                        }
+                    }
+                }
+
+                if let advisoryNotice = premium.advisoryNotice, !advisoryNotice.isEmpty {
+                    Text(advisoryNotice)
+                        .font(.caption)
+                        .foregroundStyle(Color.semanticWarning)
+                        .padding(Spacing.sm)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(Color.semanticWarning.opacity(0.12))
+                        .clipShape(RoundedRectangle(cornerRadius: CornerRadius.md, style: .continuous))
+                }
+
+                if !premium.sprayWindows.isEmpty {
+                    VStack(alignment: .leading, spacing: Spacing.xs) {
+                        Text("Spray windows")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(.secondary)
+                        ForEach(premium.sprayWindows.prefix(3)) { window in
+                            VStack(alignment: .leading, spacing: 3) {
+                                Text(formattedDateRange(start: window.startsAt, end: window.endsAt))
+                                    .font(.caption.weight(.semibold))
+                                    .foregroundStyle(.primary)
+                                Text("Score \(window.score) · \(window.summary)")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                            .padding(Spacing.sm)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .antigravityGlass(cornerRadius: CornerRadius.md)
+                        }
+                    }
+                }
+
+                if let report = premium.report {
+                    VStack(alignment: .leading, spacing: Spacing.xs) {
+                        Text("Application prep packet")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(.secondary)
+                        HStack(spacing: Spacing.sm) {
+                            if let htmlUrl = report.htmlUrl, let url = URL(string: htmlUrl) {
+                                Button {
+                                    openURL(url)
+                                } label: {
+                                    Text("Open HTML")
+                                }
+                                .buttonStyle(.bordered)
+                            }
+                            if let pdfUrl = report.pdfUrl, let url = URL(string: pdfUrl) {
+                                Button {
+                                    openURL(url)
+                                } label: {
+                                    Text("Open PDF")
+                                }
+                                .buttonStyle(.bordered)
+                            }
+                            if report.html == nil && report.htmlUrl == nil && report.pdfUrl == nil {
+                                Text("Report generated.")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                    }
+                }
+            }
+        } else {
+            Text("Premium status: \(premium.status)")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+        }
+    }
+
     private func productRow(_ product: MergedRecommendationProduct, showChevron: Bool) -> some View {
         HStack(spacing: Spacing.md) {
             IconBadge(
@@ -665,6 +845,70 @@ struct DiagnosisResultView: View {
             return Color.semanticWarning
         }
         return Color.appSecondary
+    }
+
+    private func premiumDecisionColor(_ decision: String?) -> Color {
+        switch decision?.lowercased() {
+        case "clear_signal", "pass":
+            return Color.semanticSuccess
+        case "potential_conflict", "block":
+            return Color.semanticError
+        case "needs_manual_verification", "review":
+            return Color.semanticWarning
+        default:
+            return Color.appSecondary
+        }
+    }
+
+    private func riskReviewLabel(_ decision: String?) -> String {
+        switch decision?.lowercased() {
+        case "clear_signal", "pass":
+            return "Clear Signal"
+        case "potential_conflict", "block":
+            return "Potential Conflict"
+        case "needs_manual_verification", "review":
+            return "Needs Manual Verification"
+        default:
+            return "N/A"
+        }
+    }
+
+    private func checkResultColor(_ result: String) -> Color {
+        switch result.lowercased() {
+        case "clear_signal", "pass":
+            return Color.semanticSuccess
+        case "potential_conflict", "block":
+            return Color.semanticError
+        case "needs_manual_verification", "review":
+            return Color.semanticWarning
+        default:
+            return Color.secondary
+        }
+    }
+
+    private func formatUsd(_ value: Double?) -> String {
+        guard let value else {
+            return "N/A"
+        }
+        return String(format: "$%.2f", value)
+    }
+
+    private func formattedDateRange(start: String, end: String) -> String {
+        let parser = ISO8601DateFormatter()
+        parser.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        let fallbackParser = ISO8601DateFormatter()
+
+        let startDate = parser.date(from: start) ?? fallbackParser.date(from: start)
+        let endDate = parser.date(from: end) ?? fallbackParser.date(from: end)
+        guard let startDate, let endDate else {
+            return "\(start) - \(end)"
+        }
+
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.dateStyle = .medium
+        formatter.timeStyle = .short
+        return "\(formatter.string(from: startDate)) - \(formatter.string(from: endDate))"
     }
 
     private func iconForAction(_ action: String) -> String {
