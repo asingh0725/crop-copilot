@@ -17,6 +17,7 @@ import {
   CreditCard,
 } from "lucide-react";
 import { LogoIcon } from "@/components/ui/logo-icon";
+import { PlanCreditsBadge } from "./plan-credits-badge";
 import { Button } from "@/components/ui/button";
 import {
   Tooltip,
@@ -81,7 +82,7 @@ export function Sidebar({ userName, userEmail, isAdmin = false, collapsed, onCol
         {/* Logo */}
         <div
           className={cn(
-            "flex items-center h-16 border-b border-white/5 px-4",
+            "relative flex items-center h-16 border-b border-white/5 px-4",
             collapsed ? "justify-center" : "gap-3"
           )}
         >
@@ -92,6 +93,16 @@ export function Sidebar({ userName, userEmail, isAdmin = false, collapsed, onCol
             <span className="font-semibold text-white truncate">
               Crop Copilot
             </span>
+          )}
+          {!collapsed && (
+            <div className="ml-auto">
+              <PlanCreditsBadge placement="sidebar" />
+            </div>
+          )}
+          {collapsed && (
+            <div className="absolute top-4 right-2">
+              <PlanCreditsBadge placement="sidebar-collapsed" />
+            </div>
           )}
         </div>
 

@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { Sidebar } from "./sidebar";
 import { MobileNav } from "./mobile-nav";
-import { PlanCreditsBadge } from "./plan-credits-badge";
 import { cn } from "@/lib/utils";
 
 interface AppShellProps {
@@ -18,8 +17,6 @@ export function AppShell({ children, userName, userEmail, isAdmin = false }: App
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <PlanCreditsBadge />
-
       {/* Desktop Sidebar */}
       <Sidebar
         userName={userName}
