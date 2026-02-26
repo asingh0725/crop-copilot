@@ -156,13 +156,26 @@ export function PlanCreditsBadge({ placement = "floating" }: PlanCreditsBadgePro
     return `${total} credits`;
   }, [totalCreditsLeft, usage]);
 
+  const compactCreditsCount = useMemo(() => {
+    if (!usage) return "0";
+    const total = totalCreditsLeft ?? usage.remainingRecommendations;
+    return `${total}`;
+  }, [totalCreditsLeft, usage]);
+
+  const compactSidebarCount = useMemo(() => {
+    const count = Number(compactCreditsCount);
+    if (!Number.isFinite(count)) return compactCreditsCount;
+    if (count > 999) return "999+";
+    return compactCreditsCount;
+  }, [compactCreditsCount]);
+
   const triggerClassName = useMemo(() => {
     if (placement === "sidebar") {
-      return "inline-flex h-8 items-center gap-1.5 rounded-lg border border-lime-400/30 bg-lime-400/10 px-2.5 text-xs font-semibold text-lime-300 transition hover:bg-lime-400/20";
+      return "inline-flex h-8 min-w-[4.75rem] items-center justify-center gap-1 rounded-lg border border-lime-400/25 bg-earth-900/85 px-2 text-xs font-semibold text-lime-300 transition hover:bg-earth-900";
     }
 
     if (placement === "sidebar-collapsed") {
-      return "inline-flex h-8 w-8 items-center justify-center rounded-lg border border-lime-400/30 bg-lime-400/10 text-lime-300 transition hover:bg-lime-400/20";
+      return "inline-flex h-8 w-8 items-center justify-center rounded-lg border border-lime-400/25 bg-earth-900/85 text-lime-300 transition hover:bg-earth-900";
     }
 
     return "fixed top-4 right-4 z-50 hidden md:flex items-center gap-2 rounded-2xl border border-lime-400/40 bg-lime-400/15 px-3 py-1.5 text-sm text-lime-100 shadow-lg shadow-black/40 backdrop-blur-sm transition hover:bg-lime-400/25";
@@ -179,14 +192,24 @@ export function PlanCreditsBadge({ placement = "floating" }: PlanCreditsBadgePro
           type="button"
           className={cn(triggerClassName, placement !== "floating" && "w-auto")}
         >
-          {placement !== "sidebar-collapsed" && <span className="font-semibold">{creditPillLabel}</span>}
-          {placement !== "sidebar-collapsed" && (
+          {placement === "floating" && <span className="font-semibold">{creditPillLabel}</span>}
+          {placement === "sidebar" && (
+            <>
+              <span className="font-semibold tabular-nums leading-none">{compactSidebarCount}</span>
+              <span className="text-[10px] uppercase tracking-wide text-lime-200/80 leading-none">cr</span>
+            </>
+          )}
+          {placement === "floating" && (
             <span className="text-lime-100/85">{formatCurrency(usage.creditsBalanceUsd)}</span>
           )}
-          <span className="inline-flex items-center justify-center rounded-full border border-lime-300/50 p-1">
+          <span className="inline-flex items-center justify-center rounded-full border border-lime-300/40 p-1">
             <Coins className="h-3 w-3" />
           </span>
-          {placement === "sidebar-collapsed" && <span className="sr-only">Credits</span>}
+          {placement !== "floating" && (
+            <span className="sr-only">
+              {compactCreditsCount} credits available with {formatCurrency(usage.creditsBalanceUsd)} balance
+            </span>
+          )}
         </button>
       </DialogTrigger>
       <DialogContent className="max-w-3xl border border-lime-400/20 bg-earth-950 text-white shadow-2xl">

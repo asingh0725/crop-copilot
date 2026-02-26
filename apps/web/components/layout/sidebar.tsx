@@ -82,27 +82,33 @@ export function Sidebar({ userName, userEmail, isAdmin = false, collapsed, onCol
         {/* Logo */}
         <div
           className={cn(
-            "relative flex items-center h-16 border-b border-white/5 px-4",
-            collapsed ? "justify-center" : "gap-3"
+            "relative border-b border-white/5",
+            collapsed ? "flex h-16 items-center justify-center px-4" : "px-4 py-3"
           )}
         >
-          <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-lime-400">
-            <LogoIcon size={20} className="text-earth-950" />
-          </div>
-          {!collapsed && (
-            <span className="font-semibold text-white truncate">
-              Crop Copilot
-            </span>
-          )}
-          {!collapsed && (
-            <div className="ml-auto">
-              <PlanCreditsBadge placement="sidebar" />
-            </div>
-          )}
-          {collapsed && (
-            <div className="absolute top-4 right-2">
-              <PlanCreditsBadge placement="sidebar-collapsed" />
-            </div>
+          {collapsed ? (
+            <>
+              <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-lime-400">
+                <LogoIcon size={20} className="text-earth-950" />
+              </div>
+              <div className="absolute top-4 right-2">
+                <PlanCreditsBadge placement="sidebar-collapsed" />
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex min-w-0 items-center gap-3">
+                  <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-lime-400">
+                    <LogoIcon size={20} className="text-earth-950" />
+                  </div>
+                  <span className="truncate font-semibold text-white">
+                    Crop Copilot
+                  </span>
+                </div>
+                <PlanCreditsBadge placement="sidebar" />
+              </div>
+            </>
           )}
         </div>
 
