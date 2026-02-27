@@ -145,37 +145,18 @@ export function PlanCreditsBadge({ placement = "floating" }: PlanCreditsBadgePro
     return Math.floor(usage.creditsBalanceUsd / usage.overagePriceUsd);
   }, [usage]);
 
-  const totalCreditsLeft = useMemo(() => {
+  const totalRecommendationsLeft = useMemo(() => {
     if (!usage) return null;
     return Math.max(0, usage.remainingRecommendations + purchasedCreditsAsRecs);
   }, [purchasedCreditsAsRecs, usage]);
 
-  const creditPillLabel = useMemo(() => {
-    if (!usage) return "0 credits";
-    const total = totalCreditsLeft ?? usage.remainingRecommendations;
-    return `${total} credits`;
-  }, [totalCreditsLeft, usage]);
-
-  const compactCreditsCount = useMemo(() => {
-    if (!usage) return "0";
-    const total = totalCreditsLeft ?? usage.remainingRecommendations;
-    return `${total}`;
-  }, [totalCreditsLeft, usage]);
-
-  const compactSidebarCount = useMemo(() => {
-    const count = Number(compactCreditsCount);
-    if (!Number.isFinite(count)) return compactCreditsCount;
-    if (count > 999) return "999+";
-    return compactCreditsCount;
-  }, [compactCreditsCount]);
-
   const triggerClassName = useMemo(() => {
     if (placement === "sidebar") {
-      return "inline-flex h-8 min-w-[4.75rem] items-center justify-center gap-1 rounded-lg border border-lime-400/25 bg-earth-900/85 px-2 text-xs font-semibold text-lime-300 transition hover:bg-earth-900";
+      return "inline-flex h-8 max-w-[6.75rem] items-center justify-center gap-1 rounded-lg border border-lime-400/25 bg-earth-900/85 px-2 text-xs font-semibold text-lime-300 transition hover:bg-earth-900";
     }
 
     if (placement === "sidebar-collapsed") {
-      return "inline-flex h-8 w-8 items-center justify-center rounded-lg border border-lime-400/25 bg-earth-900/85 text-lime-300 transition hover:bg-earth-900";
+      return "inline-flex h-7 w-7 items-center justify-center rounded-lg border border-lime-400/25 bg-earth-900/85 text-lime-300 transition hover:bg-earth-900";
     }
 
     return "fixed top-4 right-4 z-50 hidden md:flex items-center gap-2 rounded-2xl border border-lime-400/40 bg-lime-400/15 px-3 py-1.5 text-sm text-lime-100 shadow-lg shadow-black/40 backdrop-blur-sm transition hover:bg-lime-400/25";
@@ -192,12 +173,11 @@ export function PlanCreditsBadge({ placement = "floating" }: PlanCreditsBadgePro
           type="button"
           className={cn(triggerClassName, placement !== "floating" && "w-auto")}
         >
-          {placement === "floating" && <span className="font-semibold">{creditPillLabel}</span>}
+          {placement === "floating" && <span className="font-semibold">Credit Balance</span>}
           {placement === "sidebar" && (
-            <>
-              <span className="font-semibold tabular-nums leading-none">{compactSidebarCount}</span>
-              <span className="text-[10px] uppercase tracking-wide text-lime-200/80 leading-none">cr</span>
-            </>
+            <span className="truncate font-semibold tabular-nums leading-none">
+              {formatCurrency(usage.creditsBalanceUsd)}
+            </span>
           )}
           {placement === "floating" && (
             <span className="text-lime-100/85">{formatCurrency(usage.creditsBalanceUsd)}</span>
@@ -207,7 +187,8 @@ export function PlanCreditsBadge({ placement = "floating" }: PlanCreditsBadgePro
           </span>
           {placement !== "floating" && (
             <span className="sr-only">
-              {compactCreditsCount} credits available with {formatCurrency(usage.creditsBalanceUsd)} balance
+              Credit balance {formatCurrency(usage.creditsBalanceUsd)} with{" "}
+              {totalRecommendationsLeft ?? usage.remainingRecommendations} recommendation uses left
             </span>
           )}
         </button>
@@ -233,7 +214,7 @@ export function PlanCreditsBadge({ placement = "floating" }: PlanCreditsBadgePro
                 {formatCurrency(usage.creditsBalanceUsd)}
               </p>
               <p className="mt-2 text-xs text-lime-100/85">
-                {usage.remainingRecommendations} monthly recs left + {purchasedCreditsAsRecs} purchased recs.
+                {usage.remainingRecommendations} monthly recs left + {purchasedCreditsAsRecs} recs from credit balance.
               </p>
               <Button
                 asChild
@@ -336,7 +317,7 @@ export function PlanCreditsBadge({ placement = "floating" }: PlanCreditsBadgePro
               Live updates after billing, usage, and reward events
             </span>
             <span>
-              {isLoading ? "Refreshing..." : `${totalCreditsLeft ?? 0} total recommendation credits left`}
+              {isLoading ? "Refreshing..." : `${totalRecommendationsLeft ?? 0} recommendation uses left`}
             </span>
           </div>
         </div>

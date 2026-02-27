@@ -23,6 +23,11 @@ struct ProductsListView: View {
                 }
             }
             .navigationTitle("Products")
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    CreditsBalanceChip()
+                }
+            }
             .navigationDestination(for: String.self) { productId in
                 ProductDetailView(productId: productId)
             }

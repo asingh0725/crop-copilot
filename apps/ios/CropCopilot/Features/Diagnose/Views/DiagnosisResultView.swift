@@ -2115,6 +2115,9 @@ class DiagnosisResultViewModel: ObservableObject {
         let response: FeedbackSubmitResponse = try await apiClient.request(.submitFeedback, body: body)
         feedback = response.feedback
         nextSuggestedStage = suggestedStage(recommendationId: recommendationId)
+        if response.creditReward?.granted == true {
+            CreditsEvents.postRefresh(.feedbackRewardGranted)
+        }
         return response.feedback
     }
 

@@ -1622,16 +1622,19 @@ struct FeedbackGetResponse: Decodable {
 struct FeedbackSubmitResponse: Decodable {
     let success: Bool
     let feedback: FeedbackRecord
+    let creditReward: FeedbackCreditReward?
 
     private enum CodingKeys: String, CodingKey {
         case success
         case feedback
+        case creditReward
         case data
     }
 
     private struct DataEnvelope: Decodable {
         let success: Bool?
         let feedback: FeedbackRecord
+        let creditReward: FeedbackCreditReward?
     }
 
     init(from decoder: Decoder) throws {
@@ -1639,12 +1642,40 @@ struct FeedbackSubmitResponse: Decodable {
         if let direct = try container.decodeIfPresent(FeedbackRecord.self, forKey: .feedback) {
             feedback = direct
             success = try container.decodeIfPresent(Bool.self, forKey: .success) ?? true
+            creditReward = try container.decodeIfPresent(FeedbackCreditReward.self, forKey: .creditReward)
             return
         }
 
         let envelope = try container.decode(DataEnvelope.self, forKey: .data)
         feedback = envelope.feedback
         success = envelope.success ?? true
+        creditReward = envelope.creditReward
+    }
+}
+
+struct FeedbackCreditReward: Decodable {
+    let granted: Bool
+    let amountUsd: Double
+    let balanceUsd: Double?
+
+    private enum CodingKeys: String, CodingKey {
+        case granted
+        case amountUsd
+        case amountUsdSnake = "amount_usd"
+        case balanceUsd
+        case balanceUsdSnake = "balance_usd"
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        granted = try container.decodeIfPresent(Bool.self, forKey: .granted) ?? false
+        amountUsd =
+            try container.decodeIfPresent(Double.self, forKey: .amountUsd)
+            ?? (try container.decodeIfPresent(Double.self, forKey: .amountUsdSnake))
+            ?? 0
+        balanceUsd =
+            try container.decodeIfPresent(Double.self, forKey: .balanceUsd)
+            ?? (try container.decodeIfPresent(Double.self, forKey: .balanceUsdSnake))
     }
 }
 

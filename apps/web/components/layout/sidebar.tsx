@@ -83,18 +83,16 @@ export function Sidebar({ userName, userEmail, isAdmin = false, collapsed, onCol
         <div
           className={cn(
             "relative border-b border-white/5",
-            collapsed ? "flex h-16 items-center justify-center px-4" : "px-4 py-3"
+            collapsed ? "flex h-16 items-center px-1.5" : "px-4 py-3"
           )}
         >
           {collapsed ? (
-            <>
-              <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-lime-400">
-                <LogoIcon size={20} className="text-earth-950" />
+            <div className="flex w-full items-center justify-between">
+              <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-lime-400">
+                <LogoIcon size={16} className="text-earth-950" />
               </div>
-              <div className="absolute top-4 right-2">
-                <PlanCreditsBadge placement="sidebar-collapsed" />
-              </div>
-            </>
+              <PlanCreditsBadge placement="sidebar-collapsed" />
+            </div>
           ) : (
             <>
               <div className="flex items-center justify-between gap-2">

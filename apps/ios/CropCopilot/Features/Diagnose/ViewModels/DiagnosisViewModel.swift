@@ -173,6 +173,7 @@ class DiagnosisViewModel: ObservableObject {
                 )
             }
             showResult = true
+            CreditsEvents.postRefresh(.recommendationGenerated)
         } catch let error as NetworkError {
             if case .cancelled = error {
                 return

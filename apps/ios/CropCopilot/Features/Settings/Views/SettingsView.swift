@@ -21,6 +21,11 @@ struct SettingsView: View {
                 .padding(.bottom, Spacing.xxl)
             }
             .navigationTitle("Settings")
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    CreditsBalanceChip()
+                }
+            }
         }
     }
 

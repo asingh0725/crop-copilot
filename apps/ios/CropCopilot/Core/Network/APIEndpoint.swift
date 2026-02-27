@@ -57,6 +57,10 @@ enum APIEndpoint {
     case getFeedback(recommendationId: String)
     case submitFeedback
 
+    // Billing
+    case getSubscription
+    case getUsage
+
     // Push
     case registerPushDevice
 
@@ -84,6 +88,8 @@ enum APIEndpoint {
         case .uploadImage: return "/upload"
         case .getUploadViewUrl: return "/upload/view"
         case .getFeedback, .submitFeedback: return "/feedback"
+        case .getSubscription: return "/subscription"
+        case .getUsage: return "/usage"
         case .registerPushDevice: return "/push/register"
         }
     }
@@ -108,6 +114,8 @@ enum APIEndpoint {
              .uploadImage,
              .getUploadViewUrl,
              .getFeedback,
+             .getSubscription,
+             .getUsage,
              .submitFeedback,
              .registerPushDevice:
             return .runtimePreferred
