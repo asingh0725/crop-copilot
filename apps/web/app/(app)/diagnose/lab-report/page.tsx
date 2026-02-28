@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import { getBrowserApiBase } from "@/lib/api-client"
+import { emitCreditsRefresh } from "@/lib/credits-events"
 import Link from "next/link"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -88,6 +89,10 @@ export default function LabReportPage() {
       crop: '',
       locationState: '',
       locationCountry: 'US',
+      fieldAcreage: '',
+      plannedApplicationDate: '',
+      fieldLatitude: '',
+      fieldLongitude: '',
     },
   })
 
@@ -185,6 +190,22 @@ export default function LabReportPage() {
           labData,
           crop: data.crop,
           location: `${data.locationState}, ${data.locationCountry}`,
+          fieldAcreage:
+            data.fieldAcreage && data.fieldAcreage.trim().length > 0
+              ? Number.parseFloat(data.fieldAcreage)
+              : null,
+          plannedApplicationDate:
+            data.plannedApplicationDate && data.plannedApplicationDate.trim().length > 0
+              ? data.plannedApplicationDate
+              : null,
+          fieldLatitude:
+            data.fieldLatitude && data.fieldLatitude.trim().length > 0
+              ? Number.parseFloat(data.fieldLatitude)
+              : null,
+          fieldLongitude:
+            data.fieldLongitude && data.fieldLongitude.trim().length > 0
+              ? Number.parseFloat(data.fieldLongitude)
+              : null,
         }),
       })
 
@@ -200,6 +221,7 @@ export default function LabReportPage() {
       }
 
       toast.success('Recommendation generated!')
+      emitCreditsRefresh("recommendation_generated")
       router.push(`/recommendations/${recommendationId}`)
     } catch (error) {
       console.error('Error submitting lab report:', error)
@@ -665,6 +687,68 @@ export default function LabReportPage() {
                             ))}
                           </SelectContent>
                         </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="fieldAcreage"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Field Acreage (optional)</FormLabel>
+                        <FormControl>
+                          <Input placeholder="e.g. 120" {...field} />
+                        </FormControl>
+                        <FormDescription>Used for whole-field cost projections.</FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="plannedApplicationDate"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Planned Application Date (optional)</FormLabel>
+                        <FormControl>
+                          <Input type="date" {...field} />
+                        </FormControl>
+                        <FormDescription>Used for REI/PHI timing checks.</FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="fieldLatitude"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Latitude (optional)</FormLabel>
+                        <FormControl>
+                          <Input placeholder="e.g. 41.8781" {...field} />
+                        </FormControl>
+                        <FormDescription>Enables weather-based spray windows.</FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="fieldLongitude"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Longitude (optional)</FormLabel>
+                        <FormControl>
+                          <Input placeholder="e.g. -93.0977" {...field} />
+                        </FormControl>
+                        <FormDescription>Enables weather-based spray windows.</FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}

@@ -1,6 +1,5 @@
 /**
- * Client-safe product types — mirrors @prisma/client ProductType
- * so we don't pull the entire Prisma client into the browser bundle.
+ * Client-safe product enum used by web product surfaces.
  */
 export type ProductType =
   | "FERTILIZER"

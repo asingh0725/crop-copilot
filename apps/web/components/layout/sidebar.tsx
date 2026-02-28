@@ -14,8 +14,10 @@ import {
   User,
   Package,
   ShieldCheck,
+  CreditCard,
 } from "lucide-react";
 import { LogoIcon } from "@/components/ui/logo-icon";
+import { PlanCreditsBadge } from "./plan-credits-badge";
 import { Button } from "@/components/ui/button";
 import {
   Tooltip,
@@ -41,6 +43,7 @@ const mainNavItems: NavItem[] = [
 
 const bottomNavItems: NavItem[] = [
   { title: "Settings", href: "/settings", icon: Settings },
+  { title: "Billing", href: "/settings/billing", icon: CreditCard },
   { title: "Profile", href: "/settings/profile", icon: User },
 ];
 
@@ -79,17 +82,31 @@ export function Sidebar({ userName, userEmail, isAdmin = false, collapsed, onCol
         {/* Logo */}
         <div
           className={cn(
-            "flex items-center h-16 border-b border-white/5 px-4",
-            collapsed ? "justify-center" : "gap-3"
+            "relative border-b border-white/5",
+            collapsed ? "flex h-16 items-center px-1.5" : "px-4 py-3"
           )}
         >
-          <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-lime-400">
-            <LogoIcon size={20} className="text-earth-950" />
-          </div>
-          {!collapsed && (
-            <span className="font-semibold text-white truncate">
-              Crop Copilot
-            </span>
+          {collapsed ? (
+            <div className="flex w-full items-center justify-between">
+              <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-lime-400">
+                <LogoIcon size={16} className="text-earth-950" />
+              </div>
+              <PlanCreditsBadge placement="sidebar-collapsed" />
+            </div>
+          ) : (
+            <>
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex min-w-0 items-center gap-3">
+                  <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-lime-400">
+                    <LogoIcon size={20} className="text-earth-950" />
+                  </div>
+                  <span className="truncate font-semibold text-white">
+                    Crop Copilot
+                  </span>
+                </div>
+                <PlanCreditsBadge placement="sidebar" />
+              </div>
+            </>
           )}
         </div>
 

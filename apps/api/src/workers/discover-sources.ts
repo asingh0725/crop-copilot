@@ -248,12 +248,21 @@ async function markCombination(
 
 // ── Main handler ──────────────────────────────────────────────────────────────
 
+interface ScheduledDiscoveryEventDetail {
+  trigger?: 'scheduled' | 'manual';
+  maxBatches?: number;
+}
+
 export const handler: EventBridgeHandler<
   'crop-copilot.discovery.scheduled',
-  Record<string, unknown>,
+  ScheduledDiscoveryEventDetail,
   void
-> = async () => {
+> = async (event) => {
   const batchSize = Number(process.env.DISCOVERY_BATCH_SIZE ?? 10);
+  const requestedMaxBatches = Number(event.detail?.maxBatches ?? 0);
+  const maxBatches = Number.isFinite(requestedMaxBatches) && requestedMaxBatches > 0
+    ? Math.floor(requestedMaxBatches)
+    : Number.POSITIVE_INFINITY;
   const pool = getPool();
   const queue = getIngestionQueue();
 
@@ -267,8 +276,16 @@ export const handler: EventBridgeHandler<
   // The monthly schedule means this run must process the full 510-combination
   // matrix — not just one batch — to maintain the 90-day rediscovery cadence.
   let totalProcessed = 0;
+  let batchesProcessed = 0;
 
   while (true) {
+    if (batchesProcessed >= maxBatches) {
+      console.log(
+        `[Discovery] Reached manual maxBatches=${maxBatches}. Stopping after ${totalProcessed} combinations.`
+      );
+      break;
+    }
+
     const batch = await claimNextBatch(pool, batchSize);
 
     if (batch.length === 0) {
@@ -281,6 +298,7 @@ export const handler: EventBridgeHandler<
     }
 
     console.log(`[Discovery] Processing batch of ${batch.length} combinations (total so far: ${totalProcessed})`);
+    batchesProcessed += 1;
 
     // Process all combinations in this batch concurrently — reduces per-batch
     // wall time from ~(batchSize × 4 s) to ~4 s, keeping the full 510-combo

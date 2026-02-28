@@ -56,6 +56,11 @@ struct DiagnoseTabView: View {
                 Spacer()
             }
             .navigationTitle("Diagnose")
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    CreditsBalanceChip()
+                }
+            }
         }
     }
 }
