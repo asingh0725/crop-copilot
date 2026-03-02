@@ -168,7 +168,8 @@ pnpm install
 
 # Configure environment variables
 cp apps/web/.env.example apps/web/.env.local
-# Edit apps/web/.env.local with your Supabase credentials
+# Edit apps/web/.env.local with your Supabase credentials and API base:
+# NEXT_PUBLIC_API_GATEWAY_URL=https://<api-domain> (or http://localhost:<port> if running local API)
 ```
 
 ### Run the web app
@@ -178,6 +179,14 @@ pnpm --filter web dev
 ```
 
 The app runs at `http://localhost:3000`. Without `API_GATEWAY_URL` set, API calls gracefully return empty data — the UI renders with empty states rather than throwing.
+
+### Populate data on a fresh local copy
+
+1. Sign in as an admin user.
+2. Open `/admin/discovery` or `/admin/compliance`.
+3. In **Manual Pipeline Controls**, click **Bootstrap Local Data**.
+
+This runs discovery and compliance source scan + inline ingestion processing so local environments without active SQS workers still get indexed data.
 
 ### Run the discovery test script
 
@@ -223,7 +232,7 @@ CROP_ENV=prod AWS_ACCOUNT_ID=123456789 npx cdk deploy --all
 
 ### Database Migrations
 
-Apply SQL migrations in order from `apps/api/sql/`:
+Apply SQL migrations in order from `apps/api/sql/` (this is the canonical migration path for AWS RDS):
 
 ```bash
 psql "$DATABASE_URL" -f apps/api/sql/001_async_recommendation_tables.sql
@@ -232,6 +241,8 @@ psql "$DATABASE_URL" -f apps/api/sql/003_sync_cursor_indexes.sql
 psql "$DATABASE_URL" -f apps/api/sql/004_source_registry_fields.sql
 psql "$DATABASE_URL" -f apps/api/sql/005_ml_tables.sql
 psql "$DATABASE_URL" -f apps/api/sql/006_discovery_queue.sql
+psql "$DATABASE_URL" -f apps/api/sql/007_premium_billing_foundation.sql
+psql "$DATABASE_URL" -f apps/api/sql/008_advisory_risk_review_states.sql
 ```
 
 ---

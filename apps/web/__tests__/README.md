@@ -66,7 +66,7 @@ describe('Inputs API', () => {
 
 ### Mocking
 
-- **Database**: Use test database with Prisma
+- **Database**: Use test database with API SQL migrations
 - **Supabase Auth**: Mock with `vi.mock('@/lib/supabase/server')`
 - **External APIs**: Mock Claude API, Supabase Storage, etc.
 
@@ -75,8 +75,8 @@ describe('Inputs API', () => {
 For full integration tests, you'll need:
 
 1. Test database URL in `.env.test`
-2. Run migrations: `pnpm prisma migrate deploy`
-3. Seed test data: `pnpm prisma db seed`
+2. Run migrations from `apps/api/sql/` in order with `psql`
+3. Seed test data using SQL fixtures or API test helpers
 
 ## Current Status
 

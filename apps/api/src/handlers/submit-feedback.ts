@@ -11,6 +11,7 @@ import {
 } from '../lib/http';
 import { resolvePoolSslConfig, sanitizeDatabaseUrlForPool } from '../lib/store';
 import { processLearningSignal } from '../learning/feedback-learning';
+import { grantDetailedFeedbackReward } from '../lib/entitlements';
 
 interface SubmitFeedbackPayload {
   recommendationId: string;
@@ -53,6 +54,11 @@ interface FeedbackSubmitter {
   (userId: string, payload: SubmitFeedbackPayload): Promise<{
     success: true;
     feedback: ReturnType<typeof toFeedbackResponse>;
+    creditReward?: {
+      granted: boolean;
+      amountUsd: number;
+      balanceUsd: number;
+    } | null;
   }>;
 }
 
@@ -127,7 +133,15 @@ function parseSubmitFeedbackPayload(input: unknown): SubmitFeedbackPayload {
 async function submitFeedbackToDatabase(
   userId: string,
   payload: SubmitFeedbackPayload
-): Promise<{ success: true; feedback: ReturnType<typeof toFeedbackResponse> }> {
+): Promise<{
+  success: true;
+  feedback: ReturnType<typeof toFeedbackResponse>;
+  creditReward?: {
+    granted: boolean;
+    amountUsd: number;
+    balanceUsd: number;
+  } | null;
+}> {
   const pool = resolveFeedbackPool();
   const recommendation = await pool.query<RecommendationOwnerRow>(
     `
@@ -293,9 +307,32 @@ async function submitFeedbackToDatabase(
     });
   }
 
+  let creditReward:
+    | {
+        granted: boolean;
+        amountUsd: number;
+        balanceUsd: number;
+      }
+    | null
+    | undefined = undefined;
+
+  if (qualifiesForDetailedFeedbackReward(payload)) {
+    try {
+      creditReward = await grantDetailedFeedbackReward(pool, userId, payload.recommendationId);
+    } catch (error) {
+      console.error('Failed to grant detailed feedback reward', {
+        recommendationId: payload.recommendationId,
+        userId,
+        error: (error as Error).message,
+      });
+      creditReward = null;
+    }
+  }
+
   return {
     success: true,
     feedback: toFeedbackResponse(upserted.rows[0]),
+    creditReward,
   };
 }
 
@@ -420,6 +457,20 @@ function normalizeOptionalRating(value: unknown, field: string): number | undefi
   }
 
   return Math.round(value);
+}
+
+function qualifiesForDetailedFeedbackReward(payload: SubmitFeedbackPayload): boolean {
+  const detailedIntent =
+    payload.stage === 'detailed' ||
+    payload.accuracy !== undefined ||
+    (payload.issues?.length ?? 0) > 0;
+
+  if (!detailedIntent) {
+    return false;
+  }
+
+  const hasCommentDetail = (payload.comments?.trim().length ?? 0) >= 20;
+  return payload.accuracy !== undefined || (payload.issues?.length ?? 0) > 0 || hasCommentDetail;
 }
 
 export function buildSubmitFeedbackHandler(
