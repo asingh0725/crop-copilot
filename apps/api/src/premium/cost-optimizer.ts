@@ -8,6 +8,7 @@ import type {
 export interface ProductPriceLookup {
   productId: string;
   retailPriceUsd: number | null;
+  priceSource: 'live' | 'estimated' | null;
 }
 
 function parseRatePerAcre(value: string | null): number | null {
@@ -50,9 +51,15 @@ export function buildCostAnalysis(
     priceMap.set(entry.productId, entry.retailPriceUsd);
   }
 
+  const sourceMap = new Map<string, 'live' | 'estimated' | null>();
+  for (const entry of pricing) {
+    sourceMap.set(entry.productId, entry.priceSource);
+  }
+
   const items: CostAnalysisItem[] = input.products.map((product) => {
     const parsedRatePerAcre = parseRatePerAcre(product.applicationRate);
     const unitPriceUsd = priceMap.get(product.productId) ?? null;
+    const priceSource = sourceMap.get(product.productId) ?? null;
 
     const estimatedCostPerAcreUsd =
       parsedRatePerAcre !== null && unitPriceUsd !== null
@@ -71,17 +78,24 @@ export function buildCostAnalysis(
       applicationRate: product.applicationRate,
       parsedRatePerAcre,
       unitPriceUsd,
+      priceSource,
       estimatedCostPerAcreUsd,
       estimatedFieldCostUsd,
     };
   });
 
   const perAcreTotalUsd = roundCurrency(
-    items.reduce((sum, item) => sum + (item.estimatedCostPerAcreUsd ?? 0), 0)
+    items.some((item) => item.estimatedCostPerAcreUsd !== null)
+      ? items.reduce((sum, item) => sum + (item.estimatedCostPerAcreUsd ?? 0), 0)
+      : null
   );
 
   const wholeFieldTotalUsd =
     acreage !== null ? roundCurrency(perAcreTotalUsd !== null ? perAcreTotalUsd * acreage : null) : null;
+  const pricedItemCount = items.filter((item) => item.unitPriceUsd !== null).length;
+  const totalItemCount = items.length;
+  const pricingCoverageRatio =
+    totalItemCount > 0 ? roundCurrency(pricedItemCount / totalItemCount) ?? 0 : 0;
 
   const swapOptions: CostSwapOption[] = [];
   const itemsByType = new Map<string, CostAnalysisItem[]>();
@@ -135,6 +149,9 @@ export function buildCostAnalysis(
     acreage,
     perAcreTotalUsd,
     wholeFieldTotalUsd,
+    pricedItemCount,
+    totalItemCount,
+    pricingCoverageRatio,
     items,
     swapOptions,
   };

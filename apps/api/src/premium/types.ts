@@ -25,6 +25,8 @@ export interface CostAnalysisItem {
   applicationRate: string | null;
   parsedRatePerAcre: number | null;
   unitPriceUsd: number | null;
+  /** Whether the unit price came from a live search or a hardcoded fallback estimate. */
+  priceSource: 'live' | 'estimated' | null;
   estimatedCostPerAcreUsd: number | null;
   estimatedFieldCostUsd: number | null;
 }
@@ -43,6 +45,9 @@ export interface CostAnalysisResult {
   acreage: number | null;
   perAcreTotalUsd: number | null;
   wholeFieldTotalUsd: number | null;
+  pricedItemCount: number;
+  totalItemCount: number;
+  pricingCoverageRatio: number;
   items: CostAnalysisItem[];
   swapOptions: CostSwapOption[];
 }
@@ -76,6 +81,18 @@ export interface PremiumInsightPayload {
 export interface PremiumProcessingInput {
   recommendationId: string;
   userId: string;
+  recommendation: {
+    modelUsed: string | null;
+    confidence: number | null;
+    diagnosisCondition: string | null;
+    diagnosisConditionType: string | null;
+    sourceSignals: {
+      totalSources: number;
+      cropAlignedSources: number;
+      governmentSources: number;
+      policyLikeSources: number;
+    };
+  };
   input: {
     crop: string | null;
     location: string | null;

@@ -5,6 +5,7 @@ import { createApiClient, ApiClientError } from "@/lib/api-client";
 import { DiagnosisDisplay } from "@/components/recommendations/diagnosis-display";
 import { RecommendationContent } from "@/components/recommendations/recommendation-content";
 import { RecommendationFeedbackFlow } from "@/components/recommendations/recommendation-feedback-flow";
+import { PremiumInsightPanel } from "@/components/recommendations/premium-insight-panel";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { ArrowLeft } from "lucide-react";
@@ -91,21 +92,6 @@ function getDefaultPremiumRecommendation(): PremiumRecommendationView {
       "Decision support only. Verify label instructions and local regulations before application.",
     failureReason: null,
   };
-}
-
-function formatRiskReviewLabel(
-  decision: PremiumRecommendationView["riskReview"]
-): string {
-  switch (decision) {
-    case "clear_signal":
-      return "Clear Signal";
-    case "potential_conflict":
-      return "Potential Conflict";
-    case "needs_manual_verification":
-      return "Needs Manual Verification";
-    default:
-      return "N/A";
-  }
 }
 
 function inferConditionType(
@@ -458,116 +444,23 @@ export default async function RecommendationPage({
         />
         <RecommendationFeedbackFlow recommendationId={recommendation.id} />
 
-        <Card className="print:shadow-none print:border-gray-300">
-          <CardHeader>
-            <h2 className="text-xl font-semibold">Premium Insights</h2>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {recommendation.premium.status === "not_available" && (
-              <p className="text-gray-700">
-                Grower Pro unlocks application risk review, cost optimization, spray-window alerts, and a one-tap application prep packet.{" "}
-                <Link href="/settings/billing" className="text-green-700 underline">
-                  Upgrade to Pro
-                </Link>
-                .
-              </p>
-            )}
-
-            {(recommendation.premium.status === "queued" ||
-              recommendation.premium.status === "processing") && (
-              <p className="text-gray-700">
-                Premium risk review is {recommendation.premium.status}. Refresh in a few seconds.
-              </p>
-            )}
-
-            {recommendation.premium.status === "failed" && (
-              <p className="text-red-700">
-                Premium analysis failed: {recommendation.premium.failureReason ?? "Unknown error"}
-              </p>
-            )}
-
-            {recommendation.premium.status === "ready" && (
-              <>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                  <div className="rounded-lg border border-gray-200 p-3">
-                    <p className="text-xs text-gray-500 mb-1">Application Risk Review</p>
-                    <p className="font-semibold uppercase">
-                      {formatRiskReviewLabel(recommendation.premium.riskReview)}
-                    </p>
-                  </div>
-                  <div className="rounded-lg border border-gray-200 p-3">
-                    <p className="text-xs text-gray-500 mb-1">Per-Acre Cost</p>
-                    <p className="font-semibold">
-                      {recommendation.premium.costAnalysis?.perAcreTotalUsd != null
-                        ? `$${recommendation.premium.costAnalysis.perAcreTotalUsd.toFixed(2)}`
-                        : "N/A"}
-                    </p>
-                  </div>
-                  <div className="rounded-lg border border-gray-200 p-3">
-                    <p className="text-xs text-gray-500 mb-1">Whole-Field Cost</p>
-                    <p className="font-semibold">
-                      {recommendation.premium.costAnalysis?.wholeFieldTotalUsd != null
-                        ? `$${recommendation.premium.costAnalysis.wholeFieldTotalUsd.toFixed(2)}`
-                        : "N/A"}
-                    </p>
-                  </div>
-                </div>
-
-                {recommendation.premium.checks.length > 0 && (
-                  <div className="space-y-2">
-                    <h3 className="text-sm font-semibold text-gray-800">Risk Checks (Advisory)</h3>
-                    <div className="space-y-2">
-                      {recommendation.premium.checks.map((check) => (
-                        <div key={check.id} className="rounded-md border border-gray-200 p-2">
-                          <p className="text-sm font-medium">
-                            {check.title}{" "}
-                            <span className="uppercase text-xs text-gray-500">
-                              ({formatRiskReviewLabel(check.result)})
-                            </span>
-                          </p>
-                          <p className="text-sm text-gray-600">{check.message}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                <div className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
-                  {recommendation.premium.advisoryNotice ??
-                    "Decision support only. Verify labels and local regulations before application."}
-                </div>
-
-                {recommendation.premium.sprayWindows.length > 0 && (
-                  <div className="space-y-2">
-                    <h3 className="text-sm font-semibold text-gray-800">Spray Windows</h3>
-                    <div className="space-y-2">
-                      {recommendation.premium.sprayWindows.slice(0, 3).map((window, idx) => (
-                        <div key={`${window.startsAt}-${idx}`} className="rounded-md border border-gray-200 p-2">
-                          <p className="text-sm font-medium">
-                            {new Date(window.startsAt).toLocaleString("en-US")} -{" "}
-                            {new Date(window.endsAt).toLocaleString("en-US")}
-                          </p>
-                          <p className="text-sm text-gray-600">
-                            Score: {window.score} · {window.summary}
-                          </p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {recommendation.premium.report?.html && (
-                  <details className="rounded-md border border-gray-200 p-3">
-                    <summary className="cursor-pointer text-sm font-semibold">Application Prep Packet Preview</summary>
-                    <pre className="mt-3 max-h-72 overflow-auto bg-gray-50 p-3 text-xs">
-                      {recommendation.premium.report.html}
-                    </pre>
-                  </details>
-                )}
-              </>
-            )}
-          </CardContent>
-        </Card>
+        <PremiumInsightPanel
+          status={recommendation.premium.status}
+          riskReview={recommendation.premium.riskReview}
+          checks={recommendation.premium.checks}
+          costAnalysis={recommendation.premium.costAnalysis as any}
+          sprayWindows={recommendation.premium.sprayWindows}
+          report={recommendation.premium.report}
+          advisoryNotice={recommendation.premium.advisoryNotice}
+          failureReason={recommendation.premium.failureReason}
+          inputContext={recommendation.input ? {
+            fieldAcreage: recommendation.input.fieldAcreage,
+            fieldLatitude: recommendation.input.fieldLatitude,
+            fieldLongitude: recommendation.input.fieldLongitude,
+            plannedApplicationDate: recommendation.input.plannedApplicationDate,
+            location: recommendation.input.location,
+          } : undefined}
+        />
 
         {recommendation.input && (
           <Card className="print:shadow-none print:border-gray-300">

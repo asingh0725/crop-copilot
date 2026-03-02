@@ -398,9 +398,43 @@ struct PremiumRecommendationCheck: Decodable, Identifiable {
     let message: String
 }
 
+struct PremiumCostItem: Decodable {
+    let productName: String
+    let productType: String
+    let estimatedCostPerAcreUsd: Double?
+    let estimatedFieldCostUsd: Double?
+    /// Whether the unit price came from a live retail search or a hardcoded fallback estimate.
+    let priceSource: String?
+}
+
+struct PremiumCostSwapOption: Decodable {
+    let fromProductName: String
+    let toProductName: String
+    let estimatedSavingsPerAcreUsd: Double
+    let estimatedSavingsWholeFieldUsd: Double
+}
+
 struct PremiumCostSummary: Decodable {
     let perAcreTotalUsd: Double?
     let wholeFieldTotalUsd: Double?
+    let pricingCoverageRatio: Double?
+    let acreage: Double?
+    let items: [PremiumCostItem]
+    let swapOptions: [PremiumCostSwapOption]
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        perAcreTotalUsd = try c.decodeIfPresent(Double.self, forKey: .perAcreTotalUsd)
+        wholeFieldTotalUsd = try c.decodeIfPresent(Double.self, forKey: .wholeFieldTotalUsd)
+        pricingCoverageRatio = try c.decodeIfPresent(Double.self, forKey: .pricingCoverageRatio)
+        acreage = try c.decodeIfPresent(Double.self, forKey: .acreage)
+        items = try c.decodeIfPresent([PremiumCostItem].self, forKey: .items) ?? []
+        swapOptions = try c.decodeIfPresent([PremiumCostSwapOption].self, forKey: .swapOptions) ?? []
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case perAcreTotalUsd, wholeFieldTotalUsd, pricingCoverageRatio, acreage, items, swapOptions
+    }
 }
 
 struct PremiumSprayWindow: Decodable, Identifiable {
