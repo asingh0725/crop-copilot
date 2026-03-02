@@ -115,12 +115,14 @@ function formatDateRange(start: string, end: string): string {
   const s = new Date(start);
   const e = new Date(end);
   const sameDay = s.toDateString() === e.toDateString();
-  const dateOpts: Intl.DateTimeFormatOptions = { month: "short", day: "numeric" };
+  const dateOpts: Intl.DateTimeFormatOptions = { weekday: "short", month: "short", day: "numeric" };
   const timeOpts: Intl.DateTimeFormatOptions = { hour: "numeric", minute: "2-digit" };
   if (sameDay) {
-    return `${s.toLocaleDateString("en-US", dateOpts)} ${s.toLocaleTimeString("en-US", timeOpts)} – ${e.toLocaleTimeString("en-US", timeOpts)}`;
+    const startTime = s.toLocaleTimeString("en-US", timeOpts);
+    const endTime = e.toLocaleTimeString("en-US", timeOpts);
+    return `${s.toLocaleDateString("en-US", dateOpts)} · ${startTime} – ${endTime}`;
   }
-  return `${s.toLocaleDateString("en-US", { ...dateOpts, ...timeOpts })} – ${e.toLocaleDateString("en-US", { ...dateOpts, ...timeOpts })}`;
+  return `${s.toLocaleString("en-US", { ...dateOpts, ...timeOpts })} – ${e.toLocaleString("en-US", { ...dateOpts, ...timeOpts })}`;
 }
 
 function sprayScoreColor(score: number): string {
