@@ -87,6 +87,7 @@ struct DiagnosisResultView: View {
     @State private var citationDetent: CitationSheetDetent = .medium
     @State private var showProductNoticeAlert = false
     @State private var hasAcknowledgedProductNotice = false
+    @State private var reportPreviewHtml: String? = nil
 
     private var hasActiveModal: Bool {
         activeFeedbackStage != nil || showCitationsModal
@@ -146,6 +147,16 @@ struct DiagnosisResultView: View {
             productNoticeSheet
                 .presentationDetents([.height(280)])
                 .presentationDragIndicator(.visible)
+        }
+        .sheet(
+            isPresented: .init(
+                get: { reportPreviewHtml != nil },
+                set: { if !$0 { reportPreviewHtml = nil } }
+            )
+        ) {
+            if let html = reportPreviewHtml {
+                HTMLPreviewSheet(html: html)
+            }
         }
     }
 
@@ -913,29 +924,39 @@ struct DiagnosisResultView: View {
 
             // ── Report ─────────────────────────────────────────────────────
             if let report = premium.report,
-               report.htmlUrl != nil || report.pdfUrl != nil {
+               report.html != nil || report.htmlUrl != nil || report.pdfUrl != nil {
                 Divider()
                 VStack(alignment: .leading, spacing: Spacing.sm) {
                     Label("Application Prep Packet", systemImage: "doc.fill")
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(.secondary)
                     HStack(spacing: Spacing.sm) {
-                        if let pdfUrl = report.pdfUrl, let url = URL(string: pdfUrl) {
+                        if let html = report.html {
                             Button {
-                                openURL(url)
+                                reportPreviewHtml = html
                             } label: {
-                                Label("Open PDF", systemImage: "arrow.down.doc.fill")
+                                Label("Preview", systemImage: "eye.fill")
                                     .font(.caption.weight(.semibold))
                             }
                             .buttonStyle(.borderedProminent)
                             .tint(Color.appPrimary)
                             .controlSize(.small)
                         }
+                        if let pdfUrl = report.pdfUrl, let url = URL(string: pdfUrl) {
+                            Button {
+                                openURL(url)
+                            } label: {
+                                Label("PDF", systemImage: "arrow.down.doc.fill")
+                                    .font(.caption.weight(.semibold))
+                            }
+                            .buttonStyle(.bordered)
+                            .controlSize(.small)
+                        }
                         if let htmlUrl = report.htmlUrl, let url = URL(string: htmlUrl) {
                             Button {
                                 openURL(url)
                             } label: {
-                                Label("Open HTML", systemImage: "globe")
+                                Label("Download", systemImage: "square.and.arrow.down")
                                     .font(.caption.weight(.semibold))
                             }
                             .buttonStyle(.bordered)

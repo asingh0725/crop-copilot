@@ -1,7 +1,9 @@
 "use client";
 
-import { Lock, CheckCircle2, AlertTriangle, XCircle, Clock, Leaf, TrendingDown, Wind, FileText, Info, Zap, BarChart3, MapPin, Calendar } from "lucide-react";
+import { useState } from "react";
+import { Lock, CheckCircle2, AlertTriangle, XCircle, Clock, Leaf, TrendingDown, Wind, FileText, Info, Zap, BarChart3, MapPin, Calendar, Eye, Download } from "lucide-react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 
@@ -441,44 +443,80 @@ function SprayWindowSection({
 }
 
 function ReportSection({ report }: { report: Report }) {
-  const hasLink = report.htmlUrl || report.pdfUrl;
+  const [previewOpen, setPreviewOpen] = useState(false);
+
+  const hasHtml = !!report.html;
 
   return (
-    <div className="rounded-lg border border-gray-200 bg-white p-3">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <FileText className="h-4 w-4 text-violet-500" />
-          <p className="text-sm font-semibold text-gray-800">Application Prep Packet</p>
+    <>
+      <div className="rounded-lg border border-gray-200 bg-white p-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <FileText className="h-4 w-4 text-violet-500" />
+            <p className="text-sm font-semibold text-gray-800">Application Prep Packet</p>
+          </div>
+          <div className="flex gap-2">
+            {hasHtml && (
+              <button
+                onClick={() => setPreviewOpen(true)}
+                className="inline-flex items-center gap-1 rounded-md border border-violet-200 bg-violet-50 px-2.5 py-1 text-xs font-medium text-violet-700 transition-colors hover:bg-violet-100"
+              >
+                <Eye className="h-3 w-3" /> Preview
+              </button>
+            )}
+            {report.pdfUrl && (
+              <a
+                href={report.pdfUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 rounded-md border border-gray-200 bg-gray-50 px-2.5 py-1 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-100"
+              >
+                <Download className="h-3 w-3" /> PDF
+              </a>
+            )}
+            {report.htmlUrl && (
+              <a
+                href={report.htmlUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 rounded-md border border-gray-200 bg-gray-50 px-2.5 py-1 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-100"
+              >
+                <Download className="h-3 w-3" /> HTML
+              </a>
+            )}
+          </div>
         </div>
-        <div className="flex gap-2">
-          {report.pdfUrl && (
-            <a
-              href={report.pdfUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 rounded-md border border-gray-200 bg-gray-50 px-2.5 py-1 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-100"
-            >
-              <FileText className="h-3 w-3" /> PDF
-            </a>
-          )}
-          {report.htmlUrl && (
-            <a
-              href={report.htmlUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 rounded-md border border-gray-200 bg-gray-50 px-2.5 py-1 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-100"
-            >
-              <FileText className="h-3 w-3" /> HTML
-            </a>
-          )}
-        </div>
+        {report.generatedAt && (
+          <p className="mt-1 text-xs text-gray-500">
+            Generated {new Date(report.generatedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
+          </p>
+        )}
       </div>
-      {!hasLink && report.generatedAt && (
-        <p className="mt-1 text-xs text-gray-500">
-          Generated {new Date(report.generatedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
-        </p>
+
+      {hasHtml && (
+        <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
+          <DialogContent className="max-w-4xl h-[85vh] flex flex-col p-0 gap-0">
+            <DialogHeader className="flex-none px-6 py-4 border-b border-gray-200">
+              <div className="flex items-center gap-2">
+                <FileText className="h-5 w-5 text-violet-500" />
+                <DialogTitle>Application Prep Packet</DialogTitle>
+                {report.generatedAt && (
+                  <span className="ml-auto text-xs text-gray-400">
+                    {new Date(report.generatedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
+                  </span>
+                )}
+              </div>
+            </DialogHeader>
+            <iframe
+              srcDoc={report.html}
+              title="Application Prep Packet"
+              className="flex-1 w-full border-0 rounded-b-lg"
+              sandbox="allow-same-origin"
+            />
+          </DialogContent>
+        </Dialog>
       )}
-    </div>
+    </>
   );
 }
 
