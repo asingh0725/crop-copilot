@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Lock, CheckCircle2, AlertTriangle, XCircle, Clock, Leaf, TrendingDown, Wind, FileText, Info, Zap, BarChart3, MapPin, Calendar, Eye, Download } from "lucide-react";
+import { Lock, CheckCircle2, AlertTriangle, XCircle, Leaf, TrendingDown, Wind, FileText, Info, Zap, BarChart3, MapPin, Calendar, Eye, Download, Sun, Cloud, CloudRain, CloudLightning } from "lucide-react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import Link from "next/link";
@@ -127,6 +127,27 @@ function sprayScoreColor(score: number): string {
   if (score >= 80) return "bg-emerald-500";
   if (score >= 60) return "bg-amber-400";
   return "bg-red-400";
+}
+
+function sprayWeatherIcon(score: number, summary: string) {
+  const lower = summary.toLowerCase();
+  if (lower.includes("thunder") || lower.includes("lightning") || lower.includes("storm")) {
+    return <CloudLightning className="h-5 w-5 text-red-500" />;
+  }
+  if (lower.includes("rain") || lower.includes("shower") || lower.includes("drizzle") || score < 45) {
+    return <CloudRain className="h-5 w-5 text-blue-500" />;
+  }
+  if (score >= 80 && !lower.includes("cloud")) {
+    return <Sun className="h-5 w-5 text-amber-500" />;
+  }
+  return <Cloud className="h-5 w-5 text-slate-400" />;
+}
+
+function formatProductType(type: string): string {
+  return type
+    .split("_")
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+    .join(" ");
 }
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
@@ -260,15 +281,22 @@ function RiskReviewSection({ riskReview, checks }: { riskReview: RiskDecision; c
           {checks.map((check) => (
             <div
               key={check.id}
-              className="flex items-start gap-2.5 rounded-md border border-gray-100 bg-gray-50 px-3 py-2"
+              className={cn(
+                "flex items-start gap-2.5 rounded-lg border px-3 py-2.5 transition-colors",
+                check.result === "clear_signal"
+                  ? "border-emerald-100 bg-emerald-50/50"
+                  : check.result === "potential_conflict"
+                    ? "border-amber-100 bg-amber-50/50"
+                    : "border-orange-100 bg-orange-50/50"
+              )}
             >
               <span className="mt-0.5 shrink-0">{riskIcon(check.result)}</span>
-              <div className="min-w-0">
-                <div className="flex flex-wrap items-center gap-1.5">
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center justify-between gap-1.5">
                   <span className="text-xs font-semibold text-gray-800">{check.title}</span>
                   <RiskBadge decision={check.result} label={riskLabel(check.result)} />
                 </div>
-                <p className="mt-0.5 text-xs text-gray-600">{check.message}</p>
+                <p className="mt-1 text-xs leading-relaxed text-gray-600">{check.message}</p>
               </div>
             </div>
           ))}
@@ -336,7 +364,7 @@ function CostSection({
               <div className="min-w-0">
                 <span className="font-medium text-gray-800 line-clamp-1">{item.productName}</span>
                 <div className="mt-0.5 flex items-center gap-1">
-                  <span className="text-[10px] uppercase text-gray-400">{item.productType}</span>
+                  <span className="text-[10px] text-gray-400">{formatProductType(item.productType)}</span>
                   <PriceSourceBadge source={item.priceSource} />
                 </div>
               </div>
@@ -371,7 +399,7 @@ function CostSection({
       {anyEstimated && (
         <p className="flex items-center gap-1 text-[11px] text-gray-400">
           <BarChart3 className="h-3 w-3" />
-          Some prices are benchmark estimates. Live retail prices shown where available.
+          Some prices reflect live retail search; others are from cached results.
         </p>
       )}
     </div>
@@ -412,20 +440,26 @@ function SprayWindowSection({
         </div>
       </div>
 
-      <div className="space-y-1.5">
+      <div className="space-y-2">
         {windows.slice(0, 3).map((w, i) => (
-          <div key={i} className="flex items-start gap-3 rounded-md border border-gray-200 bg-white px-3 py-2">
-            <div className="mt-1 shrink-0">
-              <div className={cn("h-2 w-2 rounded-full", sprayScoreColor(w.score))} />
+          <div key={i} className="flex items-start gap-3 rounded-lg border border-gray-200 bg-white px-3 py-2.5 shadow-sm">
+            <div className="mt-0.5 shrink-0">
+              {sprayWeatherIcon(w.score, w.summary)}
             </div>
             <div className="min-w-0 flex-1">
               <div className="flex items-center justify-between gap-2">
                 <p className="text-xs font-semibold text-gray-800">
                   {formatDateRange(w.startsAt, w.endsAt)}
                 </p>
-                <span className="shrink-0 rounded-full border border-gray-200 bg-gray-50 px-1.5 py-0.5 text-[10px] font-medium text-gray-600">
-                  {w.score}/100
-                </span>
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <div className="flex h-1.5 w-16 overflow-hidden rounded-full bg-gray-100">
+                    <div
+                      className={cn("h-full rounded-full transition-all", sprayScoreColor(w.score))}
+                      style={{ width: `${w.score}%` }}
+                    />
+                  </div>
+                  <span className="text-[10px] font-semibold text-gray-500">{w.score}</span>
+                </div>
               </div>
               <p className="mt-0.5 text-xs text-gray-600">{w.summary}</p>
             </div>

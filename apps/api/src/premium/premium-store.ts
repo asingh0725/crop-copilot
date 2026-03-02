@@ -617,23 +617,11 @@ export async function loadCachedRetailPricing(
             })
           : [];
         if (offers.length === 0) {
-          const estimatedPrice = estimateRetailPriceUsd(
-            product.product_type,
-            product.product_name
-          );
-          const estimatedOffers: PricingOffer[] = [
-            {
-              price: estimatedPrice,
-              unit: 'estimated unit',
-              retailer: 'Estimated benchmark',
-              url: null,
-              region: resolvedRegion,
-              lastUpdated: new Date().toISOString(),
-            },
-          ];
-          await upsertPricingCacheEntry(pool, product.product_id, regionKey, estimatedOffers);
-          map.set(product.product_id, estimatedPrice);
-          sourceMap.set(product.product_id, 'estimated');
+          // Live search returned no results — leave price as null rather than
+          // fabricating a benchmark estimate. Don't cache an empty result so
+          // the next enrichment run retries the live lookup.
+          map.set(product.product_id, null);
+          sourceMap.set(product.product_id, null);
           continue;
         }
 
