@@ -909,8 +909,13 @@ function buildApiEnvironment(
     PYMUPDF_ENABLE_OCR: process.env.PYMUPDF_ENABLE_OCR ?? 'false',
     PYMUPDF_OCR_LANGUAGE: process.env.PYMUPDF_OCR_LANGUAGE ?? 'eng',
     PYMUPDF_OCR_DPI: process.env.PYMUPDF_OCR_DPI ?? '150',
-    // Gemini-powered source discovery
+    // Gemini-powered source discovery (still used for discover-sources/compliance workers)
     GOOGLE_AI_API_KEY: process.env.GOOGLE_AI_API_KEY ?? '',
+    // Pricing search provider — default "perplexity" (~$0.006/product, 6× cheaper than Gemini grounding)
+    // Options: "perplexity" | "brave" | "gemini"
+    PRICING_SEARCH_PROVIDER: process.env.PRICING_SEARCH_PROVIDER ?? 'perplexity',
+    PERPLEXITY_API_KEY: process.env.PERPLEXITY_API_KEY ?? '',
+    BRAVE_SEARCH_API_KEY: process.env.BRAVE_SEARCH_API_KEY ?? '',
     OPENWEATHER_API_KEY: process.env.OPENWEATHER_API_KEY ?? '',
     OPENWEATHER_PRICE_PER_CALL_USD: process.env.OPENWEATHER_PRICE_PER_CALL_USD ?? '0.0015',
     OPENWEATHER_DAILY_FREE_CALLS: process.env.OPENWEATHER_DAILY_FREE_CALLS ?? '1000',
