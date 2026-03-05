@@ -5,7 +5,8 @@ import { createApiClient, ApiClientError } from "@/lib/api-client";
 import { DiagnosisDisplay } from "@/components/recommendations/diagnosis-display";
 import { RecommendationContent } from "@/components/recommendations/recommendation-content";
 import { RecommendationFeedbackFlow } from "@/components/recommendations/recommendation-feedback-flow";
-import { PremiumInsightPanel } from "@/components/recommendations/premium-insight-panel";
+import { PremiumInsightPoller } from "@/components/recommendations/premium-insight-poller";
+import type { CostAnalysis, ComplianceCheck, SprayWindow, Report } from "@/components/recommendations/premium-insight-panel";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { ArrowLeft } from "lucide-react";
@@ -46,35 +47,10 @@ interface PremiumRecommendationView {
   status: "not_available" | "queued" | "processing" | "ready" | "failed";
   riskReview: "clear_signal" | "potential_conflict" | "needs_manual_verification" | null;
   complianceDecision?: "clear_signal" | "potential_conflict" | "needs_manual_verification" | null;
-  checks: Array<{
-    id: string;
-    title: string;
-    result: "clear_signal" | "potential_conflict" | "needs_manual_verification";
-    message: string;
-  }>;
-  costAnalysis: {
-    perAcreTotalUsd: number | null;
-    wholeFieldTotalUsd: number | null;
-    swapOptions?: Array<{
-      fromProductName: string;
-      toProductName: string;
-      estimatedSavingsPerAcreUsd: number;
-      estimatedSavingsWholeFieldUsd: number;
-    }>;
-  } | null;
-  sprayWindows: Array<{
-    startsAt: string;
-    endsAt: string;
-    score: number;
-    summary: string;
-    source: string;
-  }>;
-  report: {
-    html?: string;
-    htmlUrl?: string;
-    pdfUrl?: string;
-    generatedAt?: string;
-  } | null;
+  checks: ComplianceCheck[];
+  costAnalysis: CostAnalysis | null;
+  sprayWindows: SprayWindow[];
+  report: Report | null;
   advisoryNotice?: string | null;
   failureReason?: string | null;
 }
@@ -444,15 +420,18 @@ export default async function RecommendationPage({
         />
         <RecommendationFeedbackFlow recommendationId={recommendation.id} />
 
-        <PremiumInsightPanel
-          status={recommendation.premium.status}
-          riskReview={recommendation.premium.riskReview}
-          checks={recommendation.premium.checks}
-          costAnalysis={recommendation.premium.costAnalysis as any}
-          sprayWindows={recommendation.premium.sprayWindows}
-          report={recommendation.premium.report}
-          advisoryNotice={recommendation.premium.advisoryNotice}
-          failureReason={recommendation.premium.failureReason}
+        <PremiumInsightPoller
+          recommendationId={recommendation.id}
+          initialData={{
+            status: recommendation.premium.status,
+            riskReview: recommendation.premium.riskReview,
+            checks: recommendation.premium.checks,
+            costAnalysis: recommendation.premium.costAnalysis,
+            sprayWindows: recommendation.premium.sprayWindows,
+            report: recommendation.premium.report,
+            advisoryNotice: recommendation.premium.advisoryNotice,
+            failureReason: recommendation.premium.failureReason,
+          }}
           inputContext={recommendation.input ? {
             fieldAcreage: recommendation.input.fieldAcreage,
             fieldLatitude: recommendation.input.fieldLatitude,
@@ -583,19 +562,47 @@ export default async function RecommendationPage({
                   <h3 className="text-sm font-medium text-gray-700 mb-2">
                     Lab Data
                   </h3>
-                  <pre className="bg-gray-50 rounded-lg p-4 border border-gray-200 overflow-x-auto text-sm">
-                    {JSON.stringify(recommendation.input.labData, null, 2)}
-                  </pre>
+                  <LabDataTable data={recommendation.input.labData} />
                 </div>
               )}
             </CardContent>
           </Card>
         )}
 
-        <div className="text-sm text-gray-500 text-center py-4 print:hidden">
-          Model: {recommendation.modelUsed || "Unknown"}
-        </div>
       </div>
+    </div>
+  );
+}
+
+function LabDataTable({ data }: { data: unknown }) {
+  if (!data || typeof data !== "object" || Array.isArray(data)) return null;
+
+  const entries = Object.entries(data as Record<string, unknown>).filter(
+    ([, v]) => v !== null && v !== undefined && v !== ""
+  );
+
+  if (entries.length === 0) return null;
+
+  const toLabel = (key: string) =>
+    key
+      .replace(/([A-Z])/g, " $1")
+      .replace(/^./, (s) => s.toUpperCase())
+      .trim();
+
+  return (
+    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+      {entries.map(([key, value]) => (
+        <div key={key} className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2">
+          <p className="text-[11px] font-medium uppercase tracking-wide text-gray-500">
+            {toLabel(key)}
+          </p>
+          <p className="text-sm font-semibold text-gray-900">
+            {typeof value === "number"
+              ? value.toLocaleString("en-US", { maximumFractionDigits: 4 })
+              : String(value)}
+          </p>
+        </div>
+      ))}
     </div>
   );
 }

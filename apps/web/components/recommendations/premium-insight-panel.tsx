@@ -9,8 +9,8 @@ import { cn } from "@/lib/utils";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type RiskDecision = "clear_signal" | "potential_conflict" | "needs_manual_verification" | null;
-type PremiumStatus = "not_available" | "queued" | "processing" | "ready" | "failed";
+export type RiskDecision = "clear_signal" | "potential_conflict" | "needs_manual_verification" | null;
+export type PremiumStatus = "not_available" | "queued" | "processing" | "ready" | "failed";
 
 interface ComplianceCheck {
   id: string;
@@ -67,6 +67,7 @@ export interface PremiumInsightPanelProps {
   report: Report | null;
   advisoryNotice?: string | null;
   failureReason?: string | null;
+  recommendationId?: string;
   // Input context for connecting planning fields to output
   inputContext?: {
     fieldAcreage?: number | null;
@@ -76,6 +77,9 @@ export interface PremiumInsightPanelProps {
     location?: string | null;
   };
 }
+
+// Re-export CostAnalysis so page.tsx can use the exact type without an `as any`
+export type { CostAnalysis, ComplianceCheck, SprayWindow, Report };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -247,7 +251,7 @@ function ProcessingCard({ status }: { status: "queued" | "processing" }) {
           {status === "queued" ? "Premium analysis queued" : "Premium analysis running…"}
         </p>
         <p className="mt-0.5 text-xs text-blue-700">
-          Risk review, cost analysis, and spray windows are being generated. This runs in the background — refresh in a few seconds.
+          Risk review, cost analysis, and spray windows are being generated. This page will update automatically when ready.
         </p>
       </div>
     </div>
@@ -478,10 +482,62 @@ function SprayWindowSection({
   );
 }
 
-function ReportSection({ report }: { report: Report }) {
+function formatGeneratedAt(iso: string): string {
+  return new Date(iso).toLocaleString("en-US", {
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+function ReportSection({
+  report,
+  recommendationId,
+}: {
+  report: Report;
+  recommendationId?: string;
+}) {
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [iframeLoaded, setIframeLoaded] = useState(false);
+  const [downloading, setDownloading] = useState<"pdf" | "html" | null>(null);
 
   const hasHtml = !!report.html;
+
+  // Re-fetch a fresh presigned URL before opening — S3 presigned URLs expire after ~1 hour.
+  const handleDownload = async (type: "pdf" | "html") => {
+    const fallbackUrl = type === "pdf" ? report.pdfUrl : report.htmlUrl;
+    if (!fallbackUrl) return;
+
+    if (!recommendationId) {
+      window.open(fallbackUrl, "_blank", "noopener,noreferrer");
+      return;
+    }
+
+    setDownloading(type);
+    try {
+      const res = await fetch(`/api/v1/recommendations/${recommendationId}`);
+      if (res.ok) {
+        const data = await res.json();
+        const freshUrl =
+          type === "pdf"
+            ? data.premium?.report?.pdfUrl
+            : data.premium?.report?.htmlUrl;
+        window.open(freshUrl ?? fallbackUrl, "_blank", "noopener,noreferrer");
+      } else {
+        window.open(fallbackUrl, "_blank", "noopener,noreferrer");
+      }
+    } catch {
+      window.open(fallbackUrl, "_blank", "noopener,noreferrer");
+    } finally {
+      setDownloading(null);
+    }
+  };
+
+  const openPreview = () => {
+    setIframeLoaded(false);
+    setPreviewOpen(true);
+  };
 
   return (
     <>
@@ -494,37 +550,45 @@ function ReportSection({ report }: { report: Report }) {
           <div className="flex gap-2">
             {hasHtml && (
               <button
-                onClick={() => setPreviewOpen(true)}
+                onClick={openPreview}
                 className="inline-flex items-center gap-1 rounded-md border border-violet-200 bg-violet-50 px-2.5 py-1 text-xs font-medium text-violet-700 transition-colors hover:bg-violet-100"
               >
                 <Eye className="h-3 w-3" /> Preview
               </button>
             )}
             {report.pdfUrl && (
-              <a
-                href={report.pdfUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 rounded-md border border-gray-200 bg-gray-50 px-2.5 py-1 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-100"
+              <button
+                onClick={() => handleDownload("pdf")}
+                disabled={downloading === "pdf"}
+                className="inline-flex items-center gap-1 rounded-md border border-gray-200 bg-gray-50 px-2.5 py-1 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-100 disabled:opacity-60"
               >
-                <Download className="h-3 w-3" /> PDF
-              </a>
+                {downloading === "pdf" ? (
+                  <span className="h-3 w-3 animate-spin rounded-full border border-gray-400 border-t-gray-700" />
+                ) : (
+                  <Download className="h-3 w-3" />
+                )}{" "}
+                PDF
+              </button>
             )}
             {report.htmlUrl && (
-              <a
-                href={report.htmlUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 rounded-md border border-gray-200 bg-gray-50 px-2.5 py-1 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-100"
+              <button
+                onClick={() => handleDownload("html")}
+                disabled={downloading === "html"}
+                className="inline-flex items-center gap-1 rounded-md border border-gray-200 bg-gray-50 px-2.5 py-1 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-100 disabled:opacity-60"
               >
-                <Download className="h-3 w-3" /> HTML
-              </a>
+                {downloading === "html" ? (
+                  <span className="h-3 w-3 animate-spin rounded-full border border-gray-400 border-t-gray-700" />
+                ) : (
+                  <Download className="h-3 w-3" />
+                )}{" "}
+                HTML
+              </button>
             )}
           </div>
         </div>
         {report.generatedAt && (
           <p className="mt-1 text-xs text-gray-500">
-            Generated {new Date(report.generatedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
+            Generated {formatGeneratedAt(report.generatedAt)}
           </p>
         )}
       </div>
@@ -538,17 +602,25 @@ function ReportSection({ report }: { report: Report }) {
                 <DialogTitle>Application Prep Packet</DialogTitle>
                 {report.generatedAt && (
                   <span className="ml-auto text-xs text-gray-400">
-                    {new Date(report.generatedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
+                    {formatGeneratedAt(report.generatedAt)}
                   </span>
                 )}
               </div>
             </DialogHeader>
-            <iframe
-              srcDoc={report.html}
-              title="Application Prep Packet"
-              className="flex-1 w-full border-0 rounded-b-lg"
-              sandbox="allow-same-origin"
-            />
+            <div className="relative flex-1 min-h-0">
+              {!iframeLoaded && (
+                <div className="absolute inset-0 flex items-center justify-center bg-white rounded-b-lg">
+                  <div className="h-8 w-8 animate-spin rounded-full border-4 border-gray-200 border-t-violet-500" />
+                </div>
+              )}
+              <iframe
+                srcDoc={report.html}
+                title="Application Prep Packet"
+                className="h-full w-full border-0 rounded-b-lg"
+                sandbox=""
+                onLoad={() => setIframeLoaded(true)}
+              />
+            </div>
           </DialogContent>
         </Dialog>
       )}
@@ -567,6 +639,7 @@ export function PremiumInsightPanel({
   report,
   advisoryNotice,
   failureReason,
+  recommendationId,
   inputContext,
 }: PremiumInsightPanelProps) {
   return (
@@ -620,7 +693,7 @@ export function PremiumInsightPanel({
             {report && (
               <>
                 <hr className="border-gray-100" />
-                <ReportSection report={report} />
+                <ReportSection report={report} recommendationId={recommendationId} />
               </>
             )}
           </>
