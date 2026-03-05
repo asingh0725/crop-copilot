@@ -14,7 +14,14 @@
     "infra:synth": "pnpm --filter infra synth",
     "infra:diff": "pnpm --filter infra diff",
     "infra:bootstrap": "pnpm --filter infra bootstrap",
-    "infra:deploy": "pnpm --filter infra deploy"
+    "infra:deploy": "pnpm --filter infra run deploy",
+    "infra:deploy:env": "CROP_ENV=dev pnpm run infra:deploy:compliance",
+    "infra:deploy:dev": "CROP_ENV=dev pnpm run infra:deploy:compliance",
+    "infra:deploy:prod": "CROP_ENV=prod pnpm run infra:deploy:compliance",
+    "env:audit": "node tools/scripts/env/audit-env-separation.mjs",
+    "env:audit:github": "node tools/scripts/env/audit-github-environments.mjs",
+    "lambda:build:pymupdf-layer": "bash tools/lambda/build-pymupdf-layer.sh",
+    "infra:deploy:compliance": "pnpm run lambda:build:pymupdf-layer && pnpm --filter infra run deploy"
   },
   "devDependencies": {
     "prettier": "^3.4.2",

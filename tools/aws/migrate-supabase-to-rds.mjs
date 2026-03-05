@@ -7,14 +7,14 @@ import path from 'node:path';
 
 const profile = process.env.AWS_PROFILE ?? 'cropcopilot-dev';
 const region = process.env.AWS_REGION ?? 'ca-west-1';
-const envName = process.env.CROP_ENV ?? 'prod';
+const envName = normalizeEnvironment(process.env.CROP_ENV);
 const projectSlug = process.env.CROP_PROJECT_SLUG ?? 'crop-copilot';
 
 const sourceUrl =
   process.env.SUPABASE_SOURCE_DATABASE_URL ??
   process.env.SOURCE_DATABASE_URL ??
-  readEnvValue(path.resolve(process.cwd(), 'apps/web/.env'), 'DIRECT_URL') ??
-  readEnvValue(path.resolve(process.cwd(), 'apps/web/.env'), 'DATABASE_URL');
+  readScopedEnvValue(envName, 'DIRECT_URL') ??
+  readScopedEnvValue(envName, 'DATABASE_URL');
 
 const targetUrl = process.env.TARGET_DATABASE_URL ?? buildTargetUrlFromAws();
 
@@ -227,6 +227,34 @@ function readEnvValue(filePath, key) {
     return value;
   }
 
+  return null;
+}
+
+function normalizeEnvironment(rawValue) {
+  const value = (rawValue ?? '').trim().toLowerCase();
+  if (value === 'prod') {
+    return 'prod';
+  }
+  return 'dev';
+}
+
+function resolveWebEnvCandidates(envName) {
+  const webDir = path.resolve(process.cwd(), 'apps/web');
+  return [
+    path.resolve(webDir, `.env.${envName}.local`),
+    path.resolve(webDir, `.env.${envName}`),
+    path.resolve(webDir, '.env.local'),
+    path.resolve(webDir, '.env'),
+  ];
+}
+
+function readScopedEnvValue(envName, key) {
+  for (const candidate of resolveWebEnvCandidates(envName)) {
+    const value = readEnvValue(candidate, key);
+    if (value) {
+      return value;
+    }
+  }
   return null;
 }
 
