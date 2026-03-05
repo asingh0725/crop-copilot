@@ -7,6 +7,7 @@ import SwiftUI
 
 struct AppRootView: View {
     @State private var selectedTab: AppTab = .dashboard
+    @StateObject private var billingStore = BillingSnapshotStore()
 
     var body: some View {
         ZStack {
@@ -61,7 +62,11 @@ struct AppRootView: View {
                     }
                     .tag(AppTab.settings)
             }
+            .environmentObject(billingStore)
         }
         .tint(.appPrimary)
+        .task {
+            await billingStore.refreshIfNeeded()
+        }
     }
 }

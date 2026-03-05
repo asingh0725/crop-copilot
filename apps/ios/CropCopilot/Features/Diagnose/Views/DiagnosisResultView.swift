@@ -24,6 +24,7 @@ private enum RecommendationSection: String, Hashable {
     case input
     case diagnosis
     case actions
+    case premium
     case products
 }
 
@@ -80,11 +81,13 @@ struct DiagnosisResultView: View {
         .input,
         .diagnosis,
         .actions,
+        .premium,
     ]
     @State private var showCitationsModal = false
     @State private var citationDetent: CitationSheetDetent = .medium
     @State private var showProductNoticeAlert = false
     @State private var hasAcknowledgedProductNotice = false
+    @State private var reportPreviewHtml: String? = nil
 
     private var hasActiveModal: Bool {
         activeFeedbackStage != nil || showCitationsModal
@@ -144,6 +147,16 @@ struct DiagnosisResultView: View {
             productNoticeSheet
                 .presentationDetents([.height(280)])
                 .presentationDragIndicator(.visible)
+        }
+        .sheet(
+            isPresented: .init(
+                get: { reportPreviewHtml != nil },
+                set: { if !$0 { reportPreviewHtml = nil } }
+            )
+        ) {
+            if let html = reportPreviewHtml {
+                HTMLPreviewSheet(html: html)
+            }
         }
     }
 
@@ -264,6 +277,13 @@ struct DiagnosisResultView: View {
                     accessory: citationsButton(detail)
                 ) {
                     actionsContent(detail)
+                }
+
+                collapsibleSection(
+                    "Premium Insights",
+                    section: .premium
+                ) {
+                    premiumContent(detail)
                 }
 
                 collapsibleSection(
@@ -559,6 +579,410 @@ struct DiagnosisResultView: View {
         }
     }
 
+    @ViewBuilder
+    // MARK: - Premium Content
+
+    private func premiumContent(_ detail: RecommendationDetailResponse) -> some View {
+        let premium = detail.premium
+        let input = detail.input
+        let normalizedStatus = premium.status.lowercased()
+
+        return Group {
+            if normalizedStatus == "not_available" {
+                premiumPaywallCard()
+            } else if normalizedStatus == "queued" || normalizedStatus == "processing" {
+                premiumProcessingCard(status: premium.status)
+            } else if normalizedStatus == "failed" {
+                premiumFailedCard(reason: premium.failureReason)
+            } else if normalizedStatus == "ready" {
+                premiumReadyContent(premium: premium, input: input)
+            } else {
+                Text("Premium status: \(premium.status)")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    private func premiumPaywallCard() -> some View {
+        VStack(alignment: .leading, spacing: Spacing.md) {
+            HStack(spacing: Spacing.sm) {
+                Image(systemName: "lock.fill")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Grower Pro required")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.primary)
+                    Text("Upgrade to unlock premium analysis on this recommendation")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            VStack(alignment: .leading, spacing: Spacing.xs) {
+                premiumFeatureRow(icon: "checkmark.shield.fill", color: Color.semanticSuccess,
+                                  text: "Application risk review across 7 advisory checks")
+                premiumFeatureRow(icon: "chart.bar.fill", color: Color.appPrimary,
+                                  text: "Per-acre & whole-field cost analysis with swap suggestions")
+                premiumFeatureRow(icon: "wind", color: Color(red: 0.2, green: 0.6, blue: 0.9),
+                                  text: "Spray window forecasts based on your field location")
+                premiumFeatureRow(icon: "doc.fill", color: Color(red: 0.5, green: 0.2, blue: 0.8),
+                                  text: "One-tap application prep packet (HTML/PDF)")
+            }
+        }
+        .padding(Spacing.md)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .antigravityGlass(cornerRadius: CornerRadius.md)
+    }
+
+    private func premiumFeatureRow(icon: String, color: Color, text: String) -> some View {
+        HStack(alignment: .top, spacing: Spacing.sm) {
+            Image(systemName: icon)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(color)
+                .frame(width: 16)
+            Text(text)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .lineSpacing(2)
+        }
+    }
+
+    private func premiumProcessingCard(status: String) -> some View {
+        HStack(spacing: Spacing.md) {
+            ProgressView()
+                .tint(Color.appPrimary)
+                .scaleEffect(0.9)
+            VStack(alignment: .leading, spacing: 3) {
+                Text(status == "queued" ? "Analysis queued" : "Analysis running…")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.primary)
+                Text("Risk review, cost analysis, and spray windows are generating in the background. Refresh in a few seconds.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineSpacing(2)
+            }
+        }
+        .padding(Spacing.md)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .antigravityGlass(cornerRadius: CornerRadius.md)
+    }
+
+    private func premiumFailedCard(reason: String?) -> some View {
+        HStack(alignment: .top, spacing: Spacing.sm) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .font(.subheadline)
+                .foregroundStyle(Color.semanticError)
+            VStack(alignment: .leading, spacing: 3) {
+                Text("Premium analysis failed")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(Color.semanticError)
+                Text(reason ?? "Unknown error. The team has been notified.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .padding(Spacing.md)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .antigravityGlass(cornerRadius: CornerRadius.md)
+    }
+
+    @ViewBuilder
+    private func premiumReadyContent(premium: PremiumRecommendationDetail, input: RecommendationInput?) -> some View {
+        VStack(alignment: .leading, spacing: Spacing.md) {
+
+            // ── Advisory notice — top, most prominent ──────────────────────
+            let notice = premium.advisoryNotice?.isEmpty == false
+                ? premium.advisoryNotice!
+                : "Advisory use only. These are decision-support heuristics, not regulatory compliance determinations. Verify label instructions and local regulations before application."
+            HStack(alignment: .top, spacing: Spacing.sm) {
+                Image(systemName: "info.circle.fill")
+                    .font(.caption)
+                    .foregroundStyle(Color.semanticWarning)
+                Text(notice)
+                    .font(.caption)
+                    .foregroundStyle(Color.semanticWarning)
+                    .lineSpacing(2)
+            }
+            .padding(Spacing.sm)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Color.semanticWarning.opacity(0.10))
+            .clipShape(RoundedRectangle(cornerRadius: CornerRadius.sm, style: .continuous))
+
+            // ── Risk verdict ───────────────────────────────────────────────
+            HStack(spacing: Spacing.sm) {
+                Image(systemName: riskReviewIcon(premium.riskReview))
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(premiumDecisionColor(premium.riskReview))
+                Text("Risk Review: \(riskReviewLabel(premium.riskReview))")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(premiumDecisionColor(premium.riskReview))
+                Spacer()
+            }
+            .padding(Spacing.sm)
+            .background(premiumDecisionColor(premium.riskReview).opacity(0.12))
+            .clipShape(RoundedRectangle(cornerRadius: CornerRadius.sm, style: .continuous))
+
+            // ── Compliance checks ──────────────────────────────────────────
+            if !premium.checks.isEmpty {
+                VStack(alignment: .leading, spacing: Spacing.xs) {
+                    Text("Advisory Checks")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                    ForEach(premium.checks.prefix(4)) { check in
+                        HStack(alignment: .top, spacing: Spacing.sm) {
+                            Image(systemName: riskReviewIcon(check.result))
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(checkResultColor(check.result))
+                                .frame(width: 14)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(check.title)
+                                    .font(.caption.weight(.semibold))
+                                    .foregroundStyle(.primary)
+                                Text(check.message)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                                    .lineSpacing(2)
+                            }
+                        }
+                        .padding(Spacing.sm)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .antigravityGlass(cornerRadius: CornerRadius.sm)
+                    }
+                }
+            }
+
+            Divider()
+
+            // ── Cost analysis ──────────────────────────────────────────────
+            if let cost = premium.costAnalysis {
+                VStack(alignment: .leading, spacing: Spacing.sm) {
+                    HStack {
+                        Label("Cost Analysis", systemImage: "leaf.fill")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(.secondary)
+                        Spacer()
+                        // Input context: acreage
+                        if let acreage = cost.acreage ?? input?.fieldAcreage {
+                            Text("\(String(format: "%.0f", acreage)) acres")
+                                .font(.caption.weight(.medium))
+                                .foregroundStyle(Color.appPrimary)
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 2)
+                                .background(Color.appPrimary.opacity(0.10))
+                                .clipShape(Capsule())
+                        }
+                        // Coverage ratio
+                        if let ratio = cost.pricingCoverageRatio, ratio < 1.0 {
+                            Text("\(Int(ratio * 100))% priced")
+                                .font(.caption.weight(.medium))
+                                .foregroundStyle(Color.semanticWarning)
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 2)
+                                .background(Color.semanticWarning.opacity(0.10))
+                                .clipShape(Capsule())
+                        }
+                    }
+
+                    HStack(spacing: Spacing.md) {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Per Acre")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                            Text(formatUsd(cost.perAcreTotalUsd))
+                                .font(.title3.weight(.bold))
+                                .foregroundStyle(.primary)
+                        }
+                        Spacer()
+                        if let acreage = cost.acreage ?? input?.fieldAcreage, acreage > 0 {
+                            VStack(alignment: .trailing, spacing: 4) {
+                                Text("Whole Field")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                                Text(formatUsd(cost.wholeFieldTotalUsd))
+                                    .font(.title3.weight(.bold))
+                                    .foregroundStyle(.primary)
+                            }
+                        }
+                    }
+                    .padding(Spacing.sm)
+                    .antigravityGlass(cornerRadius: CornerRadius.sm)
+
+                    // Per-product breakdown
+                    if !cost.items.isEmpty {
+                        VStack(alignment: .leading, spacing: Spacing.xs) {
+                            ForEach(Array(cost.items.prefix(5).enumerated()), id: \.offset) { _, item in
+                                HStack(spacing: Spacing.sm) {
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text(item.productName)
+                                            .font(.caption.weight(.semibold))
+                                            .foregroundStyle(.primary)
+                                            .lineLimit(1)
+                                        HStack(spacing: 4) {
+                                            Text(item.productType.replacingOccurrences(of: "_", with: " ").capitalized)
+                                                .font(.caption2)
+                                                .foregroundStyle(.secondary)
+                                            if let src = item.priceSource {
+                                                Text(src == "live" ? "Live" : "Est.")
+                                                    .font(.caption2.weight(.semibold))
+                                                    .foregroundStyle(src == "live" ? Color.semanticSuccess : Color.secondary)
+                                                    .padding(.horizontal, 4)
+                                                    .padding(.vertical, 1)
+                                                    .background((src == "live" ? Color.semanticSuccess : Color.secondary).opacity(0.12))
+                                                    .clipShape(Capsule())
+                                            }
+                                        }
+                                    }
+                                    Spacer()
+                                    if let perAcre = item.estimatedCostPerAcreUsd {
+                                        Text(formatUsd(perAcre) + "/ac")
+                                            .font(.caption.weight(.semibold))
+                                            .foregroundStyle(.primary)
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // Swap suggestions
+                    if !cost.swapOptions.isEmpty {
+                        VStack(alignment: .leading, spacing: Spacing.xs) {
+                            Label("Cost Swap Suggestions", systemImage: "arrow.left.arrow.right")
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(Color.semanticSuccess)
+                            ForEach(Array(cost.swapOptions.prefix(2).enumerated()), id: \.offset) { _, swap in
+                                Text("Switch \(swap.fromProductName) → \(swap.toProductName) and save \(formatUsd(swap.estimatedSavingsPerAcreUsd))/ac")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                                    .lineSpacing(2)
+                            }
+                        }
+                        .padding(Spacing.sm)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(Color.semanticSuccess.opacity(0.08))
+                        .clipShape(RoundedRectangle(cornerRadius: CornerRadius.sm, style: .continuous))
+                    }
+                }
+            }
+
+            // ── Spray windows ──────────────────────────────────────────────
+            if !premium.sprayWindows.isEmpty {
+                Divider()
+                VStack(alignment: .leading, spacing: Spacing.sm) {
+                    HStack {
+                        Label("Spray Windows", systemImage: "wind")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(.secondary)
+                        Spacer()
+                        // GPS context badge
+                        if let lat = input?.fieldLatitude, let _ = input?.fieldLongitude {
+                            Text("GPS \(String(format: "%.2f", lat))…")
+                                .font(.caption2.weight(.medium))
+                                .foregroundStyle(Color.appPrimary)
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 2)
+                                .background(Color.appPrimary.opacity(0.10))
+                                .clipShape(Capsule())
+                        }
+                    }
+
+                    ForEach(premium.sprayWindows.prefix(3)) { window in
+                        HStack(spacing: Spacing.sm) {
+                            // Score indicator bar
+                            RoundedRectangle(cornerRadius: 2, style: .continuous)
+                                .fill(sprayScoreColor(window.score))
+                                .frame(width: 4)
+                                .padding(.vertical, Spacing.xs)
+
+                            VStack(alignment: .leading, spacing: 3) {
+                                HStack {
+                                    Text(formattedDateRange(start: window.startsAt, end: window.endsAt))
+                                        .font(.caption.weight(.semibold))
+                                        .foregroundStyle(.primary)
+                                    Spacer()
+                                    Text("\(window.score)/100")
+                                        .font(.caption2.weight(.semibold))
+                                        .foregroundStyle(sprayScoreColor(window.score))
+                                        .padding(.horizontal, 5)
+                                        .padding(.vertical, 1)
+                                        .background(sprayScoreColor(window.score).opacity(0.12))
+                                        .clipShape(Capsule())
+                                }
+                                Text(window.summary)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                                    .lineSpacing(2)
+                            }
+                        }
+                        .padding(Spacing.sm)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .antigravityGlass(cornerRadius: CornerRadius.sm)
+                    }
+                }
+            }
+
+            // ── Report ─────────────────────────────────────────────────────
+            if let report = premium.report,
+               report.html != nil || report.htmlUrl != nil || report.pdfUrl != nil {
+                Divider()
+                VStack(alignment: .leading, spacing: Spacing.sm) {
+                    Label("Application Prep Packet", systemImage: "doc.fill")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                    HStack(spacing: Spacing.sm) {
+                        if let html = report.html {
+                            Button {
+                                reportPreviewHtml = html
+                            } label: {
+                                Label("Preview", systemImage: "eye.fill")
+                                    .font(.caption.weight(.semibold))
+                            }
+                            .buttonStyle(.borderedProminent)
+                            .tint(Color.appPrimary)
+                            .controlSize(.small)
+                        }
+                        if let pdfUrl = report.pdfUrl, let url = URL(string: pdfUrl) {
+                            Button {
+                                openURL(url)
+                            } label: {
+                                Label("PDF", systemImage: "arrow.down.doc.fill")
+                                    .font(.caption.weight(.semibold))
+                            }
+                            .buttonStyle(.bordered)
+                            .controlSize(.small)
+                        }
+                        if let htmlUrl = report.htmlUrl, let url = URL(string: htmlUrl) {
+                            Button {
+                                openURL(url)
+                            } label: {
+                                Label("Download", systemImage: "square.and.arrow.down")
+                                    .font(.caption.weight(.semibold))
+                            }
+                            .buttonStyle(.bordered)
+                            .controlSize(.small)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private func riskReviewIcon(_ decision: String?) -> String {
+        switch decision?.lowercased() {
+        case "clear_signal", "pass":              return "checkmark.circle.fill"
+        case "potential_conflict", "block":       return "exclamationmark.triangle.fill"
+        case "needs_manual_verification", "review": return "questionmark.circle.fill"
+        default:                                  return "circle.dashed"
+        }
+    }
+
+    private func sprayScoreColor(_ score: Int) -> Color {
+        if score >= 80 { return Color.semanticSuccess }
+        if score >= 60 { return Color.semanticWarning }
+        return Color.semanticError
+    }
+
     private func productRow(_ product: MergedRecommendationProduct, showChevron: Bool) -> some View {
         HStack(spacing: Spacing.md) {
             IconBadge(
@@ -665,6 +1089,70 @@ struct DiagnosisResultView: View {
             return Color.semanticWarning
         }
         return Color.appSecondary
+    }
+
+    private func premiumDecisionColor(_ decision: String?) -> Color {
+        switch decision?.lowercased() {
+        case "clear_signal", "pass":
+            return Color.semanticSuccess
+        case "potential_conflict", "block":
+            return Color.semanticError
+        case "needs_manual_verification", "review":
+            return Color.semanticWarning
+        default:
+            return Color.appSecondary
+        }
+    }
+
+    private func riskReviewLabel(_ decision: String?) -> String {
+        switch decision?.lowercased() {
+        case "clear_signal", "pass":
+            return "Clear Signal"
+        case "potential_conflict", "block":
+            return "Potential Conflict"
+        case "needs_manual_verification", "review":
+            return "Needs Manual Verification"
+        default:
+            return "N/A"
+        }
+    }
+
+    private func checkResultColor(_ result: String) -> Color {
+        switch result.lowercased() {
+        case "clear_signal", "pass":
+            return Color.semanticSuccess
+        case "potential_conflict", "block":
+            return Color.semanticError
+        case "needs_manual_verification", "review":
+            return Color.semanticWarning
+        default:
+            return Color.secondary
+        }
+    }
+
+    private func formatUsd(_ value: Double?) -> String {
+        guard let value else {
+            return "N/A"
+        }
+        return String(format: "$%.2f", value)
+    }
+
+    private func formattedDateRange(start: String, end: String) -> String {
+        let parser = ISO8601DateFormatter()
+        parser.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        let fallbackParser = ISO8601DateFormatter()
+
+        let startDate = parser.date(from: start) ?? fallbackParser.date(from: start)
+        let endDate = parser.date(from: end) ?? fallbackParser.date(from: end)
+        guard let startDate, let endDate else {
+            return "\(start) - \(end)"
+        }
+
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.dateStyle = .medium
+        formatter.timeStyle = .short
+        return "\(formatter.string(from: startDate)) - \(formatter.string(from: endDate))"
     }
 
     private func iconForAction(_ action: String) -> String {
@@ -1871,6 +2359,9 @@ class DiagnosisResultViewModel: ObservableObject {
         let response: FeedbackSubmitResponse = try await apiClient.request(.submitFeedback, body: body)
         feedback = response.feedback
         nextSuggestedStage = suggestedStage(recommendationId: recommendationId)
+        if response.creditReward?.granted == true {
+            CreditsEvents.postRefresh(.feedbackRewardGranted)
+        }
         return response.feedback
     }
 

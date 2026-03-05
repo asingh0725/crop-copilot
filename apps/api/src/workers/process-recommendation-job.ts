@@ -8,6 +8,10 @@ import {
   getPushEventPublisher,
   type PushEventPublisher,
 } from '../notifications/push-events';
+import {
+  getPremiumEnrichmentQueue,
+  type PremiumEnrichmentQueue,
+} from '../queue/premium-enrichment-queue';
 import { runRecommendationPipeline } from '../pipeline/recommendation-pipeline';
 import {
   emitRecommendationMetrics,
@@ -27,7 +31,8 @@ async function processMessage(
   payload: RecommendationJobRequested,
   store: RecommendationStore,
   pipelineRunner: RecommendationPipelineRunner,
-  pushEvents: PushEventPublisher
+  pushEvents: PushEventPublisher,
+  premiumQueue: PremiumEnrichmentQueue
 ): Promise<ProcessedRecommendationResult | null> {
   const currentStatus = await store.getJobStatus(payload.jobId, payload.userId);
 
@@ -79,6 +84,24 @@ async function processMessage(
     });
   }
 
+  try {
+    await premiumQueue.publishPremiumEnrichment({
+      messageType: 'premium.enrichment.requested',
+      messageVersion: '1',
+      requestedAt: new Date().toISOString(),
+      traceId: payload.traceId,
+      userId: payload.userId,
+      recommendationId: result.recommendationId,
+    });
+  } catch (error) {
+    console.error('Failed to enqueue premium enrichment job', {
+      recommendationId: result.recommendationId,
+      userId: payload.userId,
+      traceId: payload.traceId,
+      error: (error as Error).message,
+    });
+  }
+
   return {
     traceId: payload.traceId,
     modelUsed: result.modelUsed,
@@ -90,6 +113,7 @@ export function buildProcessRecommendationJobHandler(
   store: RecommendationStore = getRecommendationStore(),
   pipelineRunner: RecommendationPipelineRunner = runRecommendationPipeline,
   pushEvents: PushEventPublisher = getPushEventPublisher(),
+  premiumQueue: PremiumEnrichmentQueue = getPremiumEnrichmentQueue(),
   metricsReporter: RecommendationMetricsReporter = emitRecommendationMetrics
 ): SQSHandler {
   return async (event: SQSEvent) => {
@@ -101,7 +125,13 @@ export function buildProcessRecommendationJobHandler(
 
       try {
         payload = RecommendationJobRequestedSchema.parse(JSON.parse(record.body));
-        const result = await processMessage(payload, store, pipelineRunner, pushEvents);
+        const result = await processMessage(
+          payload,
+          store,
+          pipelineRunner,
+          pushEvents,
+          premiumQueue
+        );
 
         if (result) {
           metricsReporter({
