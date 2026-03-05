@@ -26,7 +26,7 @@ Required values:
 
 - `AWS_ACCOUNT_ID`
 - `AWS_REGION`
-- `CROP_ENV` (`dev`, `staging`, or `prod`)
+- `CROP_ENV` (`dev` or `prod`)
 
 Optional values:
 
@@ -62,6 +62,27 @@ pnpm --filter infra diff
 pnpm --filter infra bootstrap
 pnpm --filter infra deploy
 ```
+
+## Dev/Prod env separation
+
+Use env-scoped files instead of a shared `.env`:
+
+```bash
+cp infra/.env.dev.example infra/.env.dev
+cp infra/.env.prod.example infra/.env.prod
+```
+
+Then deploy with explicit environment:
+
+```bash
+# from repository root
+CROP_ENV=dev pnpm infra:deploy:compliance
+CROP_ENV=prod pnpm infra:deploy:compliance
+```
+
+CDK entrypoint (`infra/bin/crop-copilot.ts`) now prefers env-scoped files
+(`.env.dev*`, `.env.prod*`) and only falls back to legacy `.env` files when
+`ALLOW_LEGACY_ENV_FALLBACK` is not set to `false`.
 
 ## Example (dev)
 
