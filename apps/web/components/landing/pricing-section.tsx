@@ -8,48 +8,65 @@ import { MotionDiv, MotionStagger, staggerItem } from "./motion-wrapper";
 
 const plans = [
   {
-    name: "Starter",
-    price: "Free",
-    description: "Perfect for trying out Crop Copilot",
+    name: "Grower Free",
+    price: "$0",
+    period: "/month",
+    description: "No-credit-card starter plan powered through Stripe subscriptions",
     features: [
-      "3 soil test analyses per month",
-      "Basic crop recommendations",
-      "Email support",
-      "7-day history",
+      "3 recommendation credits per month",
+      "Base recommendation workflow (photo + lab inputs)",
+      "Upgrade anytime to Grower or Grower Pro",
+      "No credit card required",
     ],
-    cta: "Get Started Free",
-    href: "/signup",
+    cta: "Start Free",
+    href: "/signup?plan=grower_free",
     popular: false,
   },
   {
-    name: "Professional",
+    name: "Grower",
     price: "$29",
     period: "/month",
-    description: "For serious farmers who want more insights",
+    description: "Core AI recommendations with controlled usage and credit top-ups",
     features: [
-      "Unlimited soil test analyses",
-      "Advanced crop-specific recommendations",
-      "Priority support",
-      "Unlimited history & reports",
-      "Export to PDF",
-      "Multi-field management",
+      "30 recommendation credits per month",
+      "Base recommendation workflow (photo + lab inputs)",
+      "Buy extra credits: 10 recommendations for $12",
+      "Detailed feedback rewards: $0.05 credit each (up to $2.50/month)",
+      "Recommendation history and source citations",
+      "Advisory safety disclaimers and product guidance",
     ],
-    cta: "Start Free Trial",
-    href: "/signup?plan=pro",
+    cta: "Start Grower",
+    href: "/signup?plan=grower",
     popular: true,
+  },
+  {
+    name: "Grower Pro",
+    price: "$45",
+    period: "/month",
+      description: "Everything in Grower plus operational risk and cost controls",
+      features: [
+        "40 recommendation credits per month",
+        "Application Risk Review: label-context checks with evidence and unresolved flags",
+        "Cost Optimizer: per-acre + whole-field costs and cheaper swap options",
+        "Spray-Window Alerts based on weather and timing",
+        "1-tap Application Prep Packet for sharing and print-ready field records",
+        "Priority queue for premium enrichment processing",
+      ],
+    cta: "Upgrade to Pro",
+    href: "/signup?plan=grower_pro",
+    popular: false,
   },
   {
     name: "Enterprise",
     price: "Custom",
-    description: "For large operations and co-ops",
-    features: [
-      "Everything in Professional",
-      "API access",
-      "Custom integrations",
-      "Dedicated account manager",
-      "On-site training",
-      "SLA guarantee",
-    ],
+    description: "For co-ops and large operations needing custom controls",
+      features: [
+        "Everything in Grower Pro",
+        "Centralized team billing and procurement controls",
+        "Custom risk-rule packs and jurisdiction context overrides",
+        "Dedicated onboarding and support SLA",
+        "Private integrations and reporting exports",
+      ],
     cta: "Contact Sales",
     href: "/contact",
     popular: false,
@@ -69,11 +86,11 @@ export function PricingSection() {
             <span className="font-serif italic text-gradient">Pricing</span>
           </h2>
           <p className="text-lg text-white/50 max-w-2xl mx-auto">
-            Start free and upgrade as your operation grows. No hidden fees.
+            Metered recommendations, transparent overages, and clear Pro value.
           </p>
         </MotionDiv>
 
-        <MotionStagger className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-5">
+        <MotionStagger className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 lg:gap-5">
           {plans.map((plan, index) => (
             <motion.div
               key={index}

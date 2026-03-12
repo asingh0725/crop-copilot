@@ -15,6 +15,7 @@ import {
   encodeSyncCursor,
   normalizeIdempotencyKey,
 } from '@crop-copilot/domain';
+import { recordRecommendationUsageAndChargeOverage } from './entitlements';
 import type {
   EnqueueInputOptions,
   EnqueueInputResult,
@@ -303,6 +304,9 @@ export class PostgresRecommendationStore implements RecommendationStore {
     userId: string,
     result: RecommendationResult
   ): Promise<void> {
+    let finalInputId: string | null = null;
+    let finalRecommendationId: string | null = null;
+
     await this.withTransaction(async (client) => {
       const persistedResult = { ...result };
 
@@ -322,6 +326,7 @@ export class PostgresRecommendationStore implements RecommendationStore {
       if (!inputId) {
         return;
       }
+      finalInputId = inputId;
 
       const recommendationId = await this.upsertLegacyRecommendation(
         client,
@@ -329,6 +334,7 @@ export class PostgresRecommendationStore implements RecommendationStore {
         inputId,
         persistedResult
       );
+      finalRecommendationId = recommendationId;
 
       if (recommendationId !== persistedResult.recommendationId) {
         persistedResult.recommendationId = recommendationId;
@@ -352,6 +358,24 @@ export class PostgresRecommendationStore implements RecommendationStore {
         persistedResult
       );
     });
+
+    if (finalRecommendationId && finalInputId) {
+      try {
+        await recordRecommendationUsageAndChargeOverage(
+          this.pool,
+          userId,
+          finalRecommendationId,
+          finalInputId
+        );
+      } catch (error) {
+        console.error('Failed to record recommendation usage for entitlement metering', {
+          jobId,
+          userId,
+          recommendationId: finalRecommendationId,
+          error: (error as Error).message,
+        });
+      }
+    }
   }
 
   private async ensureLegacyUser(
@@ -387,16 +411,24 @@ export class PostgresRecommendationStore implements RecommendationStore {
           location,
           crop,
           season,
+          "fieldAcreage",
+          "plannedApplicationDate",
+          "fieldLatitude",
+          "fieldLongitude",
           "createdAt"
         )
-        VALUES ($1, $2, $3, $4, $5, $6::jsonb, $7, $8, $9, NOW())
+        VALUES ($1, $2, $3, $4, $5, $6::jsonb, $7, $8, $9, $10, $11, $12, $13, NOW())
         ON CONFLICT (id) DO UPDATE
           SET "imageUrl" = EXCLUDED."imageUrl",
               description = EXCLUDED.description,
               "labData" = EXCLUDED."labData",
               location = EXCLUDED.location,
               crop = EXCLUDED.crop,
-              season = EXCLUDED.season
+              season = EXCLUDED.season,
+              "fieldAcreage" = EXCLUDED."fieldAcreage",
+              "plannedApplicationDate" = EXCLUDED."plannedApplicationDate",
+              "fieldLatitude" = EXCLUDED."fieldLatitude",
+              "fieldLongitude" = EXCLUDED."fieldLongitude"
       `,
       [
         inputId,
@@ -408,6 +440,10 @@ export class PostgresRecommendationStore implements RecommendationStore {
         payload.location ?? null,
         payload.crop ?? null,
         payload.season ?? null,
+        payload.fieldAcreage ?? null,
+        payload.plannedApplicationDate ?? null,
+        payload.fieldLatitude ?? null,
+        payload.fieldLongitude ?? null,
       ]
     );
   }

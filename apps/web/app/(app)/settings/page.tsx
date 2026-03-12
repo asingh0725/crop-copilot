@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageHeader } from "@/components/shared/page-header";
-import { User, Bell, Shield, HelpCircle, ChevronRight } from "lucide-react";
+import { User, Bell, Shield, HelpCircle, ChevronRight, CreditCard } from "lucide-react";
 
 const settingsItems = [
   {
@@ -9,6 +9,12 @@ const settingsItems = [
     description: "Manage your personal information and farm details",
     icon: User,
     href: "/settings/profile",
+  },
+  {
+    title: "Billing & Usage",
+    description: "Track plan usage, credits, and upgrade to Grower Pro",
+    icon: CreditCard,
+    href: "/settings/billing",
   },
   {
     title: "Notifications",

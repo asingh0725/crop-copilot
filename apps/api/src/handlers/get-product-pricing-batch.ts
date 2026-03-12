@@ -152,11 +152,22 @@ export function buildGetProductPricingBatchHandler(
       );
       products = result.rows;
     } catch (error) {
-      console.error('[Pricing] DB fetch failed:', (error as Error).message);
-      return jsonResponse(
-        { error: { code: 'INTERNAL_SERVER_ERROR', message: 'Internal server error' } },
-        { statusCode: 500 }
-      );
+      console.warn('[Pricing] DB fetch failed, falling back to id-only pricing payload:', {
+        error: (error as Error).message,
+      });
+      products = productIds.map((id) => ({
+        id,
+        name: id,
+        brand: null,
+      }));
+    }
+
+    if (products.length === 0) {
+      products = productIds.map((id) => ({
+        id,
+        name: id,
+        brand: null,
+      }));
     }
 
     // For each product: check cache, live-search if needed

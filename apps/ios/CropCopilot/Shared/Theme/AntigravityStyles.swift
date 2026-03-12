@@ -474,12 +474,4 @@ extension View {
     func shimmer() -> some View {
         modifier(ShimmerModifier())
     }
-
-    func limeShadow(radius: CGFloat = 8, opacity: Double = 0.12) -> some View {
-        shadow(color: Color.appPrimary.opacity(opacity), radius: radius, x: 0, y: 4)
-    }
-
-    func coloredShadow(_ color: Color, radius: CGFloat = 8, opacity: Double = 0.12) -> some View {
-        shadow(color: color.opacity(opacity), radius: radius, x: 0, y: 4)
-    }
 }

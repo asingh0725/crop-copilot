@@ -61,6 +61,16 @@ struct DiagnosisFormView: View {
                     .frame(minHeight: 80)
             }
 
+            Section("Application Planning (Optional)") {
+                TextField("Field Acreage", text: $viewModel.fieldAcreage)
+                    .keyboardType(.decimalPad)
+                TextField("Planned Application Date (YYYY-MM-DD)", text: $viewModel.plannedApplicationDate)
+                TextField("Latitude", text: $viewModel.fieldLatitude)
+                    .keyboardType(.decimalPad)
+                TextField("Longitude", text: $viewModel.fieldLongitude)
+                    .keyboardType(.decimalPad)
+            }
+
             Section {
                 Button {
                     Task {

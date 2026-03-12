@@ -24,6 +24,11 @@ struct DashboardView: View {
                 .padding(.bottom, Spacing.xxxl)
             }
             .navigationTitle("Dashboard")
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    CreditsBalanceChip()
+                }
+            }
             .refreshable {
                 await viewModel.loadRecentRecommendations()
             }
