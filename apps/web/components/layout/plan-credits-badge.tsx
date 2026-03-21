@@ -1,8 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { Coins, ExternalLink, Info, Sparkles, Wallet } from "lucide-react";
+import { AlertTriangle, Check, Coins, ExternalLink, Info, Loader2, Sparkles, Wallet } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { getBrowserApiBase } from "@/lib/api-client";
 import { onCreditsRefresh } from "@/lib/credits-events";
@@ -28,7 +28,17 @@ interface UsageSnapshot {
   overagePriceUsd: number;
 }
 
+interface AutoReloadConfig {
+  enabled: boolean;
+  thresholdUsd: number;
+  monthlyLimitUsd: number;
+  reloadPackId: string;
+}
+
+type SaveState = "idle" | "saving" | "saved";
+
 const REFRESH_INTERVAL_MS = 15_000;
+const DEBOUNCE_MS = 600;
 
 function formatCurrency(value: number): string {
   return new Intl.NumberFormat("en-US", {
@@ -68,20 +78,85 @@ export function PlanCreditsBadge({ placement = "floating" }: PlanCreditsBadgePro
   const [subscription, setSubscription] = useState<SubscriptionSnapshot | null>(null);
   const [usage, setUsage] = useState<UsageSnapshot | null>(null);
   const [autoReloadEnabled, setAutoReloadEnabled] = useState(false);
-  const [monthlyLimit, setMonthlyLimit] = useState("200");
+  const [thresholdUsd, setThresholdUsd] = useState("5");
+  const [monthlyLimit, setMonthlyLimit] = useState("60");
+  const [saveState, setSaveState] = useState<SaveState>("idle");
   const [promoCode, setPromoCode] = useState("");
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const getAuthToken = useCallback(async (): Promise<string> => {
+    const supabase = createClient();
+    const { data: { session } } = await supabase.auth.getSession();
+    return session?.access_token ?? "";
+  }, []);
+
+  const persistAutoReload = useCallback(
+    async (patch: Partial<{ enabled: boolean; thresholdUsd: number; monthlyLimitUsd: number }>) => {
+      setSaveState("saving");
+      try {
+        const token = await getAuthToken();
+        const base = getBrowserApiBase();
+        await fetch(`${base}/api/v1/credits/auto-reload-config`, {
+          method: "PATCH",
+          headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+          body: JSON.stringify(patch),
+        });
+        setSaveState("saved");
+        setTimeout(() => setSaveState("idle"), 2000);
+      } catch {
+        setSaveState("idle");
+      }
+    },
+    [getAuthToken]
+  );
+
+  const scheduleSave = useCallback(
+    (patch: Partial<{ enabled: boolean; thresholdUsd: number; monthlyLimitUsd: number }>) => {
+      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+      saveTimerRef.current = setTimeout(() => {
+        void persistAutoReload(patch);
+      }, DEBOUNCE_MS);
+    },
+    [persistAutoReload]
+  );
+
+  const handleToggleAutoReload = useCallback(() => {
+    setAutoReloadEnabled((prev) => {
+      const next = !prev;
+      void persistAutoReload({ enabled: next });
+      return next;
+    });
+  }, [persistAutoReload]);
+
+  const handleThresholdChange = useCallback(
+    (value: string) => {
+      setThresholdUsd(value);
+      const num = parseFloat(value);
+      if (Number.isFinite(num) && num >= 1 && num <= 50) {
+        scheduleSave({ thresholdUsd: num });
+      }
+    },
+    [scheduleSave]
+  );
+
+  const handleMonthlyLimitChange = useCallback(
+    (value: string) => {
+      setMonthlyLimit(value);
+      const num = parseFloat(value);
+      if (Number.isFinite(num) && num >= 12 && num <= 500) {
+        scheduleSave({ monthlyLimitUsd: num });
+      }
+    },
+    [scheduleSave]
+  );
 
   const load = useCallback(async () => {
     setIsLoading(true);
     try {
-      const supabase = createClient();
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      const token = session?.access_token ?? "";
+      const token = await getAuthToken();
       const base = getBrowserApiBase();
 
-      const [subRes, usageRes] = await Promise.all([
+      const [subRes, usageRes, configRes] = await Promise.all([
         fetch(`${base}/api/v1/subscription`, {
           headers: { Authorization: `Bearer ${token}` },
           cache: "no-store",
@@ -90,18 +165,26 @@ export function PlanCreditsBadge({ placement = "floating" }: PlanCreditsBadgePro
           headers: { Authorization: `Bearer ${token}` },
           cache: "no-store",
         }),
+        fetch(`${base}/api/v1/credits/auto-reload-config`, {
+          headers: { Authorization: `Bearer ${token}` },
+          cache: "no-store",
+        }),
       ]);
 
       if (subRes.ok) {
-        const subBody = (await subRes.json()) as { subscription?: SubscriptionSnapshot };
-        if (subBody.subscription) {
-          setSubscription(subBody.subscription);
-        }
+        const body = (await subRes.json()) as { subscription?: SubscriptionSnapshot };
+        if (body.subscription) setSubscription(body.subscription);
       }
       if (usageRes.ok) {
-        const usageBody = (await usageRes.json()) as { usage?: UsageSnapshot };
-        if (usageBody.usage) {
-          setUsage(usageBody.usage);
+        const body = (await usageRes.json()) as { usage?: UsageSnapshot };
+        if (body.usage) setUsage(body.usage);
+      }
+      if (configRes.ok) {
+        const body = (await configRes.json()) as { config?: AutoReloadConfig };
+        if (body.config) {
+          setAutoReloadEnabled(body.config.enabled);
+          setThresholdUsd(String(body.config.thresholdUsd));
+          setMonthlyLimit(String(body.config.monthlyLimitUsd));
         }
       }
       setLastUpdatedAt(Date.now());
@@ -110,35 +193,32 @@ export function PlanCreditsBadge({ placement = "floating" }: PlanCreditsBadgePro
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [getAuthToken]);
 
   useEffect(() => {
     void load();
 
-    const timer = window.setInterval(() => {
-      void load();
-    }, REFRESH_INTERVAL_MS);
+    const timer = window.setInterval(() => void load(), REFRESH_INTERVAL_MS);
 
     const handleVisibility = () => {
-      if (document.visibilityState === "visible") {
-        void load();
-      }
+      if (document.visibilityState === "visible") void load();
     };
     document.addEventListener("visibilitychange", handleVisibility);
-
-    const unbind = onCreditsRefresh(() => {
-      void load();
-    });
+    const unbind = onCreditsRefresh(() => void load());
 
     return () => {
       window.clearInterval(timer);
       document.removeEventListener("visibilitychange", handleVisibility);
       unbind();
+      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     };
   }, [load]);
 
-  const isPaidPlan =
-    subscription?.planId === "grower" || subscription?.planId === "grower_pro";
+  const isPaidPlan = subscription?.planId === "grower" || subscription?.planId === "grower_pro";
+  const isBalanceLow = usage ? usage.creditsBalanceUsd < usage.overagePriceUsd : false;
+  const isOutOfCapacity = usage
+    ? usage.remainingRecommendations === 0 && isBalanceLow
+    : false;
 
   const purchasedCreditsAsRecs = useMemo(() => {
     if (!usage || usage.overagePriceUsd <= 0) return 0;
@@ -152,38 +232,48 @@ export function PlanCreditsBadge({ placement = "floating" }: PlanCreditsBadgePro
 
   const triggerClassName = useMemo(() => {
     if (placement === "sidebar") {
-      return "inline-flex h-8 max-w-[6.75rem] items-center justify-center gap-1 rounded-lg border border-lime-400/25 bg-earth-900/85 px-2 text-xs font-semibold text-lime-300 transition hover:bg-earth-900";
+      return cn(
+        "inline-flex h-8 max-w-[6.75rem] items-center justify-center gap-1 rounded-lg border px-2 text-xs font-semibold transition",
+        isOutOfCapacity
+          ? "border-amber-400/30 bg-amber-900/40 text-amber-300 hover:bg-amber-900/60"
+          : "border-lime-400/25 bg-earth-900/85 text-lime-300 hover:bg-earth-900"
+      );
     }
-
     if (placement === "sidebar-collapsed") {
-      return "inline-flex h-7 w-7 items-center justify-center rounded-lg border border-lime-400/25 bg-earth-900/85 text-lime-300 transition hover:bg-earth-900";
+      return cn(
+        "inline-flex h-7 w-7 items-center justify-center rounded-lg border transition",
+        isOutOfCapacity
+          ? "border-amber-400/30 bg-amber-900/40 text-amber-300 hover:bg-amber-900/60"
+          : "border-lime-400/25 bg-earth-900/85 text-lime-300 hover:bg-earth-900"
+      );
     }
+    return cn(
+      "fixed top-4 right-4 z-50 flex items-center gap-2 rounded-2xl border px-3 py-1.5 text-sm shadow-lg shadow-black/40 backdrop-blur-sm transition",
+      isOutOfCapacity
+        ? "border-amber-400/40 bg-amber-400/15 text-amber-100 hover:bg-amber-400/25"
+        : "border-lime-400/40 bg-lime-400/15 text-lime-100 hover:bg-lime-400/25"
+    );
+  }, [placement, isOutOfCapacity]);
 
-    return "fixed top-4 right-4 z-50 hidden md:flex items-center gap-2 rounded-2xl border border-lime-400/40 bg-lime-400/15 px-3 py-1.5 text-sm text-lime-100 shadow-lg shadow-black/40 backdrop-blur-sm transition hover:bg-lime-400/25";
-  }, [placement]);
-
-  if (!isPaidPlan || !subscription || !usage) {
-    return null;
-  }
+  if (!subscription || !usage) return null;
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <button
-          type="button"
-          className={cn(triggerClassName, placement !== "floating" && "w-auto")}
-        >
-          {placement === "floating" && <span className="font-semibold">Credit Balance</span>}
+        <button type="button" className={cn(triggerClassName, placement !== "floating" && "w-auto")}>
+          {placement === "floating" && <span className="hidden sm:inline font-semibold">Credit Balance</span>}
           {placement === "sidebar" && (
             <span className="truncate font-semibold tabular-nums leading-none">
-              {formatCurrency(usage.creditsBalanceUsd)}
+              {isPaidPlan ? formatCurrency(usage.creditsBalanceUsd) : `${usage.remainingRecommendations} left`}
             </span>
           )}
           {placement === "floating" && (
-            <span className="text-lime-100/85">{formatCurrency(usage.creditsBalanceUsd)}</span>
+            <span className="opacity-85">
+              {isPaidPlan ? formatCurrency(usage.creditsBalanceUsd) : `${usage.remainingRecommendations} left`}
+            </span>
           )}
-          <span className="inline-flex items-center justify-center rounded-full border border-lime-300/40 p-1">
-            <Coins className="h-3 w-3" />
+          <span className="inline-flex items-center justify-center rounded-full border border-current/40 p-1">
+            {isOutOfCapacity ? <AlertTriangle className="h-3 w-3" /> : <Coins className="h-3 w-3" />}
           </span>
           {placement !== "floating" && (
             <span className="sr-only">
@@ -193,6 +283,7 @@ export function PlanCreditsBadge({ placement = "floating" }: PlanCreditsBadgePro
           )}
         </button>
       </DialogTrigger>
+
       <DialogContent className="max-w-3xl border border-lime-400/20 bg-earth-950 text-white shadow-2xl">
         <DialogHeader className="pb-1">
           <DialogTitle className="flex items-center justify-between text-base font-medium text-white">
@@ -204,24 +295,38 @@ export function PlanCreditsBadge({ placement = "floating" }: PlanCreditsBadgePro
         </DialogHeader>
 
         <div className="space-y-4">
+          {/* Low-balance warning */}
+          {isOutOfCapacity && !autoReloadEnabled && (
+            <div className="flex items-center gap-2 rounded-xl border border-amber-400/30 bg-amber-400/10 px-4 py-3">
+              <AlertTriangle className="h-4 w-4 shrink-0 text-amber-400" />
+              <p className="text-sm text-amber-200">
+                Balance too low to continue. Enable auto reload or{" "}
+                <Link href="/settings/billing" className="underline" onClick={() => setOpen(false)}>
+                  buy more credits
+                </Link>
+                .
+              </p>
+            </div>
+          )}
+
+          {/* Balance + Plan cards */}
           <div className="grid gap-3 md:grid-cols-2">
             <div className="rounded-2xl border border-lime-400/25 bg-lime-400/10 p-5">
               <div className="flex items-center justify-between text-lime-200">
-                <span className="text-sm">Credit balance</span>
+                <span className="text-sm">{isPaidPlan ? "Credit balance" : "Monthly usage"}</span>
                 <Wallet className="h-4 w-4" />
               </div>
               <p className="mt-2 text-5xl font-semibold tracking-tight">
-                {formatCurrency(usage.creditsBalanceUsd)}
+                {isPaidPlan ? formatCurrency(usage.creditsBalanceUsd) : `${usage.remainingRecommendations}`}
               </p>
               <p className="mt-2 text-xs text-lime-100/85">
-                {usage.remainingRecommendations} monthly recs left + {purchasedCreditsAsRecs} recs from credit balance.
+                {isPaidPlan
+                  ? `${usage.remainingRecommendations} monthly recs left + ${purchasedCreditsAsRecs} recs from credit balance.`
+                  : `recommendations remaining this month`}
               </p>
-              <Button
-                asChild
-                className="mt-4 w-full bg-lime-400 text-earth-950 hover:bg-lime-300"
-              >
+              <Button asChild className="mt-4 w-full bg-lime-400 text-earth-950 hover:bg-lime-300">
                 <Link href="/settings/billing" onClick={() => setOpen(false)}>
-                  Buy more
+                  {isPaidPlan ? "Buy more" : "Upgrade plan"}
                 </Link>
               </Button>
             </div>
@@ -253,21 +358,36 @@ export function PlanCreditsBadge({ placement = "floating" }: PlanCreditsBadgePro
 
           <div className="h-px bg-white/10" />
 
-          <div className="space-y-3">
+          {/* Auto-reload settings — paid plans only */}
+          {isPaidPlan && <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-medium text-white/80">Auto Reload</p>
+              {saveState === "saving" && (
+                <span className="flex items-center gap-1 text-xs text-white/40">
+                  <Loader2 className="h-3 w-3 animate-spin" /> Saving…
+                </span>
+              )}
+              {saveState === "saved" && (
+                <span className="flex items-center gap-1 text-xs text-lime-400">
+                  <Check className="h-3 w-3" /> Saved
+                </span>
+              )}
+            </div>
+
             <div className="flex items-center justify-between rounded-xl border border-white/10 bg-earth-900/50 px-4 py-3">
               <div>
-                <p className="text-xl font-medium text-white">Enable Auto Reload</p>
-                <p className="text-xs text-white/60">Automatically buy credits when balance runs low.</p>
+                <p className="text-base font-medium text-white">Enable Auto Reload</p>
+                <p className="text-xs text-white/60">Automatically charge your card when balance runs low.</p>
               </div>
               <button
                 type="button"
-                onClick={() => setAutoReloadEnabled((prev) => !prev)}
+                onClick={handleToggleAutoReload}
                 className={`relative h-9 w-16 rounded-full transition ${
                   autoReloadEnabled ? "bg-lime-400/60" : "bg-white/20"
                 }`}
               >
                 <span
-                  className={`absolute top-1 h-7 w-7 rounded-full bg-white transition ${
+                  className={`absolute top-1 h-7 w-7 rounded-full bg-white transition-all ${
                     autoReloadEnabled ? "left-8" : "left-1"
                   }`}
                 />
@@ -276,20 +396,36 @@ export function PlanCreditsBadge({ placement = "floating" }: PlanCreditsBadgePro
 
             <div className="flex items-center justify-between rounded-xl border border-white/10 bg-earth-900/50 px-4 py-3">
               <div>
-                <p className="text-lg font-medium text-white">Monthly limit</p>
+                <p className="text-base font-medium text-white">Reload threshold</p>
+                <p className="text-xs text-white/60">Reload when balance drops below this amount.</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-white/60">$</span>
+                <Input
+                  value={thresholdUsd}
+                  onChange={(e) => handleThresholdChange(e.target.value)}
+                  disabled={!autoReloadEnabled}
+                  className="h-9 w-20 border-white/20 bg-earth-950 text-right text-white disabled:opacity-60"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between rounded-xl border border-white/10 bg-earth-900/50 px-4 py-3">
+              <div>
+                <p className="text-base font-medium text-white">Monthly limit</p>
                 <p className="text-xs text-white/60">Cap automatic reload spend per month.</p>
               </div>
               <div className="flex items-center gap-2">
                 <span className="text-white/60">$</span>
                 <Input
                   value={monthlyLimit}
-                  onChange={(event) => setMonthlyLimit(event.target.value)}
+                  onChange={(e) => handleMonthlyLimitChange(e.target.value)}
                   disabled={!autoReloadEnabled}
                   className="h-9 w-24 border-white/20 bg-earth-950 text-right text-white disabled:opacity-60"
                 />
               </div>
             </div>
-          </div>
+          </div>}
 
           <div className="h-px bg-white/10" />
 
@@ -297,7 +433,7 @@ export function PlanCreditsBadge({ placement = "floating" }: PlanCreditsBadgePro
             <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-earth-900/50 px-3 py-2">
               <Input
                 value={promoCode}
-                onChange={(event) => setPromoCode(event.target.value)}
+                onChange={(e) => setPromoCode(e.target.value)}
                 placeholder="Redeem promo code"
                 className="h-9 border-transparent bg-transparent text-white focus-visible:ring-0"
               />

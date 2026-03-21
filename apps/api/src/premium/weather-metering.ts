@@ -147,10 +147,10 @@ export async function reserveOpenWeatherCall(
           metadata = jsonb_strip_nulls(
             COALESCE(metadata, '{}'::jsonb)
             || jsonb_build_object(
-              'lastRecommendationId', $6,
-              'dailyFreeCalls', $7,
-              'dailyHardCap', $8,
-              'pricePerCallUsd', $9
+              'lastRecommendationId', $6::text,
+              'dailyFreeCalls', $7::int,
+              'dailyHardCap', $8::int,
+              'pricePerCallUsd', $9::numeric
             )
           ),
           "updatedAt" = NOW()

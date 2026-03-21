@@ -6,7 +6,7 @@
     "build": "tsc -p tsconfig.json",
     "synth": "cdk synth",
     "diff": "cdk diff",
-    "deploy": "cdk deploy --require-approval never",
+    "deploy": "cdk deploy --all --require-approval never",
     "bootstrap": "cdk bootstrap",
     "destroy": "cdk destroy --force"
   },

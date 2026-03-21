@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { CreditCard, Gauge, Sparkles } from "lucide-react";
+import { AlertTriangle, CreditCard, Gauge, Gift, Sparkles } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { getBrowserApiBase } from "@/lib/api-client";
 import { emitCreditsRefresh } from "@/lib/credits-events";
@@ -404,6 +404,24 @@ export default function BillingUsagePage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-5">
+              {/* Out-of-capacity warning */}
+              {usage.remainingRecommendations === 0 && usage.creditsBalanceUsd < usage.overagePriceUsd && (
+                <div className="flex items-center gap-2 rounded-lg border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+                  <AlertTriangle className="h-4 w-4 shrink-0" />
+                  You&apos;re out of capacity — buy credits or upgrade your plan to continue running diagnoses.
+                </div>
+              )}
+
+              {/* Free trial callout */}
+              {subscription.planId === "grower_free" && (
+                <div className="flex items-center gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-700 dark:text-amber-300">
+                  <Gift className="h-4 w-4 shrink-0" />
+                  <span>
+                    <strong>2 free trial recommendations</strong> were included at sign-up in addition to your 3 monthly plan recommendations.
+                  </span>
+                </div>
+              )}
+
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
                   <span className="font-medium">

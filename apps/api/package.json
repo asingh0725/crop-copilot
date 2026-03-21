@@ -5,7 +5,15 @@
   "scripts": {
     "build": "pnpm --filter @crop-copilot/contracts build && pnpm --filter @crop-copilot/domain build && tsc -p tsconfig.build.json",
     "typecheck": "pnpm --filter @crop-copilot/contracts build && pnpm --filter @crop-copilot/domain build && tsc -p tsconfig.json",
-    "test": "pnpm --filter @crop-copilot/contracts build && pnpm --filter @crop-copilot/domain build && tsx --test src/**/*.test.ts"
+    "test": "pnpm --filter @crop-copilot/contracts build && pnpm --filter @crop-copilot/domain build && tsx --test src/**/*.test.ts",
+    "audit:release": "tsx src/scripts/release-readiness-audit.ts",
+    "audit:recommendation-quality": "tsx src/scripts/audit-recommendation-quality.ts",
+    "audit:launch-gates": "tsx src/scripts/launch-quality-gate-report.ts",
+    "repair:recommendation-sources": "tsx src/scripts/repair-recommendation-sources.ts",
+    "backfill:recommendations-quality": "tsx src/scripts/backfill-recommendations-quality.ts",
+    "backfill:retrieval-audit-ids": "tsx src/scripts/backfill-retrieval-audit-recommendation-ids.ts",
+    "backfill:premium-insights": "tsx src/scripts/backfill-premium-insights.ts",
+    "learning:replay-feedback": "tsx src/scripts/replay-feedback-learning.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.971.0",

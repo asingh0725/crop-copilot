@@ -1,7 +1,7 @@
 import type { Pool } from 'pg';
 import { tierIsPro, getSubscriptionSnapshot } from '../lib/entitlements';
 import { buildCostAnalysis } from './cost-optimizer';
-import { evaluateCompliance } from './compliance-engine';
+import { deriveRiskReviewDecision, evaluateCompliance } from './compliance-engine';
 import { buildApplicationReportHtml } from './report-builder';
 import {
   loadCachedRetailPricing,
@@ -10,7 +10,11 @@ import {
   upsertPremiumInsight,
 } from './premium-store';
 import { buildSprayWindows } from './weather-spray-windows';
-import { DEFAULT_ADVISORY_NOTICE, type PremiumInsightPayload } from './types';
+import {
+  DEFAULT_ADVISORY_NOTICE,
+  type ComplianceCheckResult,
+  type PremiumInsightPayload,
+} from './types';
 
 export async function runPremiumEnrichment(params: {
   pool: Pool;
@@ -77,9 +81,65 @@ export async function runPremiumEnrichment(params: {
   );
   const costAnalysis = buildCostAnalysis(processingInput, pricing);
   const sprayWindows = await buildSprayWindows(processingInput, { pool });
+  const supplementalChecks: ComplianceCheckResult[] = [];
+
+  const pricedItemCount = costAnalysis?.pricedItemCount ?? 0;
+  const totalItemCount = costAnalysis?.totalItemCount ?? 0;
+  const livePricedItemCount =
+    costAnalysis?.items.filter((item) => item.priceSource === 'live').length ?? 0;
+  const estimatedPricedItemCount =
+    costAnalysis?.items.filter((item) => item.priceSource === 'estimated').length ?? 0;
+  supplementalChecks.push({
+    id: 'cost_data_coverage',
+    title: 'Cost Data Coverage',
+    result:
+      totalItemCount === 0
+        ? 'needs_manual_verification'
+        : pricedItemCount === totalItemCount && estimatedPricedItemCount === 0
+          ? 'clear_signal'
+          : 'needs_manual_verification',
+    severity: 'soft',
+    message:
+      totalItemCount === 0
+        ? 'No recommended products were available for cost analysis.'
+        : pricedItemCount === totalItemCount && estimatedPricedItemCount === 0
+          ? `Live pricing was found for all ${totalItemCount} recommended products.`
+          : `Pricing coverage ${pricedItemCount}/${totalItemCount} (${livePricedItemCount} live, ${estimatedPricedItemCount} estimated benchmark).`,
+    ruleVersion: 'premium-support-v1',
+    sourceVersion: 'pricing-cache-v1',
+    evidence: {
+      pricedItemCount,
+      totalItemCount,
+      livePricedItemCount,
+      estimatedPricedItemCount,
+      coverageRatio: costAnalysis?.pricingCoverageRatio ?? 0,
+    },
+  });
+
+  const hasFallbackWeather = sprayWindows.some((window) => window.source === 'fallback');
+  supplementalChecks.push({
+    id: 'spray_forecast_quality',
+    title: 'Spray Forecast Data Quality',
+    result: hasFallbackWeather ? 'needs_manual_verification' : 'clear_signal',
+    severity: 'soft',
+    message: hasFallbackWeather
+      ? 'Live forecast data was unavailable. Spray windows are generic fallback estimates.'
+      : 'Spray windows are based on live forecast provider data.',
+    ruleVersion: 'premium-support-v1',
+    sourceVersion: 'weather-provider-v1',
+    evidence: {
+      sources: sprayWindows.map((window) => window.source),
+    },
+  });
+
+  const checks = [...compliance.checks, ...supplementalChecks];
+  const riskReview = deriveRiskReviewDecision(checks);
   const reportHtml = buildApplicationReportHtml({
     input: processingInput,
-    compliance,
+    compliance: {
+      checks,
+      riskReview,
+    },
     costAnalysis,
     sprayWindows,
   });
@@ -88,15 +148,18 @@ export async function runPremiumEnrichment(params: {
     pool,
     recommendationId,
     userId,
-    compliance,
+    {
+      checks,
+      riskReview,
+    },
     processingInput.input
   );
 
   const payload: PremiumInsightPayload = {
     status: 'ready',
-    riskReview: compliance.riskReview,
-    complianceDecision: compliance.riskReview,
-    checks: compliance.checks,
+    riskReview,
+    complianceDecision: riskReview,
+    checks,
     costAnalysis,
     sprayWindows,
     advisoryNotice: DEFAULT_ADVISORY_NOTICE,

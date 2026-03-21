@@ -12,7 +12,16 @@ struct DiagnosisFormView: View {
     let capturedImage: UIImage
     @StateObject private var viewModel = DiagnosisViewModel()
     @StateObject private var locationManager = LocationHelper()
-    @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject private var billingStore: BillingSnapshotStore
+    @State private var isCurrentLocationLoading = false
+
+    private var activeTier: SubscriptionTierId {
+        billingStore.subscription?.planId ?? .growerFree
+    }
+
+    private var entitlements: DiagnoseInputEntitlements {
+        activeTier.diagnoseInputEntitlements
+    }
 
     var body: some View {
         Form {
@@ -48,12 +57,6 @@ struct DiagnosisFormView: View {
                         Text(loc).tag(loc)
                     }
                 }
-                .onAppear {
-                    if viewModel.location.isEmpty, let loc = locationManager.locationString,
-                       AppConstants.allLocations.contains(loc) {
-                        viewModel.location = loc
-                    }
-                }
             }
 
             Section("Description") {
@@ -61,14 +64,61 @@ struct DiagnosisFormView: View {
                     .frame(minHeight: 80)
             }
 
-            Section("Application Planning (Optional)") {
-                TextField("Field Acreage", text: $viewModel.fieldAcreage)
-                    .keyboardType(.decimalPad)
-                TextField("Planned Application Date (YYYY-MM-DD)", text: $viewModel.plannedApplicationDate)
-                TextField("Latitude", text: $viewModel.fieldLatitude)
-                    .keyboardType(.decimalPad)
-                TextField("Longitude", text: $viewModel.fieldLongitude)
-                    .keyboardType(.decimalPad)
+            if entitlements.canUsePlanningInputs {
+                Section("Application Planning (Optional)") {
+                    TextField("Field Acreage", text: $viewModel.fieldAcreage)
+                        .keyboardType(.decimalPad)
+                    TextField("Planned Application Date (YYYY-MM-DD)", text: $viewModel.plannedApplicationDate)
+                }
+            } else {
+                Section {
+                    Text("Upgrade to Grower to add field acreage and planned application date.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            if entitlements.canUsePreciseLocation {
+                Section("Field Location (Grower Pro)") {
+                    TextField("Address or landmark", text: $viewModel.locationLookupQuery)
+                        .textInputAutocapitalization(.words)
+
+                    Button(viewModel.isLocationLookupInFlight ? "Looking up..." : "Lookup Address") {
+                        Task { await viewModel.lookupAddressCoordinates() }
+                    }
+                    .disabled(viewModel.isLocationLookupInFlight)
+
+                    Button(isCurrentLocationLoading ? "Capturing Location..." : "Use Current Location") {
+                        isCurrentLocationLoading = true
+                        locationManager.requestCurrentCoordinate { result in
+                            switch result {
+                            case .success(let coordinate):
+                                Task {
+                                    await viewModel.applyCurrentCoordinates(
+                                        latitude: coordinate.latitude,
+                                        longitude: coordinate.longitude
+                                    )
+                                    isCurrentLocationLoading = false
+                                }
+                            case .failure(let error):
+                                viewModel.errorMessage = error.localizedDescription
+                                isCurrentLocationLoading = false
+                            }
+                        }
+                    }
+                    .disabled(isCurrentLocationLoading)
+
+                    TextField("Latitude", text: $viewModel.fieldLatitude)
+                        .keyboardType(.decimalPad)
+                    TextField("Longitude", text: $viewModel.fieldLongitude)
+                        .keyboardType(.decimalPad)
+                }
+            } else if entitlements.canUsePlanningInputs {
+                Section {
+                    Text("Grower Pro adds GPS/address location tools for spray-window guidance.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
             }
 
             Section {
@@ -107,35 +157,101 @@ struct DiagnosisFormView: View {
                 DiagnosisResultView(recommendationId: recId)
             }
         }
+        .onAppear {
+            viewModel.applyTier(activeTier)
+        }
+        .onChange(of: activeTier) { newTier in
+            viewModel.applyTier(newTier)
+        }
     }
 }
 
-// MARK: - Location Helper
-class LocationHelper: NSObject, ObservableObject, CLLocationManagerDelegate {
-    @Published var locationString: String?
+enum LocationHelperError: LocalizedError {
+    case servicesDisabled
+    case permissionDenied
+    case noCoordinate
+
+    var errorDescription: String? {
+        switch self {
+        case .servicesDisabled:
+            return "Location services are disabled on this device."
+        case .permissionDenied:
+            return "Location permission is required to use current location."
+        case .noCoordinate:
+            return "Unable to read current location coordinates."
+        }
+    }
+}
+
+@MainActor
+final class LocationHelper: NSObject, ObservableObject, @preconcurrency CLLocationManagerDelegate {
     private let manager = CLLocationManager()
+    private var completion: ((Result<CLLocationCoordinate2D, Error>) -> Void)?
 
     override init() {
         super.init()
         manager.delegate = self
-        manager.desiredAccuracy = kCLLocationAccuracyKilometer
-        manager.requestWhenInUseAuthorization()
-        manager.requestLocation()
+        manager.desiredAccuracy = kCLLocationAccuracyBest
     }
 
-    func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
-        guard let location = locations.first else { return }
-        let geocoder = CLGeocoder()
-        geocoder.reverseGeocodeLocation(location) { [weak self] placemarks, _ in
-            if let placemark = placemarks?.first, let state = placemark.administrativeArea {
-                DispatchQueue.main.async {
-                    self?.locationString = state
-                }
-            }
+    func requestCurrentCoordinate(
+        completion: @escaping (Result<CLLocationCoordinate2D, Error>) -> Void
+    ) {
+        guard CLLocationManager.locationServicesEnabled() else {
+            completion(.failure(LocationHelperError.servicesDisabled))
+            return
+        }
+
+        self.completion = completion
+        let status = manager.authorizationStatus
+        switch status {
+        case .authorizedAlways, .authorizedWhenInUse:
+            manager.requestLocation()
+        case .notDetermined:
+            manager.requestWhenInUseAuthorization()
+        case .restricted, .denied:
+            self.completion = nil
+            completion(.failure(LocationHelperError.permissionDenied))
+        @unknown default:
+            self.completion = nil
+            completion(.failure(LocationHelperError.permissionDenied))
         }
     }
 
+    func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
+        guard let completion else {
+            return
+        }
+
+        switch manager.authorizationStatus {
+        case .authorizedAlways, .authorizedWhenInUse:
+            manager.requestLocation()
+        case .restricted, .denied:
+            self.completion = nil
+            completion(.failure(LocationHelperError.permissionDenied))
+        default:
+            break
+        }
+    }
+
+    func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
+        guard let completion else {
+            return
+        }
+
+        self.completion = nil
+        guard let location = locations.first?.coordinate else {
+            completion(.failure(LocationHelperError.noCoordinate))
+            return
+        }
+        completion(.success(location))
+    }
+
     func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
-        // Location not critical, silently fail
+        guard let completion else {
+            return
+        }
+        self.completion = nil
+        completion(.failure(error))
     }
 }

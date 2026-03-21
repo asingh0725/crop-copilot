@@ -29,7 +29,7 @@ export const RecommendationPremiumReadyEventSchema = z.object({
   occurredAt: z.string().datetime(),
   traceId: z.string().min(8).max(128).optional(),
   userId: z.string().uuid(),
-  recommendationId: z.string().uuid(),
+  recommendationId: z.string().min(1),
   status: z.enum(['ready', 'failed']),
   riskReview: z
     .enum(['clear_signal', 'potential_conflict', 'needs_manual_verification'])
@@ -74,7 +74,22 @@ export const PremiumEnrichmentRequestedSchema = z.object({
   requestedAt: z.string().datetime(),
   traceId: z.string().min(8).max(128).optional(),
   userId: z.string().uuid(),
-  recommendationId: z.string().uuid(),
+  recommendationId: z.string().min(1),
+});
+
+export const ModelTrainingTriggerRequestedSchema = z.object({
+  messageType: z.literal('ml.training.trigger.requested'),
+  messageVersion: z.literal('1'),
+  requestedAt: z.string().datetime(),
+  modelType: z.enum(['lambdarank', 'premium_quality']),
+  triggerId: z.string().uuid().optional(),
+  recommendationId: z.string().uuid().optional(),
+  feedbackId: z.string().uuid().optional(),
+  userId: z.string().uuid().optional(),
+  source: z.string().min(1).max(80).optional(),
+  force: z.boolean().optional(),
+  reason: z.string().min(1).max(300).optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
 });
 
 export type RecommendationJobStatusChangedEvent = z.infer<
@@ -90,3 +105,6 @@ export type RecommendationJobRequested = z.infer<
   typeof RecommendationJobRequestedSchema
 >;
 export type PremiumEnrichmentRequested = z.infer<typeof PremiumEnrichmentRequestedSchema>;
+export type ModelTrainingTriggerRequested = z.infer<
+  typeof ModelTrainingTriggerRequestedSchema
+>;

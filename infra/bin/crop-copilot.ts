@@ -1,13 +1,80 @@
 #!/usr/bin/env node
 import 'source-map-support/register';
 import * as path from 'node:path';
+import * as fs from 'node:fs';
 import * as dotenv from 'dotenv';
 import { App } from 'aws-cdk-lib';
 
-// Load apps/web/.env so API keys (GOOGLE_AI_API_KEY, ANTHROPIC_API_KEY, OPENAI_API_KEY, etc.)
-// are automatically available to buildApiEnvironment() during cdk synth/deploy.
-// Values already set in the shell take precedence (dotenv never overwrites).
-dotenv.config({ path: path.resolve(__dirname, '..', '..', 'apps', 'web', '.env') });
+type DeployEnvironment = 'dev' | 'prod';
+
+function normalizeEnvironment(raw: string | undefined): DeployEnvironment {
+  const value = (raw ?? '').trim().toLowerCase();
+  if (value === 'prod') {
+    return 'prod';
+  }
+  return 'dev';
+}
+
+function buildEnvCandidates(workspaceRoot: string, envName: DeployEnvironment): string[] {
+  return [
+    path.resolve(workspaceRoot, `.env.${envName}.local`),
+    path.resolve(workspaceRoot, 'infra', `.env.${envName}.local`),
+    path.resolve(workspaceRoot, 'apps', 'api', `.env.${envName}.local`),
+    path.resolve(workspaceRoot, 'apps', 'web', `.env.${envName}.local`),
+    path.resolve(workspaceRoot, `.env.${envName}`),
+    path.resolve(workspaceRoot, 'infra', `.env.${envName}`),
+    path.resolve(workspaceRoot, 'apps', 'api', `.env.${envName}`),
+    path.resolve(workspaceRoot, 'apps', 'web', `.env.${envName}`),
+  ];
+}
+
+function buildLegacyCandidates(workspaceRoot: string): string[] {
+  return [
+    path.resolve(workspaceRoot, '.env.local'),
+    path.resolve(workspaceRoot, 'infra', '.env.local'),
+    path.resolve(workspaceRoot, 'apps', 'api', '.env.local'),
+    path.resolve(workspaceRoot, 'apps', 'web', '.env.local'),
+    path.resolve(workspaceRoot, '.env'),
+    path.resolve(workspaceRoot, 'infra', '.env'),
+    path.resolve(workspaceRoot, 'apps', 'api', '.env'),
+    path.resolve(workspaceRoot, 'apps', 'web', '.env'),
+  ];
+}
+
+function loadEnvFiles(candidates: string[]): string[] {
+  const loaded: string[] = [];
+  for (const envPath of candidates) {
+    if (!fs.existsSync(envPath)) {
+      continue;
+    }
+    const result = dotenv.config({ path: envPath });
+    if (!result.error) {
+      loaded.push(envPath);
+    }
+  }
+  return loaded;
+}
+
+const workspaceRoot = path.resolve(__dirname, '..', '..');
+const requestedEnv = normalizeEnvironment(process.env.CROP_ENV ?? process.env.DEPLOY_ENV);
+const allowLegacyFallback =
+  (process.env.ALLOW_LEGACY_ENV_FALLBACK ?? 'false').trim().toLowerCase() === 'true';
+
+const envSpecificFiles = loadEnvFiles(buildEnvCandidates(workspaceRoot, requestedEnv));
+if (envSpecificFiles.length === 0) {
+  if (allowLegacyFallback) {
+    const legacyFiles = loadEnvFiles(buildLegacyCandidates(workspaceRoot));
+    if (legacyFiles.length > 0) {
+      console.warn(
+        `[infra] Using legacy non-environment env files for ${requestedEnv}. Create env-scoped files to prevent dev/prod bleed.`
+      );
+    }
+  } else {
+    console.warn(
+      `[infra] No env-scoped file found for ${requestedEnv}. Continuing with process env only; legacy .env fallback is disabled.`
+    );
+  }
+}
 import { loadEnvironmentConfig } from '../lib/config';
 import { FoundationStack } from '../lib/stacks/foundation-stack';
 import { ApiRuntimeStack } from '../lib/stacks/api-runtime-stack';

@@ -23,11 +23,16 @@ import { Pool } from 'pg';
 import { resolvePoolSslConfig, sanitizeDatabaseUrlForPool } from '../lib/store';
 import { getIngestionQueue } from '../queue/ingestion-queue';
 import { CROPS, REGIONS } from '../ingestion/discovery-seeds';
+import {
+  extractDiscoveryUrlsFromGeminiCandidate,
+  filterReachableDiscoveryUrls,
+} from '../ingestion/discovery-url-utils';
 
 const GEMINI_API_URL =
   'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
 
 const REDISCOVERY_DAYS = 90;
+const DEFAULT_GEMINI_TIMEOUT_MS = 25_000;
 
 interface DiscoveryRow {
   id: string;
@@ -73,17 +78,29 @@ async function searchWithGemini(crop: string, region: string): Promise<Discovere
     `and pest control specifically in ${region}. ` +
     `Prioritize university extension services (.edu), government agricultural agencies (.gov), ` +
     `and peer-reviewed research institutions. ` +
-    `Exclude news sites, retailers, social media, and Wikipedia.`;
+    `Exclude news sites, retailers, social media, and Wikipedia. ` +
+    `Return only a JSON array of objects with keys: url, title, sourceType. ` +
+    `Use canonical destination URLs (no redirects and no search-result links). ` +
+    `sourceType must be one of: GOVERNMENT, UNIVERSITY_EXTENSION, RESEARCH_PAPER.`;
 
   try {
-    const response = await fetch(`${GEMINI_API_URL}?key=${apiKey}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        tools: [{ google_search: {} }],
-      }),
-    });
+    const timeoutMs = Number(process.env.DISCOVERY_GEMINI_TIMEOUT_MS ?? DEFAULT_GEMINI_TIMEOUT_MS);
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), timeoutMs);
+    let response: Response;
+    try {
+      response = await fetch(`${GEMINI_API_URL}?key=${apiKey}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        signal: controller.signal,
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          tools: [{ google_search: {} }],
+        }),
+      });
+    } finally {
+      clearTimeout(timeout);
+    }
 
     if (!response.ok) {
       const err = await response.text().catch(() => '');
@@ -93,36 +110,39 @@ async function searchWithGemini(crop: string, region: string): Promise<Discovere
 
     const payload = (await response.json()) as {
       candidates?: Array<{
+        content?: {
+          parts?: Array<{ text?: string }>;
+        };
         groundingMetadata?: {
           groundingChunks?: GeminiGroundingChunk[];
         };
       }>;
     };
 
-    const chunks = payload.candidates?.[0]?.groundingMetadata?.groundingChunks ?? [];
-    const seen = new Set<string>();
+    const candidate = payload.candidates?.[0];
+    const parsedEntries = extractDiscoveryUrlsFromGeminiCandidate(candidate, 8);
+    const reachableEntries = await filterReachableDiscoveryUrls(parsedEntries, 8);
     const sources: DiscoveredSource[] = [];
 
-    for (const chunk of chunks) {
-      const uri = chunk.web?.uri?.trim();
-      const title = chunk.web?.title?.trim() ?? '';
-      if (!uri || seen.has(uri)) continue;
-      seen.add(uri);
-
-      // Basic URL validation
-      try {
-        new URL(uri);
-      } catch {
-        continue;
-      }
-
-      sources.push({ url: uri, title, sourceType: inferSourceType(uri, title) });
+    for (const entry of reachableEntries) {
+      const inferred = inferSourceType(
+        entry.url,
+        entry.sourceTypeHint ? `${entry.title} ${entry.sourceTypeHint}` : entry.title
+      );
+      sources.push({
+        url: entry.url,
+        title: entry.title,
+        sourceType: inferred,
+      });
       if (sources.length >= 8) break;
     }
 
     return sources;
   } catch (error) {
-    console.warn('[Discovery] Gemini search failed:', (error as Error).message);
+    const message = (error as Error).name === 'AbortError'
+      ? `Gemini request timed out after ${process.env.DISCOVERY_GEMINI_TIMEOUT_MS ?? DEFAULT_GEMINI_TIMEOUT_MS}ms`
+      : (error as Error).message;
+    console.warn('[Discovery] Gemini search failed:', message);
     return [];
   }
 }

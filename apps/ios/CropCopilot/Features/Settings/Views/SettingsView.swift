@@ -113,6 +113,18 @@ struct SettingsView: View {
             }
             .buttonStyle(.plain)
 
+            NavigationLink {
+                BillingView()
+            } label: {
+                settingsRow(
+                    title: "Billing & Credits",
+                    subtitle: "Plan, usage, and auto-reload settings",
+                    icon: "creditcard.fill",
+                    color: .appPrimary
+                )
+            }
+            .buttonStyle(.plain)
+
             settingsRow(
                 title: "Notifications",
                 subtitle: "Push preference controls coming soon",

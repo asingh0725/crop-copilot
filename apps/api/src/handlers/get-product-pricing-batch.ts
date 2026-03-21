@@ -1,4 +1,5 @@
 import type { APIGatewayProxyHandlerV2 } from 'aws-lambda';
+import { randomUUID } from 'node:crypto';
 import { Pool } from 'pg';
 import { z } from 'zod';
 import { withAuth } from '../auth/with-auth';
@@ -83,11 +84,11 @@ async function storeCachedPricing(
   const expiresAt = new Date(now.getTime() + PRICING_CACHE_TTL_MS);
   try {
     await db.query(
-      `INSERT INTO "ProductPricingCache" ("productId", region, pricing, "cachedAt", "expiresAt")
-       VALUES ($1, $2, $3::jsonb, $4, $5)
+      `INSERT INTO "ProductPricingCache" (id, "productId", region, pricing, "cachedAt", "expiresAt")
+       VALUES ($1, $2, $3, $4::jsonb, $5, $6)
        ON CONFLICT ("productId", region)
        DO UPDATE SET pricing = EXCLUDED.pricing, "cachedAt" = EXCLUDED."cachedAt", "expiresAt" = EXCLUDED."expiresAt"`,
-      [productId, regionKey, JSON.stringify(offers), now, expiresAt]
+      [randomUUID(), productId, regionKey, JSON.stringify(offers), now, expiresAt]
     );
   } catch (err) {
     console.warn('[Pricing] Failed to store cache:', (err as Error).message);

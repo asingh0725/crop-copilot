@@ -11,6 +11,33 @@ enum SubscriptionTierId: String, Decodable {
     case growerPro = "grower_pro"
 }
 
+struct DiagnoseInputEntitlements {
+    let canUsePlanningInputs: Bool
+    let canUsePreciseLocation: Bool
+}
+
+extension SubscriptionTierId {
+    var diagnoseInputEntitlements: DiagnoseInputEntitlements {
+        switch self {
+        case .growerFree:
+            return DiagnoseInputEntitlements(
+                canUsePlanningInputs: false,
+                canUsePreciseLocation: false
+            )
+        case .grower:
+            return DiagnoseInputEntitlements(
+                canUsePlanningInputs: true,
+                canUsePreciseLocation: false
+            )
+        case .growerPro:
+            return DiagnoseInputEntitlements(
+                canUsePlanningInputs: true,
+                canUsePreciseLocation: true
+            )
+        }
+    }
+}
+
 struct SubscriptionSnapshot: Decodable {
     let planId: SubscriptionTierId
     let planName: String
@@ -50,4 +77,15 @@ struct SubscriptionSnapshotResponse: Decodable {
 
 struct UsageSnapshotResponse: Decodable {
     let usage: UsageSnapshot?
+}
+
+struct AutoReloadConfig: Codable {
+    var enabled: Bool
+    var thresholdUsd: Double
+    var monthlyLimitUsd: Double
+    var reloadPackId: String
+}
+
+struct AutoReloadConfigResponse: Decodable {
+    let config: AutoReloadConfig
 }

@@ -71,6 +71,33 @@ interface ErrorSourceRow {
   updatedAt: string;
 }
 
+interface PipelineEventSummaryRow {
+  info_count: string;
+  warn_count: string;
+  error_count: string;
+}
+
+interface PipelineEventRow {
+  id: string;
+  pipeline: string;
+  stage: string;
+  severity: 'info' | 'warn' | 'error';
+  message: string;
+  run_id: string | null;
+  source_id: string | null;
+  recommendation_id: string | null;
+  user_id: string | null;
+  url: string | null;
+  metadata: unknown;
+  created_at: string;
+}
+
+interface PipelineEventGroupCountRow {
+  pipeline: string;
+  severity: 'info' | 'warn' | 'error';
+  count: string;
+}
+
 interface ComplianceIngestionStatsRow {
   total_sources: string;
   total_chunks: string;
@@ -97,8 +124,20 @@ interface ComplianceRunRow {
   chunks_created: string;
   facts_extracted: string;
   errors: string;
+  metadata: unknown;
   started_at: string;
   ended_at: string | null;
+}
+
+interface ComplianceRunFailedSource {
+  sourceId: string;
+  url: string;
+  stage: string;
+  message: string;
+}
+
+interface ComplianceRunMetadata {
+  failedSources: ComplianceRunFailedSource[];
 }
 
 interface ComplianceErrorRow {
@@ -171,6 +210,7 @@ interface ComplianceDashboardSnapshot {
     chunksCreated: number;
     factsExtracted: number;
     errors: number;
+    metadata: ComplianceRunMetadata;
     startedAt: string;
     endedAt: string | null;
   } | null;
@@ -195,6 +235,7 @@ interface ComplianceDashboardSnapshot {
     chunksCreated: number;
     factsExtracted: number;
     errors: number;
+    metadata: ComplianceRunMetadata;
     startedAt: string;
     endedAt: string | null;
   }>;
@@ -221,6 +262,25 @@ interface ComplianceDashboardSnapshot {
     errorMessage: string | null;
     updatedAt: string;
   }>;
+  observability: {
+    available: boolean;
+    counts24h: {
+      info: number;
+      warn: number;
+      error: number;
+    };
+    recentEvents: Array<{
+      id: string;
+      pipeline: string;
+      stage: string;
+      severity: 'info' | 'warn' | 'error';
+      message: string;
+      runId: string | null;
+      sourceId: string | null;
+      url: string | null;
+      createdAt: string;
+    }>;
+  };
 }
 
 interface PgErrorLike {
@@ -297,11 +357,106 @@ function defaultComplianceSnapshot(): ComplianceDashboardSnapshot {
     recentRuns: [],
     discoveryRows: [],
     sourceRows: [],
+    observability: {
+      available: false,
+      counts24h: {
+        info: 0,
+        warn: 0,
+        error: 0,
+      },
+      recentEvents: [],
+    },
   };
 }
 
 function toCount(value: string | null | undefined): number {
   return Number(value ?? 0);
+}
+
+function inferComplianceFailureStage(message: string): string {
+  const normalized = message.toLowerCase();
+  if (
+    normalized.includes('pdf') ||
+    normalized.includes('parser') ||
+    normalized.includes('llamaparse') ||
+    normalized.includes('pymupdf') ||
+    (normalized.includes('spawn') && normalized.includes('python')) ||
+    normalized.includes('enoent') ||
+    normalized.includes('parse') ||
+    normalized.includes('abortexception') ||
+    normalized.includes('formaterror') ||
+    normalized.includes('invalidpdfexception')
+  ) {
+    return 'parse';
+  }
+  if (
+    normalized.includes('http ') ||
+    normalized.includes('fetch') ||
+    normalized.includes('timeout') ||
+    normalized.includes('aborted') ||
+    normalized.includes('enotfound') ||
+    normalized.includes('econn')
+  ) {
+    return 'fetch';
+  }
+  if (normalized.includes('chunk')) {
+    return 'chunk';
+  }
+  if (
+    normalized.includes('insert') ||
+    normalized.includes('update') ||
+    normalized.includes('delete') ||
+    normalized.includes('sql') ||
+    normalized.includes('database') ||
+    normalized.includes('relation')
+  ) {
+    return 'database';
+  }
+  return 'unknown';
+}
+
+function normalizeRunMetadata(raw: unknown): ComplianceRunMetadata {
+  const defaultMetadata: ComplianceRunMetadata = { failedSources: [] };
+  if (!raw || typeof raw !== 'object') {
+    return defaultMetadata;
+  }
+
+  const failedSourcesRaw = (raw as { failedSources?: unknown }).failedSources;
+  if (!Array.isArray(failedSourcesRaw)) {
+    return defaultMetadata;
+  }
+
+  return {
+    failedSources: failedSourcesRaw
+      .map((item) => {
+        if (!item || typeof item !== 'object') {
+          return null;
+        }
+
+        const sourceId = String((item as { sourceId?: unknown }).sourceId ?? '').trim();
+        const url = String((item as { url?: unknown }).url ?? '').trim();
+        const stage = String((item as { stage?: unknown }).stage ?? '').trim();
+        const message = String((item as { message?: unknown }).message ?? '').trim();
+
+        if (!sourceId && !url && !message) {
+          return null;
+        }
+
+        const normalizedStage = stage.toLowerCase();
+        const resolvedStage =
+          normalizedStage && normalizedStage !== 'unknown'
+            ? normalizedStage
+            : inferComplianceFailureStage(message);
+
+        return {
+          sourceId,
+          url,
+          stage: resolvedStage,
+          message,
+        };
+      })
+      .filter((row): row is ComplianceRunFailedSource => row !== null),
+  };
 }
 
 async function fetchComplianceSnapshot(db: Pool): Promise<ComplianceDashboardSnapshot> {
@@ -354,6 +509,7 @@ async function fetchComplianceSnapshot(db: Pool): Promise<ComplianceDashboardSna
             "chunksCreated" AS chunks_created,
             "factsExtracted" AS facts_extracted,
             errors::text AS errors,
+            metadata,
             "startedAt" AS started_at,
             "endedAt" AS ended_at
           FROM "ComplianceIngestionRun"
@@ -468,10 +624,78 @@ async function fetchComplianceSnapshot(db: Pool): Promise<ComplianceDashboardSna
           chunksCreated: toCount(latestRunRow.chunks_created),
           factsExtracted: toCount(latestRunRow.facts_extracted),
           errors: toCount(latestRunRow.errors),
+          metadata: normalizeRunMetadata(latestRunRow.metadata),
           startedAt: latestRunRow.started_at,
           endedAt: latestRunRow.ended_at,
         }
       : null;
+
+    let complianceObservability: ComplianceDashboardSnapshot['observability'] = {
+      available: false,
+      counts24h: {
+        info: 0,
+        warn: 0,
+        error: 0,
+      },
+      recentEvents: [],
+    };
+
+    try {
+      const [observabilitySummaryResult, observabilityRowsResult] = await Promise.all([
+        db.query<PipelineEventSummaryRow>(`
+          SELECT
+            COUNT(*) FILTER (WHERE severity = 'info')::text AS info_count,
+            COUNT(*) FILTER (WHERE severity = 'warn')::text AS warn_count,
+            COUNT(*) FILTER (WHERE severity = 'error')::text AS error_count
+          FROM "PipelineEventLog"
+          WHERE "createdAt" > NOW() - INTERVAL '24 hours'
+            AND pipeline = 'compliance'
+        `),
+        db.query<PipelineEventRow>(`
+          SELECT
+            id,
+            pipeline,
+            stage,
+            severity,
+            message,
+            "runId" AS run_id,
+            "sourceId" AS source_id,
+            "recommendationId" AS recommendation_id,
+            "userId" AS user_id,
+            url,
+            metadata,
+            "createdAt" AS created_at
+          FROM "PipelineEventLog"
+          WHERE pipeline = 'compliance'
+          ORDER BY "createdAt" DESC
+          LIMIT 80
+        `),
+      ]);
+
+      complianceObservability = {
+        available: true,
+        counts24h: {
+          info: toCount(observabilitySummaryResult.rows[0]?.info_count),
+          warn: toCount(observabilitySummaryResult.rows[0]?.warn_count),
+          error: toCount(observabilitySummaryResult.rows[0]?.error_count),
+        },
+        recentEvents: observabilityRowsResult.rows.map((row) => ({
+          id: row.id,
+          pipeline: row.pipeline,
+          stage: row.stage,
+          severity: row.severity,
+          message: row.message,
+          runId: row.run_id,
+          sourceId: row.source_id,
+          url: row.url,
+          createdAt: row.created_at,
+        })),
+      };
+    } catch (error) {
+      if (!isMissingTableError(error)) {
+        throw error;
+      }
+    }
 
     return {
       available: true,
@@ -500,6 +724,7 @@ async function fetchComplianceSnapshot(db: Pool): Promise<ComplianceDashboardSna
         chunksCreated: toCount(row.chunks_created),
         factsExtracted: toCount(row.facts_extracted),
         errors: toCount(row.errors),
+        metadata: normalizeRunMetadata(row.metadata),
         startedAt: row.started_at,
         endedAt: row.ended_at,
       })),
@@ -526,6 +751,7 @@ async function fetchComplianceSnapshot(db: Pool): Promise<ComplianceDashboardSna
         errorMessage: row.error_message,
         updatedAt: row.updated_at,
       })),
+      observability: complianceObservability,
     };
   } catch (error) {
     if (isMissingTableError(error)) {
@@ -629,6 +855,120 @@ export function buildGetDiscoveryStatusHandler(verifier?: AuthVerifier): APIGate
         `),
       ]);
 
+      let observability = {
+        available: false,
+        counts24h: {
+          info: 0,
+          warn: 0,
+          error: 0,
+        },
+        counts24hByPipeline: {} as Record<
+          string,
+          {
+            info: number;
+            warn: number;
+            error: number;
+          }
+        >,
+        recentEvents: [] as Array<{
+          id: string;
+          pipeline: string;
+          stage: string;
+          severity: 'info' | 'warn' | 'error';
+          message: string;
+          runId: string | null;
+          sourceId: string | null;
+          recommendationId: string | null;
+          userId: string | null;
+          url: string | null;
+          metadata: unknown;
+          createdAt: string;
+        }>,
+      };
+
+      try {
+        const [summaryResult, groupedResult, rowsResult] = await Promise.all([
+          db.query<PipelineEventSummaryRow>(`
+            SELECT
+              COUNT(*) FILTER (WHERE severity = 'info')::text AS info_count,
+              COUNT(*) FILTER (WHERE severity = 'warn')::text AS warn_count,
+              COUNT(*) FILTER (WHERE severity = 'error')::text AS error_count
+            FROM "PipelineEventLog"
+            WHERE "createdAt" > NOW() - INTERVAL '24 hours'
+          `),
+          db.query<PipelineEventGroupCountRow>(`
+            SELECT
+              pipeline,
+              severity,
+              COUNT(*)::text AS count
+            FROM "PipelineEventLog"
+            WHERE "createdAt" > NOW() - INTERVAL '24 hours'
+            GROUP BY pipeline, severity
+          `),
+          db.query<PipelineEventRow>(`
+            SELECT
+              id,
+              pipeline,
+              stage,
+              severity,
+              message,
+              "runId" AS run_id,
+              "sourceId" AS source_id,
+              "recommendationId" AS recommendation_id,
+              "userId" AS user_id,
+              url,
+              metadata,
+              "createdAt" AS created_at
+            FROM "PipelineEventLog"
+            ORDER BY "createdAt" DESC
+            LIMIT 120
+          `),
+        ]);
+
+        observability = {
+          available: true,
+          counts24h: {
+            info: toCount(summaryResult.rows[0]?.info_count),
+            warn: toCount(summaryResult.rows[0]?.warn_count),
+            error: toCount(summaryResult.rows[0]?.error_count),
+          },
+          counts24hByPipeline: groupedResult.rows.reduce<
+            Record<string, { info: number; warn: number; error: number }>
+          >((acc, row) => {
+            if (!acc[row.pipeline]) {
+              acc[row.pipeline] = {
+                info: 0,
+                warn: 0,
+                error: 0,
+              };
+            }
+            const bucket = acc[row.pipeline];
+            bucket[row.severity] = toCount(row.count);
+            return acc;
+          }, {}),
+          recentEvents: rowsResult.rows.map((row) => ({
+            id: row.id,
+            pipeline: row.pipeline,
+            stage: row.stage,
+            severity: row.severity,
+            message: row.message,
+            runId: row.run_id,
+            sourceId: row.source_id,
+            recommendationId: row.recommendation_id,
+            userId: row.user_id,
+            url: row.url,
+            metadata: row.metadata,
+            createdAt: row.created_at,
+          })),
+        };
+      } catch (error) {
+        if (!isMissingTableError(error)) {
+          console.warn('[DiscoveryStatus] Failed to load pipeline observability events', {
+            error: (error as Error).message,
+          });
+        }
+      }
+
       const an = analyticsResult.rows[0];
       const analytics = {
         users: Number(an?.users ?? 0),
@@ -656,10 +996,20 @@ export function buildGetDiscoveryStatusHandler(verifier?: AuthVerifier): APIGate
       const mlResult = await db.query<MLModelRow>(`
         SELECT id, "modelType", "trainedAt", "feedbackCount", "ndcgScore", "s3Uri", status, "createdAt"
         FROM "MLModelVersion"
+        WHERE "modelType" = 'lambdarank'
         ORDER BY "trainedAt" DESC
         LIMIT 1
       `);
       const latestModel = mlResult.rows[0] ?? null;
+
+      const premiumModelResult = await db.query<MLModelRow>(`
+        SELECT id, "modelType", "trainedAt", "feedbackCount", "ndcgScore", "s3Uri", status, "createdAt"
+        FROM "MLModelVersion"
+        WHERE "modelType" = 'premium_quality'
+        ORDER BY "trainedAt" DESC
+        LIMIT 1
+      `);
+      const latestPremiumModel = premiumModelResult.rows[0] ?? null;
 
       // ── Filtered discovery rows ─────────────────────────────────────────────
       const conditions: string[] = [];
@@ -736,10 +1086,25 @@ export function buildGetDiscoveryStatusHandler(verifier?: AuthVerifier): APIGate
                 s3Uri: latestModel.s3Uri ?? null,
               }
             : null,
+          latestPremiumModel: latestPremiumModel
+            ? {
+                id: latestPremiumModel.id,
+                modelType: latestPremiumModel.modelType,
+                status: latestPremiumModel.status,
+                trainedAt: latestPremiumModel.trainedAt,
+                feedbackCount: Number(latestPremiumModel.feedbackCount),
+                ndcgScore:
+                  latestPremiumModel.ndcgScore != null
+                    ? Number(latestPremiumModel.ndcgScore)
+                    : null,
+                s3Uri: latestPremiumModel.s3Uri ?? null,
+              }
+            : null,
           // App analytics
           analytics,
           // Error details
           errors: { sources: errorSources },
+          observability,
           rows,
           pagination: { page, pageSize, total: filteredTotal, totalPages },
         },

@@ -2,9 +2,14 @@ import type { EventBridgeHandler } from 'aws-lambda';
 import { Pool } from 'pg';
 import { resolvePoolSslConfig, sanitizeDatabaseUrlForPool } from '../lib/store';
 import { COMPLIANCE_CROPS, US_STATES } from '../compliance/seed-matrix';
+import {
+  extractDiscoveryUrlsFromGeminiCandidate,
+  filterReachableDiscoveryUrls,
+} from '../ingestion/discovery-url-utils';
 
 const GEMINI_API_URL =
   'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
+const DEFAULT_GEMINI_TIMEOUT_MS = 25_000;
 
 interface DiscoveryRow {
   id: string;
@@ -54,16 +59,36 @@ async function searchComplianceSources(crop: string, state: string): Promise<Dis
     `Find authoritative pesticide compliance and label sources for ${crop} in ${state}, United States.`,
     'Prioritize .gov, state department of agriculture, EPA resources, university extension compliance pages.',
     'Exclude retailer and blog pages.',
+    'Return only a JSON array of objects with keys: url, title, sourceType.',
+    'Use canonical destination URLs only (no redirect links and no search-result URLs).',
+    'sourceType must be one of: government, university_extension, regulatory.',
   ].join(' ');
 
-  const response = await fetch(`${GEMINI_API_URL}?key=${apiKey}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      contents: [{ parts: [{ text: prompt }] }],
-      tools: [{ google_search: {} }],
-    }),
-  });
+  const timeoutMs = Number(
+    process.env.COMPLIANCE_DISCOVERY_GEMINI_TIMEOUT_MS ?? DEFAULT_GEMINI_TIMEOUT_MS
+  );
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+
+  let response: Response;
+  try {
+    response = await fetch(`${GEMINI_API_URL}?key=${apiKey}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      signal: controller.signal,
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        tools: [{ google_search: {} }],
+      }),
+    });
+  } catch (error) {
+    if ((error as Error).name === 'AbortError') {
+      throw new Error(`Gemini request timed out after ${timeoutMs}ms`);
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeout);
+  }
 
   if (!response.ok) {
     const message = await response.text().catch(() => '');
@@ -72,42 +97,29 @@ async function searchComplianceSources(crop: string, state: string): Promise<Dis
 
   const payload = (await response.json()) as {
     candidates?: Array<{
+      content?: {
+        parts?: Array<{ text?: string }>;
+      };
       groundingMetadata?: {
         groundingChunks?: GeminiGroundingChunk[];
       };
     }>;
   };
 
-  const chunks = payload.candidates?.[0]?.groundingMetadata?.groundingChunks ?? [];
-  const seen = new Set<string>();
+  const candidate = payload.candidates?.[0];
+  const parsedEntries = extractDiscoveryUrlsFromGeminiCandidate(candidate, 8);
+  const reachableEntries = await filterReachableDiscoveryUrls(parsedEntries, 8);
   const sources: DiscoveredSource[] = [];
 
-  for (const chunk of chunks) {
-    const url = chunk.web?.uri?.trim();
-    const title = chunk.web?.title?.trim() ?? '';
-    if (!url || seen.has(url)) {
-      continue;
-    }
-
-    let parsedUrl: URL;
-    try {
-      parsedUrl = new URL(url);
-    } catch {
-      continue;
-    }
-
-    // Gemini grounding often returns transient Google redirect URLs that are
-    // not stable regulatory sources; skip them so ingestion focuses on
-    // canonical provider URLs.
-    if (parsedUrl.hostname.includes('vertexaisearch.cloud.google.com')) {
-      continue;
-    }
-
-    seen.add(url);
+  for (const entry of reachableEntries) {
+    const title = entry.title || `${crop} compliance - ${state}`;
     sources.push({
-      url,
-      title: title || `${crop} compliance - ${state}`,
-      sourceType: inferSourceType(url, title),
+      url: entry.url,
+      title,
+      sourceType: inferSourceType(
+        entry.url,
+        entry.sourceTypeHint ? `${title} ${entry.sourceTypeHint}` : title
+      ),
     });
 
     if (sources.length >= 8) {
@@ -155,6 +167,16 @@ async function claimBatch(pool: Pool, batchSize: number): Promise<DiscoveryRow[]
   );
 
   return result.rows;
+}
+
+async function resetStuckRunningRows(pool: Pool): Promise<void> {
+  await pool.query(
+    `
+      UPDATE "ComplianceDiscoveryQueue"
+      SET status = 'pending'
+      WHERE status = 'running'
+    `
+  );
 }
 
 async function registerSource(
@@ -214,6 +236,28 @@ async function markRow(
   );
 }
 
+async function processRowsConcurrently(
+  rows: DiscoveryRow[],
+  concurrency: number,
+  handler: (row: DiscoveryRow) => Promise<void>
+): Promise<void> {
+  let index = 0;
+  const workerCount = Math.max(1, Math.min(concurrency, rows.length || 1));
+  const workers = Array.from({ length: workerCount }, async () => {
+    while (true) {
+      const currentIndex = index;
+      index += 1;
+      const row = rows[currentIndex];
+      if (!row) {
+        return;
+      }
+      await handler(row);
+    }
+  });
+
+  await Promise.allSettled(workers);
+}
+
 export const handler: EventBridgeHandler<
   'crop-copilot.compliance.discovery.scheduled',
   {
@@ -231,9 +275,14 @@ export const handler: EventBridgeHandler<
       : fallbackBatchSize;
 
   await seedDiscoveryQueue(pool);
+  await resetStuckRunningRows(pool);
   const rows = await claimBatch(pool, batchSize);
+  const concurrency = Math.min(
+    Math.max(Number(process.env.COMPLIANCE_DISCOVERY_CONCURRENCY ?? 8), 1),
+    16
+  );
 
-  for (const row of rows) {
+  await processRowsConcurrently(rows, concurrency, async (row) => {
     try {
       const discovered = await searchComplianceSources(row.crop, row.state);
       for (const source of discovered) {
@@ -249,5 +298,5 @@ export const handler: EventBridgeHandler<
       });
       await markRow(pool, row.id, 'error', 0);
     }
-  }
+  });
 };

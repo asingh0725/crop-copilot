@@ -145,6 +145,15 @@ const CROP_ALIAS_MATCHERS = CROP_ALIAS_ENTRIES.map((entry) => ({
 
 let sharedPool: Pool | null = null;
 
+function attachPoolErrorLogging(pool: Pool, scope: string): void {
+  pool.on('error', (error) => {
+    console.error(`[${scope}] PostgreSQL pool error`, {
+      message: error.message,
+      code: (error as NodeJS.ErrnoException).code,
+    });
+  });
+}
+
 function resolvePool(): Pool {
   if (!sharedPool) {
     const databaseUrl = process.env.DATABASE_URL;
@@ -155,8 +164,12 @@ function resolvePool(): Pool {
     sharedPool = new Pool({
       connectionString: sanitizeDatabaseUrlForPool(databaseUrl),
       max: Number(process.env.PG_POOL_MAX ?? 5),
+      idleTimeoutMillis: Number(process.env.PG_IDLE_TIMEOUT_MS ?? 30_000),
+      connectionTimeoutMillis: Number(process.env.PG_CONNECT_TIMEOUT_MS ?? 10_000),
+      keepAlive: true,
       ssl: resolvePoolSslConfig(),
     });
+    attachPoolErrorLogging(sharedPool, 'recommendation-pipeline');
   }
 
   return sharedPool;
@@ -445,66 +458,59 @@ async function generateModelOutputFromProviders(
   options: ModelGenerationOptions = {}
 ): Promise<ModelGenerationResult | null> {
   const providers = resolveRecommendationModelProviders();
-  const attempts = await Promise.all(
-    providers.map(async (provider, providerOrder) => {
-      try {
-        const result =
-          provider === 'anthropic'
-            ? await generateModelOutputFromAnthropic(params, options.promptOverride)
-            : await generateModelOutputFromGemini(params, options.promptOverride);
-        if (!result) {
-          return null;
+  const mode = normalizeOptionalString(process.env.RECOMMENDATION_MODEL_SELECTION_MODE) ?? 'fallback';
+  const bestCandidate =
+    mode === 'best_of_available'
+      ? {
+          score: Number.NEGATIVE_INFINITY,
+          confidence: Number.NEGATIVE_INFINITY,
+          providerOrder: Number.MAX_SAFE_INTEGER,
+          result: null as ModelGenerationResult | null,
         }
-        const score = scoreModelOutputQuality(result.output, params.candidates);
-        const confidence = clamp(
-          Number(result.output.diagnosis?.confidence ?? result.output.confidence ?? 0),
-          0,
-          1
-        );
-        return {
-          provider,
-          providerOrder,
-          score,
-          confidence,
-          result,
-        };
-      } catch (error) {
-        console.error('Recommendation model provider failed', {
-          provider,
-          error: (error as Error).message,
-        });
-        return null;
+      : null;
+
+  for (let providerOrder = 0; providerOrder < providers.length; providerOrder += 1) {
+    const provider = providers[providerOrder];
+    try {
+      const result =
+        provider === 'anthropic'
+          ? await generateModelOutputFromAnthropic(params, options.promptOverride)
+          : await generateModelOutputFromGemini(params, options.promptOverride);
+      if (!result) {
+        continue;
       }
-    })
-  );
 
-  const successful = attempts.filter(
-    (
-      entry
-    ): entry is {
-      provider: RecommendationModelProvider;
-      providerOrder: number;
-      score: number;
-      confidence: number;
-      result: ModelGenerationResult;
-    } => entry !== null
-  );
+      if (!bestCandidate) {
+        return result;
+      }
 
-  if (successful.length === 0) {
-    return null;
+      const score = scoreModelOutputQuality(result.output, params.candidates);
+      const confidence = clamp(
+        Number(result.output.diagnosis?.confidence ?? result.output.confidence ?? 0),
+        0,
+        1
+      );
+      const shouldReplace =
+        score > bestCandidate.score ||
+        (score === bestCandidate.score && confidence > bestCandidate.confidence) ||
+        (score === bestCandidate.score &&
+          confidence === bestCandidate.confidence &&
+          providerOrder < bestCandidate.providerOrder);
+      if (shouldReplace) {
+        bestCandidate.score = score;
+        bestCandidate.confidence = confidence;
+        bestCandidate.providerOrder = providerOrder;
+        bestCandidate.result = result;
+      }
+    } catch (error) {
+      console.error('Recommendation model provider failed', {
+        provider,
+        error: (error as Error).message,
+      });
+    }
   }
 
-  successful.sort((a, b) => {
-    if (b.score !== a.score) {
-      return b.score - a.score;
-    }
-    if (b.confidence !== a.confidence) {
-      return b.confidence - a.confidence;
-    }
-    return a.providerOrder - b.providerOrder;
-  });
-
-  return successful[0].result;
+  return bestCandidate?.result ?? null;
 }
 
 function resolveRecommendationModelProviders(): RecommendationModelProvider[] {
@@ -758,18 +764,18 @@ async function retrieveCandidatesLexical(
   expansion: QueryExpansionResult,
   limit: number
 ): Promise<RetrievedCandidate[]> {
+  const cropTerm = normalizeCropTerm(input.crop);
+  const cropHints = buildCropHints(cropTerm);
+  const cropRegexPattern = buildCropSqlRegexPattern(cropHints);
   const terms = expansion.terms
     .map((term) => term.toLowerCase().trim())
     .filter((term) => term.length >= 4)
     .slice(0, 10);
   if (terms.length === 0) {
-    return [];
+    return retrieveBroadFallbackCandidates(pool, limit, cropRegexPattern, cropHints);
   }
 
   const patterns = terms.map((term) => `%${escapeLikePattern(term)}%`);
-  const cropTerm = normalizeCropTerm(input.crop);
-  const cropHints = buildCropHints(cropTerm);
-  const cropRegexPattern = buildCropSqlRegexPattern(cropHints);
   const cropWordMatcher = buildCropWordRegex(cropHints);
   const cropConstraint =
     cropRegexPattern
@@ -826,7 +832,7 @@ async function retrieveCandidatesLexical(
     [patterns, limit * 5, cropRegexPattern ?? '', cropHints]
   );
 
-  return rows.rows
+  const lexicalCandidates = rows.rows
     .map((row) => {
       const content = normalizeWhitespace(row.content);
       const lexicalScore = scoreLexicalMatch(content, terms);
@@ -849,6 +855,80 @@ async function retrieveCandidatesLexical(
     .filter((candidate) => candidate.similarity > 0.2)
     .filter((candidate) => !isLowSignalContent(candidate.content))
     .sort((a, b) => b.similarity - a.similarity)
+    .slice(0, limit);
+
+  if (lexicalCandidates.length > 0) {
+    return lexicalCandidates;
+  }
+
+  return retrieveBroadFallbackCandidates(pool, limit, cropRegexPattern, cropHints);
+}
+
+async function retrieveBroadFallbackCandidates(
+  pool: Pool,
+  limit: number,
+  cropRegexPattern: string | null,
+  cropHints: string[]
+): Promise<RetrievedCandidate[]> {
+  const cropConstraint =
+    cropRegexPattern
+      ? `
+        AND (
+          (
+            jsonb_typeof(s.metadata->'crops') = 'array' AND
+            jsonb_array_length(s.metadata->'crops') > 0 AND
+            EXISTS (
+              SELECT 1
+              FROM jsonb_array_elements_text(s.metadata->'crops') AS source_crop(value)
+              WHERE lower(source_crop.value) = ANY($2::text[])
+            )
+          )
+          OR (
+            (
+              s.metadata IS NULL OR
+              s.metadata->'crops' IS NULL OR
+              jsonb_typeof(s.metadata->'crops') <> 'array' OR
+              jsonb_array_length(s.metadata->'crops') = 0
+            ) AND (
+              lower(t.content) ~ $1::text OR
+              lower(s.title) ~ $1::text
+            )
+          )
+        )
+      `
+      : '';
+
+  const rows = await pool.query<CandidateRow>(
+    `
+      SELECT
+        t.id AS chunk_id,
+        t.content,
+        t.metadata,
+        s.id AS source_id,
+        s.title AS source_title,
+        s."sourceType"::text AS source_type,
+        s.institution,
+        COALESCE(sb.boost, 0)::float8 AS source_boost,
+        0.35::float8 AS similarity
+      FROM "TextChunk" t
+      JOIN "Source" s ON s.id = t."sourceId"
+      LEFT JOIN "SourceBoost" sb ON sb."sourceId" = s.id
+      WHERE s.status IN ('ready', 'processed')
+        ${cropConstraint}
+      ORDER BY t."createdAt" DESC
+      LIMIT $3
+    `,
+    [cropRegexPattern ?? '', cropHints, limit * 5]
+  );
+
+  return rows.rows
+    .map((row) =>
+      toRetrievedCandidate({
+        ...row,
+        similarity: Math.min(0.9, Number(row.similarity) + clamp(Number(row.source_boost ?? 0), -0.1, 0.25)),
+      })
+    )
+    .filter((candidate) => !isLowSignalContent(candidate.content))
     .slice(0, limit);
 }
 
@@ -1016,7 +1096,7 @@ async function generateModelOutputFromGemini(
   // Default to flash — structured JSON extraction does not require Pro-tier reasoning.
   // Override with GEMINI_RECOMMENDATION_MODEL=gemini-2.5-pro for higher accuracy.
   const preferredModel = process.env.GEMINI_RECOMMENDATION_MODEL?.trim() || 'gemini-2.5-flash';
-  const fallbackModels = ['gemini-2.0-flash'];
+  const fallbackModels = ['gemini-2.5-flash', 'gemini-2.5-pro'];
   const models = [preferredModel, ...fallbackModels].filter(
     (model, index, all) => model.length > 0 && all.indexOf(model) === index
   );
@@ -1074,6 +1154,10 @@ async function requestGeminiModel(params: {
     process.env.RECOMMENDATION_MODEL_TIMEOUT_MS,
     DEFAULT_MODEL_TIMEOUT_MS
   );
+  const maxOutputTokens = parsePositiveIntEnv(
+    process.env.GEMINI_MAX_OUTPUT_TOKENS,
+    3072
+  );
   const response = await fetchWithTimeout(
     `https://generativelanguage.googleapis.com/v1beta/models/${params.model}:generateContent?key=${params.apiKey}`,
     {
@@ -1090,7 +1174,7 @@ async function requestGeminiModel(params: {
         ],
         generationConfig: {
           temperature: 0.1,
-          maxOutputTokens: 2048,
+          maxOutputTokens,
           ...(params.responseMimeType ? { responseMimeType: params.responseMimeType } : {}),
         },
       }),
@@ -1150,9 +1234,13 @@ function describeGeminiNoText(payload: {
 }
 
 function buildModelPrompt(params: ModelGenerationInput): string {
+  const maxChunkChars = parsePositiveIntEnv(
+    process.env.RECOMMENDATION_PROMPT_CHUNK_CHARS,
+    500
+  );
   const chunkLines = params.candidates.slice(0, MAX_CONTEXT_CANDIDATES).map((candidate) => {
-    const excerpt = candidate.content.length > 700
-      ? `${candidate.content.slice(0, 697)}...`
+    const excerpt = candidate.content.length > maxChunkChars
+      ? `${candidate.content.slice(0, Math.max(0, maxChunkChars - 3))}...`
       : candidate.content;
     return [
       `chunkId=${candidate.chunkId}`,
@@ -1162,6 +1250,7 @@ function buildModelPrompt(params: ModelGenerationInput): string {
       `content=${excerpt}`,
     ].join('\n');
   });
+  const promptInput = buildPromptInputPayload(params.input, params.queryExpansion.expandedQuery);
 
   return [
     'Return JSON with this schema only:',
@@ -1181,15 +1270,7 @@ function buildModelPrompt(params: ModelGenerationInput): string {
     '- Return at most 3 products.',
     '- Never include markdown fences or extra prose outside JSON.',
     '',
-    `Input: ${JSON.stringify({
-      type: params.input.type,
-      crop: params.input.crop,
-      location: params.input.location,
-      season: params.input.season,
-      description: params.input.description,
-      labData: params.input.labData,
-      query: params.queryExpansion.expandedQuery,
-    })}`,
+    `Input: ${JSON.stringify(promptInput)}`,
     '',
     'Evidence chunks:',
     chunkLines.join('\n\n'),
@@ -1208,13 +1289,18 @@ function buildRepairPrompt(params: {
   };
   quality: QualityAssessment;
 }): string {
+  const maxEvidenceChars = parsePositiveIntEnv(
+    process.env.RECOMMENDATION_REPAIR_EVIDENCE_CHARS,
+    600
+  );
   const evidence = params.candidates.slice(0, MAX_CONTEXT_CANDIDATES).map((candidate) => ({
     chunkId: candidate.chunkId,
     sourceTitle: candidate.sourceTitle,
     sourceType: candidate.sourceType,
     similarity: Number(candidate.similarity.toFixed(3)),
-    excerpt: candidate.content.slice(0, 900),
+    excerpt: candidate.content.slice(0, maxEvidenceChars),
   }));
+  const promptInput = buildPromptInputPayload(params.input, params.queryExpansion.expandedQuery);
 
   return [
     'Return JSON with this schema only:',
@@ -1233,20 +1319,65 @@ function buildRepairPrompt(params: {
     '- Keep product suggestions only when diagnosis confidence and evidence support them.',
     '- No markdown fences. JSON only.',
     '',
-    `Input: ${JSON.stringify({
-      type: params.input.type,
-      crop: params.input.crop,
-      location: params.input.location,
-      season: params.input.season,
-      description: params.input.description,
-      labData: params.input.labData,
-      query: params.queryExpansion.expandedQuery,
-    })}`,
+    `Input: ${JSON.stringify(promptInput)}`,
     '',
     `Draft output to improve: ${JSON.stringify(params.draft)}`,
     '',
     `Evidence chunks: ${JSON.stringify(evidence)}`,
   ].join('\n');
+}
+
+function buildPromptInputPayload(
+  input: InputSnapshot,
+  query: string
+): Record<string, unknown> {
+  const maxDescriptionChars = parsePositiveIntEnv(
+    process.env.RECOMMENDATION_PROMPT_DESCRIPTION_CHARS,
+    1200
+  );
+  const maxLabDataChars = parsePositiveIntEnv(
+    process.env.RECOMMENDATION_PROMPT_LABDATA_CHARS,
+    1400
+  );
+
+  return {
+    type: input.type,
+    crop: input.crop,
+    location: input.location,
+    season: input.season,
+    description: truncateForPrompt(input.description, maxDescriptionChars),
+    labDataSummary: summarizePromptValue(input.labData, maxLabDataChars),
+    query,
+  };
+}
+
+function truncateForPrompt(value: string | undefined, maxChars: number): string | undefined {
+  if (!value) {
+    return undefined;
+  }
+  if (value.length <= maxChars) {
+    return value;
+  }
+  return `${value.slice(0, Math.max(0, maxChars - 3))}...`;
+}
+
+function summarizePromptValue(value: unknown, maxChars: number): string | undefined {
+  if (value == null) {
+    return undefined;
+  }
+  let serialized = '';
+  try {
+    serialized = JSON.stringify(value);
+  } catch {
+    return undefined;
+  }
+  if (!serialized) {
+    return undefined;
+  }
+  if (serialized.length <= maxChars) {
+    return serialized;
+  }
+  return `${serialized.slice(0, Math.max(0, maxChars - 3))}...`;
 }
 
 function buildNormalizationBaseline(candidates: RankedCandidate[]): ModelOutput {
@@ -1771,21 +1902,20 @@ async function persistRetrievalAuditRecord(params: {
         VALUES (
           $1,
           $2,
+          NULL,
           $3,
-          $4,
+          $4::text[],
           $5::text[],
           $6::text[],
-          $7::text[],
+          $7::jsonb,
           $8::jsonb,
           $9::jsonb,
-          $10::jsonb,
           NOW()
         )
       `,
       [
         randomUUID(),
         params.inputId,
-        null,
         params.query,
         params.queryTerms.slice(0, 12),
         [],

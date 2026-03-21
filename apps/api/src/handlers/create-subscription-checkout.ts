@@ -332,9 +332,11 @@ export function buildCreateSubscriptionCheckoutHandler(
         automatic_tax: {
           enabled: true,
         },
+        customer_update: {
+          address: 'auto',
+        },
         payment_method_collection: payload.tier === 'grower_free' ? 'if_required' : 'always',
         subscription_data: {
-          proration_behavior: 'create_prorations',
           metadata: {
             userId: auth.userId,
             planId: payload.tier,

@@ -405,7 +405,7 @@ function CostSection({
       {anyEstimated && (
         <p className="flex items-center gap-1 text-[11px] text-gray-400">
           <BarChart3 className="h-3 w-3" />
-          Some prices reflect live retail search; others are from cached results.
+          Some prices use live retailer data; others use benchmark estimates when live quotes are unavailable.
         </p>
       )}
     </div>

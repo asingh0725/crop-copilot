@@ -15,6 +15,7 @@ import {
   type IngestionQueue,
 } from '../queue/ingestion-queue';
 import { resolvePoolSslConfig, sanitizeDatabaseUrlForPool } from '../lib/store';
+import { recordPipelineEvent } from '../lib/pipeline-events';
 
 interface ScheduledIngestionEvent {
   trigger?: 'scheduled' | 'manual';
@@ -54,11 +55,36 @@ export function buildRunIngestionBatchHandler(
     const batch = await buildIngestionBatchMessage(trigger, registry, now);
     if (!batch) {
       console.log('[RunIngestionBatch] No sources due for ingestion');
+      if (dbPool) {
+        await recordPipelineEvent(dbPool, {
+          pipeline: 'discovery',
+          stage: 'orchestrator',
+          severity: 'info',
+          message: 'No due discovery sources for ingestion.',
+          metadata: {
+            trigger: trigger.trigger,
+            maxSources: trigger.maxSources,
+          },
+        });
+      }
       return;
     }
 
     console.log(`[RunIngestionBatch] Queueing ${batch.sources.length} sources for ingestion`);
     await queue.publishIngestionBatch(batch);
+    if (dbPool) {
+      await recordPipelineEvent(dbPool, {
+        pipeline: 'discovery',
+        stage: 'orchestrator',
+        severity: 'info',
+        message: `Queued ${batch.sources.length} discovery sources for ingestion.`,
+        metadata: {
+          trigger: trigger.trigger,
+          maxSources: trigger.maxSources,
+          queued: batch.sources.length,
+        },
+      });
+    }
   };
 }
 

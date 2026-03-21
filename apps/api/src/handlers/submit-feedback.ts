@@ -12,6 +12,8 @@ import {
 import { resolvePoolSslConfig, sanitizeDatabaseUrlForPool } from '../lib/store';
 import { processLearningSignal } from '../learning/feedback-learning';
 import { grantDetailedFeedbackReward } from '../lib/entitlements';
+import { getModelTrainingTriggerQueue } from '../queue/model-training-trigger-queue';
+import { recordPipelineEvent } from '../lib/pipeline-events';
 
 interface SubmitFeedbackPayload {
   recommendationId: string;
@@ -48,6 +50,18 @@ interface RecommendationOwnerRow {
   user_id: string;
 }
 
+interface PremiumContextRow {
+  status: string;
+}
+
+interface TrainingTriggerRow {
+  id: string;
+}
+
+interface PgErrorLike {
+  code?: string;
+}
+
 type FeedbackStage = 'basic' | 'detailed' | 'outcome';
 
 interface FeedbackSubmitter {
@@ -79,6 +93,68 @@ function resolveFeedbackPool(): Pool {
   }
 
   return feedbackPool;
+}
+
+function isMissingTableError(error: unknown): boolean {
+  const code = (error as PgErrorLike | null)?.code;
+  return code === '42P01' || code === '42703';
+}
+
+async function createTrainingTrigger(
+  pool: Pool,
+  params: {
+    modelType: 'lambdarank' | 'premium_quality';
+    feedbackId: string;
+    recommendationId: string;
+    userId: string;
+    source: string;
+    metadata?: Record<string, unknown>;
+  }
+): Promise<string | null> {
+  try {
+    const result = await pool.query<TrainingTriggerRow>(
+      `
+        INSERT INTO "ModelTrainingTrigger" (
+          "modelType",
+          "feedbackId",
+          "recommendationId",
+          "userId",
+          source,
+          status,
+          metadata,
+          "createdAt",
+          "updatedAt"
+        )
+        VALUES ($1, $2::uuid, $3, $4, $5, 'pending', $6::jsonb, NOW(), NOW())
+        ON CONFLICT ("modelType", "feedbackId")
+        DO UPDATE SET
+          status = 'pending',
+          reason = NULL,
+          "errorMessage" = NULL,
+          metadata = EXCLUDED.metadata,
+          "updatedAt" = NOW()
+        RETURNING id
+      `,
+      [
+        params.modelType,
+        params.feedbackId,
+        params.recommendationId,
+        params.userId,
+        params.source,
+        JSON.stringify(params.metadata ?? {}),
+      ]
+    );
+    return result.rows[0]?.id ?? null;
+  } catch (error) {
+    if (isMissingTableError(error)) {
+      return null;
+    }
+    throw error;
+  }
+}
+
+function hasPremiumIssueTag(issues: string[]): boolean {
+  return issues.some((issue) => issue.toLowerCase().startsWith('premium_'));
 }
 
 class FeedbackNotFoundError extends Error {
@@ -305,6 +381,14 @@ async function submitFeedbackToDatabase(
       recommendationId: payload.recommendationId,
       error: (error as Error).message,
     });
+    await recordPipelineEvent(pool, {
+      pipeline: 'learning',
+      stage: 'feedback_learning',
+      severity: 'warn',
+      message: `Learning signal update failed: ${(error as Error).message}`,
+      recommendationId: payload.recommendationId,
+      userId,
+    });
   }
 
   let creditReward:
@@ -325,7 +409,136 @@ async function submitFeedbackToDatabase(
         userId,
         error: (error as Error).message,
       });
+      await recordPipelineEvent(pool, {
+        pipeline: 'learning',
+        stage: 'feedback_reward',
+        severity: 'warn',
+        message: `Detailed feedback reward failed: ${(error as Error).message}`,
+        recommendationId: payload.recommendationId,
+        userId,
+      });
       creditReward = null;
+    }
+  }
+
+  const feedbackId = upserted.rows[0]?.id;
+  if (feedbackId) {
+    const trainingQueue = getModelTrainingTriggerQueue();
+    const normalizedIssues = normalizeIssues(merged.issues);
+    let hasPremiumContext = false;
+
+    try {
+      const premiumContextResult = await pool.query<PremiumContextRow>(
+        `
+          SELECT status
+          FROM "RecommendationPremiumInsight"
+          WHERE "recommendationId" = $1
+          LIMIT 1
+        `,
+        [payload.recommendationId]
+      );
+      hasPremiumContext = premiumContextResult.rows.length > 0;
+    } catch (error) {
+      if (!isMissingTableError(error)) {
+        console.warn('Failed to read premium context for feedback trigger', {
+          recommendationId: payload.recommendationId,
+          error: (error as Error).message,
+        });
+      }
+    }
+
+    try {
+      const lambdarankTriggerId = await createTrainingTrigger(pool, {
+        modelType: 'lambdarank',
+        feedbackId,
+        recommendationId: payload.recommendationId,
+        userId,
+        source: 'feedback_submit',
+        metadata: {
+          stage: payload.stage ?? null,
+          hasPremiumContext,
+        },
+      });
+
+      await trainingQueue.publishTrainingTrigger({
+        messageType: 'ml.training.trigger.requested',
+        messageVersion: '1',
+        requestedAt: new Date().toISOString(),
+        modelType: 'lambdarank',
+        triggerId: lambdarankTriggerId ?? undefined,
+        recommendationId: payload.recommendationId,
+        feedbackId,
+        userId,
+        source: 'feedback_submit',
+      });
+
+      await recordPipelineEvent(pool, {
+        pipeline: 'learning',
+        stage: 'feedback_trigger_enqueue',
+        severity: 'info',
+        message: 'Queued lambdarank retrain trigger from feedback submission.',
+        recommendationId: payload.recommendationId,
+        userId,
+        metadata: {
+          modelType: 'lambdarank',
+          triggerId: lambdarankTriggerId,
+          feedbackId,
+        },
+      });
+
+      if (hasPremiumContext || hasPremiumIssueTag(normalizedIssues)) {
+        const premiumTriggerId = await createTrainingTrigger(pool, {
+          modelType: 'premium_quality',
+          feedbackId,
+          recommendationId: payload.recommendationId,
+          userId,
+          source: 'feedback_submit',
+          metadata: {
+            stage: payload.stage ?? null,
+            issues: normalizedIssues.slice(0, 20),
+          },
+        });
+
+        await trainingQueue.publishTrainingTrigger({
+          messageType: 'ml.training.trigger.requested',
+          messageVersion: '1',
+          requestedAt: new Date().toISOString(),
+          modelType: 'premium_quality',
+          triggerId: premiumTriggerId ?? undefined,
+          recommendationId: payload.recommendationId,
+          feedbackId,
+          userId,
+          source: 'feedback_submit',
+        });
+
+        await recordPipelineEvent(pool, {
+          pipeline: 'learning',
+          stage: 'feedback_trigger_enqueue',
+          severity: 'info',
+          message: 'Queued premium_quality retrain trigger from feedback submission.',
+          recommendationId: payload.recommendationId,
+          userId,
+          metadata: {
+            modelType: 'premium_quality',
+            triggerId: premiumTriggerId,
+            feedbackId,
+          },
+        });
+      }
+    } catch (error) {
+      console.error('Failed to enqueue model training trigger', {
+        recommendationId: payload.recommendationId,
+        userId,
+        error: (error as Error).message,
+      });
+      await recordPipelineEvent(pool, {
+        pipeline: 'learning',
+        stage: 'feedback_trigger_enqueue',
+        severity: 'error',
+        message: `Failed to enqueue feedback-triggered retrain signal: ${(error as Error).message}`,
+        recommendationId: payload.recommendationId,
+        userId,
+      });
     }
   }
 

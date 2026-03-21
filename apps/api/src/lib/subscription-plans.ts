@@ -52,6 +52,7 @@ export const OVERAGE_RECOMMENDATION_PRICE_USD = 1.2;
 export const DETAILED_FEEDBACK_REWARD_USD = 0.05;
 export const DETAILED_FEEDBACK_REWARD_CAP_USD = 2.5;
 export const REFERRAL_REWARD_USD = 10;
+export const SIGNUP_BONUS_USD = 2.4; // 2 free trial recommendations at sign-up
 
 export function isProTier(tier: SubscriptionTier): boolean {
   return tier === 'grower_pro';

@@ -199,6 +199,13 @@ DATABASE_URL="..." GOOGLE_AI_API_KEY="..." npx tsx src/scripts/run-discovery-tes
 
 ## Deployment
 
+### Branch and environment lanes
+
+- `codex/env` -> GitHub workflow `Deploy Env` -> GitHub Environment `development`
+- `codex/prod` -> GitHub workflow `Deploy Prod` -> GitHub Environment `production`
+
+This keeps deploy credentials and secrets split between dev/prod.
+
 ### Environment Variables (CDK)
 
 | Variable | Required | Description |

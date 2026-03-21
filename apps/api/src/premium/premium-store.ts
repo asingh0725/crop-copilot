@@ -500,6 +500,27 @@ function estimateRetailPriceUsd(productType: string, productName: string): numbe
   return base;
 }
 
+function estimatedPricingFallbackEnabled(): boolean {
+  return (process.env.PREMIUM_PRICING_ALLOW_ESTIMATED_FALLBACK ?? 'true').trim().toLowerCase() !== 'false';
+}
+
+function buildEstimatedPricingOffer(params: {
+  productType: string;
+  productName: string;
+  region: string;
+}): PricingOffer {
+  const { productType, productName, region } = params;
+  const price = estimateRetailPriceUsd(productType, productName);
+  return {
+    price,
+    unit: 'benchmark',
+    retailer: 'Estimated benchmark',
+    url: null,
+    region,
+    lastUpdated: new Date().toISOString(),
+  };
+}
+
 async function upsertPricingCacheEntry(
   pool: Pool,
   productId: string,
@@ -576,6 +597,7 @@ export async function loadCachedRetailPricing(
     .trim()
     .toLowerCase();
   const liveLookupEnabled = pricingMode !== 'estimated_only';
+  const allowEstimatedFallback = estimatedPricingFallbackEnabled();
   const map = new Map<string, number | null>();
   const sourceMap = new Map<string, 'live' | 'estimated' | null>();
 
@@ -617,11 +639,18 @@ export async function loadCachedRetailPricing(
             })
           : [];
         if (offers.length === 0) {
-          // Live search returned no results — leave price as null rather than
-          // fabricating a benchmark estimate. Don't cache an empty result so
-          // the next enrichment run retries the live lookup.
-          map.set(product.product_id, null);
-          sourceMap.set(product.product_id, null);
+          if (allowEstimatedFallback) {
+            const estimatedOffer = buildEstimatedPricingOffer({
+              productType: product.product_type,
+              productName: product.product_name,
+              region: resolvedRegion,
+            });
+            map.set(product.product_id, estimatedOffer.price);
+            sourceMap.set(product.product_id, 'estimated');
+          } else {
+            map.set(product.product_id, null);
+            sourceMap.set(product.product_id, null);
+          }
           continue;
         }
 
@@ -634,8 +663,18 @@ export async function loadCachedRetailPricing(
           region: resolvedRegion,
           error: (error as Error).message,
         });
-        map.set(product.product_id, null);
-        sourceMap.set(product.product_id, null);
+        if (allowEstimatedFallback) {
+          const estimatedOffer = buildEstimatedPricingOffer({
+            productType: product.product_type,
+            productName: product.product_name,
+            region: resolvedRegion,
+          });
+          map.set(product.product_id, estimatedOffer.price);
+          sourceMap.set(product.product_id, 'estimated');
+        } else {
+          map.set(product.product_id, null);
+          sourceMap.set(product.product_id, null);
+        }
       }
     }
   }

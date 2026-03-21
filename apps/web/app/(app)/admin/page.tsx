@@ -27,6 +27,16 @@ interface ErrorSource {
   updatedAt: string;
 }
 
+interface ModelStatus {
+  id: string;
+  modelType: string;
+  status: string;
+  trainedAt: string;
+  ndcgScore: number | null;
+  feedbackCount: number;
+  s3Uri: string | null;
+}
+
 interface AdminStatusResponse {
   stats: { total: number; pending: number; running: number; completed: number; error: number };
   progress: { pct: number; sourcesTotal: number };
@@ -38,13 +48,8 @@ interface AdminStatusResponse {
     completed: number;
     error: number;
   };
-  latestModel: {
-    modelType: string;
-    status: string;
-    trainedAt: string;
-    ndcgScore: number | null;
-    feedbackCount: number;
-  } | null;
+  latestModel: ModelStatus | null;
+  latestPremiumModel: ModelStatus | null;
   compliance?: {
     available: boolean;
     discovery: {
@@ -113,6 +118,15 @@ function timeAgo(iso: string): string {
   const hrs = Math.floor(mins / 60);
   if (hrs < 24) return `${hrs}h ago`;
   return `${Math.floor(hrs / 24)}d ago`;
+}
+
+function modelBadgeVariant(
+  status: string,
+): "default" | "outline" | "secondary" | "destructive" {
+  if (status === "deployed") return "default";
+  if (status === "training") return "outline";
+  if (status === "failed" || status === "error") return "destructive";
+  return "secondary";
 }
 
 async function fetchGatewayJson<T>(params: {
@@ -279,6 +293,14 @@ export default async function AdminPage() {
     analytics.feedback > 0
       ? Math.round((analytics.helpfulFeedback / analytics.feedback) * 100)
       : null;
+  const modelStatuses: Array<{
+    label: string;
+    cadence: string;
+    model: ModelStatus | null;
+  }> = [
+    { label: "Retrieval Ranker", cadence: "nightly 02:00 UTC", model: data?.latestModel ?? null },
+    { label: "Premium Quality", cadence: "feedback-triggered", model: data?.latestPremiumModel ?? null },
+  ];
 
   return (
     <div className="container max-w-6xl py-6 px-4 sm:px-6 lg:px-8 space-y-8">
@@ -446,6 +468,68 @@ export default async function AdminPage() {
               )}
             </CardContent>
           </Card>
+        </div>
+      </section>
+
+      <section className="space-y-3">
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="text-lg font-semibold">ML Model Status</h2>
+          <p className="text-xs text-muted-foreground">
+            Live snapshot from <span className="font-mono">MLModelVersion</span>
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {modelStatuses.map((entry) => {
+            const model = entry.model;
+            return (
+              <Card key={entry.label}>
+                <CardContent className="pt-4 pb-4 px-4 space-y-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-sm font-medium">{entry.label}</p>
+                    <Badge
+                      variant={model ? modelBadgeVariant(model.status) : "secondary"}
+                      className="text-xs"
+                    >
+                      {model?.status ?? "not trained"}
+                    </Badge>
+                  </div>
+
+                  <p className="text-xs text-muted-foreground">{entry.cadence}</p>
+
+                  {model ? (
+                    <div className="space-y-1.5 text-xs text-muted-foreground">
+                      <p>
+                        Model: <span className="font-medium text-foreground">{model.modelType}</span>
+                      </p>
+                      <p>
+                        Trained: <span className="font-medium text-foreground">{timeAgo(model.trainedAt)}</span>
+                      </p>
+                      <p>
+                        Feedback samples:{" "}
+                        <span className="font-medium text-foreground">{fmt(model.feedbackCount)}</span>
+                      </p>
+                      <p>
+                        Score:{" "}
+                        <span className="font-medium text-foreground">
+                          {model.ndcgScore != null ? `NDCG ${model.ndcgScore.toFixed(3)}` : "pending"}
+                        </span>
+                      </p>
+                      {model.s3Uri && (
+                        <p className="truncate">
+                          Artifact: <span className="font-mono text-[11px]">{model.s3Uri}</span>
+                        </p>
+                      )}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-muted-foreground">
+                      No run recorded yet. Model training begins after feedback thresholds are met.
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
       </section>
 

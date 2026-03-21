@@ -22,6 +22,14 @@ struct CreditsBalanceChip: View {
         Self.currencyFormatter.string(from: NSNumber(value: billingStore.creditBalanceUsd)) ?? "$0.00"
     }
 
+    private var isOutOfCapacity: Bool {
+        billingStore.totalRecommendationCapacityLeft == 0
+    }
+
+    private var chipAccent: Color {
+        isOutOfCapacity ? Color.semanticWarning : Color.appPrimary
+    }
+
     var body: some View {
         Group {
             if billingStore.isPaidPlan {
@@ -31,12 +39,12 @@ struct CreditsBalanceChip: View {
                     HStack(spacing: 6) {
                         Text(balanceLabel)
                             .font(.caption.weight(.semibold))
-                            .foregroundStyle(Color.appPrimary)
+                            .foregroundStyle(chipAccent)
                             .monospacedDigit()
                             .lineLimit(1)
-                        Image(systemName: "dollarsign.circle.fill")
+                        Image(systemName: isOutOfCapacity ? "exclamationmark.circle.fill" : "dollarsign.circle.fill")
                             .font(.caption)
-                            .foregroundStyle(Color.appPrimary.opacity(0.9))
+                            .foregroundStyle(chipAccent.opacity(0.9))
                     }
                     .padding(.horizontal, 10)
                     .padding(.vertical, 6)
@@ -46,7 +54,7 @@ struct CreditsBalanceChip: View {
                     )
                     .overlay(
                         RoundedRectangle(cornerRadius: 12, style: .continuous)
-                            .stroke(Color.appPrimary.opacity(0.35), lineWidth: 1)
+                            .stroke(chipAccent.opacity(0.35), lineWidth: 1)
                     )
                 }
                 .buttonStyle(.plain)

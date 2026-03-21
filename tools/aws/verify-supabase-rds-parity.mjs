@@ -4,11 +4,13 @@ import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 
+const envName = normalizeEnvironment(process.env.CROP_ENV);
+
 const sourceUrl =
   process.env.SUPABASE_SOURCE_DATABASE_URL ??
   process.env.SOURCE_DATABASE_URL ??
-  readEnvValue(path.resolve(process.cwd(), 'apps/web/.env'), 'DIRECT_URL') ??
-  readEnvValue(path.resolve(process.cwd(), 'apps/web/.env'), 'DATABASE_URL');
+  readScopedEnvValue(envName, 'DIRECT_URL') ??
+  readScopedEnvValue(envName, 'DATABASE_URL');
 
 const targetUrl = process.env.TARGET_DATABASE_URL;
 
@@ -102,6 +104,34 @@ function readEnvValue(filePath, key) {
       value = value.slice(1, -1);
     }
     return value;
+  }
+  return null;
+}
+
+function normalizeEnvironment(rawValue) {
+  const value = (rawValue ?? '').trim().toLowerCase();
+  if (value === 'prod') {
+    return 'prod';
+  }
+  return 'dev';
+}
+
+function resolveWebEnvCandidates(envName) {
+  const webDir = path.resolve(process.cwd(), 'apps/web');
+  return [
+    path.resolve(webDir, `.env.${envName}.local`),
+    path.resolve(webDir, `.env.${envName}`),
+    path.resolve(webDir, '.env.local'),
+    path.resolve(webDir, '.env'),
+  ];
+}
+
+function readScopedEnvValue(envName, key) {
+  for (const candidate of resolveWebEnvCandidates(envName)) {
+    const value = readEnvValue(candidate, key);
+    if (value) {
+      return value;
+    }
   }
   return null;
 }

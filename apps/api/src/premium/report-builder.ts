@@ -66,6 +66,16 @@ function currency(value: number | null): string {
   return `$${value.toFixed(2)}`;
 }
 
+function priceSourceLabel(source: 'live' | 'estimated' | null): string {
+  if (source === 'live') {
+    return 'Live';
+  }
+  if (source === 'estimated') {
+    return 'Estimated';
+  }
+  return 'Unavailable';
+}
+
 function renderChecks(compliance: ComplianceEvaluationResult): string {
   return compliance.checks
     .map((check) => {
@@ -98,6 +108,7 @@ function renderCosts(costAnalysis: CostAnalysisResult | null): string {
         <tr>
           <td>${escapeHtml(item.productName)}</td>
           <td>${escapeHtml(item.applicationRate ?? 'N/A')}</td>
+          <td>${escapeHtml(priceSourceLabel(item.priceSource))}</td>
           <td>${currency(item.unitPriceUsd)}</td>
           <td>${currency(item.estimatedCostPerAcreUsd)}</td>
           <td>${currency(item.estimatedFieldCostUsd)}</td>
@@ -126,6 +137,7 @@ function renderCosts(costAnalysis: CostAnalysisResult | null): string {
         <tr>
           <th>Product</th>
           <th>Rate</th>
+          <th>Price Source</th>
           <th>Unit Price</th>
           <th>Per Acre</th>
           <th>Whole Field</th>

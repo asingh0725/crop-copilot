@@ -70,6 +70,9 @@
 		D5B2961D61F17252D2B661E3 /* Input.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C081E140344A67671AF0811 /* Input.swift */; };
 		D7093D72179DFBF5285D40D9 /* LabReportViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D4AFCCFD2A668659369CE3F /* LabReportViewModelTests.swift */; };
 		D88C1CEB921D87A7B78BDD78 /* SecureAsyncImage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A989DCFD0CDD5DDB501F30E /* SecureAsyncImage.swift */; };
+		3F8E2A91C4D75B06E1F29A3C /* HTMLPreviewSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9B4D7F2E0C1A8E53D6B24F71 /* HTMLPreviewSheet.swift */; };
+		7D3F95C2B0E4816A3C9F28D5 /* BillingViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8C42D1B7E3F0956C4D81A2E /* BillingViewModel.swift */; };
+		5B8D2F7AC0E4931D6A17B5C3 /* BillingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C6E15A4B2D8F0371B9AC634E /* BillingView.swift */; };
 		D913B50B668F663ACFACAF6E /* UserProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0C69D2C2696F2D730C050E1 /* UserProfile.swift */; };
 		E244A1517508BB2DE606ECB8 /* APIEndpoint.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88A9F3585BF1872F92BD3A8F /* APIEndpoint.swift */; };
 		E3D6523C9EE6E6AAE0AD5F32 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 1A9DF51806372361A5FC7919 /* Assets.xcassets */; };
@@ -139,6 +142,9 @@
 		752D76CD1AC4BB52FBC4FAC1 /* SignupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignupView.swift; sourceTree = "<group>"; };
 		753D90981F670F4AFC5192AE /* CameraManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraManager.swift; sourceTree = "<group>"; };
 		7A989DCFD0CDD5DDB501F30E /* SecureAsyncImage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SecureAsyncImage.swift; sourceTree = "<group>"; };
+		9B4D7F2E0C1A8E53D6B24F71 /* HTMLPreviewSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HTMLPreviewSheet.swift; sourceTree = "<group>"; };
+		A8C42D1B7E3F0956C4D81A2E /* BillingViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BillingViewModel.swift; sourceTree = "<group>"; };
+		C6E15A4B2D8F0371B9AC634E /* BillingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BillingView.swift; sourceTree = "<group>"; };
 		80EB98051D053CA3F580C2C2 /* Fonts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Fonts.swift; sourceTree = "<group>"; };
 		88A9F3585BF1872F92BD3A8F /* APIEndpoint.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIEndpoint.swift; sourceTree = "<group>"; };
 		8AAB51EA009A128345F930D0 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
@@ -402,6 +408,7 @@
 		A0974BC02B3B53F867FBBE1B /* Views */ = {
 			isa = PBXGroup;
 			children = (
+				C6E15A4B2D8F0371B9AC634E /* BillingView.swift */,
 				F4F4B692C13A05A395AD94F6 /* ProfileView.swift */,
 				8AAB51EA009A128345F930D0 /* SettingsView.swift */,
 			);
@@ -447,6 +454,7 @@
 			children = (
 				26F78A6FDE3B135C8444D9F0 /* CreditsBalanceChip.swift */,
 				5C4F5955C9FF01282CF7CA84 /* CropCopilotLogoMark.swift */,
+				9B4D7F2E0C1A8E53D6B24F71 /* HTMLPreviewSheet.swift */,
 				7A989DCFD0CDD5DDB501F30E /* SecureAsyncImage.swift */,
 			);
 			path = Components;
@@ -529,6 +537,7 @@
 			isa = PBXGroup;
 			children = (
 				A3E0E524C09B694388B42F8E /* BillingSnapshotStore.swift */,
+				A8C42D1B7E3F0956C4D81A2E /* BillingViewModel.swift */,
 				3721E9E39DAC726C39F60BF0 /* ProfileViewModel.swift */,
 			);
 			path = ViewModels;
@@ -693,6 +702,8 @@
 				342DF49836F0E65F6337DA43 /* AuthViewModel.swift in Sources */,
 				B9D65F38CF45F5AF1BEF46D4 /* BillingSnapshotStore.swift in Sources */,
 				3912C76D676EA01D7B9327D1 /* BillingSnapshots.swift in Sources */,
+				5B8D2F7AC0E4931D6A17B5C3 /* BillingView.swift in Sources */,
+				7D3F95C2B0E4816A3C9F28D5 /* BillingViewModel.swift in Sources */,
 				C19565AA13101A14D96C8E01 /* BiometricAuthView.swift in Sources */,
 				5AEA2FFA7EE9FD282675CFFB /* CameraManager.swift in Sources */,
 				2948249A3FB8F033C526DB2C /* CameraPreviewView.swift in Sources */,
@@ -734,6 +745,7 @@
 				821FA56070E743D46C7EAF08 /* RecommendationDetailView.swift in Sources */,
 				70CFC9D91CA5E5250B9A780A /* RecommendationsListView.swift in Sources */,
 				1FEC784825B8488F411AF9E0 /* RecommendationsViewModel.swift in Sources */,
+				3F8E2A91C4D75B06E1F29A3C /* HTMLPreviewSheet.swift in Sources */,
 				D88C1CEB921D87A7B78BDD78 /* SecureAsyncImage.swift in Sources */,
 				B9F41A64416840BD133ECED8 /* SettingsView.swift in Sources */,
 				3689B0121C4C53A163655EFF /* SignupView.swift in Sources */,

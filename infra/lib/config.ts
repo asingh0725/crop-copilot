@@ -18,6 +18,11 @@ const DEFAULT_BUDGETS: Record<EnvironmentName, number> = {
   prod: 50,
 };
 
+const DEFAULT_REGIONS: Record<EnvironmentName, string> = {
+  dev: 'ca-west-1',
+  prod: 'us-west-1',
+};
+
 const DEFAULT_MAX_RECOMMENDATION_COST_USD: Record<EnvironmentName, number> = {
   dev: 1.5,
   prod: 1.1,
@@ -63,15 +68,40 @@ function parsePositiveNumber(raw: string | undefined, fallback: number, name: st
   return parsed;
 }
 
+function isTruthy(raw: string | undefined): boolean {
+  return ['1', 'true', 'yes', 'on'].includes((raw ?? '').trim().toLowerCase());
+}
+
+function resolveExpectedRegion(envName: EnvironmentName): string {
+  const override =
+    envName === 'prod'
+      ? process.env.PROD_AWS_REGION
+      : process.env.DEV_AWS_REGION;
+  return (override ?? DEFAULT_REGIONS[envName]).trim();
+}
+
 export function loadEnvironmentConfig(): EnvironmentConfig {
   const envName = parseEnvironmentName(process.env.CROP_ENV);
   const accountId = process.env.AWS_ACCOUNT_ID || process.env.CDK_DEFAULT_ACCOUNT;
-  const region = process.env.AWS_REGION || process.env.CDK_DEFAULT_REGION || 'us-west-2';
+  const expectedRegion = resolveExpectedRegion(envName);
+  const region =
+    (process.env.AWS_REGION ?? process.env.CDK_DEFAULT_REGION ?? expectedRegion).trim();
   const metricsNamespace = process.env.METRICS_NAMESPACE || 'CropCopilot/Pipeline';
 
   if (!accountId) {
     throw new Error(
       'AWS account ID is required. Set AWS_ACCOUNT_ID or run CDK with an authenticated AWS profile.'
+    );
+  }
+
+  if (!region) {
+    throw new Error('AWS region is required. Set AWS_REGION or CDK_DEFAULT_REGION.');
+  }
+
+  if (region !== expectedRegion && !isTruthy(process.env.ALLOW_CROSS_REGION_DEPLOY)) {
+    throw new Error(
+      `Refusing ${envName} deployment in ${region}. Expected ${expectedRegion}. ` +
+        'Set ALLOW_CROSS_REGION_DEPLOY=true only for intentional one-off overrides.'
     );
   }
 

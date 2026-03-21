@@ -35,6 +35,20 @@ interface LatestModel {
   s3Uri: string | null;
 }
 
+interface ObservabilityEvent {
+  id: string;
+  pipeline: string;
+  stage: string;
+  severity: "info" | "warn" | "error";
+  message: string;
+  runId: string | null;
+  sourceId: string | null;
+  recommendationId?: string | null;
+  userId?: string | null;
+  url?: string | null;
+  createdAt: string;
+}
+
 interface DiscoveryStatusResponse {
   stats: {
     total: number;
@@ -48,78 +62,23 @@ interface DiscoveryStatusResponse {
     sourcesTotal: number;
   };
   ingestion: IngestionStats;
-  compliance?: {
+  latestPremiumModel: LatestModel | null;
+  observability: {
     available: boolean;
-    discovery: {
-      total: number;
-      pending: number;
-      running: number;
-      completed: number;
+    counts24h: {
+      info: number;
+      warn: number;
       error: number;
-      sourcesTotal: number;
-      progressPct: number;
     };
-    ingestion: {
-      totalSources: number;
-      pending: number;
-      running: number;
-      indexed: number;
-      error: number;
-      totalChunks: number;
-      totalFacts: number;
-    };
-    coverage: {
-      totalCells: number;
-      coveredCells: number;
-      avgCoverageScore: number;
-      staleCells: number;
-    };
-    latestRun: {
-      status: string;
-      trigger: string;
-      startedAt: string;
-      endedAt: string | null;
-      sourcesQueued: number;
-      sourcesProcessed: number;
-      chunksCreated: number;
-      factsExtracted: number;
-      errors: number;
-    } | null;
-    recentRuns: Array<{
-      id: string;
-      status: string;
-      trigger: string;
-      startedAt: string;
-      endedAt: string | null;
-      sourcesQueued: number;
-      sourcesProcessed: number;
-      chunksCreated: number;
-      factsExtracted: number;
-      errors: number;
-    }>;
-    discoveryRows: Array<{
-      id: string;
-      state: string;
-      crop: string;
-      status: string;
-      sourcesFound: number;
-      lastDiscoveredAt: string | null;
-      createdAt: string;
-    }>;
-    sourceRows: Array<{
-      id: string;
-      title: string;
-      url: string;
-      state: string | null;
-      crop: string | null;
-      status: string;
-      chunksCount: number;
-      factsCount: number;
-      lastFetchedAt: string | null;
-      lastIndexedAt: string | null;
-      errorMessage: string | null;
-      updatedAt: string;
-    }>;
+    counts24hByPipeline: Record<
+      string,
+      {
+        info: number;
+        warn: number;
+        error: number;
+      }
+    >;
+    recentEvents: ObservabilityEvent[];
   };
   latestModel: LatestModel | null;
   rows: DiscoveryRow[];
@@ -138,26 +97,6 @@ const DISCOVERY_STATUS_BADGE: Record<
   pending: { label: "Pending", variant: "secondary" },
   running: { label: "Running", variant: "outline" },
   completed: { label: "Completed", variant: "default" },
-  error: { label: "Error", variant: "destructive" },
-};
-
-const COMPLIANCE_DISCOVERY_STATUS_BADGE: Record<
-  "pending" | "running" | "completed" | "error",
-  { label: string; variant: "secondary" | "outline" | "default" | "destructive" }
-> = {
-  pending: { label: "Pending", variant: "secondary" },
-  running: { label: "Running", variant: "outline" },
-  completed: { label: "Completed", variant: "default" },
-  error: { label: "Error", variant: "destructive" },
-};
-
-const COMPLIANCE_SOURCE_STATUS_BADGE: Record<
-  "pending" | "running" | "indexed" | "error",
-  { label: string; variant: "secondary" | "outline" | "default" | "destructive" }
-> = {
-  pending: { label: "Pending", variant: "secondary" },
-  running: { label: "Running", variant: "outline" },
-  indexed: { label: "Indexed", variant: "default" },
   error: { label: "Error", variant: "destructive" },
 };
 
@@ -278,44 +217,39 @@ export default async function DiscoveryStatusPage() {
     error: 0,
   };
   const latestModel = data?.latestModel ?? null;
-  const rows = data?.rows ?? [];
-  const compliance = data?.compliance ?? {
+  const latestPremiumModel = data?.latestPremiumModel ?? null;
+  const observability = data?.observability ?? {
     available: false,
-    discovery: {
-      total: 0,
-      pending: 0,
-      running: 0,
-      completed: 0,
+    counts24h: {
+      info: 0,
+      warn: 0,
       error: 0,
-      sourcesTotal: 0,
-      progressPct: 0,
     },
-    ingestion: {
-      totalSources: 0,
-      pending: 0,
-      running: 0,
-      indexed: 0,
-      error: 0,
-      totalChunks: 0,
-      totalFacts: 0,
-    },
-    coverage: {
-      totalCells: 0,
-      coveredCells: 0,
-      avgCoverageScore: 0,
-      staleCells: 0,
-    },
-    latestRun: null,
-    recentRuns: [],
-    discoveryRows: [],
-    sourceRows: [],
+    counts24hByPipeline: {},
+    recentEvents: [] as ObservabilityEvent[],
   };
-  const complianceDiscoveryRows = compliance.discoveryRows ?? [];
-  const complianceSourceRows = compliance.sourceRows ?? [];
-  const complianceRecentRuns = compliance.recentRuns ?? [];
+  const rows = data?.rows ?? [];
 
   // How many combinations are left ÷ batch-size-per-minute (10 per 2 min)
   const runsRemaining = Math.ceil((stats.total - stats.completed) / 10);
+  const scopedEvents = observability.recentEvents.filter(
+    (event) => event.pipeline === "discovery" || event.pipeline === "learning"
+  );
+  const discoveryCounts = observability.counts24hByPipeline.discovery ?? {
+    info: 0,
+    warn: 0,
+    error: 0,
+  };
+  const learningCounts = observability.counts24hByPipeline.learning ?? {
+    info: 0,
+    warn: 0,
+    error: 0,
+  };
+  const scopedCounts = {
+    info: discoveryCounts.info + learningCounts.info,
+    warn: discoveryCounts.warn + learningCounts.warn,
+    error: discoveryCounts.error + learningCounts.error,
+  };
 
   return (
     <div className="container max-w-6xl py-6 px-4 sm:px-6 lg:px-8 space-y-8">
@@ -327,9 +261,19 @@ export default async function DiscoveryStatusPage() {
         >
           ← Admin
         </Link>
-        <h1 className="text-2xl font-bold tracking-tight">Pipeline Dashboard</h1>
+        <h1 className="text-2xl font-bold tracking-tight">Discovery Pipeline Dashboard</h1>
         <p className="text-muted-foreground text-sm mt-1">
-          End-to-end status: source discovery → ingestion → ML training
+          Discovery-only status: source discovery → ingestion → model training
+        </p>
+        <p className="text-xs text-muted-foreground mt-1">
+          Compliance pipeline has its own dedicated dashboard at{" "}
+          <Link
+            href="/admin/compliance"
+            className="underline underline-offset-4 hover:text-foreground"
+          >
+            /admin/compliance
+          </Link>
+          .
         </p>
       </div>
 
@@ -344,7 +288,7 @@ export default async function DiscoveryStatusPage() {
         </Card>
       )}
 
-      <PipelineManualControls />
+      <PipelineManualControls mode="discovery" />
 
       {/* ══ Phase 1: Source Discovery ════════════════════════════════════════ */}
       <section className="space-y-4">
@@ -458,290 +402,80 @@ export default async function DiscoveryStatusPage() {
         )}
       </section>
 
-      {/* ══ Phase 3: ML Model Training ═══════════════════════════════════════ */}
+      {/* ══ Observability & Separation ═══════════════════════════════════════ */}
       <section className="space-y-4">
         <div className="flex items-center gap-2">
           <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            Phase 2B
+            Ops
           </span>
-          <h2 className="text-lg font-semibold">Compliance Ingestion</h2>
+          <h2 className="text-lg font-semibold">Observability</h2>
           <Link
             href="/admin/compliance"
-            className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-4 ml-auto mr-2"
+            className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-4 ml-auto"
           >
-            detailed dashboard
+            Open Compliance Dashboard →
           </Link>
-          <Badge variant={compliance.available ? "default" : "secondary"} className="text-xs">
-            {compliance.available ? "Active" : "Not initialized"}
-          </Badge>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
-          <StatCard label="States × Crops" value={compliance.coverage.totalCells} />
-          <StatCard label="Covered Cells" value={compliance.coverage.coveredCells} color="text-green-600" />
-          <StatCard label="Discovery Done" value={`${compliance.discovery.progressPct}%`} />
-          <StatCard label="Indexed Sources" value={compliance.ingestion.indexed} color="text-green-600" />
-          <StatCard label="Pending" value={compliance.ingestion.pending} color="text-muted-foreground" />
-          <StatCard label="Running" value={compliance.ingestion.running} color="text-blue-600" />
-          <StatCard label="Chunks" value={compliance.ingestion.totalChunks} />
-          <StatCard label="Facts" value={compliance.ingestion.totalFacts} />
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <StatCard
+            label="Events (24h)"
+            value={scopedCounts.info + scopedCounts.warn + scopedCounts.error}
+          />
+          <StatCard label="Errors (24h)" value={scopedCounts.error} color="text-destructive" />
+          <StatCard label="Warnings (24h)" value={scopedCounts.warn} color="text-yellow-600" />
+          <StatCard label="Info (24h)" value={scopedCounts.info} color="text-blue-600" />
         </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-          <Card>
-            <CardHeader className="pb-2 pt-4">
-              <CardTitle className="text-sm">Compliance Discovery Queue</CardTitle>
-            </CardHeader>
-            <CardContent className="pt-0 pb-4 space-y-2">
-              <div className="flex items-center justify-between text-xs text-muted-foreground">
-                <span>
-                  {compliance.discovery.completed} / {compliance.discovery.total} completed
-                </span>
-                <span>{compliance.discovery.sourcesTotal} URLs discovered</span>
-              </div>
-              <Progress value={compliance.discovery.progressPct} className="h-2" />
-              <div className="grid grid-cols-4 gap-2 text-xs text-muted-foreground">
-                <span>pending {compliance.discovery.pending}</span>
-                <span>running {compliance.discovery.running}</span>
-                <span>done {compliance.discovery.completed}</span>
-                <span className={compliance.discovery.error > 0 ? "text-destructive" : ""}>
-                  error {compliance.discovery.error}
-                </span>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="pb-2 pt-4">
-              <CardTitle className="text-sm">Compliance Source Processing</CardTitle>
-            </CardHeader>
-            <CardContent className="pt-0 pb-4 space-y-2">
-              <div className="flex items-center justify-between text-xs text-muted-foreground">
-                <span>
-                  {compliance.ingestion.indexed} / {compliance.ingestion.totalSources} indexed
-                </span>
-                <span>
-                  {compliance.ingestion.totalChunks} chunks · {compliance.ingestion.totalFacts} facts
-                </span>
-              </div>
-              <Progress
-                value={
-                  compliance.ingestion.totalSources > 0
-                    ? (compliance.ingestion.indexed / compliance.ingestion.totalSources) * 100
-                    : 0
-                }
-                className="h-2"
-              />
-              <div className="grid grid-cols-4 gap-2 text-xs text-muted-foreground">
-                <span>pending {compliance.ingestion.pending}</span>
-                <span>running {compliance.ingestion.running}</span>
-                <span>indexed {compliance.ingestion.indexed}</span>
-                <span className={compliance.ingestion.error > 0 ? "text-destructive" : ""}>
-                  error {compliance.ingestion.error}
-                </span>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        <Card>
-          <CardContent className="pt-5 pb-4 space-y-2 text-sm">
-            <div className="flex flex-wrap items-center gap-3">
-              <span className="text-muted-foreground">
-                Avg coverage score:{" "}
-                <span className="font-medium text-foreground">
-                  {compliance.coverage.avgCoverageScore.toFixed(2)}
-                </span>
-              </span>
-              <span className="text-muted-foreground">
-                Stale cells (&gt;72h):{" "}
-                <span className={compliance.coverage.staleCells > 0 ? "font-medium text-yellow-600" : "font-medium text-foreground"}>
-                  {compliance.coverage.staleCells}
-                </span>
-              </span>
-            </div>
-            {compliance.latestRun && (
-              <div className="text-muted-foreground">
-                Latest run: <span className="font-medium text-foreground">{compliance.latestRun.status}</span>{" "}
-                ({compliance.latestRun.trigger}) · {compliance.latestRun.sourcesProcessed}/{compliance.latestRun.sourcesQueued} sources ·{" "}
-                {compliance.latestRun.factsExtracted} facts extracted
-              </div>
-            )}
-          </CardContent>
-        </Card>
 
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-base">Recent Compliance Runs</CardTitle>
+            <CardTitle className="text-base">Recent Pipeline Events</CardTitle>
           </CardHeader>
           <CardContent className="px-0 pb-0">
-            {complianceRecentRuns.length === 0 ? (
-              <p className="text-center text-muted-foreground py-10 text-sm">
-                No compliance runs yet.
-              </p>
-            ) : (
+          {scopedEvents.length === 0 ? (
+            <p className="text-center text-muted-foreground py-8 text-sm">
+              No observability events recorded yet.
+            </p>
+          ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b bg-muted/50">
-                      <th className="text-left px-4 py-2 font-medium text-muted-foreground">Status</th>
-                      <th className="text-left px-4 py-2 font-medium text-muted-foreground">Trigger</th>
-                      <th className="text-right px-4 py-2 font-medium text-muted-foreground">Sources</th>
-                      <th className="text-right px-4 py-2 font-medium text-muted-foreground">Chunks</th>
-                      <th className="text-right px-4 py-2 font-medium text-muted-foreground">Facts</th>
-                      <th className="text-right px-4 py-2 font-medium text-muted-foreground">Errors</th>
-                      <th className="text-left px-4 py-2 font-medium text-muted-foreground">Started</th>
+                      <th className="text-left px-4 py-2 font-medium text-muted-foreground">When</th>
+                      <th className="text-left px-4 py-2 font-medium text-muted-foreground">Pipeline</th>
+                      <th className="text-left px-4 py-2 font-medium text-muted-foreground">Stage</th>
+                      <th className="text-left px-4 py-2 font-medium text-muted-foreground">Severity</th>
+                      <th className="text-left px-4 py-2 font-medium text-muted-foreground">Message</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {complianceRecentRuns.map((run, index) => {
-                      const status =
-                        run.status === "completed"
-                          ? { label: "Completed", variant: "default" as const }
-                          : run.status === "running"
-                          ? { label: "Running", variant: "outline" as const }
-                          : run.status === "failed"
-                          ? { label: "Failed", variant: "destructive" as const }
-                          : { label: run.status, variant: "secondary" as const };
-                      return (
-                        <tr
-                          key={run.id}
-                          className={`border-b last:border-0 ${index % 2 === 0 ? "" : "bg-muted/20"}`}
-                        >
-                          <td className="px-4 py-2">
-                            <Badge variant={status.variant} className="text-xs">
-                              {status.label}
-                            </Badge>
-                          </td>
-                          <td className="px-4 py-2 text-muted-foreground capitalize">{run.trigger}</td>
-                          <td className="px-4 py-2 text-right tabular-nums">
-                            {run.sourcesProcessed}/{run.sourcesQueued}
-                          </td>
-                          <td className="px-4 py-2 text-right tabular-nums">{run.chunksCreated}</td>
-                          <td className="px-4 py-2 text-right tabular-nums">{run.factsExtracted}</td>
-                          <td className="px-4 py-2 text-right tabular-nums">
-                            <span className={run.errors > 0 ? "text-destructive font-medium" : ""}>
-                              {run.errors}
-                            </span>
-                          </td>
-                          <td className="px-4 py-2 text-xs text-muted-foreground">
-                            {formatDate(run.startedAt)}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base">Compliance Discovery Cells</CardTitle>
-          </CardHeader>
-          <CardContent className="px-0 pb-0">
-            {complianceDiscoveryRows.length === 0 ? (
-              <p className="text-center text-muted-foreground py-10 text-sm">
-                No compliance discovery rows yet.
-              </p>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b bg-muted/50">
-                      <th className="text-left px-4 py-2 font-medium text-muted-foreground">State</th>
-                      <th className="text-left px-4 py-2 font-medium text-muted-foreground">Crop</th>
-                      <th className="text-left px-4 py-2 font-medium text-muted-foreground">Status</th>
-                      <th className="text-right px-4 py-2 font-medium text-muted-foreground">URLs</th>
-                      <th className="text-left px-4 py-2 font-medium text-muted-foreground">Last Run</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {complianceDiscoveryRows.map((row, index) => {
-                      const status =
-                        COMPLIANCE_DISCOVERY_STATUS_BADGE[
-                          (row.status as keyof typeof COMPLIANCE_DISCOVERY_STATUS_BADGE) ?? "pending"
-                        ] ?? COMPLIANCE_DISCOVERY_STATUS_BADGE.pending;
+                    {scopedEvents.slice(0, 40).map((row, index) => {
+                      const severityVariant =
+                        row.severity === "error"
+                          ? "destructive"
+                          : row.severity === "warn"
+                            ? "outline"
+                            : "secondary";
                       return (
                         <tr
                           key={row.id}
                           className={`border-b last:border-0 ${index % 2 === 0 ? "" : "bg-muted/20"}`}
                         >
-                          <td className="px-4 py-2 text-muted-foreground">{row.state}</td>
-                          <td className="px-4 py-2 font-medium capitalize">{row.crop}</td>
+                          <td className="px-4 py-2 text-xs text-muted-foreground">
+                            {formatDate(row.createdAt)}
+                          </td>
+                          <td className="px-4 py-2 font-medium">{row.pipeline}</td>
+                          <td className="px-4 py-2 text-xs text-muted-foreground">{row.stage}</td>
                           <td className="px-4 py-2">
-                            <Badge variant={status.variant} className="text-xs">
-                              {status.label}
+                            <Badge variant={severityVariant} className="text-xs">
+                              {row.severity}
                             </Badge>
                           </td>
-                          <td className="px-4 py-2 text-right tabular-nums">{row.sourcesFound}</td>
-                          <td className="px-4 py-2 text-xs text-muted-foreground">
-                            {formatDate(row.lastDiscoveredAt)}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base">Compliance Sources</CardTitle>
-          </CardHeader>
-          <CardContent className="px-0 pb-0">
-            {complianceSourceRows.length === 0 ? (
-              <p className="text-center text-muted-foreground py-10 text-sm">
-                No compliance sources yet.
-              </p>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b bg-muted/50">
-                      <th className="text-left px-4 py-2 font-medium text-muted-foreground">Source</th>
-                      <th className="text-left px-4 py-2 font-medium text-muted-foreground">Status</th>
-                      <th className="text-right px-4 py-2 font-medium text-muted-foreground">Chunks</th>
-                      <th className="text-right px-4 py-2 font-medium text-muted-foreground">Facts</th>
-                      <th className="text-left px-4 py-2 font-medium text-muted-foreground">Last Indexed</th>
-                      <th className="text-left px-4 py-2 font-medium text-muted-foreground hidden xl:table-cell">Error</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {complianceSourceRows.map((row, index) => {
-                      const status =
-                        COMPLIANCE_SOURCE_STATUS_BADGE[
-                          (row.status as keyof typeof COMPLIANCE_SOURCE_STATUS_BADGE) ?? "pending"
-                        ] ?? COMPLIANCE_SOURCE_STATUS_BADGE.pending;
-                      return (
-                        <tr
-                          key={row.id}
-                          className={`border-b last:border-0 ${index % 2 === 0 ? "" : "bg-muted/20"}`}
-                        >
-                          <td className="px-4 py-2 max-w-sm">
-                            <p className="font-medium truncate">{row.title}</p>
-                            <p className="text-xs text-muted-foreground truncate">{row.url}</p>
-                            <p className="text-[11px] text-muted-foreground/80">
-                              {[row.state, row.crop].filter(Boolean).join(" · ") || "—"}
-                            </p>
-                          </td>
-                          <td className="px-4 py-2">
-                            <Badge variant={status.variant} className="text-xs">
-                              {status.label}
-                            </Badge>
-                          </td>
-                          <td className="px-4 py-2 text-right tabular-nums">{row.chunksCount}</td>
-                          <td className="px-4 py-2 text-right tabular-nums">{row.factsCount}</td>
-                          <td className="px-4 py-2 text-xs text-muted-foreground">
-                            {formatDate(row.lastIndexedAt ?? row.lastFetchedAt)}
-                          </td>
-                          <td className="px-4 py-2 text-xs text-destructive hidden xl:table-cell max-w-xs">
-                            <span className="line-clamp-2">{row.errorMessage ?? "—"}</span>
+                          <td className="px-4 py-2 text-xs">
+                            <p className="line-clamp-2">{row.message}</p>
+                            {row.url && (
+                              <p className="text-muted-foreground truncate mt-0.5">{row.url}</p>
+                            )}
                           </td>
                         </tr>
                       );
@@ -762,64 +496,124 @@ export default async function DiscoveryStatusPage() {
           </span>
           <h2 className="text-lg font-semibold">ML Model Training</h2>
           <Badge variant="outline" className="text-xs ml-auto">
-            LightGBM LambdaRank · nightly 02:00 UTC
+            LambdaRank + Premium Quality · scheduled + feedback-triggered
           </Badge>
         </div>
 
         {latestModel ? (
-          <Card>
-            <CardContent className="pt-5 pb-4">
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
-                <div>
-                  <p className="text-xs text-muted-foreground mb-1">Status</p>
-                  <Badge
-                    variant={
-                      latestModel.status === "deployed"
-                        ? "default"
-                        : latestModel.status === "training"
-                        ? "outline"
-                        : "secondary"
-                    }
-                  >
-                    {latestModel.status}
-                  </Badge>
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground mb-1">Model type</p>
-                  <p className="font-medium">{latestModel.modelType}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground mb-1">Trained at</p>
-                  <p className="font-medium">{formatDate(latestModel.trainedAt)}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground mb-1">NDCG score</p>
-                  <p className="font-medium">
-                    {latestModel.ndcgScore != null
-                      ? latestModel.ndcgScore.toFixed(4)
-                      : "—"}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground mb-1">Feedback samples</p>
-                  <p className="font-medium">{latestModel.feedbackCount.toLocaleString()}</p>
-                </div>
-                {latestModel.s3Uri && (
-                  <div className="col-span-2 sm:col-span-3">
-                    <p className="text-xs text-muted-foreground mb-1">S3 artifact</p>
-                    <p className="font-mono text-xs text-muted-foreground truncate">
-                      {latestModel.s3Uri}
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base">Retrieval Model</CardTitle>
+              </CardHeader>
+              <CardContent className="pt-1 pb-4">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-1">Status</p>
+                    <Badge
+                      variant={
+                        latestModel.status === "deployed"
+                          ? "default"
+                          : latestModel.status === "training"
+                            ? "outline"
+                            : "secondary"
+                      }
+                    >
+                      {latestModel.status}
+                    </Badge>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-1">Model type</p>
+                    <p className="font-medium">{latestModel.modelType}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-1">Trained at</p>
+                    <p className="font-medium">{formatDate(latestModel.trainedAt)}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-1">NDCG score</p>
+                    <p className="font-medium">
+                      {latestModel.ndcgScore != null
+                        ? latestModel.ndcgScore.toFixed(4)
+                        : "—"}
                     </p>
                   </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-1">Feedback samples</p>
+                    <p className="font-medium">{latestModel.feedbackCount.toLocaleString()}</p>
+                  </div>
+                  {latestModel.s3Uri && (
+                    <div className="col-span-2 sm:col-span-3">
+                      <p className="text-xs text-muted-foreground mb-1">S3 artifact</p>
+                      <p className="font-mono text-xs text-muted-foreground truncate">
+                        {latestModel.s3Uri}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base">Premium Model</CardTitle>
+              </CardHeader>
+              <CardContent className="pt-1 pb-4">
+                <div>
+                  {latestPremiumModel ? (
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
+                      <div>
+                        <p className="text-xs text-muted-foreground mb-1">Status</p>
+                        <Badge
+                          variant={
+                            latestPremiumModel.status === "deployed"
+                              ? "default"
+                              : latestPremiumModel.status === "training"
+                                ? "outline"
+                                : "secondary"
+                          }
+                        >
+                          {latestPremiumModel.status}
+                        </Badge>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground mb-1">Model type</p>
+                        <p className="font-medium">{latestPremiumModel.modelType}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground mb-1">Trained at</p>
+                        <p className="font-medium">{formatDate(latestPremiumModel.trainedAt)}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground mb-1">Feedback samples</p>
+                        <p className="font-medium">
+                          {latestPremiumModel.feedbackCount.toLocaleString()}
+                        </p>
+                      </div>
+                      {latestPremiumModel.s3Uri && (
+                        <div className="col-span-2 sm:col-span-4">
+                          <p className="text-xs text-muted-foreground mb-1">S3 artifact</p>
+                          <p className="font-mono text-xs text-muted-foreground truncate">
+                            {latestPremiumModel.s3Uri}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">
+                      No premium model training run yet. Premium training is triggered by feedback on
+                      recommendations with premium insights.
+                    </p>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         ) : (
           <Card>
             <CardContent className="py-8 text-center text-muted-foreground text-sm">
-              No model trained yet. The nightly retraining job requires at least 50 feedback
-              samples.
+              No retrieval model trained yet. Feedback-triggered retraining starts once thresholds
+              are met.
             </CardContent>
           </Card>
         )}

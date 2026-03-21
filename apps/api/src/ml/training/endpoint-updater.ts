@@ -33,6 +33,8 @@ interface SageMakerTrainingEvent {
   };
 }
 
+type EndpointContainerMode = 'native' | 'script';
+
 let pool: Pool | null = null;
 
 function getPool(): Pool {
@@ -46,6 +48,14 @@ function getPool(): Pool {
     });
   }
   return pool;
+}
+
+function resolveEndpointContainerMode(raw: string | undefined): EndpointContainerMode {
+  const normalized = (raw ?? '').trim().toLowerCase();
+  if (normalized === 'script' || normalized === 'custom') {
+    return 'script';
+  }
+  return 'native';
 }
 
 export const handler: EventBridgeHandler<
@@ -64,18 +74,41 @@ export const handler: EventBridgeHandler<
   }
 
   if (status !== 'Completed') {
-    console.log(`[EndpointUpdater] Job ${jobName} status is ${status} — nothing to do`);
+    if ((status === 'Failed' || status === 'Stopped') && process.env.DATABASE_URL) {
+      try {
+        const db = getPool();
+        await db.query(
+          `UPDATE "MLModelVersion"
+           SET status = 'retired', "updatedAt" = NOW()
+           WHERE "s3Uri" LIKE $1
+             AND status = 'training'`,
+          [`%${jobName}%`],
+        );
+        console.log(
+          `[EndpointUpdater] Marked MLModelVersion as retired for failed/stopped job ${jobName}`,
+        );
+      } catch (err) {
+        console.warn(
+          '[EndpointUpdater] Failed to mark MLModelVersion retired:',
+          (err as Error).message,
+        );
+      }
+    }
+    console.log(`[EndpointUpdater] Job ${jobName} status is ${status} — no endpoint update`);
     return;
   }
 
   const endpointName = process.env.SAGEMAKER_ENDPOINT_NAME;
   const trainingImage = process.env.SAGEMAKER_TRAINING_IMAGE;
+  const inferenceImage = process.env.SAGEMAKER_INFERENCE_IMAGE || trainingImage;
   const roleArn = process.env.SAGEMAKER_ROLE_ARN;
+  const containerMode = resolveEndpointContainerMode(process.env.SAGEMAKER_ENDPOINT_CONTAINER_MODE);
+  const inferenceProgram = process.env.SAGEMAKER_INFERENCE_PROGRAM || 'inference.py';
   const region = process.env.AWS_REGION ?? 'us-east-1';
 
-  if (!endpointName || !trainingImage || !roleArn) {
+  if (!endpointName || !inferenceImage || !roleArn) {
     console.warn(
-      '[EndpointUpdater] Missing SAGEMAKER_ENDPOINT_NAME / SAGEMAKER_TRAINING_IMAGE / SAGEMAKER_ROLE_ARN — skipping endpoint update',
+      '[EndpointUpdater] Missing SAGEMAKER_ENDPOINT_NAME / SAGEMAKER_INFERENCE_IMAGE|SAGEMAKER_TRAINING_IMAGE / SAGEMAKER_ROLE_ARN — skipping endpoint update',
     );
     return;
   }
@@ -109,12 +142,15 @@ export const handler: EventBridgeHandler<
       ModelName: modelName,
       ExecutionRoleArn: roleArn,
       PrimaryContainer: {
-        Image: trainingImage,
+        Image: inferenceImage,
         ModelDataUrl: modelArtifactUri,
-        Environment: {
-          SAGEMAKER_PROGRAM: 'inference.py',
-          SAGEMAKER_SUBMIT_DIRECTORY: '/opt/ml/model/code',
-        },
+        Environment:
+          containerMode === 'script'
+            ? {
+                SAGEMAKER_PROGRAM: inferenceProgram,
+                SAGEMAKER_SUBMIT_DIRECTORY: '/opt/ml/model/code',
+              }
+            : undefined,
       },
       Tags: [
         { Key: 'Project', Value: 'CropCopilot' },

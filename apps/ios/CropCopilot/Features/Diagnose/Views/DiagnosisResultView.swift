@@ -689,7 +689,7 @@ struct DiagnosisResultView: View {
     }
 
     @ViewBuilder
-    private func premiumReadyContent(premium: PremiumRecommendationDetail, input: RecommendationInput?) -> some View {
+    private func premiumReadyContent(premium: PremiumRecommendationDetail, input: RecommendationInputDetail?) -> some View {
         VStack(alignment: .leading, spacing: Spacing.md) {
 
             // ── Advisory notice — top, most prominent ──────────────────────

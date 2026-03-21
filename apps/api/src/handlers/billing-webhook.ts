@@ -59,6 +59,78 @@ function resolveTierFromMetadata(value?: string): SubscriptionTier | null {
   return null;
 }
 
+function resolveTierFromLookupKey(value?: string | null): SubscriptionTier | null {
+  const lookupKey = value?.trim().toLowerCase();
+  switch (lookupKey) {
+    case 'crop_copilot_grower_free_monthly_v1':
+      return 'grower_free';
+    case 'crop_copilot_grower_monthly_v1':
+      return 'grower';
+    case 'crop_copilot_grower_pro_monthly_v1':
+      return 'grower_pro';
+    default:
+      return null;
+  }
+}
+
+function resolveTierFromPrice(
+  price?: Stripe.Price | string | null
+): SubscriptionTier | null {
+  if (!price) {
+    return null;
+  }
+
+  if (typeof price === 'string') {
+    return tierFromStripePriceId(price);
+  }
+
+  const fromMetadata = resolveTierFromMetadata(price.metadata?.planId);
+  if (fromMetadata) {
+    return fromMetadata;
+  }
+
+  const fromLookupKey = resolveTierFromLookupKey(price.lookup_key);
+  if (fromLookupKey) {
+    return fromLookupKey;
+  }
+
+  return tierFromStripePriceId(price.id);
+}
+
+function resolveCreditPackFromLookupKey(value?: string | null): keyof typeof CREDIT_PACKS | null {
+  const lookupKey = value?.trim().toLowerCase();
+  switch (lookupKey) {
+    case 'crop_copilot_pack_10_onetime_v1':
+      return 'pack_10';
+    default:
+      return null;
+  }
+}
+
+function resolveCreditPackFromPrice(
+  price?: Stripe.Price | string | null
+): keyof typeof CREDIT_PACKS | null {
+  if (!price) {
+    return null;
+  }
+
+  if (typeof price === 'string') {
+    return creditPackFromStripePriceId(price);
+  }
+
+  const fromMetadata = price.metadata?.creditPackId?.trim();
+  if (fromMetadata && fromMetadata in CREDIT_PACKS) {
+    return fromMetadata as keyof typeof CREDIT_PACKS;
+  }
+
+  const fromLookupKey = resolveCreditPackFromLookupKey(price.lookup_key);
+  if (fromLookupKey) {
+    return fromLookupKey;
+  }
+
+  return creditPackFromStripePriceId(price.id);
+}
+
 function resolveTierFromSubscription(
   subscription: Stripe.Subscription,
   existingTier: SubscriptionTier | null
@@ -68,8 +140,7 @@ function resolveTierFromSubscription(
     return fromMetadata;
   }
 
-  const primaryPriceId = subscription.items.data[0]?.price?.id;
-  const fromPrice = tierFromStripePriceId(primaryPriceId);
+  const fromPrice = resolveTierFromPrice(subscription.items.data[0]?.price ?? null);
   if (fromPrice) {
     return fromPrice;
   }
@@ -301,8 +372,7 @@ async function resolveCreditPackIdFromCheckout(
     });
 
     for (const item of lineItems.data) {
-      const priceId = typeof item.price === 'string' ? item.price : item.price?.id;
-      const packId = creditPackFromStripePriceId(priceId);
+      const packId = resolveCreditPackFromPrice(item.price ?? null);
       if (packId) {
         return packId;
       }

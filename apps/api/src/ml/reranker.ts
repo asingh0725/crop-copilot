@@ -50,6 +50,10 @@ export async function rerank(
   candidates: RankedCandidate[],
   context: RerankContext = {},
 ): Promise<RankedCandidate[] | null> {
+  if (process.env.DISABLE_RERANKER === '1') {
+    return null;
+  }
+
   const endpointName = process.env.SAGEMAKER_ENDPOINT_NAME?.trim();
   if (!endpointName || candidates.length === 0) {
     return null;
@@ -72,8 +76,15 @@ export async function rerank(
       Accept: 'text/csv',
       Body: Buffer.from(payload, 'utf-8'),
     });
-
-    const response = await client.send(command);
+    const timeoutMs = parsePositiveInt(
+      process.env.RERANKER_TIMEOUT_MS,
+      4_000
+    );
+    const response = await withTimeout(
+      client.send(command),
+      timeoutMs,
+      `SageMaker reranker timeout after ${timeoutMs}ms`
+    );
 
     // Body is a Uint8ArrayBlobAdapter in the Node.js SDK runtime
     const responseBody = response.Body
@@ -93,6 +104,32 @@ export async function rerank(
     });
     return null;
   }
+}
+
+async function withTimeout<T>(
+  promise: Promise<T>,
+  timeoutMs: number,
+  message: string
+): Promise<T> {
+  let timer: NodeJS.Timeout | null = null;
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => reject(new Error(message)), timeoutMs);
+  });
+  try {
+    return await Promise.race([promise, timeoutPromise]);
+  } finally {
+    if (timer) {
+      clearTimeout(timer);
+    }
+  }
+}
+
+function parsePositiveInt(raw: string | undefined, fallback: number): number {
+  const parsed = Number.parseInt(raw ?? '', 10);
+  if (!Number.isFinite(parsed) || parsed <= 0) {
+    return fallback;
+  }
+  return parsed;
 }
 
 /**
@@ -138,7 +175,7 @@ function buildCsvPayload(candidates: RankedCandidate[], context: RerankContext):
  */
 function parseScores(body: string, expectedCount: number): number[] | null {
   const lines = body
-    .split('\n')
+    .split(/[\n,]+/g)
     .map((line) => line.trim())
     .filter((line) => line.length > 0);
 

@@ -45,6 +45,14 @@ interface ComplianceStatusResponse {
       chunksCreated: number;
       factsExtracted: number;
       errors: number;
+      metadata: {
+        failedSources: Array<{
+          sourceId: string;
+          url: string;
+          stage: string;
+          message: string;
+        }>;
+      };
     } | null;
     errors: {
       count: number;
@@ -69,6 +77,14 @@ interface ComplianceStatusResponse {
       chunksCreated: number;
       factsExtracted: number;
       errors: number;
+      metadata: {
+        failedSources: Array<{
+          sourceId: string;
+          url: string;
+          stage: string;
+          message: string;
+        }>;
+      };
     }>;
     discoveryRows: Array<{
       id: string;
@@ -93,6 +109,25 @@ interface ComplianceStatusResponse {
       errorMessage: string | null;
       updatedAt: string;
     }>;
+    observability: {
+      available: boolean;
+      counts24h: {
+        info: number;
+        warn: number;
+        error: number;
+      };
+      recentEvents: Array<{
+        id: string;
+        pipeline: string;
+        stage: string;
+        severity: "info" | "warn" | "error";
+        message: string;
+        runId: string | null;
+        sourceId: string | null;
+        url: string | null;
+        createdAt: string;
+      }>;
+    };
   };
 }
 
@@ -211,7 +246,7 @@ export default async function ComplianceDashboardPage() {
     ? statusResult.value.compliance
     : undefined;
 
-  const model = compliance ?? {
+  const fallbackModel = {
     available: false,
     discovery: {
       total: 0,
@@ -242,7 +277,22 @@ export default async function ComplianceDashboardPage() {
     recentRuns: [],
     discoveryRows: [],
     sourceRows: [],
+    observability: {
+      available: false,
+      counts24h: {
+        info: 0,
+        warn: 0,
+        error: 0,
+      },
+      recentEvents: [],
+    },
   };
+  const model = compliance
+    ? {
+        ...compliance,
+        observability: compliance.observability ?? fallbackModel.observability,
+      }
+    : fallbackModel;
 
   const runningNow =
     model.discovery.running > 0 ||
@@ -250,6 +300,7 @@ export default async function ComplianceDashboardPage() {
     model.recentRuns.some((run) => run.status === "running");
 
   const latestFailure = model.errors.sample[0] ?? null;
+  const latestRunFailures = model.latestRun?.metadata?.failedSources?.slice(0, 3) ?? [];
   const discoveryErrors = model.discoveryRows.filter((row) => row.status === "error");
   const sourceErrors = model.sourceRows.filter((row) => row.status === "error");
 
@@ -267,6 +318,16 @@ export default async function ComplianceDashboardPage() {
           <p className="text-sm text-muted-foreground mt-1">
             Explicit run status, failure location, and retry visibility.
           </p>
+          <p className="text-xs text-muted-foreground mt-1">
+            Discovery pipeline is separated into{" "}
+            <Link
+              href="/admin/discovery"
+              className="underline underline-offset-4 hover:text-foreground"
+            >
+              /admin/discovery
+            </Link>
+            .
+          </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <Badge variant={model.available ? "default" : "secondary"}>
@@ -277,6 +338,9 @@ export default async function ComplianceDashboardPage() {
           </Badge>
           <Badge variant={model.errors.count > 0 ? "destructive" : "default"}>
             {model.errors.count} source errors
+          </Badge>
+          <Badge variant={model.observability.counts24h.warn > 0 ? "outline" : "secondary"}>
+            {model.observability.counts24h.warn} warnings (24h)
           </Badge>
         </div>
       </div>
@@ -294,7 +358,7 @@ export default async function ComplianceDashboardPage() {
 
       <ComplianceAutoRefresh intervalMs={30_000} />
 
-      <PipelineManualControls />
+      <PipelineManualControls mode="compliance" enableComplianceUrlIngestion />
 
       <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
         <Card className="text-center py-2">
@@ -398,6 +462,18 @@ export default async function ComplianceDashboardPage() {
                 <p className="text-xs text-destructive">
                   {latestFailure.errorMessage || "Unknown parser/ingestion error"}
                 </p>
+                {latestRunFailures.length > 0 && (
+                  <div className="pt-1 space-y-1">
+                    <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                      Latest run failure stages
+                    </p>
+                    {latestRunFailures.map((failure) => (
+                      <p key={`${failure.sourceId}:${failure.stage}`} className="text-xs text-muted-foreground">
+                        <span className="font-medium">[{failure.stage}]</span> {failure.message}
+                      </p>
+                    ))}
+                  </div>
+                )}
               </>
             ) : (
               <p className="text-sm text-muted-foreground">
@@ -407,6 +483,76 @@ export default async function ComplianceDashboardPage() {
           </CardContent>
         </Card>
       </div>
+
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base">Pipeline Event Timeline (24h)</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="grid grid-cols-3 gap-3 text-sm">
+            <div className="rounded-md border p-3">
+              <p className="text-xs text-muted-foreground">Errors</p>
+              <p className="text-xl font-semibold text-destructive">
+                {model.observability.counts24h.error}
+              </p>
+            </div>
+            <div className="rounded-md border p-3">
+              <p className="text-xs text-muted-foreground">Warnings</p>
+              <p className="text-xl font-semibold text-yellow-600">
+                {model.observability.counts24h.warn}
+              </p>
+            </div>
+            <div className="rounded-md border p-3">
+              <p className="text-xs text-muted-foreground">Info</p>
+              <p className="text-xl font-semibold text-blue-600">
+                {model.observability.counts24h.info}
+              </p>
+            </div>
+          </div>
+
+          {model.observability.recentEvents.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No event logs yet.</p>
+          ) : (
+            <div className="max-h-[20rem] overflow-auto border rounded-md">
+              <table className="w-full text-sm">
+                <thead className="sticky top-0 bg-muted/60 backdrop-blur">
+                  <tr className="border-b">
+                    <th className="text-left px-4 py-2 font-medium text-muted-foreground">When</th>
+                    <th className="text-left px-4 py-2 font-medium text-muted-foreground">Stage</th>
+                    <th className="text-left px-4 py-2 font-medium text-muted-foreground">Severity</th>
+                    <th className="text-left px-4 py-2 font-medium text-muted-foreground">Message</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {model.observability.recentEvents.slice(0, 60).map((event, index) => {
+                    const variant =
+                      event.severity === "error"
+                        ? "destructive"
+                        : event.severity === "warn"
+                          ? "outline"
+                          : "secondary";
+                    return (
+                      <tr key={event.id} className={`border-b last:border-0 ${index % 2 === 0 ? "" : "bg-muted/20"}`}>
+                        <td className="px-4 py-2 text-xs text-muted-foreground">{formatDate(event.createdAt)}</td>
+                        <td className="px-4 py-2 text-xs text-muted-foreground">{event.stage}</td>
+                        <td className="px-4 py-2">
+                          <Badge variant={variant} className="text-xs">
+                            {event.severity}
+                          </Badge>
+                        </td>
+                        <td className="px-4 py-2 text-xs">
+                          <p className="line-clamp-2">{event.message}</p>
+                          {event.url && <p className="text-muted-foreground truncate">{event.url}</p>}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader className="pb-2">

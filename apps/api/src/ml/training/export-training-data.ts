@@ -97,7 +97,7 @@ async function main(): Promise<void> {
       const result = await pool.query<AuditRow>(
         `
           SELECT
-            ra."recommendationId"       AS recommendation_id,
+            COALESCE(ra."recommendationId", resolved.id) AS recommendation_id,
             ra."candidateChunks"        AS candidate_chunks,
             ra.topics                   AS query_topics,
             i.crop                      AS query_crop,
@@ -105,8 +105,16 @@ async function main(): Promise<void> {
             f.rating,
             f."outcomeSuccess"          AS outcome_success
           FROM "RetrievalAudit" ra
+          LEFT JOIN LATERAL (
+            SELECT r.id
+            FROM "Recommendation" r
+            WHERE r."inputId" = ra."inputId"
+            ORDER BY ABS(EXTRACT(EPOCH FROM (r."createdAt" - ra."createdAt"))), r."createdAt" DESC
+            LIMIT 1
+          ) resolved ON TRUE
           LEFT JOIN "Input"    i ON i.id = ra."inputId"
-          LEFT JOIN "Feedback" f ON f."recommendationId" = ra."recommendationId"
+          INNER JOIN "Feedback" f ON f."recommendationId" = COALESCE(ra."recommendationId", resolved.id)
+          WHERE COALESCE(ra."recommendationId", resolved.id) IS NOT NULL
           ORDER BY ra."createdAt" DESC
           LIMIT $1 OFFSET $2
         `,
@@ -220,6 +228,7 @@ function computeFeedbackSignal(params: {
 function computeLabel(cited: boolean, feedbackSignal: number): 0 | 1 | 2 {
   if (!cited) return 0;
   if (feedbackSignal > 0) return 2;
+  if (feedbackSignal < 0) return 0;
   return 1;
 }
 

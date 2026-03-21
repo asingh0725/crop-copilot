@@ -23,6 +23,7 @@ export class FoundationStack extends Stack {
   readonly premiumEnrichmentQueue: sqs.IQueue;
   readonly ingestionQueue: sqs.IQueue;
   readonly complianceIngestionQueue: sqs.IQueue;
+  readonly modelTrainingTriggerQueue: sqs.IQueue;
   readonly pushEventsTopic: sns.ITopic;
   readonly billingAlertsTopicArn: string;
 
@@ -162,6 +163,23 @@ export class FoundationStack extends Stack {
       },
     });
     this.complianceIngestionQueue = complianceIngestionQueue;
+
+    const modelTrainingTriggerDlq = new sqs.Queue(this, 'ModelTrainingTriggerDlq', {
+      queueName: `${config.projectSlug}-${config.envName}-model-training-trigger-dlq`,
+      encryption: sqs.QueueEncryption.SQS_MANAGED,
+      retentionPeriod: Duration.days(14),
+    });
+
+    const modelTrainingTriggerQueue = new sqs.Queue(this, 'ModelTrainingTriggerQueue', {
+      queueName: `${config.projectSlug}-${config.envName}-model-training-trigger`,
+      encryption: sqs.QueueEncryption.SQS_MANAGED,
+      visibilityTimeout: Duration.minutes(15),
+      deadLetterQueue: {
+        queue: modelTrainingTriggerDlq,
+        maxReceiveCount: 5,
+      },
+    });
+    this.modelTrainingTriggerQueue = modelTrainingTriggerQueue;
 
     // ── CloudWatch Metrics ─────────────────────────────────────────────────────
     const recommendationLatencyMetric = new cloudwatch.Metric({
@@ -310,6 +328,40 @@ export class FoundationStack extends Stack {
       treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
     });
 
+    const modelTrainingTriggerBacklogAlarm = new cloudwatch.Alarm(
+      this,
+      'ModelTrainingTriggerBacklogAlarm',
+      {
+        alarmName: `${config.projectSlug}-${config.envName}-model-training-trigger-backlog`,
+        alarmDescription: 'Model training trigger queue backlog exceeded expected threshold.',
+        metric: modelTrainingTriggerQueue.metricApproximateNumberOfMessagesVisible({
+          statistic: 'Average',
+          period: Duration.minutes(5),
+        }),
+        threshold: 20,
+        evaluationPeriods: 2,
+        datapointsToAlarm: 2,
+        treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
+      }
+    );
+
+    const modelTrainingTriggerDlqAlarm = new cloudwatch.Alarm(
+      this,
+      'ModelTrainingTriggerDlqAlarm',
+      {
+        alarmName: `${config.projectSlug}-${config.envName}-model-training-trigger-dlq-depth`,
+        alarmDescription: 'Model training trigger DLQ has pending messages.',
+        metric: modelTrainingTriggerDlq.metricApproximateNumberOfMessagesVisible({
+          statistic: 'Maximum',
+          period: Duration.minutes(5),
+        }),
+        threshold: 1,
+        evaluationPeriods: 1,
+        datapointsToAlarm: 1,
+        treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
+      }
+    );
+
     for (const alarm of [
       queueBacklogAlarm,
       recommendationDlqAlarm,
@@ -319,6 +371,8 @@ export class FoundationStack extends Stack {
       premiumDlqAlarm,
       complianceQueueBacklogAlarm,
       complianceDlqAlarm,
+      modelTrainingTriggerBacklogAlarm,
+      modelTrainingTriggerDlqAlarm,
     ]) {
       alarm.addAlarmAction(new cloudwatchActions.SnsAction(billingAlertsTopic));
     }
@@ -326,7 +380,7 @@ export class FoundationStack extends Stack {
     // ── CloudWatch Dashboard (prod only — saves ~$3/month per non-prod env) ────
     if (config.envName === 'prod') {
       const opsDashboard = new cloudwatch.Dashboard(this, 'OpsDashboard', {
-        dashboardName: `${config.projectSlug}-${config.envName}-ops`,
+        dashboardName: `${config.projectSlug}-${config.envName}-ops-${this.account}`,
       });
 
       opsDashboard.addWidgets(

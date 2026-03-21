@@ -9,7 +9,17 @@ import SwiftUI
 
 struct LabReportFormView: View {
     @StateObject private var viewModel = LabReportViewModel()
-    @Environment(\.dismiss) private var dismiss
+    @StateObject private var locationManager = LocationHelper()
+    @EnvironmentObject private var billingStore: BillingSnapshotStore
+    @State private var isCurrentLocationLoading = false
+
+    private var activeTier: SubscriptionTierId {
+        billingStore.subscription?.planId ?? .growerFree
+    }
+
+    private var entitlements: DiagnoseInputEntitlements {
+        activeTier.diagnoseInputEntitlements
+    }
 
     var body: some View {
         Form {
@@ -66,14 +76,61 @@ struct LabReportFormView: View {
                 TextField("Soil Texture", text: $viewModel.soilTexture)
             }
 
-            Section("Application Planning (Optional)") {
-                TextField("Field Acreage", text: $viewModel.fieldAcreage)
-                    .keyboardType(.decimalPad)
-                TextField("Planned Application Date (YYYY-MM-DD)", text: $viewModel.plannedApplicationDate)
-                TextField("Latitude", text: $viewModel.fieldLatitude)
-                    .keyboardType(.decimalPad)
-                TextField("Longitude", text: $viewModel.fieldLongitude)
-                    .keyboardType(.decimalPad)
+            if entitlements.canUsePlanningInputs {
+                Section("Application Planning (Optional)") {
+                    TextField("Field Acreage", text: $viewModel.fieldAcreage)
+                        .keyboardType(.decimalPad)
+                    TextField("Planned Application Date (YYYY-MM-DD)", text: $viewModel.plannedApplicationDate)
+                }
+            } else {
+                Section {
+                    Text("Upgrade to Grower to add field acreage and planned application date.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            if entitlements.canUsePreciseLocation {
+                Section("Field Location (Grower Pro)") {
+                    TextField("Address or landmark", text: $viewModel.locationLookupQuery)
+                        .textInputAutocapitalization(.words)
+
+                    Button(viewModel.isLocationLookupInFlight ? "Looking up..." : "Lookup Address") {
+                        Task { await viewModel.lookupAddressCoordinates() }
+                    }
+                    .disabled(viewModel.isLocationLookupInFlight)
+
+                    Button(isCurrentLocationLoading ? "Capturing Location..." : "Use Current Location") {
+                        isCurrentLocationLoading = true
+                        locationManager.requestCurrentCoordinate { result in
+                            switch result {
+                            case .success(let coordinate):
+                                Task {
+                                    await viewModel.applyCurrentCoordinates(
+                                        latitude: coordinate.latitude,
+                                        longitude: coordinate.longitude
+                                    )
+                                    isCurrentLocationLoading = false
+                                }
+                            case .failure(let error):
+                                viewModel.errorMessage = error.localizedDescription
+                                isCurrentLocationLoading = false
+                            }
+                        }
+                    }
+                    .disabled(isCurrentLocationLoading)
+
+                    TextField("Latitude", text: $viewModel.fieldLatitude)
+                        .keyboardType(.decimalPad)
+                    TextField("Longitude", text: $viewModel.fieldLongitude)
+                        .keyboardType(.decimalPad)
+                }
+            } else if entitlements.canUsePlanningInputs {
+                Section {
+                    Text("Grower Pro adds GPS/address location tools for spray-window guidance.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
             }
 
             // Submit
@@ -110,6 +167,12 @@ struct LabReportFormView: View {
             if let recId = viewModel.resultRecommendationId {
                 DiagnosisResultView(recommendationId: recId)
             }
+        }
+        .onAppear {
+            viewModel.applyTier(activeTier)
+        }
+        .onChange(of: activeTier) { newTier in
+            viewModel.applyTier(newTier)
         }
     }
 

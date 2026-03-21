@@ -29,7 +29,9 @@ pnpm-debug.log*
 # local env files
 .env*.local
 .env
+.env.*
 !.env.example
+!.env.*.example
 
 # vercel
 .vercel
@@ -41,6 +43,7 @@ next-env.d.ts
 # turborepo
 .turbo
 infra/cdk.out/
+infra/cdk.out*/
 infra/.cdk.staging/
 infra/.env
 apps/*/dist/
@@ -102,6 +105,7 @@ infra/**/.env.*
 samconfig.toml
 cdk.context.json
 cdk.out/
+infra/layers/pymupdf/python/
 
 # SageMaker / ML training artifacts
 apps/api/src/ml/training/data/
@@ -120,6 +124,9 @@ __pycache__/
 .venv/
 venv/
 .ipynb_checkpoints/
+
+# generated audit/report output
+apps/api/reports/
 
 # scratch / temp files
 PHASE*.md

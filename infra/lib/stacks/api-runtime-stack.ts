@@ -116,6 +116,16 @@ export class ApiRuntimeStack extends Stack {
       entry: 'handlers/create-subscription-portal.ts',
       environment,
     });
+    const getAutoReloadConfigHandler = createApiFunction(this, {
+      id: 'GetAutoReloadConfigHandler',
+      entry: 'handlers/get-auto-reload-config.ts',
+      environment,
+    });
+    const updateAutoReloadConfigHandler = createApiFunction(this, {
+      id: 'UpdateAutoReloadConfigHandler',
+      entry: 'handlers/update-auto-reload-config.ts',
+      environment,
+    });
     const billingWebhookHandler = createApiFunction(this, {
       id: 'BillingWebhookHandler',
       entry: 'handlers/billing-webhook.ts',
@@ -252,11 +262,48 @@ export class ApiRuntimeStack extends Stack {
       timeout: Duration.seconds(60),
     });
 
+    const mlTrainingEnvironment: Record<string, string> = {
+      S3_TRAINING_BUCKET: foundation.artifactsBucket.bucketName,
+      SAGEMAKER_ROLE_ARN: process.env.SAGEMAKER_ROLE_ARN ?? '',
+      SAGEMAKER_TRAINING_IMAGE: process.env.SAGEMAKER_TRAINING_IMAGE ?? '',
+      SAGEMAKER_TRAINING_JOB_NAME: process.env.SAGEMAKER_TRAINING_JOB_NAME ?? 'cropcopilot-ltr',
+      SAGEMAKER_TRAINING_BACKEND: process.env.SAGEMAKER_TRAINING_BACKEND ?? 'xgboost_builtin',
+      SAGEMAKER_PREMIUM_TRAINING_IMAGE: process.env.SAGEMAKER_PREMIUM_TRAINING_IMAGE ?? '',
+      SAGEMAKER_PREMIUM_TRAINING_JOB_NAME:
+        process.env.SAGEMAKER_PREMIUM_TRAINING_JOB_NAME ?? 'cropcopilot-premium-quality',
+      SAGEMAKER_PREMIUM_TRAINING_BACKEND:
+        process.env.SAGEMAKER_PREMIUM_TRAINING_BACKEND ??
+        process.env.SAGEMAKER_TRAINING_BACKEND ??
+        'xgboost_builtin',
+      XGBOOST_OBJECTIVE: process.env.XGBOOST_OBJECTIVE ?? 'reg:squarederror',
+      XGBOOST_EVAL_METRIC: process.env.XGBOOST_EVAL_METRIC ?? 'rmse',
+      XGBOOST_NUM_ROUND: process.env.XGBOOST_NUM_ROUND ?? '220',
+      XGBOOST_MAX_DEPTH: process.env.XGBOOST_MAX_DEPTH ?? '6',
+      XGBOOST_ETA: process.env.XGBOOST_ETA ?? '0.1',
+      XGBOOST_SUBSAMPLE: process.env.XGBOOST_SUBSAMPLE ?? '0.85',
+      XGBOOST_COLSAMPLE_BYTREE: process.env.XGBOOST_COLSAMPLE_BYTREE ?? '0.85',
+      SAGEMAKER_INFERENCE_IMAGE: process.env.SAGEMAKER_INFERENCE_IMAGE ?? '',
+      SAGEMAKER_ENDPOINT_CONTAINER_MODE: process.env.SAGEMAKER_ENDPOINT_CONTAINER_MODE ?? 'native',
+      SAGEMAKER_INFERENCE_PROGRAM: process.env.SAGEMAKER_INFERENCE_PROGRAM ?? 'inference.py',
+    };
+
+    const mlRuntimeEnvironment: Record<string, string> = {
+      CROP_ENV: config.envName,
+      DATA_BACKEND: environment.DATA_BACKEND ?? 'postgres',
+      DATABASE_URL: environment.DATABASE_URL ?? '',
+      PG_POOL_MAX: environment.PG_POOL_MAX ?? '3',
+      METRICS_NAMESPACE: environment.METRICS_NAMESPACE ?? 'CropCopilot/Pipeline',
+      RETRAINING_MIN_FEEDBACK: environment.RETRAINING_MIN_FEEDBACK ?? '50',
+      PREMIUM_RETRAINING_MIN_FEEDBACK: environment.PREMIUM_RETRAINING_MIN_FEEDBACK ?? '30',
+      SAGEMAKER_ENDPOINT_NAME: environment.SAGEMAKER_ENDPOINT_NAME ?? '',
+    };
+
     // Nightly ML model retraining: exports training data to S3, submits SageMaker job
     const retrainTriggerWorker = createApiFunction(this, {
       id: 'RetrainTriggerWorker',
       entry: 'ml/training/retrain-trigger.ts',
-      environment,
+      environment: mlRuntimeEnvironment,
+      extraEnvironment: mlTrainingEnvironment,
       memorySize: 512,
       timeout: Duration.minutes(10),
     });
@@ -264,7 +311,8 @@ export class ApiRuntimeStack extends Stack {
     const retrainPremiumTriggerWorker = createApiFunction(this, {
       id: 'RetrainPremiumTriggerWorker',
       entry: 'ml/training/retrain-premium-trigger.ts',
-      environment,
+      environment: mlRuntimeEnvironment,
+      extraEnvironment: mlTrainingEnvironment,
       memorySize: 512,
       timeout: Duration.minutes(10),
     });
@@ -273,7 +321,8 @@ export class ApiRuntimeStack extends Stack {
     const endpointUpdaterWorker = createApiFunction(this, {
       id: 'EndpointUpdaterWorker',
       entry: 'ml/training/endpoint-updater.ts',
-      environment,
+      environment: mlRuntimeEnvironment,
+      extraEnvironment: mlTrainingEnvironment,
       memorySize: 256,
       timeout: Duration.seconds(60),
     });
@@ -318,7 +367,8 @@ export class ApiRuntimeStack extends Stack {
     const processModelTrainingTriggerWorker = createApiFunction(this, {
       id: 'ProcessModelTrainingTriggerWorker',
       entry: 'workers/process-model-training-trigger.ts',
-      environment,
+      environment: mlRuntimeEnvironment,
+      extraEnvironment: mlTrainingEnvironment,
       memorySize: 1024,
       timeout: Duration.minutes(15),
     });
@@ -342,19 +392,19 @@ export class ApiRuntimeStack extends Stack {
     foundation.artifactsBucket.grantReadWrite(processModelTrainingTriggerWorker);
     retrainTriggerWorker.addToRolePolicy(
       new iam.PolicyStatement({
-        actions: ['sagemaker:CreateTrainingJob', 'iam:PassRole'],
+        actions: ['sagemaker:CreateTrainingJob', 'sagemaker:AddTags', 'iam:PassRole'],
         resources: ['*'],
       }),
     );
     retrainPremiumTriggerWorker.addToRolePolicy(
       new iam.PolicyStatement({
-        actions: ['sagemaker:CreateTrainingJob', 'iam:PassRole'],
+        actions: ['sagemaker:CreateTrainingJob', 'sagemaker:AddTags', 'iam:PassRole'],
         resources: ['*'],
       }),
     );
     processModelTrainingTriggerWorker.addToRolePolicy(
       new iam.PolicyStatement({
-        actions: ['sagemaker:CreateTrainingJob', 'iam:PassRole'],
+        actions: ['sagemaker:CreateTrainingJob', 'sagemaker:AddTags', 'iam:PassRole'],
         resources: ['*'],
       }),
     );
@@ -369,6 +419,7 @@ export class ApiRuntimeStack extends Stack {
           'sagemaker:CreateEndpoint',
           'sagemaker:UpdateEndpoint',
           'sagemaker:DescribeEndpoint',
+          'sagemaker:AddTags',
           'iam:PassRole',
         ],
         resources: ['*'],
@@ -419,7 +470,7 @@ export class ApiRuntimeStack extends Stack {
       eventPattern: {
         source: ['aws.sagemaker'],
         detailType: ['SageMaker Training Job State Change'],
-        detail: { TrainingJobStatus: ['Completed'] },
+        detail: { TrainingJobStatus: ['Completed', 'Failed', 'Stopped'] },
       },
     });
     sageMakerCompleteRule.addTarget(new eventsTargets.LambdaFunction(endpointUpdaterWorker));
@@ -594,6 +645,22 @@ export class ApiRuntimeStack extends Stack {
       integration: new integrations.HttpLambdaIntegration(
         'CreateSubscriptionPortalIntegration',
         createSubscriptionPortalHandler
+      ),
+    });
+    httpApi.addRoutes({
+      path: '/api/v1/credits/auto-reload-config',
+      methods: [apigwv2.HttpMethod.GET],
+      integration: new integrations.HttpLambdaIntegration(
+        'GetAutoReloadConfigIntegration',
+        getAutoReloadConfigHandler
+      ),
+    });
+    httpApi.addRoutes({
+      path: '/api/v1/credits/auto-reload-config',
+      methods: [apigwv2.HttpMethod.PATCH],
+      integration: new integrations.HttpLambdaIntegration(
+        'UpdateAutoReloadConfigIntegration',
+        updateAutoReloadConfigHandler
       ),
     });
     httpApi.addRoutes({
@@ -891,14 +958,6 @@ function buildApiEnvironment(
     PG_POOL_MAX: process.env.PG_POOL_MAX ?? '6',
     // SageMaker reranker (leave empty to disable; reranker falls back to hybrid ranking)
     SAGEMAKER_ENDPOINT_NAME: process.env.SAGEMAKER_ENDPOINT_NAME ?? '',
-    // ML retraining (leave empty to skip SageMaker job submission)
-    S3_TRAINING_BUCKET: foundation.artifactsBucket.bucketName,
-    SAGEMAKER_ROLE_ARN: process.env.SAGEMAKER_ROLE_ARN ?? '',
-    SAGEMAKER_TRAINING_IMAGE: process.env.SAGEMAKER_TRAINING_IMAGE ?? '',
-    SAGEMAKER_TRAINING_JOB_NAME: process.env.SAGEMAKER_TRAINING_JOB_NAME ?? 'cropcopilot-ltr',
-    SAGEMAKER_PREMIUM_TRAINING_IMAGE: process.env.SAGEMAKER_PREMIUM_TRAINING_IMAGE ?? '',
-    SAGEMAKER_PREMIUM_TRAINING_JOB_NAME:
-      process.env.SAGEMAKER_PREMIUM_TRAINING_JOB_NAME ?? 'cropcopilot-premium-quality',
     RETRAINING_MIN_FEEDBACK: process.env.RETRAINING_MIN_FEEDBACK ?? '50',
     PREMIUM_RETRAINING_MIN_FEEDBACK: process.env.PREMIUM_RETRAINING_MIN_FEEDBACK ?? '30',
     // PDF parsing via LlamaParse (1000 free pages/day; leave empty to skip PDFs)

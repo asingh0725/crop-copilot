@@ -3,7 +3,10 @@ import { Pool } from 'pg';
 import { withAuth } from '../auth/with-auth';
 import type { AuthVerifier } from '../auth/types';
 import { jsonResponse } from '../lib/http';
+import { getSubscriptionSnapshot, tierIsPro } from '../lib/entitlements';
 import { resolvePoolSslConfig, sanitizeDatabaseUrlForPool } from '../lib/store';
+import { getPremiumEnrichmentQueue } from '../queue/premium-enrichment-queue';
+import { upsertPremiumInsight } from '../premium/premium-store';
 import { DEFAULT_ADVISORY_NOTICE, type RiskReviewDecision } from '../premium/types';
 
 interface RecommendationRow {
@@ -88,6 +91,18 @@ interface PremiumInsightRow {
   spray_windows: unknown;
   report: unknown;
   failure_reason: string | null;
+}
+
+interface PremiumResponsePayload {
+  status: 'not_available' | 'queued' | 'processing' | 'ready' | 'failed';
+  riskReview: RiskReviewDecision | null;
+  complianceDecision: RiskReviewDecision | null;
+  checks: unknown[];
+  costAnalysis: Record<string, unknown> | null;
+  sprayWindows: unknown[];
+  advisoryNotice: string;
+  report: Record<string, unknown> | null;
+  failureReason: string | null;
 }
 
 let recommendationDetailPool: Pool | null = null;
@@ -488,6 +503,83 @@ function parseSourceLimit(rawValue: string | undefined): number {
   return Math.min(parsed, 100);
 }
 
+function buildPremiumUnavailable(): PremiumResponsePayload {
+  return {
+    status: 'not_available',
+    riskReview: null,
+    complianceDecision: null,
+    checks: [],
+    costAnalysis: null,
+    sprayWindows: [],
+    advisoryNotice: DEFAULT_ADVISORY_NOTICE,
+    report: null,
+    failureReason: null,
+  };
+}
+
+function buildPremiumQueued(): PremiumResponsePayload {
+  return {
+    status: 'queued',
+    riskReview: null,
+    complianceDecision: null,
+    checks: [],
+    costAnalysis: null,
+    sprayWindows: [],
+    advisoryNotice: DEFAULT_ADVISORY_NOTICE,
+    report: null,
+    failureReason: null,
+  };
+}
+
+function mapPremiumInsight(row: PremiumInsightRow): PremiumResponsePayload {
+  return {
+    status: row.status,
+    riskReview: normalizeRiskReviewDecision(row.compliance_decision),
+    complianceDecision: normalizeRiskReviewDecision(row.compliance_decision),
+    checks: normalizePremiumChecks(row.checks),
+    costAnalysis:
+      row.cost_analysis &&
+      typeof row.cost_analysis === 'object' &&
+      !Array.isArray(row.cost_analysis)
+        ? (row.cost_analysis as Record<string, unknown>)
+        : null,
+    sprayWindows: Array.isArray(row.spray_windows) ? row.spray_windows : [],
+    advisoryNotice: DEFAULT_ADVISORY_NOTICE,
+    report:
+      row.report && typeof row.report === 'object' && !Array.isArray(row.report)
+        ? (row.report as Record<string, unknown>)
+        : null,
+    failureReason: row.failure_reason,
+  };
+}
+
+async function queuePremiumRefresh(args: {
+  pool: Pool;
+  userId: string;
+  recommendationId: string;
+  requestId: string;
+}): Promise<void> {
+  await getPremiumEnrichmentQueue().publishPremiumEnrichment({
+    messageType: 'premium.enrichment.requested',
+    messageVersion: '1',
+    requestedAt: new Date().toISOString(),
+    traceId: args.requestId,
+    userId: args.userId,
+    recommendationId: args.recommendationId,
+  });
+
+  await upsertPremiumInsight(args.pool, args.userId, args.recommendationId, {
+    status: 'queued',
+    riskReview: null,
+    complianceDecision: null,
+    checks: [],
+    costAnalysis: null,
+    sprayWindows: [],
+    advisoryNotice: DEFAULT_ADVISORY_NOTICE,
+    report: null,
+  });
+}
+
 function buildRecommendedProductsFromDiagnosis(
   normalizedDiagnosis: Record<string, unknown>
 ): Array<{
@@ -603,13 +695,14 @@ export function buildGetRecommendationHandler(
       }
 
       const recommendation = recommendationResult.rows[0];
-      const [sourcesResult, productsResult, premiumResult] = await Promise.all([
+      const [sourcesResult, productsResult, premiumResult, subscription] = await Promise.all([
         pool.query<RecommendationSourceRow>(recommendationSourcesQuery, [
           recommendation.id,
           sourceLimit,
         ]),
         pool.query<ProductRecommendationRow>(recommendationProductsQuery, [recommendation.id]),
         pool.query<PremiumInsightRow>(recommendationPremiumQuery, [recommendation.id]),
+        getSubscriptionSnapshot(pool, auth.userId),
       ]);
 
       const sources = sourcesResult.rows.map((row) => ({
@@ -649,40 +742,33 @@ export function buildGetRecommendationHandler(
               priority: row.priority,
             }))
           : buildRecommendedProductsFromDiagnosis(normalizedDiagnosis);
+      const isPremiumEligible =
+        (subscription.status === 'active' || subscription.status === 'trialing') &&
+        tierIsPro(subscription.planId);
       const premiumRow = premiumResult.rows[0];
-      const premium = premiumRow
-        ? {
-            status: premiumRow.status,
-            riskReview: normalizeRiskReviewDecision(premiumRow.compliance_decision),
-            complianceDecision: normalizeRiskReviewDecision(premiumRow.compliance_decision),
-            checks: normalizePremiumChecks(premiumRow.checks),
-            costAnalysis:
-              premiumRow.cost_analysis &&
-              typeof premiumRow.cost_analysis === 'object' &&
-              !Array.isArray(premiumRow.cost_analysis)
-                ? premiumRow.cost_analysis
-                : null,
-            sprayWindows: Array.isArray(premiumRow.spray_windows) ? premiumRow.spray_windows : [],
-            advisoryNotice: DEFAULT_ADVISORY_NOTICE,
-            report:
-              premiumRow.report &&
-              typeof premiumRow.report === 'object' &&
-              !Array.isArray(premiumRow.report)
-                ? premiumRow.report
-                : null,
-            failureReason: premiumRow.failure_reason,
-          }
-        : {
-            status: 'not_available',
-            riskReview: null,
-            complianceDecision: null,
-            checks: [],
-            costAnalysis: null,
-            sprayWindows: [],
-            advisoryNotice: DEFAULT_ADVISORY_NOTICE,
-            report: null,
-            failureReason: null,
-          };
+      const shouldQueuePremium = isPremiumEligible && (!premiumRow || premiumRow.status === 'not_available');
+
+      let premium: PremiumResponsePayload = premiumRow
+        ? mapPremiumInsight(premiumRow)
+        : buildPremiumUnavailable();
+
+      if (shouldQueuePremium) {
+        premium = buildPremiumQueued();
+        try {
+          await queuePremiumRefresh({
+            pool,
+            userId: auth.userId,
+            recommendationId: recommendation.id,
+            requestId: event.requestContext.requestId,
+          });
+        } catch (error) {
+          console.warn('Failed to enqueue premium enrichment from recommendation detail', {
+            recommendationId: recommendation.id,
+            userId: auth.userId,
+            error: (error as Error).message,
+          });
+        }
+      }
 
       return jsonResponse(
         {

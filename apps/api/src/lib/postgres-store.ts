@@ -79,6 +79,7 @@ interface ParsedDiagnosisProduct {
 interface DiagnosisContext {
   condition: string | null;
   conditionType: string;
+  confidence: number | null;
   reasoning: string | null;
   recommendationActions: string[];
   products: ParsedDiagnosisProduct[];
@@ -327,6 +328,7 @@ export class PostgresRecommendationStore implements RecommendationStore {
         return;
       }
       finalInputId = inputId;
+      const generatedRecommendationId = persistedResult.recommendationId;
 
       const recommendationId = await this.upsertLegacyRecommendation(
         client,
@@ -335,6 +337,13 @@ export class PostgresRecommendationStore implements RecommendationStore {
         persistedResult
       );
       finalRecommendationId = recommendationId;
+
+      await this.syncRetrievalAuditRecommendationId(
+        client,
+        inputId,
+        generatedRecommendationId,
+        recommendationId
+      );
 
       if (recommendationId !== persistedResult.recommendationId) {
         persistedResult.recommendationId = recommendationId;
@@ -360,6 +369,14 @@ export class PostgresRecommendationStore implements RecommendationStore {
     });
 
     if (finalRecommendationId && finalInputId) {
+      const skipUsageMetering =
+        (process.env.RECOMMENDATION_BACKFILL_SKIP_USAGE_METERING ?? '')
+          .trim()
+          .toLowerCase() === 'true';
+      if (skipUsageMetering) {
+        return;
+      }
+
       try {
         await recordRecommendationUsageAndChargeOverage(
           this.pool,
@@ -510,6 +527,32 @@ export class PostgresRecommendationStore implements RecommendationStore {
     );
 
     return recommendationId;
+  }
+
+  private async syncRetrievalAuditRecommendationId(
+    client: PoolClient,
+    inputId: string,
+    generatedRecommendationId: string,
+    persistedRecommendationId: string
+  ): Promise<void> {
+    try {
+      await client.query(
+        `
+          UPDATE "RetrievalAudit"
+          SET "recommendationId" = $3
+          WHERE "inputId" = $1
+            AND ("recommendationId" IS NULL OR "recommendationId" = $2)
+        `,
+        [inputId, generatedRecommendationId, persistedRecommendationId]
+      );
+    } catch (error) {
+      console.warn('Failed to sync retrieval audit recommendationId', {
+        inputId,
+        generatedRecommendationId,
+        persistedRecommendationId,
+        error: (error as Error).message,
+      });
+    }
   }
 
   private async syncRecommendationSources(
@@ -679,12 +722,19 @@ export class PostgresRecommendationStore implements RecommendationStore {
 
     const crop = inputResult.rows[0]?.crop ?? null;
     const diagnosisContext = extractDiagnosisContext(result.diagnosis);
+    const modelUsed = (result.modelUsed ?? '').trim().toLowerCase();
+    if (!shouldAllowProductRecommendations(diagnosisContext)) {
+      return;
+    }
 
     let selectedProducts = await this.resolveProductsFromDiagnosisPayload(
       client,
       diagnosisContext
     );
-    if (selectedProducts.length === 0) {
+    if (
+      selectedProducts.length === 0 &&
+      shouldUseCatalogFallbackProducts(diagnosisContext, modelUsed)
+    ) {
       selectedProducts = await this.resolveCatalogFallbackProducts(
         client,
         crop,
@@ -899,7 +949,7 @@ export class PostgresRecommendationStore implements RecommendationStore {
       FROM "Product"
     `;
 
-    const catalogResult = await client.query<CatalogProductRow>(
+    const cropScopedResult = await client.query<CatalogProductRow>(
       `
         ${baseSelect}
         WHERE (
@@ -913,7 +963,7 @@ export class PostgresRecommendationStore implements RecommendationStore {
               FROM unnest(crops) AS crop_name
               WHERE lower(crop_name) = lower($1)
             )
-            OR cardinality(crops) = 0
+            OR COALESCE(cardinality(crops), 0) = 0
           )
         ORDER BY
           CASE
@@ -923,7 +973,7 @@ export class PostgresRecommendationStore implements RecommendationStore {
               FROM unnest(crops) AS crop_name
               WHERE lower(crop_name) = lower($1)
             ) THEN 0
-            WHEN cardinality(crops) = 0 THEN 1
+            WHEN COALESCE(cardinality(crops), 0) = 0 THEN 1
             ELSE 2
           END,
           "updatedAt" DESC
@@ -932,23 +982,32 @@ export class PostgresRecommendationStore implements RecommendationStore {
       [crop, preferredTypes, MAX_PRODUCT_RECOMMENDATIONS]
     );
 
-    const relaxedRows =
-      catalogResult.rows.length > 0
-        ? catalogResult.rows
-        : (
-            await client.query<CatalogProductRow>(
-              `
-                ${baseSelect}
-                ORDER BY "updatedAt" DESC
-                LIMIT $1
-              `,
-              [MAX_PRODUCT_RECOMMENDATIONS]
-            )
-          ).rows;
+    const catalogResult =
+      cropScopedResult.rows.length > 0 || !crop
+        ? cropScopedResult
+        : await client.query<CatalogProductRow>(
+            `
+              ${baseSelect}
+              WHERE (
+                CARDINALITY($1::text[]) = 0
+                OR type::text = ANY($1::text[])
+              )
+              ORDER BY "updatedAt" DESC
+              LIMIT $2
+            `,
+            [preferredTypes, MAX_PRODUCT_RECOMMENDATIONS]
+          );
 
-    return relaxedRows.map((row) => ({
+    if (catalogResult.rows.length === 0) {
+      return [];
+    }
+
+    return catalogResult.rows.map((row) => ({
       productId: row.id,
-      reason: buildFallbackProductReason(row, context, crop),
+      reason:
+        cropScopedResult.rows.length > 0
+          ? buildFallbackProductReason(row, context, crop)
+          : `${buildFallbackProductReason(row, context, crop)} Crop-specific inventory was unavailable, so this is a category-level fallback.`,
       applicationRate: row.application_rate,
       searchQuery: `precomputed:catalog:${context.conditionType}`,
     }));
@@ -1037,6 +1096,21 @@ function asStringCandidate(value: unknown): string | null {
   }
   if (typeof value === 'number' || typeof value === 'boolean') {
     return String(value);
+  }
+  return null;
+}
+
+function asFiniteNumber(value: unknown): number | null {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value;
+  }
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    if (!trimmed) {
+      return null;
+    }
+    const parsed = Number(trimmed);
+    return Number.isFinite(parsed) ? parsed : null;
   }
   return null;
 }
@@ -1197,6 +1271,8 @@ function extractDiagnosisContext(diagnosisPayload: unknown): DiagnosisContext {
     .filter((product): product is ParsedDiagnosisProduct => Boolean(product));
 
   const condition = asNonEmptyString(diagnosisNode.condition);
+  const confidence =
+    asFiniteNumber(diagnosisNode.confidence) ?? asFiniteNumber(root.confidence);
   const reasoning = asNonEmptyString(diagnosisNode.reasoning);
   const rawConditionType = asNonEmptyString(diagnosisNode.conditionType);
 
@@ -1208,10 +1284,60 @@ function extractDiagnosisContext(diagnosisPayload: unknown): DiagnosisContext {
       reasoning,
       recommendationActions
     ),
+    confidence,
     reasoning,
     recommendationActions,
     products: parsedProducts,
   };
+}
+
+function shouldUseCatalogFallbackProducts(
+  context: DiagnosisContext,
+  modelUsed: string
+): boolean {
+  if (modelUsed.startsWith('heuristic')) {
+    return false;
+  }
+
+  if (context.conditionType === 'unknown') {
+    return false;
+  }
+
+  if (context.confidence !== null && context.confidence < 0.72) {
+    return false;
+  }
+
+  return true;
+}
+
+function shouldAllowProductRecommendations(context: DiagnosisContext): boolean {
+  if (context.conditionType === 'unknown') {
+    return false;
+  }
+
+  if (context.confidence !== null && context.confidence < 0.68) {
+    return false;
+  }
+
+  if (context.recommendationActions.length === 0) {
+    return false;
+  }
+
+  const hasSpecificAction = context.recommendationActions.some((action) => {
+    const normalized = action.trim().toLowerCase();
+    if (normalized.length < 16) {
+      return false;
+    }
+    return !/(monitor|track progression|confirm diagnosis|scout additional zones)/.test(
+      normalized
+    );
+  });
+
+  if (!hasSpecificAction && (context.confidence ?? 0) < 0.76) {
+    return false;
+  }
+
+  return true;
 }
 
 function buildFallbackProductReason(
