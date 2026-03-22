@@ -2,7 +2,7 @@ name: Deploy Env
 
 on:
   push:
-    branches: [codex/env]
+    branches: [env]
   workflow_dispatch:
 
 concurrency:
@@ -20,10 +20,13 @@ jobs:
     environment: development
     env:
       CROP_ENV: dev
-      API_DATABASE_MODE: aws
-      PROVISION_AWS_DATABASE: "true"
+      API_DATABASE_MODE: external
+      PROVISION_AWS_DATABASE: "false"
+      ALLOW_LEGACY_ENV_FALLBACK: "false"
+      REQUIRE_MODEL_OUTPUT: "false"
       AWS_REGION: ${{ vars.AWS_REGION }}
       AWS_ACCOUNT_ID: ${{ vars.AWS_ACCOUNT_ID }}
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
       APP_BASE_URL: ${{ vars.APP_BASE_URL }}
       ADMIN_EMAILS: ${{ vars.ADMIN_EMAILS }}
       COGNITO_REGION: ${{ vars.COGNITO_REGION }}

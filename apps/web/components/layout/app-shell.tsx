@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Sidebar } from "./sidebar";
 import { MobileNav } from "./mobile-nav";
+import { PlanCreditsBadge } from "./plan-credits-badge";
 import { cn } from "@/lib/utils";
 
 interface AppShellProps {
@@ -38,6 +39,9 @@ export function AppShell({ children, userName, userEmail, isAdmin = false }: App
           {children}
         </div>
       </main>
+
+      {/* Credits pill — fixed top-right on all screen sizes */}
+      <PlanCreditsBadge placement="floating" />
 
       {/* Mobile Bottom Navigation */}
       <MobileNav userName={userName} userEmail={userEmail} isAdmin={isAdmin} />

@@ -30,6 +30,9 @@ function hasBranch(branchName) {
   }
 }
 
+function workflowContains(relativePath, needle) {
+  return exists(relativePath) && fileIncludes(relativePath, needle);
+}
 const checks = [
   {
     id: 'workflow_env',
@@ -43,13 +46,13 @@ const checks = [
   },
   {
     id: 'branch_env',
-    description: 'Local codex/env branch exists',
-    pass: hasBranch('codex/env'),
+    description: 'Local env branch exists',
+    pass: hasBranch('env') || hasBranch('codex/env'),
   },
   {
     id: 'branch_prod',
-    description: 'Local codex/prod branch exists',
-    pass: hasBranch('codex/prod'),
+    description: 'Local prod branch exists',
+    pass: hasBranch('prod') || hasBranch('codex/prod'),
   },
   {
     id: 'infra_env_dev_template',
@@ -94,6 +97,46 @@ const checks = [
     pass:
       fileIncludes('.gitignore', '.env.*') &&
       fileIncludes('.gitignore', '!.env.*.example'),
+  },
+  {
+    id: 'env_workflow_database_secret',
+    description: 'Env workflow injects DATABASE_URL secret',
+    pass: workflowContains('.github/workflows/deploy-env.yml', 'DATABASE_URL: ${{ secrets.DATABASE_URL }}'),
+  },
+  {
+    id: 'prod_workflow_database_secret',
+    description: 'Prod workflow injects DATABASE_URL secret',
+    pass: workflowContains('.github/workflows/deploy-prod.yml', 'DATABASE_URL: ${{ secrets.DATABASE_URL }}'),
+  },
+  {
+    id: 'env_workflow_disables_legacy_fallback',
+    description: 'Env workflow disables legacy .env fallback',
+    pass: workflowContains('.github/workflows/deploy-env.yml', 'ALLOW_LEGACY_ENV_FALLBACK: "false"'),
+  },
+  {
+    id: 'prod_workflow_disables_legacy_fallback',
+    description: 'Prod workflow disables legacy .env fallback',
+    pass: workflowContains('.github/workflows/deploy-prod.yml', 'ALLOW_LEGACY_ENV_FALLBACK: "false"'),
+  },
+  {
+    id: 'env_workflow_external_db_mode',
+    description: 'Env workflow deploys API in external DB mode',
+    pass: workflowContains('.github/workflows/deploy-env.yml', 'API_DATABASE_MODE: external'),
+  },
+  {
+    id: 'prod_workflow_external_db_mode',
+    description: 'Prod workflow deploys API in external DB mode',
+    pass: workflowContains('.github/workflows/deploy-prod.yml', 'API_DATABASE_MODE: external'),
+  },
+  {
+    id: 'env_workflow_model_output_guard',
+    description: 'Env workflow leaves model output guard disabled for iteration',
+    pass: workflowContains('.github/workflows/deploy-env.yml', 'REQUIRE_MODEL_OUTPUT: "false"'),
+  },
+  {
+    id: 'prod_workflow_model_output_guard',
+    description: 'Prod workflow enforces model output guard',
+    pass: workflowContains('.github/workflows/deploy-prod.yml', 'REQUIRE_MODEL_OUTPUT: "true"'),
   },
 ];
 

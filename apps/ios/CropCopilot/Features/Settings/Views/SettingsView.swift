@@ -21,6 +21,11 @@ struct SettingsView: View {
                 .padding(.bottom, Spacing.xxl)
             }
             .navigationTitle("Settings")
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    CreditsBalanceChip()
+                }
+            }
         }
     }
 
@@ -103,6 +108,18 @@ struct SettingsView: View {
                     title: "Profile",
                     subtitle: "Farm details and crops of interest",
                     icon: "person.crop.circle.fill",
+                    color: .appPrimary
+                )
+            }
+            .buttonStyle(.plain)
+
+            NavigationLink {
+                BillingView()
+            } label: {
+                settingsRow(
+                    title: "Billing & Credits",
+                    subtitle: "Plan, usage, and auto-reload settings",
+                    icon: "creditcard.fill",
                     color: .appPrimary
                 )
             }

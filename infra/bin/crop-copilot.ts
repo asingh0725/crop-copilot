@@ -58,20 +58,20 @@ function loadEnvFiles(candidates: string[]): string[] {
 const workspaceRoot = path.resolve(__dirname, '..', '..');
 const requestedEnv = normalizeEnvironment(process.env.CROP_ENV ?? process.env.DEPLOY_ENV);
 const allowLegacyFallback =
-  (process.env.ALLOW_LEGACY_ENV_FALLBACK ?? 'true').trim().toLowerCase() !== 'false';
+  (process.env.ALLOW_LEGACY_ENV_FALLBACK ?? 'false').trim().toLowerCase() === 'true';
 
 const envSpecificFiles = loadEnvFiles(buildEnvCandidates(workspaceRoot, requestedEnv));
 if (envSpecificFiles.length === 0) {
-  if (!allowLegacyFallback) {
-    throw new Error(
-      `No env-specific files found for ${requestedEnv}. Expected one of .env.${requestedEnv}(.local) in root/infra/apps/api/apps/web.`
-    );
-  }
-
-  const legacyFiles = loadEnvFiles(buildLegacyCandidates(workspaceRoot));
-  if (legacyFiles.length > 0) {
+  if (allowLegacyFallback) {
+    const legacyFiles = loadEnvFiles(buildLegacyCandidates(workspaceRoot));
+    if (legacyFiles.length > 0) {
+      console.warn(
+        `[infra] Using legacy non-environment env files for ${requestedEnv}. Create env-scoped files to prevent dev/prod bleed.`
+      );
+    }
+  } else {
     console.warn(
-      `[infra] Using legacy non-environment env files for ${requestedEnv}. Create env-scoped files to prevent dev/prod bleed.`
+      `[infra] No env-scoped file found for ${requestedEnv}. Continuing with process env only; legacy .env fallback is disabled.`
     );
   }
 }

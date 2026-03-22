@@ -9,6 +9,20 @@ import UIKit
 import UserNotifications
 
 class AppDelegate: NSObject, UIApplicationDelegate {
+    private func requestPushAuthorization(_ application: UIApplication) {
+        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .badge, .sound]) {
+            granted,
+            _ in
+            guard granted else {
+                return
+            }
+
+            DispatchQueue.main.async {
+                application.registerForRemoteNotifications()
+            }
+        }
+    }
+
     func application(
         _ application: UIApplication,
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
@@ -23,6 +37,8 @@ class AppDelegate: NSObject, UIApplicationDelegate {
             UITabBar.appearance().scrollEdgeAppearance = tabAppearance
         }
 
+        requestPushAuthorization(application)
+
         return true
     }
 
@@ -32,7 +48,17 @@ class AppDelegate: NSObject, UIApplicationDelegate {
         didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data
     ) {
         let token = deviceToken.map { String(format: "%02.2hhx", $0) }.joined()
-        // TODO: Send token to backend for push notification registration
+        Task {
+            do {
+                let appVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String
+                try await APIClient.shared.registerPushDevice(
+                    deviceToken: token,
+                    appVersion: appVersion
+                )
+            } catch {
+                // Push is optional; registration failures should not block app startup.
+            }
+        }
     }
 
     func application(

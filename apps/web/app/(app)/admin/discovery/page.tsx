@@ -1,10 +1,10 @@
 import { createClient } from "@/lib/supabase/server";
-import { createApiClient } from "@/lib/api-client";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { PipelineManualControls } from "@/components/admin/pipeline-manual-controls";
 
 interface DiscoveryRow {
   id: string;
@@ -35,6 +35,20 @@ interface LatestModel {
   s3Uri: string | null;
 }
 
+interface ObservabilityEvent {
+  id: string;
+  pipeline: string;
+  stage: string;
+  severity: "info" | "warn" | "error";
+  message: string;
+  runId: string | null;
+  sourceId: string | null;
+  recommendationId?: string | null;
+  userId?: string | null;
+  url?: string | null;
+  createdAt: string;
+}
+
 interface DiscoveryStatusResponse {
   stats: {
     total: number;
@@ -48,6 +62,24 @@ interface DiscoveryStatusResponse {
     sourcesTotal: number;
   };
   ingestion: IngestionStats;
+  latestPremiumModel: LatestModel | null;
+  observability: {
+    available: boolean;
+    counts24h: {
+      info: number;
+      warn: number;
+      error: number;
+    };
+    counts24hByPipeline: Record<
+      string,
+      {
+        info: number;
+        warn: number;
+        error: number;
+      }
+    >;
+    recentEvents: ObservabilityEvent[];
+  };
   latestModel: LatestModel | null;
   rows: DiscoveryRow[];
   pagination: {
@@ -76,6 +108,33 @@ function formatDate(iso: string | null): string {
     hour: "2-digit",
     minute: "2-digit",
   });
+}
+
+async function fetchGatewayJson<T>(params: {
+  baseUrl: string;
+  path: string;
+  accessToken: string;
+  timeoutMs?: number;
+}): Promise<T> {
+  const { baseUrl, path, accessToken, timeoutMs = 8_000 } = params;
+  if (!baseUrl) {
+    throw new Error("API base URL is not configured");
+  }
+
+  const response = await fetch(`${baseUrl}${path}`, {
+    cache: "no-store",
+    signal: AbortSignal.timeout(timeoutMs),
+    headers: {
+      Accept: "application/json",
+      ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Gateway request failed (${response.status})`);
+  }
+
+  return (await response.json()) as T;
 }
 
 function StatCard({
@@ -116,14 +175,27 @@ export default async function DiscoveryStatusPage() {
   const {
     data: { session },
   } = await supabase.auth.getSession();
-
-  const client = createApiClient(session?.access_token ?? "");
+  const accessToken = session?.access_token ?? "";
+  const gatewayBase = (
+    process.env.API_GATEWAY_URL ??
+    process.env.NEXT_PUBLIC_API_GATEWAY_URL ??
+    ""
+  ).replace(/\/+$/, "");
 
   const [statusResult] = await Promise.allSettled([
-    client.get<DiscoveryStatusResponse>(
-      "/api/v1/admin/discovery/status?pageSize=200"
-    ),
+    fetchGatewayJson<DiscoveryStatusResponse>({
+      baseUrl: gatewayBase,
+      path: "/api/v1/admin/discovery/status?pageSize=200",
+      accessToken,
+    }),
   ]);
+
+  const statusError =
+    statusResult.status === "rejected"
+      ? statusResult.reason instanceof Error
+        ? statusResult.reason.message
+        : "Failed to load discovery status"
+      : null;
 
   const data =
     statusResult.status === "fulfilled" ? statusResult.value : null;
@@ -145,10 +217,39 @@ export default async function DiscoveryStatusPage() {
     error: 0,
   };
   const latestModel = data?.latestModel ?? null;
+  const latestPremiumModel = data?.latestPremiumModel ?? null;
+  const observability = data?.observability ?? {
+    available: false,
+    counts24h: {
+      info: 0,
+      warn: 0,
+      error: 0,
+    },
+    counts24hByPipeline: {},
+    recentEvents: [] as ObservabilityEvent[],
+  };
   const rows = data?.rows ?? [];
 
   // How many combinations are left ÷ batch-size-per-minute (10 per 2 min)
   const runsRemaining = Math.ceil((stats.total - stats.completed) / 10);
+  const scopedEvents = observability.recentEvents.filter(
+    (event) => event.pipeline === "discovery" || event.pipeline === "learning"
+  );
+  const discoveryCounts = observability.counts24hByPipeline.discovery ?? {
+    info: 0,
+    warn: 0,
+    error: 0,
+  };
+  const learningCounts = observability.counts24hByPipeline.learning ?? {
+    info: 0,
+    warn: 0,
+    error: 0,
+  };
+  const scopedCounts = {
+    info: discoveryCounts.info + learningCounts.info,
+    warn: discoveryCounts.warn + learningCounts.warn,
+    error: discoveryCounts.error + learningCounts.error,
+  };
 
   return (
     <div className="container max-w-6xl py-6 px-4 sm:px-6 lg:px-8 space-y-8">
@@ -160,11 +261,34 @@ export default async function DiscoveryStatusPage() {
         >
           ← Admin
         </Link>
-        <h1 className="text-2xl font-bold tracking-tight">Pipeline Dashboard</h1>
+        <h1 className="text-2xl font-bold tracking-tight">Discovery Pipeline Dashboard</h1>
         <p className="text-muted-foreground text-sm mt-1">
-          End-to-end status: source discovery → ingestion → ML training
+          Discovery-only status: source discovery → ingestion → model training
+        </p>
+        <p className="text-xs text-muted-foreground mt-1">
+          Compliance pipeline has its own dedicated dashboard at{" "}
+          <Link
+            href="/admin/compliance"
+            className="underline underline-offset-4 hover:text-foreground"
+          >
+            /admin/compliance
+          </Link>
+          .
         </p>
       </div>
+
+      {statusError && (
+        <Card className="border-destructive/30 bg-destructive/5">
+          <CardContent className="pt-5">
+            <p className="text-sm text-destructive font-medium">Discovery status API unavailable</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              {statusError}. Set `API_GATEWAY_URL` / `NEXT_PUBLIC_API_GATEWAY_URL`, then run Manual Pipeline Controls to bootstrap local data.
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
+      <PipelineManualControls mode="discovery" />
 
       {/* ══ Phase 1: Source Discovery ════════════════════════════════════════ */}
       <section className="space-y-4">
@@ -278,6 +402,92 @@ export default async function DiscoveryStatusPage() {
         )}
       </section>
 
+      {/* ══ Observability & Separation ═══════════════════════════════════════ */}
+      <section className="space-y-4">
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            Ops
+          </span>
+          <h2 className="text-lg font-semibold">Observability</h2>
+          <Link
+            href="/admin/compliance"
+            className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-4 ml-auto"
+          >
+            Open Compliance Dashboard →
+          </Link>
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <StatCard
+            label="Events (24h)"
+            value={scopedCounts.info + scopedCounts.warn + scopedCounts.error}
+          />
+          <StatCard label="Errors (24h)" value={scopedCounts.error} color="text-destructive" />
+          <StatCard label="Warnings (24h)" value={scopedCounts.warn} color="text-yellow-600" />
+          <StatCard label="Info (24h)" value={scopedCounts.info} color="text-blue-600" />
+        </div>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">Recent Pipeline Events</CardTitle>
+          </CardHeader>
+          <CardContent className="px-0 pb-0">
+          {scopedEvents.length === 0 ? (
+            <p className="text-center text-muted-foreground py-8 text-sm">
+              No observability events recorded yet.
+            </p>
+          ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b bg-muted/50">
+                      <th className="text-left px-4 py-2 font-medium text-muted-foreground">When</th>
+                      <th className="text-left px-4 py-2 font-medium text-muted-foreground">Pipeline</th>
+                      <th className="text-left px-4 py-2 font-medium text-muted-foreground">Stage</th>
+                      <th className="text-left px-4 py-2 font-medium text-muted-foreground">Severity</th>
+                      <th className="text-left px-4 py-2 font-medium text-muted-foreground">Message</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {scopedEvents.slice(0, 40).map((row, index) => {
+                      const severityVariant =
+                        row.severity === "error"
+                          ? "destructive"
+                          : row.severity === "warn"
+                            ? "outline"
+                            : "secondary";
+                      return (
+                        <tr
+                          key={row.id}
+                          className={`border-b last:border-0 ${index % 2 === 0 ? "" : "bg-muted/20"}`}
+                        >
+                          <td className="px-4 py-2 text-xs text-muted-foreground">
+                            {formatDate(row.createdAt)}
+                          </td>
+                          <td className="px-4 py-2 font-medium">{row.pipeline}</td>
+                          <td className="px-4 py-2 text-xs text-muted-foreground">{row.stage}</td>
+                          <td className="px-4 py-2">
+                            <Badge variant={severityVariant} className="text-xs">
+                              {row.severity}
+                            </Badge>
+                          </td>
+                          <td className="px-4 py-2 text-xs">
+                            <p className="line-clamp-2">{row.message}</p>
+                            {row.url && (
+                              <p className="text-muted-foreground truncate mt-0.5">{row.url}</p>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </section>
+
       {/* ══ Phase 3: ML Model Training ═══════════════════════════════════════ */}
       <section className="space-y-4">
         <div className="flex items-center gap-2">
@@ -286,64 +496,124 @@ export default async function DiscoveryStatusPage() {
           </span>
           <h2 className="text-lg font-semibold">ML Model Training</h2>
           <Badge variant="outline" className="text-xs ml-auto">
-            LightGBM LambdaRank · nightly 02:00 UTC
+            LambdaRank + Premium Quality · scheduled + feedback-triggered
           </Badge>
         </div>
 
         {latestModel ? (
-          <Card>
-            <CardContent className="pt-5 pb-4">
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
-                <div>
-                  <p className="text-xs text-muted-foreground mb-1">Status</p>
-                  <Badge
-                    variant={
-                      latestModel.status === "deployed"
-                        ? "default"
-                        : latestModel.status === "training"
-                        ? "outline"
-                        : "secondary"
-                    }
-                  >
-                    {latestModel.status}
-                  </Badge>
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground mb-1">Model type</p>
-                  <p className="font-medium">{latestModel.modelType}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground mb-1">Trained at</p>
-                  <p className="font-medium">{formatDate(latestModel.trainedAt)}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground mb-1">NDCG score</p>
-                  <p className="font-medium">
-                    {latestModel.ndcgScore != null
-                      ? latestModel.ndcgScore.toFixed(4)
-                      : "—"}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground mb-1">Feedback samples</p>
-                  <p className="font-medium">{latestModel.feedbackCount.toLocaleString()}</p>
-                </div>
-                {latestModel.s3Uri && (
-                  <div className="col-span-2 sm:col-span-3">
-                    <p className="text-xs text-muted-foreground mb-1">S3 artifact</p>
-                    <p className="font-mono text-xs text-muted-foreground truncate">
-                      {latestModel.s3Uri}
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base">Retrieval Model</CardTitle>
+              </CardHeader>
+              <CardContent className="pt-1 pb-4">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-1">Status</p>
+                    <Badge
+                      variant={
+                        latestModel.status === "deployed"
+                          ? "default"
+                          : latestModel.status === "training"
+                            ? "outline"
+                            : "secondary"
+                      }
+                    >
+                      {latestModel.status}
+                    </Badge>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-1">Model type</p>
+                    <p className="font-medium">{latestModel.modelType}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-1">Trained at</p>
+                    <p className="font-medium">{formatDate(latestModel.trainedAt)}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-1">NDCG score</p>
+                    <p className="font-medium">
+                      {latestModel.ndcgScore != null
+                        ? latestModel.ndcgScore.toFixed(4)
+                        : "—"}
                     </p>
                   </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-1">Feedback samples</p>
+                    <p className="font-medium">{latestModel.feedbackCount.toLocaleString()}</p>
+                  </div>
+                  {latestModel.s3Uri && (
+                    <div className="col-span-2 sm:col-span-3">
+                      <p className="text-xs text-muted-foreground mb-1">S3 artifact</p>
+                      <p className="font-mono text-xs text-muted-foreground truncate">
+                        {latestModel.s3Uri}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base">Premium Model</CardTitle>
+              </CardHeader>
+              <CardContent className="pt-1 pb-4">
+                <div>
+                  {latestPremiumModel ? (
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
+                      <div>
+                        <p className="text-xs text-muted-foreground mb-1">Status</p>
+                        <Badge
+                          variant={
+                            latestPremiumModel.status === "deployed"
+                              ? "default"
+                              : latestPremiumModel.status === "training"
+                                ? "outline"
+                                : "secondary"
+                          }
+                        >
+                          {latestPremiumModel.status}
+                        </Badge>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground mb-1">Model type</p>
+                        <p className="font-medium">{latestPremiumModel.modelType}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground mb-1">Trained at</p>
+                        <p className="font-medium">{formatDate(latestPremiumModel.trainedAt)}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground mb-1">Feedback samples</p>
+                        <p className="font-medium">
+                          {latestPremiumModel.feedbackCount.toLocaleString()}
+                        </p>
+                      </div>
+                      {latestPremiumModel.s3Uri && (
+                        <div className="col-span-2 sm:col-span-4">
+                          <p className="text-xs text-muted-foreground mb-1">S3 artifact</p>
+                          <p className="font-mono text-xs text-muted-foreground truncate">
+                            {latestPremiumModel.s3Uri}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">
+                      No premium model training run yet. Premium training is triggered by feedback on
+                      recommendations with premium insights.
+                    </p>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         ) : (
           <Card>
             <CardContent className="py-8 text-center text-muted-foreground text-sm">
-              No model trained yet. The nightly retraining job requires at least 50 feedback
-              samples.
+              No retrieval model trained yet. Feedback-triggered retraining starts once thresholds
+              are met.
             </CardContent>
           </Card>
         )}

@@ -4,6 +4,12 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import { getBrowserApiBase } from "@/lib/api-client"
+import { emitCreditsRefresh } from "@/lib/credits-events"
+import {
+  normalizeSubscriptionTier,
+  planningPayloadFromInputValues,
+  type SubscriptionTier,
+} from "@/lib/diagnose-entitlements"
 import Link from "next/link"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -12,6 +18,7 @@ import { toast } from "sonner"
 import { labReportSchema, type LabReportInput } from "@/lib/validations/diagnose"
 import { CROP_OPTIONS, LOCATIONS } from "@/lib/constants/profile"
 import { AnalyzingLoader } from "@/components/diagnose/analyzing-loader"
+import { PlanningLocationFields } from "@/components/diagnose/planning-location-fields"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -63,6 +70,7 @@ export default function LabReportPage() {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
   const [isFetching, setIsFetching] = useState(true)
+  const [subscriptionTier, setSubscriptionTier] = useState<SubscriptionTier>("grower_free")
 
   const form = useForm<LabReportInput>({
     resolver: zodResolver(labReportSchema as any),
@@ -88,6 +96,10 @@ export default function LabReportPage() {
       crop: '',
       locationState: '',
       locationCountry: 'US',
+      fieldAcreage: '',
+      plannedApplicationDate: '',
+      fieldLatitude: '',
+      fieldLongitude: '',
     },
   })
 
@@ -97,11 +109,18 @@ export default function LabReportPage() {
         const supabase = createClient()
         const { data: { session } } = await supabase.auth.getSession()
         const base = getBrowserApiBase()
-        const response = await fetch(`${base}/api/v1/profile`, {
-          headers: { Authorization: `Bearer ${session?.access_token ?? ''}` },
-        })
-        if (response.ok) {
-          const { profile } = await response.json()
+        const token = session?.access_token ?? ''
+        const [profileResponse, subscriptionResponse] = await Promise.all([
+          fetch(`${base}/api/v1/profile`, {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
+          fetch(`${base}/api/v1/subscription`, {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
+        ])
+
+        if (profileResponse.ok) {
+          const { profile } = await profileResponse.json()
           if (profile?.location) {
             const location = LOCATIONS.find(loc => loc.value === profile.location)
             if (location) {
@@ -109,6 +128,15 @@ export default function LabReportPage() {
               form.setValue('locationCountry', location.country)
             }
           }
+        }
+
+        if (subscriptionResponse.ok) {
+          const body = (await subscriptionResponse.json()) as {
+            subscription?: { planId?: string }
+          }
+          setSubscriptionTier(normalizeSubscriptionTier(body.subscription?.planId))
+        } else {
+          setSubscriptionTier("grower_free")
         }
       } catch (error) {
         console.error('Error fetching profile:', error)
@@ -173,6 +201,15 @@ export default function LabReportPage() {
       const supabase = createClient()
       const { data: { session } } = await supabase.auth.getSession()
       const base = getBrowserApiBase()
+      const planningPayload = planningPayloadFromInputValues(
+        {
+          fieldAcreage: data.fieldAcreage,
+          plannedApplicationDate: data.plannedApplicationDate,
+          fieldLatitude: data.fieldLatitude,
+          fieldLongitude: data.fieldLongitude,
+        },
+        subscriptionTier
+      )
       const inputRes = await fetch(`${base}/api/v1/inputs`, {
         method: 'POST',
         headers: {
@@ -185,6 +222,10 @@ export default function LabReportPage() {
           labData,
           crop: data.crop,
           location: `${data.locationState}, ${data.locationCountry}`,
+          fieldAcreage: planningPayload.fieldAcreage,
+          plannedApplicationDate: planningPayload.plannedApplicationDate,
+          fieldLatitude: planningPayload.fieldLatitude,
+          fieldLongitude: planningPayload.fieldLongitude,
         }),
       })
 
@@ -200,6 +241,7 @@ export default function LabReportPage() {
       }
 
       toast.success('Recommendation generated!')
+      emitCreditsRefresh("recommendation_generated")
       router.push(`/recommendations/${recommendationId}`)
     } catch (error) {
       console.error('Error submitting lab report:', error)
@@ -670,6 +712,8 @@ export default function LabReportPage() {
                     )}
                   />
                 </div>
+
+                <PlanningLocationFields form={form as any} tier={subscriptionTier} />
               </div>
 
               {/* Submit Button */}

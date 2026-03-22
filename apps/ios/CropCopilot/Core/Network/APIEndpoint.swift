@@ -57,6 +57,22 @@ enum APIEndpoint {
     case getFeedback(recommendationId: String)
     case submitFeedback
 
+    // Billing
+    case getSubscription
+    case getUsage
+    case getAutoReloadConfig
+    case updateAutoReloadConfig
+    case subscriptionCheckout
+    case creditsCheckout
+    case subscriptionPortal
+
+    // Location helpers
+    case geocodeLocation
+    case reverseGeocodeLocation
+
+    // Push
+    case registerPushDevice
+
     private enum HostTarget {
         case primary
         case runtimePreferred
@@ -81,6 +97,15 @@ enum APIEndpoint {
         case .uploadImage: return "/upload"
         case .getUploadViewUrl: return "/upload/view"
         case .getFeedback, .submitFeedback: return "/feedback"
+        case .getSubscription: return "/subscription"
+        case .getUsage: return "/usage"
+        case .getAutoReloadConfig, .updateAutoReloadConfig: return "/credits/auto-reload-config"
+        case .subscriptionCheckout: return "/subscription/checkout"
+        case .creditsCheckout: return "/credits/checkout"
+        case .subscriptionPortal: return "/subscription/portal"
+        case .geocodeLocation: return "/location/geocode"
+        case .reverseGeocodeLocation: return "/location/reverse"
+        case .registerPushDevice: return "/push/register"
         }
     }
 
@@ -104,7 +129,17 @@ enum APIEndpoint {
              .uploadImage,
              .getUploadViewUrl,
              .getFeedback,
-             .submitFeedback:
+             .getSubscription,
+             .getUsage,
+             .getAutoReloadConfig,
+             .updateAutoReloadConfig,
+             .subscriptionCheckout,
+             .creditsCheckout,
+             .subscriptionPortal,
+             .geocodeLocation,
+             .reverseGeocodeLocation,
+             .submitFeedback,
+             .registerPushDevice:
             return .runtimePreferred
         default:
             return .primary
@@ -116,10 +151,14 @@ enum APIEndpoint {
         case .login, .signup, .refreshToken,
              .createInput, .compareProducts,
              .getProductPricing, .uploadImage,
-             .submitFeedback:
+             .submitFeedback, .registerPushDevice,
+             .geocodeLocation, .reverseGeocodeLocation,
+             .subscriptionCheckout, .creditsCheckout, .subscriptionPortal:
             return .post
         case .updateProfile:
             return .put
+        case .updateAutoReloadConfig:
+            return .patch
         case .deleteRecommendation:
             return .delete
         default:

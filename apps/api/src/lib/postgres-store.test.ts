@@ -264,6 +264,10 @@ test('PostgresRecommendationStore persists recommendation payload into legacy ta
       rows: [],
     },
     {
+      includes: 'UPDATE "RetrievalAudit"',
+      rows: [],
+    },
+    {
       includes: 'DELETE FROM "RecommendationSource"',
       rows: [],
     },
@@ -290,14 +294,6 @@ test('PostgresRecommendationStore persists recommendation payload into legacy ta
     {
       includes: 'SELECT crop FROM "Input"',
       rows: [{ crop: 'corn' }],
-    },
-    {
-      includes: 'SELECT id, name, brand, type::text AS type',
-      rows: [],
-    },
-    {
-      includes: 'ORDER BY "updatedAt" DESC LIMIT \\$1',
-      rows: [],
     },
     { includes: '^COMMIT$', rows: [] },
   ]);
@@ -336,6 +332,10 @@ test('PostgresRecommendationStore persists precomputed product recommendations',
     },
     {
       includes: 'UPDATE "Recommendation"',
+      rows: [],
+    },
+    {
+      includes: 'UPDATE "RetrievalAudit"',
       rows: [],
     },
     {
@@ -382,7 +382,14 @@ test('PostgresRecommendationStore persists precomputed product recommendations',
         diagnosis: {
           condition: 'northern corn leaf blight',
           conditionType: 'disease',
+          confidence: 0.82,
         },
+        recommendations: [
+          {
+            action: 'Apply targeted foliar protection once lesion incidence exceeds threshold.',
+            priority: 'immediate',
+          },
+        ],
         products: [
           {
             productId: 'prod-1',
@@ -410,6 +417,10 @@ test('PostgresRecommendationStore resolves diagnosis products by product name al
     },
     {
       includes: 'UPDATE "Recommendation"',
+      rows: [],
+    },
+    {
+      includes: 'UPDATE "RetrievalAudit"',
       rows: [],
     },
     {
@@ -456,7 +467,14 @@ test('PostgresRecommendationStore resolves diagnosis products by product name al
         diagnosis: {
           condition: 'northern corn leaf blight',
           conditionType: 'disease',
+          confidence: 0.79,
         },
+        recommendations: [
+          {
+            action: 'Schedule canopy protection before forecasted leaf wetness period.',
+            priority: 'soon',
+          },
+        ],
         productRecommendations: [
           {
             product_name: 'Corn Guard',
@@ -466,6 +484,122 @@ test('PostgresRecommendationStore resolves diagnosis products by product name al
         ],
       },
       modelUsed: 'rag-v2-scaffold',
+      sources: [],
+    } as any
+  );
+});
+
+test('PostgresRecommendationStore skips catalog fallback products for unknown diagnosis', async () => {
+  const pool = createScriptedPool([
+    { includes: '^BEGIN$', rows: [] },
+    {
+      includes: 'UPDATE app_recommendation_job',
+      rows: [{ input_id: '9f2644c5-a906-4739-9fca-a6f4078dc8c7' }],
+    },
+    {
+      includes: 'SELECT id FROM "Recommendation" WHERE "inputId"',
+      rows: [{ id: '1d57059e-e6ce-4f89-a061-937eddf591d4' }],
+    },
+    {
+      includes: 'UPDATE "Recommendation"',
+      rows: [],
+    },
+    {
+      includes: 'UPDATE "RetrievalAudit"',
+      rows: [],
+    },
+    {
+      includes: 'DELETE FROM "RecommendationSource"',
+      rows: [],
+    },
+    {
+      includes: 'DELETE FROM "ProductRecommendation"',
+      rows: [],
+    },
+    {
+      includes: 'SELECT crop FROM "Input"',
+      rows: [{ crop: 'blueberries' }],
+    },
+    { includes: '^COMMIT$', rows: [] },
+  ]);
+
+  const store = new PostgresRecommendationStore(pool);
+
+  await store.saveRecommendationResult(
+    'deab17cf-f109-43f2-b95b-7d2f328a7720',
+    '11111111-1111-1111-1111-111111111111',
+    {
+      recommendationId: '1d57059e-e6ce-4f89-a061-937eddf591d4',
+      confidence: 0.65,
+      diagnosis: {
+        diagnosis: {
+          condition: 'uncertain_field_issue',
+          conditionType: 'unknown',
+          confidence: 0.65,
+        },
+        recommendations: [
+          {
+            action: 'Collect additional samples.',
+            priority: 'immediate',
+          },
+        ],
+      },
+      modelUsed: 'heuristic-rag-v1',
+      sources: [],
+    } as any
+  );
+});
+
+test('PostgresRecommendationStore skips catalog fallback products for heuristic model output', async () => {
+  const pool = createScriptedPool([
+    { includes: '^BEGIN$', rows: [] },
+    {
+      includes: 'UPDATE app_recommendation_job',
+      rows: [{ input_id: '9f2644c5-a906-4739-9fca-a6f4078dc8c7' }],
+    },
+    {
+      includes: 'SELECT id FROM "Recommendation" WHERE "inputId"',
+      rows: [{ id: '1d57059e-e6ce-4f89-a061-937eddf591d4' }],
+    },
+    {
+      includes: 'UPDATE "Recommendation"',
+      rows: [],
+    },
+    {
+      includes: 'UPDATE "RetrievalAudit"',
+      rows: [],
+    },
+    {
+      includes: 'DELETE FROM "RecommendationSource"',
+      rows: [],
+    },
+    {
+      includes: 'DELETE FROM "ProductRecommendation"',
+      rows: [],
+    },
+    {
+      includes: 'SELECT crop FROM "Input"',
+      rows: [{ crop: 'potatoes' }],
+    },
+    { includes: '^COMMIT$', rows: [] },
+  ]);
+
+  const store = new PostgresRecommendationStore(pool);
+
+  await store.saveRecommendationResult(
+    'deab17cf-f109-43f2-b95b-7d2f328a7720',
+    '11111111-1111-1111-1111-111111111111',
+    {
+      recommendationId: '1d57059e-e6ce-4f89-a061-937eddf591d4',
+      confidence: 0.81,
+      diagnosis: {
+        diagnosis: {
+          condition: 'probable_foliar_disease',
+          conditionType: 'disease',
+          confidence: 0.81,
+        },
+      },
+      modelUsed: 'heuristic-rag-v1',
       sources: [],
     } as any
   );

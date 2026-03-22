@@ -20,6 +20,7 @@ import { DbSourceRegistry } from '../ingestion/db-source-registry';
 import { scrapeUrl } from '../ingestion/scraper';
 import { chunkTextSemantically } from '../rag/semantic-chunker-v2';
 import { resolvePoolSslConfig, sanitizeDatabaseUrlForPool } from '../lib/store';
+import { recordPipelineEvent } from '../lib/pipeline-events';
 
 const EMBEDDING_MODEL = 'text-embedding-3-small';
 const EMBEDDING_BATCH_SIZE = 20; // OpenAI allows up to 2048 inputs, but keep batches small
@@ -45,6 +46,30 @@ function getRegistry() {
   if (!process.env.DATABASE_URL) return getSourceRegistry();
   const pool = sharedPool ?? getPool();
   return new DbSourceRegistry(pool);
+}
+
+function isSkippableFetchFailure(message: string): boolean {
+  const normalized = message.toLowerCase();
+  return (
+    normalized.includes('http 300') ||
+    normalized.includes('http 403') ||
+    normalized.includes('http 404') ||
+    normalized.includes('http 410') ||
+    normalized.includes('http 429') ||
+    normalized.includes('http 5') ||
+    normalized.includes('http 500') ||
+    normalized.includes('http 502') ||
+    normalized.includes('http 503') ||
+    normalized.includes('http 504') ||
+    normalized.includes('internal server error') ||
+    normalized.includes('multiple choices') ||
+    normalized.includes('site blocks scraping') ||
+    normalized.includes('fetch failed') ||
+    normalized.includes('timed out') ||
+    normalized.includes('aborted') ||
+    normalized.includes('enotfound') ||
+    normalized.includes('econn')
+  );
 }
 
 // ─── Embedding ───────────────────────────────────────────────────────────────
@@ -120,13 +145,12 @@ async function upsertChunks(pool: Pool, chunks: ChunkToUpsert[]): Promise<void> 
       const vectorLiteral = `[${chunk.embedding.join(',')}]`;
       await pool.query(
         `
-        INSERT INTO "TextChunk" (id, content, embedding, "sourceId", metadata, "createdAt", "updatedAt")
-        VALUES ($1, $2, $3::vector, $4, $5::jsonb, NOW(), NOW())
+        INSERT INTO "TextChunk" (id, content, embedding, "sourceId", metadata, "createdAt")
+        VALUES ($1, $2, $3::vector, $4, $5::jsonb, NOW())
         ON CONFLICT (id) DO UPDATE SET
-          content    = EXCLUDED.content,
-          embedding  = EXCLUDED.embedding,
-          metadata   = EXCLUDED.metadata,
-          "updatedAt" = NOW()
+          content   = EXCLUDED.content,
+          embedding = EXCLUDED.embedding,
+          metadata  = EXCLUDED.metadata
         `,
         [chunk.id, chunk.content, vectorLiteral, chunk.sourceId, metadata],
       );
@@ -134,12 +158,11 @@ async function upsertChunks(pool: Pool, chunks: ChunkToUpsert[]): Promise<void> 
       // Store without embedding — will be excluded from vector search but visible to lexical
       await pool.query(
         `
-        INSERT INTO "TextChunk" (id, content, "sourceId", metadata, "createdAt", "updatedAt")
-        VALUES ($1, $2, $3, $4::jsonb, NOW(), NOW())
+        INSERT INTO "TextChunk" (id, content, "sourceId", metadata, "createdAt")
+        VALUES ($1, $2, $3, $4::jsonb, NOW())
         ON CONFLICT (id) DO UPDATE SET
-          content    = EXCLUDED.content,
-          metadata   = EXCLUDED.metadata,
-          "updatedAt" = NOW()
+          content  = EXCLUDED.content,
+          metadata = EXCLUDED.metadata
         `,
         [chunk.id, chunk.content, chunk.sourceId, metadata],
       );
@@ -152,16 +175,39 @@ async function updateSourceStatus(
   sourceId: string,
   status: string,
   chunksCount: number,
+  errorMessage: string | null = null,
 ): Promise<void> {
   await pool.query(
     `UPDATE "Source"
      SET status        = $1,
          "chunksCount" = $2,
+         "errorMessage" = $4,
          "lastScrapedAt" = NOW(),
          "updatedAt"   = NOW()
      WHERE id = $3`,
-    [status, chunksCount, sourceId],
+    [status, chunksCount, sourceId, errorMessage],
   );
+}
+
+async function markSourceSkipped(pool: Pool, sourceId: string, reason: string): Promise<void> {
+  await pool.query(
+    `UPDATE "Source"
+     SET status = 'ready',
+         "chunksCount" = 0,
+         "errorMessage" = $2,
+         "lastScrapedAt" = NOW(),
+         "updatedAt" = NOW()
+     WHERE id = $1`,
+    [sourceId, `[skipped:fetch] ${reason}`.slice(0, 500)]
+  );
+}
+
+function trimErrorMessage(message: string): string {
+  return message.replace(/\s+/g, ' ').trim().slice(0, 500);
+}
+
+function buildTaggedError(stage: 'fetch' | 'process', message: string): string {
+  return trimErrorMessage(`[${stage}] ${message}`);
 }
 
 // ─── Per-source processing ────────────────────────────────────────────────────
@@ -174,10 +220,39 @@ async function processSource(
 
   let doc;
   try {
-    doc = await scrapeUrl(source.url);
+    doc = await scrapeUrl(source.url, { pdfMode: 'pymupdf_preferred' });
   } catch (error) {
-    console.error(`[Ingestion] Scrape failed for ${source.url}:`, (error as Error).message);
-    await updateSourceStatus(pool, source.sourceId, 'error', 0).catch(() => undefined);
+    const message = (error as Error).message;
+    if (isSkippableFetchFailure(message)) {
+      console.warn(`[Ingestion] Source marked ready with skipped fetch: ${source.url}: ${message}`);
+      await markSourceSkipped(pool, source.sourceId, message).catch(() => undefined);
+      await recordPipelineEvent(pool, {
+        pipeline: 'discovery',
+        stage: 'ingestion_fetch_skipped',
+        severity: 'warn',
+        message,
+        sourceId: source.sourceId,
+        url: source.url,
+      });
+      return { chunksIngested: 0 };
+    }
+
+    console.error(`[Ingestion] Scrape failed for ${source.url}:`, message);
+    await updateSourceStatus(
+      pool,
+      source.sourceId,
+      'error',
+      0,
+      buildTaggedError('fetch', message),
+    ).catch(() => undefined);
+    await recordPipelineEvent(pool, {
+      pipeline: 'discovery',
+      stage: 'ingestion_fetch',
+      severity: 'error',
+      message,
+      sourceId: source.sourceId,
+      url: source.url,
+    });
     throw error;
   }
 
@@ -249,22 +324,63 @@ async function processBatch(body: string): Promise<void> {
   const payload = IngestionBatchMessageSchema.parse(JSON.parse(body));
   const registry = getRegistry();
   const processedAt = new Date(payload.requestedAt);
+  const configuredConcurrency = Number(process.env.INGESTION_SOURCE_CONCURRENCY ?? 4);
+  const concurrency = Math.max(1, Math.min(Math.floor(configuredConcurrency), 12));
 
-  for (const source of payload.sources) {
-    try {
-      // Resolve the pool inside the per-source try so that a missing DATABASE_URL
-      // is treated as a per-source failure (logged + skipped) rather than crashing
-      // the entire batch and causing SQS redelivery.
-      const pool = getPool();
-      await processSource(pool, source);
-      await registry.markSourceProcessed(source.sourceId, processedAt);
-    } catch (error) {
-      console.error(`[Ingestion] Source ${source.sourceId} failed:`, (error as Error).message);
-      // Don't rethrow — continue with remaining sources in the batch.
-      // Source status is already set to 'error' by processSource; skip markSourceProcessed
-      // so the scheduler picks it up again on the next cycle.
+  let cursor = 0;
+  const workerCount = Math.min(concurrency, payload.sources.length || 1);
+  const workers = Array.from({ length: workerCount }, async () => {
+    while (true) {
+      const index = cursor;
+      cursor += 1;
+      const source = payload.sources[index];
+      if (!source) {
+        return;
+      }
+
+      try {
+        // Resolve the pool inside the per-source try so that a missing DATABASE_URL
+        // is treated as a per-source failure (logged + skipped) rather than crashing
+        // the entire batch and causing SQS redelivery.
+        const pool = getPool();
+        await processSource(pool, source);
+        await registry.markSourceProcessed(source.sourceId, processedAt);
+      } catch (error) {
+        const message = (error as Error).message;
+        try {
+          const pool = getPool();
+          await updateSourceStatus(
+            pool,
+            source.sourceId,
+            'error',
+            0,
+            buildTaggedError('process', message),
+          );
+        } catch {
+          // ignored: status update best-effort
+        }
+        console.error(`[Ingestion] Source ${source.sourceId} failed:`, message);
+        try {
+          const pool = getPool();
+          await recordPipelineEvent(pool, {
+            pipeline: 'discovery',
+            stage: 'ingestion_process',
+            severity: 'error',
+            message,
+            sourceId: source.sourceId,
+            url: source.url,
+          });
+        } catch {
+          // best effort
+        }
+        // Don't rethrow — continue with remaining sources in the batch.
+        // Source status is already set to 'error' by processSource; skip markSourceProcessed
+        // so the scheduler picks it up again on the next cycle.
+      }
     }
-  }
+  });
+
+  await Promise.all(workers);
 }
 
 export const handler: SQSHandler = async (event: SQSEvent) => {
@@ -278,6 +394,20 @@ export const handler: SQSHandler = async (event: SQSEvent) => {
         messageId: record.messageId,
         error: (error as Error).message,
       });
+      try {
+        const pool = getPool();
+        await recordPipelineEvent(pool, {
+          pipeline: 'discovery',
+          stage: 'ingestion_batch_record',
+          severity: 'error',
+          message: `Failed to process ingestion batch message: ${(error as Error).message}`,
+          metadata: {
+            messageId: record.messageId,
+          },
+        });
+      } catch {
+        // best effort
+      }
       batchItemFailures.push({ itemIdentifier: record.messageId });
     }
   }

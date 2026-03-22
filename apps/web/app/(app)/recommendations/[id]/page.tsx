@@ -4,6 +4,9 @@ import { createClient } from "@/lib/supabase/server";
 import { createApiClient, ApiClientError } from "@/lib/api-client";
 import { DiagnosisDisplay } from "@/components/recommendations/diagnosis-display";
 import { RecommendationContent } from "@/components/recommendations/recommendation-content";
+import { RecommendationFeedbackFlow } from "@/components/recommendations/recommendation-feedback-flow";
+import { PremiumInsightPoller } from "@/components/recommendations/premium-insight-poller";
+import type { CostAnalysis, ComplianceCheck, SprayWindow, Report } from "@/components/recommendations/premium-insight-panel";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { ArrowLeft } from "lucide-react";
@@ -38,6 +41,33 @@ interface RecommendationSourceView {
     publisher?: string | null;
     publishedDate?: string | null;
   } | null;
+}
+
+interface PremiumRecommendationView {
+  status: "not_available" | "queued" | "processing" | "ready" | "failed";
+  riskReview: "clear_signal" | "potential_conflict" | "needs_manual_verification" | null;
+  complianceDecision?: "clear_signal" | "potential_conflict" | "needs_manual_verification" | null;
+  checks: ComplianceCheck[];
+  costAnalysis: CostAnalysis | null;
+  sprayWindows: SprayWindow[];
+  report: Report | null;
+  advisoryNotice?: string | null;
+  failureReason?: string | null;
+}
+
+function getDefaultPremiumRecommendation(): PremiumRecommendationView {
+  return {
+    status: "not_available",
+    riskReview: null,
+    complianceDecision: null,
+    checks: [],
+    costAnalysis: null,
+    sprayWindows: [],
+    report: null,
+    advisoryNotice:
+      "Decision support only. Verify label instructions and local regulations before application.",
+    failureReason: null,
+  };
 }
 
 function inferConditionType(
@@ -275,6 +305,10 @@ async function getRecommendation(id: string) {
         crop: string | null;
         location: string | null;
         season: string | null;
+        fieldAcreage: number | null;
+        plannedApplicationDate: string | null;
+        fieldLatitude: number | null;
+        fieldLongitude: number | null;
         createdAt: string;
       };
       sources: RecommendationSourceView[];
@@ -288,6 +322,7 @@ async function getRecommendation(id: string) {
         applicationRate: string | null;
         priority: number;
       }>;
+      premium: PremiumRecommendationView;
     }>(`/api/v1/recommendations/${id}`);
 
     return {
@@ -310,6 +345,7 @@ async function getRecommendation(id: string) {
       })),
       input: rec.input,
       sources: rec.sources,
+      premium: rec.premium ?? getDefaultPremiumRecommendation(),
     };
   } catch (err) {
     if (err instanceof ApiClientError && err.status === 404) {
@@ -382,6 +418,28 @@ export default async function RecommendationPage({
           sources={displaySources}
           products={products}
         />
+        <RecommendationFeedbackFlow recommendationId={recommendation.id} />
+
+        <PremiumInsightPoller
+          recommendationId={recommendation.id}
+          initialData={{
+            status: recommendation.premium.status,
+            riskReview: recommendation.premium.riskReview,
+            checks: recommendation.premium.checks,
+            costAnalysis: recommendation.premium.costAnalysis,
+            sprayWindows: recommendation.premium.sprayWindows,
+            report: recommendation.premium.report,
+            advisoryNotice: recommendation.premium.advisoryNotice,
+            failureReason: recommendation.premium.failureReason,
+          }}
+          inputContext={recommendation.input ? {
+            fieldAcreage: recommendation.input.fieldAcreage,
+            fieldLatitude: recommendation.input.fieldLatitude,
+            fieldLongitude: recommendation.input.fieldLongitude,
+            plannedApplicationDate: recommendation.input.plannedApplicationDate,
+            location: recommendation.input.location,
+          } : undefined}
+        />
 
         {recommendation.input && (
           <Card className="print:shadow-none print:border-gray-300">
@@ -428,6 +486,46 @@ export default async function RecommendationPage({
                     </p>
                   </div>
                 )}
+                {recommendation.input.fieldAcreage != null && (
+                  <div>
+                    <h3 className="text-sm font-medium text-gray-700 mb-1">
+                      Field Acreage
+                    </h3>
+                    <p className="text-gray-900">
+                      {recommendation.input.fieldAcreage.toLocaleString("en-US", {
+                        maximumFractionDigits: 2,
+                      })} acres
+                    </p>
+                  </div>
+                )}
+                {recommendation.input.plannedApplicationDate && (
+                  <div>
+                    <h3 className="text-sm font-medium text-gray-700 mb-1">
+                      Planned Application Date
+                    </h3>
+                    <p className="text-gray-900">
+                      {new Date(
+                        recommendation.input.plannedApplicationDate
+                      ).toLocaleDateString("en-US", {
+                        year: "numeric",
+                        month: "long",
+                        day: "numeric",
+                      })}
+                    </p>
+                  </div>
+                )}
+                {recommendation.input.fieldLatitude != null &&
+                  recommendation.input.fieldLongitude != null && (
+                    <div>
+                      <h3 className="text-sm font-medium text-gray-700 mb-1">
+                        Field Coordinates
+                      </h3>
+                      <p className="text-gray-900">
+                        {recommendation.input.fieldLatitude.toFixed(5)},{" "}
+                        {recommendation.input.fieldLongitude.toFixed(5)}
+                      </p>
+                    </div>
+                  )}
               </div>
 
               {recommendation.input.description && (
@@ -464,19 +562,47 @@ export default async function RecommendationPage({
                   <h3 className="text-sm font-medium text-gray-700 mb-2">
                     Lab Data
                   </h3>
-                  <pre className="bg-gray-50 rounded-lg p-4 border border-gray-200 overflow-x-auto text-sm">
-                    {JSON.stringify(recommendation.input.labData, null, 2)}
-                  </pre>
+                  <LabDataTable data={recommendation.input.labData} />
                 </div>
               )}
             </CardContent>
           </Card>
         )}
 
-        <div className="text-sm text-gray-500 text-center py-4 print:hidden">
-          Model: {recommendation.modelUsed || "Unknown"}
-        </div>
       </div>
+    </div>
+  );
+}
+
+function LabDataTable({ data }: { data: unknown }) {
+  if (!data || typeof data !== "object" || Array.isArray(data)) return null;
+
+  const entries = Object.entries(data as Record<string, unknown>).filter(
+    ([, v]) => v !== null && v !== undefined && v !== ""
+  );
+
+  if (entries.length === 0) return null;
+
+  const toLabel = (key: string) =>
+    key
+      .replace(/([A-Z])/g, " $1")
+      .replace(/^./, (s) => s.toUpperCase())
+      .trim();
+
+  return (
+    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+      {entries.map(([key, value]) => (
+        <div key={key} className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2">
+          <p className="text-[11px] font-medium uppercase tracking-wide text-gray-500">
+            {toLabel(key)}
+          </p>
+          <p className="text-sm font-semibold text-gray-900">
+            {typeof value === "number"
+              ? value.toLocaleString("en-US", { maximumFractionDigits: 4 })
+              : String(value)}
+          </p>
+        </div>
+      ))}
     </div>
   );
 }

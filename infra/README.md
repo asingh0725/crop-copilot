@@ -45,6 +45,7 @@ Optional values:
 - `RECOMMENDATION_COST_BY_MODEL_JSON`
 - `API_DATABASE_MODE` (`external` or `aws`)
 - `PROVISION_AWS_DATABASE` (`true` by default)
+- `ALLOW_LEGACY_ENV_FALLBACK` (`false` by default)
 - `DB_NAME`
 - `DB_USERNAME`
 
@@ -80,9 +81,9 @@ CROP_ENV=dev pnpm infra:deploy:compliance
 CROP_ENV=prod pnpm infra:deploy:compliance
 ```
 
-CDK entrypoint (`infra/bin/crop-copilot.ts`) now prefers env-scoped files
-(`.env.dev*`, `.env.prod*`) and only falls back to legacy `.env` files when
-`ALLOW_LEGACY_ENV_FALLBACK` is not set to `false`.
+CDK entrypoint (`infra/bin/crop-copilot.ts`) prefers env-scoped files
+(`.env.dev*`, `.env.prod*`). Legacy `.env` fallback is disabled by default and
+must be explicitly enabled with `ALLOW_LEGACY_ENV_FALLBACK=true`.
 
 ## Example (dev)
 

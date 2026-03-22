@@ -7,6 +7,7 @@ const environments = ['development', 'production'];
 
 const requiredSecrets = [
   'AWS_ROLE_TO_ASSUME',
+  'DATABASE_URL',
   'SUPABASE_URL',
   'SUPABASE_ANON_KEY',
   'ANTHROPIC_API_KEY',

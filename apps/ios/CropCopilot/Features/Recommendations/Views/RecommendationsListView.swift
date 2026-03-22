@@ -53,6 +53,11 @@ struct RecommendationsListView: View {
                 }
             }
             .navigationTitle("Recommendations")
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    CreditsBalanceChip()
+                }
+            }
             .navigationDestination(for: String.self) { recommendationId in
                 RecommendationDetailView(recommendationId: recommendationId)
             }

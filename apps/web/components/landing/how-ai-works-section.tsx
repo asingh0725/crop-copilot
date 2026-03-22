@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { Globe, Scissors, Database, Search, MessageSquare } from "lucide-react";
 import { Float, MotionStagger, staggerItem } from "./motion-wrapper";
@@ -40,17 +40,29 @@ const steps = [
 
 export function HowAIWorksSection() {
   const [activeStep, setActiveStep] = useState(0);
+  const sectionRef = useRef<HTMLElement>(null);
+  const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => setIsVisible(entry.isIntersecting),
+      { threshold: 0.1 }
+    );
+    if (sectionRef.current) observer.observe(sectionRef.current);
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (!isVisible) return;
     const timer = setInterval(() => {
       setActiveStep((previous) => (previous + 1) % steps.length);
     }, 1800);
-
     return () => clearInterval(timer);
-  }, []);
+  }, [isVisible]);
 
   return (
     <section
+      ref={sectionRef}
       id="how-it-works"
       className="relative overflow-hidden border-t border-white/10 bg-earth-950 py-24 lg:py-32"
     >

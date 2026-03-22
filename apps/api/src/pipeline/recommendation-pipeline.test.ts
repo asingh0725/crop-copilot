@@ -90,36 +90,95 @@ test('runRecommendationPipeline generates context-aware recommendation payload',
   );
 });
 
-test('runRecommendationPipeline falls back to heuristic output without model response', async () => {
+test('runRecommendationPipeline filters cross-crop evidence before model generation', async () => {
   const result = await runRecommendationPipeline(
     {
-      inputId: '1fbfd5f1-2099-43c9-a775-c783af74c6f8',
+      inputId: '8e3d0d0d-42f4-4097-8a57-e7f3625e7d22',
       userId: '11111111-1111-4111-8111-111111111111',
-      jobId: 'f0293ad7-4e61-4db7-b25a-3c357c1bfbc5',
+      jobId: 'f0f45ded-4dca-470a-b7d2-f04de47f7da2',
     },
     {
       loadInputSnapshot: async () => ({
         type: 'PHOTO',
-        crop: 'corn',
-        description: 'Interveinal chlorosis observed in lower leaves.',
+        crop: 'blueberries',
+        location: 'British Columbia, CA',
+        description:
+          'Newer leaves are yellowing while veins remain green after sustained rain.',
       }),
       retrieveCandidates: async () => [
         {
-          chunkId: 'chunk-corn-3',
-          content: 'Corn nutrient deficiency symptoms include leaf yellowing.',
-          similarity: 0.8,
+          chunkId: 'chunk-grape-1',
+          content:
+            'Guide to pest control products registered for use on grapes in British Columbia.',
+          similarity: 0.89,
+          sourceType: 'GOVERNMENT',
+          sourceTitle:
+            'Guide to pest control products registered for use on grapes in British Columbia',
+          metadata: { crops: ['grapes'] },
+        },
+        {
+          chunkId: 'chunk-blueberry-1',
+          content:
+            'Blueberry chlorosis can appear on newer leaves while veins stay green in saturated soils.',
+          similarity: 0.84,
           sourceType: 'UNIVERSITY_EXTENSION',
-          sourceTitle: 'Corn nutrient reference',
+          sourceTitle: 'Blueberry nutrient stress guide',
+          metadata: { crops: ['blueberries'] },
         },
       ],
-      generateModelOutput: async () => null,
+      generateModelOutput: async ({ candidates }) => ({
+        model: 'claude-sonnet-test',
+        output: {
+          diagnosis: {
+            condition: 'probable_nutrient_deficiency',
+            conditionType: 'deficiency',
+            confidence: 0.79,
+            reasoning: 'Symptoms and crop-specific evidence suggest nutrient stress.',
+          },
+          recommendations: [
+            {
+              action: 'Collect tissue samples from symptomatic and healthy rows.',
+              priority: 'immediate',
+              timing: 'Within 48 hours',
+              details: 'Validate nutrient imbalance before corrective treatment.',
+              citations: candidates.map((candidate) => candidate.chunkId),
+            },
+          ],
+          products: [],
+          confidence: 0.79,
+        },
+      }),
     }
   );
 
-  assert.equal(result.modelUsed, 'heuristic-rag-v1');
-  assert.equal(result.sources[0]?.chunkId, 'chunk-corn-3');
+  assert.equal(result.modelUsed, 'claude-sonnet-test');
+  assert.equal(result.sources[0]?.chunkId, 'chunk-blueberry-1');
+  assert.equal(result.sources.some((source) => source.chunkId === 'chunk-grape-1'), false);
   assert.equal(
     (result.diagnosis.diagnosis as { conditionType: string }).conditionType,
     'deficiency'
+  );
+});
+
+test('runRecommendationPipeline fails when model output is unavailable', async () => {
+  await assert.rejects(
+    () =>
+      runRecommendationPipeline(
+        {
+          inputId: '8e3d0d0d-42f4-4097-8a57-e7f3625e7d23',
+          userId: '11111111-1111-4111-8111-111111111111',
+          jobId: 'f0f45ded-4dca-470a-b7d2-f04de47f7da3',
+        },
+        {
+          loadInputSnapshot: async () => ({
+            type: 'PHOTO',
+            crop: 'potatoes',
+            description: 'Lower leaves yellowing and edge scorching.',
+          }),
+          retrieveCandidates: async () => [],
+          generateModelOutput: async () => null,
+        }
+      ),
+    /Model output unavailable/
   );
 });

@@ -4,9 +4,9 @@ import {
   Zap,
   Shield,
   BarChart3,
-  Leaf,
+  ShieldAlert,
   Cloud,
-  BookOpen,
+  FileCheck,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { MotionDiv, MotionStagger, staggerItem, Float } from "./motion-wrapper";
@@ -29,34 +29,38 @@ const features = [
     size: "large" as const,
   },
   {
-    icon: BarChart3,
-    title: "Cited Recommendations",
+    icon: ShieldAlert,
+    title: "Application Risk Review",
     description:
-      "Every recommendation comes with citations to the university research that backs it up.",
+      "Label-context checks with evidence citations and unresolved-flag summaries before every spray.",
     size: "small" as const,
+    pro: true,
   },
   {
-    icon: Leaf,
-    title: "Sustainable Practices",
+    icon: BarChart3,
+    title: "Cost Optimizer",
     description:
-      "Optimize nutrient application to reduce environmental impact while maximizing yield.",
+      "Per-acre and whole-field cost breakdowns with cheaper product swap suggestions.",
     size: "small" as const,
+    pro: true,
   },
   {
     icon: Cloud,
-    title: "Cloud Storage",
+    title: "Spray-Window Alerts",
     description:
-      "All your soil tests and recommendations securely stored and accessible anywhere.",
+      "Weather and timing intelligence that flags the optimal application window for your conditions.",
     size: "small" as const,
+    pro: true,
   },
   {
-    icon: BookOpen,
-    title: "Educational Insights",
+    icon: FileCheck,
+    title: "Application Prep Packet",
     description:
-      "Learn why each recommendation is made with detailed explanations and sources.",
+      "1-tap print-ready field records and shareable application summaries for your entire operation.",
     size: "small" as const,
+    pro: true,
   },
-];
+] as const;
 
 // ... features array remains the same
 
@@ -97,17 +101,17 @@ export function FeaturesSection() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <MotionDiv className="text-center mb-16">
           <span className="mb-4 inline-block rounded-full border border-white/10 bg-white/[0.08] px-4 py-1.5 text-sm font-medium text-lime-200">
-            Capabilities
+            Full Feature Set
           </span>
           <h2 className="mb-6 text-3xl font-bold tracking-tight text-white sm:text-4xl lg:text-5xl">
-            Floating Glass Panels for{" "}
+            Core Intelligence.{" "}
             <span className="font-serif italic text-transparent bg-clip-text bg-[linear-gradient(120deg,#f5c76d_8%,#a3e635_50%,#dff3a8_95%)]">
-              Precision Decisions
+              Pro Power.
             </span>
           </h2>
           <p className="mx-auto max-w-2xl text-lg text-white/[0.6]">
-            Crop Copilot combines retrieval evidence, agronomy context, and automation into one
-            cohesive zero-gravity control surface.
+            Instant, evidence-backed recommendations for every grower — plus an advanced Pro tier
+            built for risk controls, cost intelligence, and field-ready documentation.
           </p>
         </MotionDiv>
 
@@ -158,10 +162,21 @@ export function FeaturesSection() {
                   <motion.div
                     variants={staggerItem}
                     custom={index + 2}
-                    className="group z-10 h-full rounded-[24px] border border-white/12 bg-white/[0.08] p-6 backdrop-blur-2xl transition-all duration-400 hover:border-lime-300/30 hover:bg-white/[0.11]"
+                    className={`group relative z-10 h-full rounded-[24px] border p-6 backdrop-blur-2xl transition-all duration-400 ${"pro" in feature && feature.pro
+                      ? "border-amber-warm/20 bg-amber-warm/[0.05] hover:border-amber-warm/35 hover:bg-amber-warm/[0.09]"
+                      : "border-white/12 bg-white/[0.08] hover:border-lime-300/30 hover:bg-white/[0.11]"
+                    }`}
                   >
-                    <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl border border-white/12 bg-white/[0.08] transition-colors duration-300 group-hover:bg-lime-300/22">
-                      <feature.icon className="h-6 w-6 text-lime-300" />
+                    {"pro" in feature && feature.pro && (
+                      <span className="absolute right-4 top-4 rounded-full border border-amber-warm/30 bg-amber-warm/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-warm">
+                        Pro
+                      </span>
+                    )}
+                    <div className={`mb-4 flex h-12 w-12 items-center justify-center rounded-xl border transition-colors duration-300 ${"pro" in feature && feature.pro
+                      ? "border-amber-warm/20 bg-amber-warm/[0.08] group-hover:bg-amber-warm/20"
+                      : "border-white/12 bg-white/[0.08] group-hover:bg-lime-300/22"
+                    }`}>
+                      <feature.icon className={`h-6 w-6 ${"pro" in feature && feature.pro ? "text-amber-warm" : "text-lime-300"}`} />
                     </div>
                     <h3 className="mb-2 text-lg font-bold text-white">{feature.title}</h3>
                     <p className="text-sm leading-relaxed text-white/[0.58]">{feature.description}</p>
@@ -171,6 +186,22 @@ export function FeaturesSection() {
             ))}
           </div>
         </MotionStagger>
+
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ delay: 0.4 }}
+          className="mt-10 flex justify-center"
+        >
+          <a
+            href="#pricing"
+            className="inline-flex items-center gap-2 rounded-full border border-amber-warm/25 bg-amber-warm/[0.07] px-5 py-2.5 text-sm text-amber-warm/90 backdrop-blur-xl transition-all hover:border-amber-warm/40 hover:bg-amber-warm/[0.12]"
+          >
+            <span className="h-1.5 w-1.5 rounded-full bg-amber-warm animate-pulse" />
+            Pro features included in Grower Pro — see pricing
+          </a>
+        </motion.div>
       </div>
     </section>
   );

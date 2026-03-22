@@ -8,6 +8,9 @@ import {
   getRecommendationQueue,
   type RecommendationQueue,
 } from '../queue/recommendation-queue';
+import { getRuntimePool } from '../lib/runtime-pool';
+import { checkRecommendationAllowance, getSubscriptionSnapshot } from '../lib/entitlements';
+import { DEFAULT_SUBSCRIPTION_TIER, type SubscriptionTier } from '../lib/subscription-plans';
 
 function isValidationError(error: unknown): error is Error {
   return error instanceof Error && error.name === 'ZodError';
@@ -24,6 +27,24 @@ function normalizeTraceId(value: unknown): string | undefined {
   }
 
   return trimmed;
+}
+
+type ParsedCreateInputCommand = ReturnType<typeof CreateInputCommandSchema.parse>;
+
+function sanitizePlanningInputsByTier(
+  command: ParsedCreateInputCommand,
+  tier: SubscriptionTier
+): ParsedCreateInputCommand {
+  const allowsPlanning = tier === 'grower' || tier === 'grower_pro';
+  const allowsPreciseLocation = tier === 'grower_pro';
+
+  return {
+    ...command,
+    fieldAcreage: allowsPlanning ? command.fieldAcreage ?? null : null,
+    plannedApplicationDate: allowsPlanning ? command.plannedApplicationDate ?? null : null,
+    fieldLatitude: allowsPreciseLocation ? command.fieldLatitude ?? null : null,
+    fieldLongitude: allowsPreciseLocation ? command.fieldLongitude ?? null : null,
+  };
 }
 
 export function buildCreateInputHandler(
@@ -67,7 +88,43 @@ export function buildCreateInputHandler(
       );
     }
 
+    let subscriptionTier: SubscriptionTier = DEFAULT_SUBSCRIPTION_TIER;
+    try {
+      const subscription = await getSubscriptionSnapshot(getRuntimePool(), auth.userId);
+      subscriptionTier = subscription.planId;
+    } catch (error) {
+      console.warn('Falling back to default tier for create-input field gating', {
+        userId: auth.userId,
+        error: (error as Error).message,
+      });
+    }
+    command = sanitizePlanningInputsByTier(command, subscriptionTier);
+
     let enqueueResponse: EnqueueInputResult;
+
+    if ((process.env.ENABLE_USAGE_GUARD ?? 'false').toLowerCase() === 'true') {
+      try {
+        const allowance = await checkRecommendationAllowance(getRuntimePool(), auth.userId);
+        if (!allowance.allowed) {
+          return jsonResponse(
+            {
+              error: {
+                code: 'USAGE_LIMIT_REACHED',
+                message: allowance.reason ?? 'Monthly recommendation limit reached',
+              },
+              usage: allowance.snapshot,
+            },
+            { statusCode: 402 }
+          );
+        }
+      } catch (error) {
+        console.error('Failed to evaluate usage guard for create-input', {
+          userId: auth.userId,
+          error: (error as Error).message,
+        });
+      }
+    }
+
     try {
       enqueueResponse = await getRecommendationStore().enqueueInput(auth.userId, command, {
         email: auth.email,

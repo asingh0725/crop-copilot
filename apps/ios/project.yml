@@ -33,6 +33,7 @@ targets:
       - path: CropCopilot
         excludes:
           - "**/.DS_Store"
+          - "Shared/Theme/Animations.swift"
     settings:
       base:
         INFOPLIST_FILE: CropCopilot/Info.plist

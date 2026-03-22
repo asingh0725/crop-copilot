@@ -2,11 +2,14 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   CreateInputCommandSchema,
+  CreditsUpdatedEventSchema,
   CreateUploadUrlRequestSchema,
   IngestionBatchMessageSchema,
+  RecommendationPremiumReadyEventSchema,
   RecommendationReadyEventSchema,
   RecommendationJobRequestedSchema,
   RecommendationJobStatusResponseSchema,
+  SubscriptionUpdatedEventSchema,
   SyncPullRequestSchema,
   SyncPullResponseSchema,
 } from './index';
@@ -19,10 +22,15 @@ test('CreateInputCommandSchema validates expected payload', () => {
     description: 'Leaf spot and yellow halo',
     crop: 'Tomato',
     location: 'CA',
+    fieldAcreage: 42.5,
+    plannedApplicationDate: '2026-03-01',
+    fieldLatitude: 38.58,
+    fieldLongitude: -121.49,
   });
 
   assert.equal(value.type, 'PHOTO');
   assert.equal(value.crop, 'Tomato');
+  assert.equal(value.fieldAcreage, 42.5);
 });
 
 test('RecommendationJobStatusResponseSchema allows completed job with result', () => {
@@ -126,6 +134,49 @@ test('RecommendationReadyEventSchema supports trace correlation metadata', () =>
   });
 
   assert.equal(parsed.traceId, 'req_abc12345');
+});
+
+test('RecommendationPremiumReadyEventSchema validates premium-ready event', () => {
+  const parsed = RecommendationPremiumReadyEventSchema.parse({
+    eventType: 'recommendation.premium_ready',
+    eventVersion: '1',
+    occurredAt: '2026-02-16T12:00:00.000Z',
+    userId: '11111111-1111-4111-8111-111111111111',
+    recommendationId: '8b679b28-877f-48db-b3c6-b4e50273ef79',
+    status: 'ready',
+    riskReview: 'needs_manual_verification',
+  });
+
+  assert.equal(parsed.status, 'ready');
+});
+
+test('SubscriptionUpdatedEventSchema validates subscription-updated event', () => {
+  const parsed = SubscriptionUpdatedEventSchema.parse({
+    eventType: 'subscription.updated',
+    eventVersion: '1',
+    occurredAt: '2026-02-16T12:00:00.000Z',
+    userId: '11111111-1111-4111-8111-111111111111',
+    status: 'active',
+    tier: 'grower_free',
+    periodStart: '2026-02-01T00:00:00.000Z',
+    periodEnd: '2026-03-01T00:00:00.000Z',
+  });
+
+  assert.equal(parsed.tier, 'grower_free');
+});
+
+test('CreditsUpdatedEventSchema validates credit ledger event', () => {
+  const parsed = CreditsUpdatedEventSchema.parse({
+    eventType: 'credits.updated',
+    eventVersion: '1',
+    occurredAt: '2026-02-16T12:00:00.000Z',
+    userId: '11111111-1111-4111-8111-111111111111',
+    deltaUsd: 0.05,
+    reason: 'detailed_feedback_reward',
+    balanceUsd: 1.45,
+  });
+
+  assert.equal(parsed.deltaUsd, 0.05);
 });
 
 test('IngestionBatchMessageSchema validates batch ingestion request', () => {

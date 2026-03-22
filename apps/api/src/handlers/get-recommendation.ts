@@ -3,7 +3,11 @@ import { Pool } from 'pg';
 import { withAuth } from '../auth/with-auth';
 import type { AuthVerifier } from '../auth/types';
 import { jsonResponse } from '../lib/http';
+import { getSubscriptionSnapshot, tierIsPro } from '../lib/entitlements';
 import { resolvePoolSslConfig, sanitizeDatabaseUrlForPool } from '../lib/store';
+import { getPremiumEnrichmentQueue } from '../queue/premium-enrichment-queue';
+import { upsertPremiumInsight } from '../premium/premium-store';
+import { DEFAULT_ADVISORY_NOTICE, type RiskReviewDecision } from '../premium/types';
 
 interface RecommendationRow {
   id: string;
@@ -19,6 +23,10 @@ interface RecommendationRow {
   input_crop: string | null;
   input_location: string | null;
   input_season: string | null;
+  input_field_acreage: number | null;
+  input_planned_application_date: Date | string | null;
+  input_field_latitude: number | null;
+  input_field_longitude: number | null;
   input_created_at: Date | string;
 }
 
@@ -66,6 +74,35 @@ interface DiagnosisProduct {
   alternativeIds?: unknown;
   product?: unknown;
   priority?: unknown;
+}
+
+interface PremiumInsightRow {
+  status: 'not_available' | 'queued' | 'processing' | 'ready' | 'failed';
+  compliance_decision:
+    | 'pass'
+    | 'block'
+    | 'review'
+    | 'clear_signal'
+    | 'potential_conflict'
+    | 'needs_manual_verification'
+    | null;
+  checks: unknown;
+  cost_analysis: unknown;
+  spray_windows: unknown;
+  report: unknown;
+  failure_reason: string | null;
+}
+
+interface PremiumResponsePayload {
+  status: 'not_available' | 'queued' | 'processing' | 'ready' | 'failed';
+  riskReview: RiskReviewDecision | null;
+  complianceDecision: RiskReviewDecision | null;
+  checks: unknown[];
+  costAnalysis: Record<string, unknown> | null;
+  sprayWindows: unknown[];
+  advisoryNotice: string;
+  report: Record<string, unknown> | null;
+  failureReason: string | null;
 }
 
 let recommendationDetailPool: Pool | null = null;
@@ -183,6 +220,49 @@ function asNumber(value: unknown): number | null {
   return null;
 }
 
+function normalizeRiskReviewDecision(value: string | null | undefined): RiskReviewDecision | null {
+  if (!value) {
+    return null;
+  }
+
+  switch (value) {
+    case 'pass':
+      return 'clear_signal';
+    case 'block':
+      return 'potential_conflict';
+    case 'review':
+      return 'needs_manual_verification';
+    case 'clear_signal':
+    case 'potential_conflict':
+    case 'needs_manual_verification':
+      return value;
+    default:
+      return null;
+  }
+}
+
+function normalizePremiumChecks(value: unknown): unknown[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value.map((raw) => {
+    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
+      return raw;
+    }
+
+    const record = raw as Record<string, unknown>;
+    const result = normalizeRiskReviewDecision(
+      typeof record.result === 'string' ? record.result : null
+    );
+
+    return {
+      ...record,
+      result: result ?? record.result ?? null,
+    };
+  });
+}
+
 function extractDiagnosisProducts(
   base: Record<string, unknown>,
   diagnosisNode: Record<string, unknown>
@@ -222,6 +302,10 @@ const recommendationSelectQuery = `
     i.crop AS input_crop,
     i.location AS input_location,
     i.season AS input_season,
+    i."fieldAcreage" AS input_field_acreage,
+    i."plannedApplicationDate" AS input_planned_application_date,
+    i."fieldLatitude" AS input_field_latitude,
+    i."fieldLongitude" AS input_field_longitude,
     i."createdAt" AS input_created_at
   FROM "Recommendation" r
   JOIN "Input" i ON i.id = r."inputId"
@@ -245,6 +329,10 @@ const recommendationByInputQuery = `
     i.crop AS input_crop,
     i.location AS input_location,
     i.season AS input_season,
+    i."fieldAcreage" AS input_field_acreage,
+    i."plannedApplicationDate" AS input_planned_application_date,
+    i."fieldLatitude" AS input_field_latitude,
+    i."fieldLongitude" AS input_field_longitude,
     i."createdAt" AS input_created_at
   FROM "Recommendation" r
   JOIN "Input" i ON i.id = r."inputId"
@@ -290,6 +378,20 @@ const recommendationProductsQuery = `
   JOIN "Product" p ON p.id = pr."productId"
   WHERE pr."recommendationId" = $1
   ORDER BY pr.priority ASC, pr."createdAt" ASC
+`;
+
+const recommendationPremiumQuery = `
+  SELECT
+    status,
+    "complianceDecision" AS compliance_decision,
+    checks,
+    "costAnalysis" AS cost_analysis,
+    "sprayWindows" AS spray_windows,
+    report,
+    "failureReason" AS failure_reason
+  FROM "RecommendationPremiumInsight"
+  WHERE "recommendationId" = $1
+  LIMIT 1
 `;
 
 function normalizeDiagnosisPayload(
@@ -399,6 +501,83 @@ function parseSourceLimit(rawValue: string | undefined): number {
   }
 
   return Math.min(parsed, 100);
+}
+
+function buildPremiumUnavailable(): PremiumResponsePayload {
+  return {
+    status: 'not_available',
+    riskReview: null,
+    complianceDecision: null,
+    checks: [],
+    costAnalysis: null,
+    sprayWindows: [],
+    advisoryNotice: DEFAULT_ADVISORY_NOTICE,
+    report: null,
+    failureReason: null,
+  };
+}
+
+function buildPremiumQueued(): PremiumResponsePayload {
+  return {
+    status: 'queued',
+    riskReview: null,
+    complianceDecision: null,
+    checks: [],
+    costAnalysis: null,
+    sprayWindows: [],
+    advisoryNotice: DEFAULT_ADVISORY_NOTICE,
+    report: null,
+    failureReason: null,
+  };
+}
+
+function mapPremiumInsight(row: PremiumInsightRow): PremiumResponsePayload {
+  return {
+    status: row.status,
+    riskReview: normalizeRiskReviewDecision(row.compliance_decision),
+    complianceDecision: normalizeRiskReviewDecision(row.compliance_decision),
+    checks: normalizePremiumChecks(row.checks),
+    costAnalysis:
+      row.cost_analysis &&
+      typeof row.cost_analysis === 'object' &&
+      !Array.isArray(row.cost_analysis)
+        ? (row.cost_analysis as Record<string, unknown>)
+        : null,
+    sprayWindows: Array.isArray(row.spray_windows) ? row.spray_windows : [],
+    advisoryNotice: DEFAULT_ADVISORY_NOTICE,
+    report:
+      row.report && typeof row.report === 'object' && !Array.isArray(row.report)
+        ? (row.report as Record<string, unknown>)
+        : null,
+    failureReason: row.failure_reason,
+  };
+}
+
+async function queuePremiumRefresh(args: {
+  pool: Pool;
+  userId: string;
+  recommendationId: string;
+  requestId: string;
+}): Promise<void> {
+  await getPremiumEnrichmentQueue().publishPremiumEnrichment({
+    messageType: 'premium.enrichment.requested',
+    messageVersion: '1',
+    requestedAt: new Date().toISOString(),
+    traceId: args.requestId,
+    userId: args.userId,
+    recommendationId: args.recommendationId,
+  });
+
+  await upsertPremiumInsight(args.pool, args.userId, args.recommendationId, {
+    status: 'queued',
+    riskReview: null,
+    complianceDecision: null,
+    checks: [],
+    costAnalysis: null,
+    sprayWindows: [],
+    advisoryNotice: DEFAULT_ADVISORY_NOTICE,
+    report: null,
+  });
 }
 
 function buildRecommendedProductsFromDiagnosis(
@@ -516,12 +695,14 @@ export function buildGetRecommendationHandler(
       }
 
       const recommendation = recommendationResult.rows[0];
-      const [sourcesResult, productsResult] = await Promise.all([
+      const [sourcesResult, productsResult, premiumResult, subscription] = await Promise.all([
         pool.query<RecommendationSourceRow>(recommendationSourcesQuery, [
           recommendation.id,
           sourceLimit,
         ]),
         pool.query<ProductRecommendationRow>(recommendationProductsQuery, [recommendation.id]),
+        pool.query<PremiumInsightRow>(recommendationPremiumQuery, [recommendation.id]),
+        getSubscriptionSnapshot(pool, auth.userId),
       ]);
 
       const sources = sourcesResult.rows.map((row) => ({
@@ -561,6 +742,33 @@ export function buildGetRecommendationHandler(
               priority: row.priority,
             }))
           : buildRecommendedProductsFromDiagnosis(normalizedDiagnosis);
+      const isPremiumEligible =
+        (subscription.status === 'active' || subscription.status === 'trialing') &&
+        tierIsPro(subscription.planId);
+      const premiumRow = premiumResult.rows[0];
+      const shouldQueuePremium = isPremiumEligible && (!premiumRow || premiumRow.status === 'not_available');
+
+      let premium: PremiumResponsePayload = premiumRow
+        ? mapPremiumInsight(premiumRow)
+        : buildPremiumUnavailable();
+
+      if (shouldQueuePremium) {
+        premium = buildPremiumQueued();
+        try {
+          await queuePremiumRefresh({
+            pool,
+            userId: auth.userId,
+            recommendationId: recommendation.id,
+            requestId: event.requestContext.requestId,
+          });
+        } catch (error) {
+          console.warn('Failed to enqueue premium enrichment from recommendation detail', {
+            recommendationId: recommendation.id,
+            userId: auth.userId,
+            error: (error as Error).message,
+          });
+        }
+      }
 
       return jsonResponse(
         {
@@ -578,10 +786,17 @@ export function buildGetRecommendationHandler(
             crop: recommendation.input_crop,
             location: recommendation.input_location,
             season: recommendation.input_season,
+            fieldAcreage: recommendation.input_field_acreage,
+            plannedApplicationDate: recommendation.input_planned_application_date
+              ? toIsoString(recommendation.input_planned_application_date)
+              : null,
+            fieldLatitude: recommendation.input_field_latitude,
+            fieldLongitude: recommendation.input_field_longitude,
             createdAt: toIsoString(recommendation.input_created_at),
           },
           sources,
           recommendedProducts,
+          premium,
         },
         { statusCode: 200 }
       );

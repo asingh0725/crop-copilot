@@ -25,6 +25,11 @@ export class DbSourceRegistry implements SourceRegistry {
   constructor(private readonly pool: Pool) {}
 
   async listDueSources(now: Date): Promise<IngestionSourceDescriptor[]> {
+    const configuredLimit = Number(process.env.INGESTION_BATCH_MAX_SOURCES ?? 100);
+    const maxSources = Number.isFinite(configuredLimit)
+      ? Math.max(1, Math.min(Math.floor(configuredLimit), 500))
+      : 100;
+
     const result = await this.pool.query<SourceRow>(
       `
         SELECT
@@ -36,6 +41,11 @@ export class DbSourceRegistry implements SourceRegistry {
         FROM "Source"
         WHERE status NOT IN ('archived')
           AND url IS NOT NULL
+          AND url NOT ILIKE 'https://vertexaisearch.cloud.google.com/%'
+          AND url NOT ILIKE 'https://www.google.com/search%'
+          AND url NOT ILIKE 'https://google.com/search%'
+          AND url NOT ILIKE 'https://www.google.com/url%'
+          AND url NOT ILIKE 'https://google.com/url%'
           AND (
             "lastScrapedAt" IS NULL
             OR "lastScrapedAt" < $1::timestamptz - make_interval(hours => "freshnessHours")
@@ -43,9 +53,9 @@ export class DbSourceRegistry implements SourceRegistry {
         ORDER BY
           CASE priority WHEN 'high' THEN 0 WHEN 'medium' THEN 1 ELSE 2 END,
           "lastScrapedAt" ASC NULLS FIRST
-        LIMIT 100
+        LIMIT $2
       `,
-      [now.toISOString()],
+      [now.toISOString(), maxSources],
     );
 
     return result.rows.map((row) => ({

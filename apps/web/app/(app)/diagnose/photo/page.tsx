@@ -4,6 +4,12 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import { getBrowserApiBase } from "@/lib/api-client"
+import { emitCreditsRefresh } from "@/lib/credits-events"
+import {
+  normalizeSubscriptionTier,
+  planningPayloadFromInputValues,
+  type SubscriptionTier,
+} from "@/lib/diagnose-entitlements"
 import Link from "next/link"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -16,6 +22,7 @@ import {
 } from "@/lib/validations/diagnose"
 import { CROP_OPTIONS, LOCATIONS } from "@/lib/constants/profile"
 import { ImageUploadZone } from "@/components/diagnose/image-upload-zone"
+import { PlanningLocationFields } from "@/components/diagnose/planning-location-fields"
 import { AnalyzingLoader } from "@/components/diagnose/analyzing-loader"
 import { Button } from "@/components/ui/button"
 import {
@@ -68,6 +75,7 @@ export default function PhotoDiagnosePage() {
   const [isLoading, setIsLoading] = useState(false)
   const [loadingStage, setLoadingStage] = useState<"uploading" | "analyzing">("uploading")
   const [isFetching, setIsFetching] = useState(true)
+  const [subscriptionTier, setSubscriptionTier] = useState<SubscriptionTier>("grower_free")
   const [imageFile, setImageFile] = useState<File | null>(null)
   const [imageError, setImageError] = useState<string>('')
 
@@ -80,6 +88,10 @@ export default function PhotoDiagnosePage() {
       growthStage: '',
       locationState: '',
       locationCountry: 'US',
+      fieldAcreage: '',
+      plannedApplicationDate: '',
+      fieldLatitude: '',
+      fieldLongitude: '',
     },
   })
 
@@ -91,11 +103,18 @@ export default function PhotoDiagnosePage() {
         const supabase = createClient()
         const { data: { session } } = await supabase.auth.getSession()
         const base = getBrowserApiBase()
-        const response = await fetch(`${base}/api/v1/profile`, {
-          headers: { Authorization: `Bearer ${session?.access_token ?? ''}` },
-        })
-        if (response.ok) {
-          const { profile } = await response.json()
+        const token = session?.access_token ?? ''
+        const [profileResponse, subscriptionResponse] = await Promise.all([
+          fetch(`${base}/api/v1/profile`, {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
+          fetch(`${base}/api/v1/subscription`, {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
+        ])
+
+        if (profileResponse.ok) {
+          const { profile } = await profileResponse.json()
           if (profile?.location) {
             const location = LOCATIONS.find(loc => loc.value === profile.location)
             if (location) {
@@ -103,6 +122,15 @@ export default function PhotoDiagnosePage() {
               form.setValue('locationCountry', location.country)
             }
           }
+        }
+
+        if (subscriptionResponse.ok) {
+          const body = (await subscriptionResponse.json()) as {
+            subscription?: { planId?: string }
+          }
+          setSubscriptionTier(normalizeSubscriptionTier(body.subscription?.planId))
+        } else {
+          setSubscriptionTier("grower_free")
         }
       } catch (error) {
         console.error('Error fetching profile:', error)
@@ -161,6 +189,15 @@ export default function PhotoDiagnosePage() {
       }
 
       const imageUrl = uploadUrl.split('?')[0]
+      const planningPayload = planningPayloadFromInputValues(
+        {
+          fieldAcreage: data.fieldAcreage,
+          plannedApplicationDate: data.plannedApplicationDate,
+          fieldLatitude: data.fieldLatitude,
+          fieldLongitude: data.fieldLongitude,
+        },
+        subscriptionTier
+      )
 
       // Step 2: Enqueue recommendation generation.
       setLoadingStage("analyzing")
@@ -178,6 +215,10 @@ export default function PhotoDiagnosePage() {
           crop: data.crop,
           season: data.growthStage,
           location: `${data.locationState}, ${data.locationCountry}`,
+          fieldAcreage: planningPayload.fieldAcreage,
+          plannedApplicationDate: planningPayload.plannedApplicationDate,
+          fieldLatitude: planningPayload.fieldLatitude,
+          fieldLongitude: planningPayload.fieldLongitude,
         }),
       })
 
@@ -193,6 +234,7 @@ export default function PhotoDiagnosePage() {
       }
 
       toast.success('Recommendation generated!')
+      emitCreditsRefresh("recommendation_generated")
       router.push(`/recommendations/${recommendation}`)
     } catch (error) {
       console.error('Error submitting diagnosis:', error)
@@ -415,6 +457,8 @@ export default function PhotoDiagnosePage() {
                   )}
                 />
               </div>
+
+              <PlanningLocationFields form={form as any} tier={subscriptionTier} />
 
               {/* Submit Button */}
               <div className="flex justify-end space-x-4 pt-4">
