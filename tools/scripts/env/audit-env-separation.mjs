@@ -33,7 +33,6 @@ function hasBranch(branchName) {
 function workflowContains(relativePath, needle) {
   return exists(relativePath) && fileIncludes(relativePath, needle);
 }
-
 const checks = [
   {
     id: 'workflow_env',
@@ -47,13 +46,13 @@ const checks = [
   },
   {
     id: 'branch_env',
-    description: 'Local codex/env branch exists',
-    pass: hasBranch('codex/env'),
+    description: 'Local env branch exists',
+    pass: hasBranch('env') || hasBranch('codex/env'),
   },
   {
     id: 'branch_prod',
-    description: 'Local codex/prod branch exists',
-    pass: hasBranch('codex/prod'),
+    description: 'Local prod branch exists',
+    pass: hasBranch('prod') || hasBranch('codex/prod'),
   },
   {
     id: 'infra_env_dev_template',
