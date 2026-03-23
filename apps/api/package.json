@@ -10,6 +10,7 @@
     "audit:recommendation-quality": "tsx src/scripts/audit-recommendation-quality.ts",
     "audit:launch-gates": "tsx src/scripts/launch-quality-gate-report.ts",
     "repair:recommendation-sources": "tsx src/scripts/repair-recommendation-sources.ts",
+    "repair:crop-alignment-citations": "tsx src/scripts/repair-crop-alignment-and-citations.ts",
     "backfill:recommendations-quality": "tsx src/scripts/backfill-recommendations-quality.ts",
     "backfill:retrieval-audit-ids": "tsx src/scripts/backfill-retrieval-audit-recommendation-ids.ts",
     "backfill:premium-insights": "tsx src/scripts/backfill-premium-insights.ts",
