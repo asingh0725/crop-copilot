@@ -20,7 +20,7 @@ const DEFAULT_BUDGETS: Record<EnvironmentName, number> = {
 
 const DEFAULT_REGIONS: Record<EnvironmentName, string> = {
   dev: 'ca-west-1',
-  prod: 'us-west-1',
+  prod: 'us-west-2',
 };
 
 const DEFAULT_MAX_RECOMMENDATION_COST_USD: Record<EnvironmentName, number> = {

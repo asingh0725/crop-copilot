@@ -6,7 +6,7 @@ import type {
 import { jsonResponse } from '../lib/http';
 import { AuthError } from './errors';
 import type { AuthContext, AuthVerifier } from './types';
-import { verifyAccessTokenFromEvent } from './supabase-auth';
+import { verifyAccessTokenFromEvent } from './verify-access-token';
 
 export type AuthenticatedHandler = (
   event: APIGatewayProxyEventV2,

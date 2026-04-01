@@ -5,11 +5,10 @@ import * as sns from 'aws-cdk-lib/aws-sns';
 import * as subscriptions from 'aws-cdk-lib/aws-sns-subscriptions';
 import * as ssm from 'aws-cdk-lib/aws-ssm';
 import * as sqs from 'aws-cdk-lib/aws-sqs';
-import * as sfn from 'aws-cdk-lib/aws-stepfunctions';
-import * as events from 'aws-cdk-lib/aws-events';
-import * as targets from 'aws-cdk-lib/aws-events-targets';
 import * as cloudwatch from 'aws-cdk-lib/aws-cloudwatch';
 import * as cloudwatchActions from 'aws-cdk-lib/aws-cloudwatch-actions';
+import * as cognito from 'aws-cdk-lib/aws-cognito';
+import * as lambda from 'aws-cdk-lib/aws-lambda';
 import { Construct } from 'constructs';
 import type { EnvironmentConfig } from '../config';
 
@@ -26,6 +25,8 @@ export class FoundationStack extends Stack {
   readonly modelTrainingTriggerQueue: sqs.IQueue;
   readonly pushEventsTopic: sns.ITopic;
   readonly billingAlertsTopicArn: string;
+  readonly authUserPool: cognito.IUserPool;
+  readonly authUserPoolClient: cognito.IUserPoolClient;
 
   constructor(scope: Construct, id: string, props: FoundationStackProps) {
     super(scope, id, props);
@@ -37,6 +38,71 @@ export class FoundationStack extends Stack {
     }
 
     const shouldRetainData = config.envName === 'prod';
+    const parameterPrefix = `/${config.projectSlug}/${config.envName}`;
+
+    // ── Cognito Auth Foundation ────────────────────────────────────────────────
+    const preSignUpTrigger = new lambda.Function(this, 'CognitoPreSignUpTrigger', {
+      runtime: lambda.Runtime.NODEJS_22_X,
+      handler: 'index.handler',
+      code: lambda.Code.fromInline(`
+exports.handler = async (event) => {
+  if (event?.request?.userAttributes?.email) {
+    event.response.autoConfirmUser = true;
+    event.response.autoVerifyEmail = true;
+  }
+  return event;
+};
+      `),
+      timeout: Duration.seconds(10),
+      description: 'Auto-confirms Crop Copilot Cognito signups so web/iOS can sign in immediately.',
+    });
+
+    const authUserPool = new cognito.UserPool(this, 'AuthUserPool', {
+      userPoolName: `${config.projectSlug}-${config.envName}-auth`,
+      selfSignUpEnabled: true,
+      signInAliases: { email: true },
+      autoVerify: { email: true },
+      standardAttributes: {
+        email: {
+          required: true,
+          mutable: true,
+        },
+      },
+      passwordPolicy: {
+        minLength: 10,
+        requireLowercase: true,
+        requireUppercase: true,
+        requireDigits: true,
+        requireSymbols: false,
+      },
+      accountRecovery: cognito.AccountRecovery.EMAIL_ONLY,
+      lambdaTriggers: {
+        preSignUp: preSignUpTrigger,
+      },
+      removalPolicy: shouldRetainData ? RemovalPolicy.RETAIN : RemovalPolicy.DESTROY,
+    });
+    this.authUserPool = authUserPool;
+
+    const authUserPoolClient = authUserPool.addClient('AuthUserPoolClient', {
+      userPoolClientName: `${config.projectSlug}-${config.envName}-web`,
+      authFlows: {
+        userPassword: true,
+        userSrp: true,
+      },
+      preventUserExistenceErrors: true,
+      accessTokenValidity: Duration.hours(1),
+      idTokenValidity: Duration.hours(1),
+      refreshTokenValidity: Duration.days(30),
+      enableTokenRevocation: true,
+      readAttributes: new cognito.ClientAttributes().withStandardAttributes({
+        email: true,
+        emailVerified: true,
+      }),
+      writeAttributes: new cognito.ClientAttributes().withStandardAttributes({
+        email: true,
+      }),
+    });
+    this.authUserPoolClient = authUserPoolClient;
 
     // ── S3 Artifacts Bucket ────────────────────────────────────────────────────
     const artifactsBucket = new s3.Bucket(this, 'ArtifactsBucket', {
@@ -86,8 +152,6 @@ export class FoundationStack extends Stack {
     }
 
     this.billingAlertsTopicArn = billingAlertsTopic.topicArn;
-
-    const parameterPrefix = `/${config.projectSlug}/${config.envName}`;
 
     // ── SQS Queues ─────────────────────────────────────────────────────────────
     const recommendationDlq = new sqs.Queue(this, 'RecommendationJobDlq', {
@@ -380,7 +444,7 @@ export class FoundationStack extends Stack {
     // ── CloudWatch Dashboard (prod only — saves ~$3/month per non-prod env) ────
     if (config.envName === 'prod') {
       const opsDashboard = new cloudwatch.Dashboard(this, 'OpsDashboard', {
-        dashboardName: `${config.projectSlug}-${config.envName}-ops-${this.account}`,
+        dashboardName: `${config.projectSlug}-${config.envName}-ops`,
       });
 
       opsDashboard.addWidgets(
@@ -445,56 +509,6 @@ export class FoundationStack extends Stack {
       });
     }
 
-    // ── Step Functions — Express workflows (cheaper for short-lived pipelines) ─
-    const pipelineDefinition = new sfn.Pass(this, 'RetrievingContext')
-      .next(new sfn.Pass(this, 'GeneratingRecommendation'))
-      .next(new sfn.Pass(this, 'ValidatingOutput'))
-      .next(new sfn.Pass(this, 'PersistingResult'))
-      .next(new sfn.Succeed(this, 'RecommendationCompleted'));
-
-    const recommendationPipelineStateMachine = new sfn.StateMachine(
-      this,
-      'RecommendationPipelineStateMachine',
-      {
-        definitionBody: sfn.DefinitionBody.fromChainable(pipelineDefinition),
-        stateMachineType: sfn.StateMachineType.EXPRESS,
-      }
-    );
-
-    const ingestionPipelineDefinition = new sfn.Pass(this, 'DiscoverSources')
-      .next(new sfn.Pass(this, 'ScrapeSources'))
-      .next(new sfn.Pass(this, 'ParseAndChunk'))
-      .next(new sfn.Pass(this, 'EmbedAndUpsert'))
-      .next(new sfn.Succeed(this, 'IngestionCompleted'));
-
-    const ingestionPipelineStateMachine = new sfn.StateMachine(
-      this,
-      'IngestionPipelineStateMachine',
-      {
-        definitionBody: sfn.DefinitionBody.fromChainable(ingestionPipelineDefinition),
-        stateMachineType: sfn.StateMachineType.EXPRESS,
-      }
-    );
-
-    // ── EventBridge Schedule ───────────────────────────────────────────────────
-    const ingestionScheduleRule = new events.Rule(this, 'IngestionScheduleRule', {
-      ruleName: `${config.projectSlug}-${config.envName}-ingestion-schedule`,
-      schedule: events.Schedule.cron({
-        minute: '0',
-        hour: '6',
-      }),
-      description: 'Triggers ingestion orchestration every day at 06:00 UTC.',
-    });
-
-    ingestionScheduleRule.addTarget(
-      new targets.SfnStateMachine(ingestionPipelineStateMachine, {
-        input: events.RuleTargetInput.fromObject({
-          trigger: 'scheduled',
-          source: 'eventbridge',
-        }),
-      })
-    );
-
     // ── SSM Parameters ─────────────────────────────────────────────────────────
     new ssm.StringParameter(this, 'ParameterApiBaseUrl', {
       parameterName: `${parameterPrefix}/platform/api/base-url`,
@@ -514,6 +528,24 @@ export class FoundationStack extends Stack {
       description: 'Primary Bedrock generation model identifier.',
     });
 
+    new ssm.StringParameter(this, 'ParameterCognitoRegion', {
+      parameterName: `${parameterPrefix}/auth/cognito/region`,
+      stringValue: config.region,
+      description: 'AWS region hosting the Crop Copilot Cognito user pool.',
+    });
+
+    new ssm.StringParameter(this, 'ParameterCognitoUserPoolId', {
+      parameterName: `${parameterPrefix}/auth/cognito/user-pool-id`,
+      stringValue: authUserPool.userPoolId,
+      description: 'Cognito user pool ID for Crop Copilot authentication.',
+    });
+
+    new ssm.StringParameter(this, 'ParameterCognitoAppClientId', {
+      parameterName: `${parameterPrefix}/auth/cognito/app-client-id`,
+      stringValue: authUserPoolClient.userPoolClientId,
+      description: 'Cognito app client ID for Crop Copilot authentication.',
+    });
+
     new ssm.StringParameter(this, 'ParameterRecommendationQueueUrl', {
       parameterName: `${parameterPrefix}/pipeline/recommendation-queue-url`,
       stringValue: recommendationQueue.queueUrl,
@@ -524,12 +556,6 @@ export class FoundationStack extends Stack {
       parameterName: `${parameterPrefix}/pipeline/premium-enrichment-queue-url`,
       stringValue: premiumEnrichmentQueue.queueUrl,
       description: 'SQS queue URL for premium enrichment jobs.',
-    });
-
-    new ssm.StringParameter(this, 'ParameterRecommendationStateMachineArn', {
-      parameterName: `${parameterPrefix}/pipeline/recommendation-state-machine-arn`,
-      stringValue: recommendationPipelineStateMachine.stateMachineArn,
-      description: 'Step Functions ARN for recommendation pipeline orchestration.',
     });
 
     new ssm.StringParameter(this, 'ParameterPushEventsTopicArn', {
@@ -548,12 +574,6 @@ export class FoundationStack extends Stack {
       parameterName: `${parameterPrefix}/pipeline/compliance-ingestion-queue-url`,
       stringValue: complianceIngestionQueue.queueUrl,
       description: 'SQS queue URL for compliance ingestion batch requests.',
-    });
-
-    new ssm.StringParameter(this, 'ParameterIngestionStateMachineArn', {
-      parameterName: `${parameterPrefix}/pipeline/ingestion-state-machine-arn`,
-      stringValue: ingestionPipelineStateMachine.stateMachineArn,
-      description: 'Step Functions ARN for ingestion pipeline orchestration.',
     });
 
     if (config.costAlertEmail) {
@@ -575,6 +595,16 @@ export class FoundationStack extends Stack {
       description: 'SNS topic ARN for billing alarms and budget alerts.',
     });
 
+    new CfnOutput(this, 'CognitoUserPoolId', {
+      value: authUserPool.userPoolId,
+      description: 'Cognito user pool ID for Crop Copilot authentication.',
+    });
+
+    new CfnOutput(this, 'CognitoAppClientId', {
+      value: authUserPoolClient.userPoolClientId,
+      description: 'Cognito app client ID for Crop Copilot authentication.',
+    });
+
     new CfnOutput(this, 'SsmParameterPrefix', {
       value: parameterPrefix,
       description: 'Prefix for environment-scoped runtime configuration.',
@@ -583,11 +613,6 @@ export class FoundationStack extends Stack {
     new CfnOutput(this, 'RecommendationQueueUrl', {
       value: recommendationQueue.queueUrl,
       description: 'SQS queue URL for recommendation job requests.',
-    });
-
-    new CfnOutput(this, 'RecommendationStateMachineArn', {
-      value: recommendationPipelineStateMachine.stateMachineArn,
-      description: 'Step Functions state machine ARN for async recommendation pipeline.',
     });
 
     new CfnOutput(this, 'PremiumEnrichmentQueueUrl', {
@@ -610,9 +635,5 @@ export class FoundationStack extends Stack {
       description: 'SQS queue URL for compliance ingestion batch processing.',
     });
 
-    new CfnOutput(this, 'IngestionStateMachineArn', {
-      value: ingestionPipelineStateMachine.stateMachineArn,
-      description: 'Step Functions state machine ARN for ingestion orchestration.',
-    });
   }
 }

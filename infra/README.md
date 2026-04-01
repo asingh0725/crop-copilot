@@ -10,11 +10,10 @@ This package provisions the AWS foundation stack for Crop Copilot.
 - SQS recommendation job queue + DLQ
 - SQS ingestion queue + DLQ
 - SNS mobile push events topic
-- Step Functions recommendation pipeline scaffold
-- Step Functions ingestion pipeline scaffold + EventBridge schedule trigger
 - CloudWatch ops dashboard (queue depth, DLQ, latency, cost metrics)
 - CloudWatch alarms for queue backlog, DLQ depth, failures, and per-recommendation cost
 - SSM parameter namespace for platform runtime config
+- Cognito user pool + app client for first-party auth
 - API runtime stack (HTTP API + Lambda handlers + SQS workers)
 - PostgreSQL stack (RDS instance + credentials + SSM metadata)
 
@@ -36,9 +35,6 @@ Optional values:
 - `COST_ALERT_EMAIL`
 - `DATA_BACKEND`
 - `DATABASE_URL`
-- `COGNITO_REGION`
-- `COGNITO_USER_POOL_ID`
-- `COGNITO_APP_CLIENT_ID`
 - `SUPABASE_URL`
 - `SUPABASE_ANON_KEY`
 - `RECOMMENDATION_COST_USD`
@@ -53,6 +49,12 @@ Database cutover controls:
 - `API_DATABASE_MODE=external`: API runtime uses `DATABASE_URL` from env (current Supabase-compatible mode).
 - `API_DATABASE_MODE=aws`: API runtime uses the URL generated from the AWS RDS stack.
 
+Auth controls:
+- Foundation now provisions Cognito in AWS and passes `COGNITO_REGION`, `COGNITO_USER_POOL_ID`,
+  and `COGNITO_APP_CLIENT_ID` to the API runtime automatically.
+- Keep Supabase env only during migration/fallback; web should move to
+  `NEXT_PUBLIC_AUTH_PROVIDER=cognito` once Vercel env is updated.
+
 ## Commands
 
 ```bash
@@ -62,6 +64,7 @@ pnpm --filter infra synth
 pnpm --filter infra diff
 pnpm --filter infra bootstrap
 pnpm --filter infra deploy
+pnpm infra:deploy:github-ops
 ```
 
 ## Dev/Prod env separation
@@ -79,6 +82,17 @@ Then deploy with explicit environment:
 # from repository root
 CROP_ENV=dev pnpm infra:deploy:compliance
 CROP_ENV=prod pnpm infra:deploy:compliance
+```
+
+GitHub OIDC ops bootstrap:
+
+```bash
+aws sso login --profile cropcopilot-deploy
+export AWS_PROFILE=cropcopilot-deploy
+export AWS_REGION=us-west-2
+
+pnpm infra:deploy:github-ops
+pnpm github:sync:aws-oidc-vars
 ```
 
 CDK entrypoint (`infra/bin/crop-copilot.ts`) prefers env-scoped files

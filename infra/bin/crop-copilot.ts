@@ -80,9 +80,28 @@ import { FoundationStack } from '../lib/stacks/foundation-stack';
 import { ApiRuntimeStack } from '../lib/stacks/api-runtime-stack';
 import { DatabaseStack } from '../lib/stacks/database-stack';
 import { BudgetStack } from '../lib/stacks/budget-stack';
+import { GithubOpsStack } from '../lib/stacks/github-ops-stack';
 
 const app = new App();
 const config = loadEnvironmentConfig();
+const enableGithubOpsBootstrap =
+  (process.env.ENABLE_GITHUB_OPS_BOOTSTRAP ?? 'false').trim().toLowerCase() === 'true';
+const githubOpsOnly =
+  (process.env.GITHUB_OPS_ONLY ?? 'false').trim().toLowerCase() === 'true';
+
+if (enableGithubOpsBootstrap && config.envName === 'prod' && githubOpsOnly) {
+  new GithubOpsStack(app, `${config.projectSlug}-${config.envName}-github-ops`, {
+    env: {
+      account: config.accountId,
+      region: config.region,
+    },
+    description: `Crop Copilot GitHub OIDC operations roles (${config.envName})`,
+    config,
+  });
+
+  app.synth();
+  process.exit(0);
+}
 
 const foundation = new FoundationStack(app, `${config.projectSlug}-${config.envName}-foundation`, {
   env: {
@@ -128,3 +147,14 @@ new ApiRuntimeStack(app, `${config.projectSlug}-${config.envName}-api-runtime`, 
   foundation,
   database,
 });
+
+if (enableGithubOpsBootstrap && config.envName === 'prod') {
+  new GithubOpsStack(app, `${config.projectSlug}-${config.envName}-github-ops`, {
+    env: {
+      account: config.accountId,
+      region: config.region,
+    },
+    description: `Crop Copilot GitHub OIDC operations roles (${config.envName})`,
+    config,
+  });
+}

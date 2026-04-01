@@ -8,10 +8,31 @@ import { isBadRequestError, jsonResponse, parseJsonBody } from '../lib/http';
 import { resolvePoolSslConfig, sanitizeDatabaseUrlForPool } from '../lib/store';
 import { searchLivePricing, type PricingOffer } from '../lib/pricing-search';
 
-const PRICING_CACHE_TTL_MS = 6 * 60 * 60 * 1000; // 6 hours — matches iOS client TTL
+const DEFAULT_PRICING_BATCH_MAX_IDS = 10;
+const DEFAULT_PRICING_POSITIVE_CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+const DEFAULT_PRICING_NEGATIVE_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
+const DEFAULT_DAILY_LIVE_LOOKUP_LIMIT = 25;
+
+function parsePositiveInt(raw: string | undefined, fallback: number): number {
+  const parsed = Number.parseInt(raw ?? '', 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+}
+
+function resolvePricingCacheTtlMs(offers: PricingOffer[]): number {
+  if (offers.length === 0) {
+    return parsePositiveInt(
+      process.env.PRICING_NEGATIVE_CACHE_TTL_MS,
+      DEFAULT_PRICING_NEGATIVE_CACHE_TTL_MS
+    );
+  }
+  return parsePositiveInt(
+    process.env.PRICING_POSITIVE_CACHE_TTL_MS,
+    DEFAULT_PRICING_POSITIVE_CACHE_TTL_MS
+  );
+}
 
 const ProductPricingBatchSchema = z.object({
-  productIds: z.array(z.string().trim().min(1)).min(1).max(50),
+  productIds: z.array(z.string().trim().min(1)).min(1).max(DEFAULT_PRICING_BATCH_MAX_IDS),
   region: z.string().trim().min(1).max(200).optional(),
 });
 
@@ -81,7 +102,7 @@ async function storeCachedPricing(
   offers: PricingOffer[]
 ): Promise<void> {
   const now = new Date();
-  const expiresAt = new Date(now.getTime() + PRICING_CACHE_TTL_MS);
+  const expiresAt = new Date(now.getTime() + resolvePricingCacheTtlMs(offers));
   try {
     await db.query(
       `INSERT INTO "ProductPricingCache" (id, "productId", region, pricing, "cachedAt", "expiresAt")
@@ -92,6 +113,70 @@ async function storeCachedPricing(
     );
   } catch (err) {
     console.warn('[Pricing] Failed to store cache:', (err as Error).message);
+  }
+}
+
+async function countDailyLiveLookups(db: Pool, userId: string): Promise<number> {
+  try {
+    const result = await db.query<{ count: string }>(
+      `
+        SELECT COALESCE(SUM(units), 0)::text AS count
+        FROM "UsageLedger"
+        WHERE "userId" = $1
+          AND "usageType" = 'pricing_live_lookup'
+          AND "createdAt" >= NOW() - INTERVAL '24 hours'
+      `,
+      [userId]
+    );
+    return Number(result.rows[0]?.count ?? 0);
+  } catch (error) {
+    console.warn('[Pricing] Failed to read live lookup usage:', {
+      userId,
+      error: (error as Error).message,
+    });
+    return 0;
+  }
+}
+
+async function recordDailyLiveLookup(
+  db: Pool,
+  userId: string,
+  productId: string,
+  region: string
+): Promise<void> {
+  const usageMonth = new Date().toISOString().slice(0, 7);
+  try {
+    await db.query(
+      `
+        INSERT INTO "UsageLedger" (
+          id,
+          "userId",
+          "recommendationId",
+          "inputId",
+          "usageType",
+          "usageMonth",
+          units,
+          metadata,
+          "createdAt"
+        )
+        VALUES ($1, $2, NULL, NULL, 'pricing_live_lookup', $3, 1, $4::jsonb, NOW())
+      `,
+      [
+        randomUUID(),
+        userId,
+        usageMonth,
+        JSON.stringify({
+          productId,
+          region,
+        }),
+      ]
+    );
+  } catch (error) {
+    console.warn('[Pricing] Failed to record live lookup usage:', {
+      userId,
+      productId,
+      error: (error as Error).message,
+    });
   }
 }
 
@@ -123,7 +208,7 @@ function buildPricingEntry(
 export function buildGetProductPricingBatchHandler(
   verifier?: AuthVerifier
 ): APIGatewayProxyHandlerV2 {
-  return withAuth(async (event) => {
+  return withAuth(async (event, auth) => {
     let payload: z.infer<typeof ProductPricingBatchSchema>;
     try {
       payload = ProductPricingBatchSchema.parse(parseJsonBody<unknown>(event.body));
@@ -140,9 +225,28 @@ export function buildGetProductPricingBatchHandler(
     }
 
     const productIds = Array.from(new Set(payload.productIds));
+    const maxProductIds = parsePositiveInt(
+      process.env.PRICING_BATCH_MAX_IDS,
+      DEFAULT_PRICING_BATCH_MAX_IDS
+    );
+    if (productIds.length > maxProductIds) {
+      return jsonResponse(
+        {
+          error: {
+            code: 'BAD_REQUEST',
+            message: `A maximum of ${maxProductIds} products can be priced per request.`,
+          },
+        },
+        { statusCode: 400 }
+      );
+    }
     const region = payload.region ?? process.env.DEFAULT_PRICING_REGION ?? 'United States';
     const regionKey = normalizeRegionKey(region);
     const db = getPool();
+    const dailyLookupLimit = parsePositiveInt(
+      process.env.PRICING_BATCH_DAILY_LIVE_LOOKUP_LIMIT,
+      DEFAULT_DAILY_LIVE_LOOKUP_LIMIT
+    );
 
     // Fetch product metadata
     let products: ProductRow[] = [];
@@ -172,29 +276,37 @@ export function buildGetProductPricingBatchHandler(
     }
 
     // For each product: check cache, live-search if needed
-    const pricingEntries = await Promise.all(
-      products.map(async (row) => {
-        const cached = await getCachedPricing(db, row.id, regionKey);
-        if (cached !== null) {
-          console.log(`[Pricing] Cache hit for ${row.id} (${regionKey})`);
-          return buildPricingEntry(row, cached, region);
-        }
+    let liveLookupsUsed = await countDailyLiveLookups(db, auth.userId);
+    const pricingEntries = [];
+    for (const row of products) {
+      const cached = await getCachedPricing(db, row.id, regionKey);
+      if (cached !== null) {
+        console.log(`[Pricing] Cache hit for ${row.id} (${regionKey})`);
+        pricingEntries.push(buildPricingEntry(row, cached, region));
+        continue;
+      }
 
-        console.log(`[Pricing] Live search for "${row.name}" in ${region}`);
-        const offers = await searchLivePricing({
-          productName: row.name,
-          brand: row.brand,
-          region,
-          maxResults: 5,
+      if (liveLookupsUsed >= dailyLookupLimit) {
+        console.warn('[Pricing] Daily live lookup cap reached; returning cached-only result', {
+          userId: auth.userId,
+          dailyLookupLimit,
         });
+        pricingEntries.push(buildPricingEntry(row, [], region));
+        continue;
+      }
 
-        if (offers.length > 0) {
-          void storeCachedPricing(db, row.id, regionKey, offers);
-        }
-
-        return buildPricingEntry(row, offers, region);
-      })
-    );
+      console.log(`[Pricing] Live search for "${row.name}" in ${region}`);
+      const offers = await searchLivePricing({
+        productName: row.name,
+        brand: row.brand,
+        region,
+        maxResults: 3,
+      });
+      await storeCachedPricing(db, row.id, regionKey, offers);
+      await recordDailyLiveLookup(db, auth.userId, row.id, regionKey);
+      liveLookupsUsed += 1;
+      pricingEntries.push(buildPricingEntry(row, offers, region));
+    }
 
     return jsonResponse(
       {

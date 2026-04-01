@@ -1,27 +1,15 @@
-import { createServerClient, type CookieOptions } from '@supabase/ssr'
-import { cookies } from 'next/headers'
+import { cookies } from 'next/headers';
+import { createCognitoServerAuthClient } from '@/lib/auth/cognito-server-client';
+import { getAuthProvider } from '@/lib/auth/provider';
+import { createSupabaseServerAuthClient } from '@/lib/auth/supabase-adapter';
+import type { AppAuthClient } from '@/lib/auth/types';
 
-export async function createClient() {
-  const cookieStore = await cookies()
+export async function createClient(): Promise<AppAuthClient> {
+  const cookieStore = await cookies();
 
-  return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return cookieStore.getAll()
-        },
-        setAll(cookiesToSet) {
-          try {
-            cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, options)
-            )
-          } catch {
-            // Server component context
-          }
-        },
-      },
-    }
-  )
+  if (getAuthProvider() === 'cognito') {
+    return createCognitoServerAuthClient(cookieStore as any);
+  }
+
+  return createSupabaseServerAuthClient(cookieStore as any);
 }

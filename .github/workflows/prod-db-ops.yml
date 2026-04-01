@@ -1,0 +1,152 @@
+name: Prod DB Ops
+
+on:
+  workflow_dispatch:
+    inputs:
+      change_request:
+        description: Exact description of the production DB change
+        required: true
+        type: string
+      sql_file:
+        description: Repo-relative SQL file to apply
+        required: true
+        type: string
+      db_stack_name:
+        description: CloudFormation stack that owns the production DB
+        required: false
+        default: crop-copilot-prod-database
+        type: string
+      db_resource_logical_id:
+        description: Logical resource ID of the RDS instance in the stack
+        required: false
+        default: PostgresDatabase
+        type: string
+      snapshot_prefix:
+        description: Prefix for the fresh pre-change snapshot
+        required: false
+        default: crop-copilot-prod-pre-change
+        type: string
+      prod_change_approved:
+        description: Must be YES after reviewing the snapshot and backup plan
+        required: true
+        default: "NO"
+        type: choice
+        options:
+          - "NO"
+          - "YES"
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  db-ops:
+    name: Snapshot First Then Apply SQL
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    environment: production
+    env:
+      AWS_REGION: ${{ vars.AWS_REGION }}
+      AWS_ROLE_TO_ASSUME: ${{ vars.AWS_DB_OPS_ROLE_ARN }}
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      DB_STACK_NAME: ${{ inputs.db_stack_name }}
+      DB_RESOURCE_LOGICAL_ID: ${{ inputs.db_resource_logical_id }}
+      SQL_FILE: ${{ inputs.sql_file }}
+      CHANGE_REQUEST: ${{ inputs.change_request }}
+      SNAPSHOT_PREFIX: ${{ inputs.snapshot_prefix }}
+      PROD_CHANGE_APPROVED: ${{ inputs.prod_change_approved }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.AWS_ROLE_TO_ASSUME }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Validate inputs
+        run: |
+          set -euo pipefail
+          test -n "$DATABASE_URL"
+          test -n "$SQL_FILE"
+          test -f "$SQL_FILE"
+          if [ "$PROD_CHANGE_APPROVED" != "YES" ]; then
+            echo "prod_change_approved must be YES"
+            exit 1
+          fi
+
+      - name: Resolve DB instance identifier
+        run: |
+          set -euo pipefail
+          DB_INSTANCE_ID=$(aws cloudformation list-stack-resources \
+            --stack-name "$DB_STACK_NAME" \
+            --query "StackResourceSummaries[?LogicalResourceId=='$DB_RESOURCE_LOGICAL_ID'].PhysicalResourceId | [0]" \
+            --output text)
+          if [ -z "$DB_INSTANCE_ID" ] || [ "$DB_INSTANCE_ID" = "None" ]; then
+            echo "Failed to resolve DB instance from stack $DB_STACK_NAME logical id $DB_RESOURCE_LOGICAL_ID"
+            exit 1
+          fi
+          echo "DB_INSTANCE_ID=$DB_INSTANCE_ID" >> "$GITHUB_ENV"
+
+      - name: Create fresh RDS snapshot
+        run: |
+          set -euo pipefail
+          TIMESTAMP=$(date -u +%Y%m%d-%H%M%S)
+          SNAPSHOT_ID="${SNAPSHOT_PREFIX}-${TIMESTAMP}"
+          aws rds create-db-snapshot \
+            --db-instance-identifier "$DB_INSTANCE_ID" \
+            --db-snapshot-identifier "$SNAPSHOT_ID" \
+            --tags Key=Project,Value=crop-copilot Key=Environment,Value=prod Key=Purpose,Value=pre-change
+          aws rds wait db-snapshot-completed --db-snapshot-identifier "$SNAPSHOT_ID"
+          echo "PROD_SNAPSHOT_ID=$SNAPSHOT_ID" >> "$GITHUB_ENV"
+
+      - name: Ensure PostgreSQL client tools
+        run: |
+          set -euo pipefail
+          if ! command -v pg_dump >/dev/null 2>&1; then
+            sudo apt-get update
+            sudo apt-get install -y postgresql-client
+          fi
+
+      - name: Create logical backup
+        run: |
+          set -euo pipefail
+          mkdir -p backups
+          BACKUP_PATH="backups/${PROD_SNAPSHOT_ID}.dump"
+          pg_dump --format=custom --no-owner --file "$BACKUP_PATH" "$DATABASE_URL"
+          echo "PROD_LOGICAL_BACKUP_PATH=$BACKUP_PATH" >> "$GITHUB_ENV"
+
+      - name: Build dry-run summary
+        run: |
+          set -euo pipefail
+          LINES=$(wc -l < "$SQL_FILE" | tr -d ' ')
+          HASH=$(shasum -a 256 "$SQL_FILE" | awk '{print $1}')
+          SUMMARY="sql_file=$SQL_FILE lines=$LINES sha256=$HASH db_instance=$DB_INSTANCE_ID snapshot=$PROD_SNAPSHOT_ID static_review_only=true"
+          echo "$SUMMARY" > backups/${PROD_SNAPSHOT_ID}.summary.txt
+          echo "PROD_DRY_RUN_SUMMARY=$SUMMARY" >> "$GITHUB_ENV"
+
+      - name: Enforce prod mutation guardrail
+        run: node tools/scripts/require-prod-data-guard.mjs
+        env:
+          PROD_CHANGE_REQUEST: ${{ env.CHANGE_REQUEST }}
+          PROD_SNAPSHOT_ID: ${{ env.PROD_SNAPSHOT_ID }}
+          PROD_LOGICAL_BACKUP_PATH: ${{ env.PROD_LOGICAL_BACKUP_PATH }}
+          PROD_DRY_RUN_SUMMARY: ${{ env.PROD_DRY_RUN_SUMMARY }}
+          PROD_CHANGE_APPROVED: ${{ env.PROD_CHANGE_APPROVED }}
+
+      - name: Apply SQL change
+        run: |
+          set -euo pipefail
+          psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f "$SQL_FILE"
+
+      - name: Upload backup artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: prod-db-ops-artifacts
+          path: |
+            backups/*.dump
+            backups/*.summary.txt

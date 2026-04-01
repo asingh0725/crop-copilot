@@ -1,8 +1,12 @@
-import { createBrowserClient } from '@supabase/ssr'
+import { createCognitoBrowserAuthClient } from '@/lib/auth/cognito-browser-client';
+import { getAuthProvider } from '@/lib/auth/provider';
+import { createSupabaseBrowserAuthClient } from '@/lib/auth/supabase-adapter';
+import type { AppAuthClient } from '@/lib/auth/types';
 
-export function createClient() {
-  return createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  )
+export function createClient(): AppAuthClient {
+  if (getAuthProvider() === 'cognito') {
+    return createCognitoBrowserAuthClient();
+  }
+
+  return createSupabaseBrowserAuthClient();
 }

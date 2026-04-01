@@ -5,6 +5,8 @@ export interface AuthContext {
   email?: string;
   scopes: string[];
   tokenUse?: string;
+  authProvider?: 'supabase' | 'cognito';
+  authSubject?: string;
 }
 
 export type AuthVerifier = (event: APIGatewayProxyEventV2) => Promise<AuthContext>;
