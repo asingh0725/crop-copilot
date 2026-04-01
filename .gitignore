@@ -134,3 +134,5 @@ PLAN*.md
 TODO*.md
 *.scratch.ts
 *.scratch.js
+
+.claude/worktrees/
