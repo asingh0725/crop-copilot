@@ -162,6 +162,47 @@ function buildFindings({ inventory, serviceCosts, rdsUsageCosts }) {
     });
   }
 
+  const publicDbInstances = Object.entries(inventory).flatMap(([region, data]) =>
+    (data.dbInstances ?? []).filter((db) => db.public).map((db) => ({ region, db }))
+  );
+  if (publicDbInstances.length > 0) {
+    findings.push({
+      severity: 'medium',
+      code: 'public_rds_instances',
+      message: `Publicly accessible RDS instances detected: ${publicDbInstances
+        .map((item) => `${item.db.id}@${item.region}`)
+        .join(', ')}.`,
+    });
+  }
+
+  const natGateways = Object.entries(inventory).flatMap(([region, data]) =>
+    (data.natGateways ?? []).map((gateway) => ({ region, gateway }))
+  );
+  if (natGateways.length > 0) {
+    findings.push({
+      severity: 'medium',
+      code: 'nat_gateway_cost_driver',
+      message: `NAT gateways detected: ${natGateways
+        .map((item) => `${item.gateway.id}@${item.region}`)
+        .join(', ')}.`,
+    });
+  }
+
+  const unattachedElasticIps = Object.entries(inventory).flatMap(([region, data]) =>
+    (data.elasticIps ?? [])
+      .filter((address) => !address.networkInterfaceId && !address.associationId)
+      .map((address) => ({ region, address }))
+  );
+  if (unattachedElasticIps.length > 0) {
+    findings.push({
+      severity: 'medium',
+      code: 'unattached_elastic_ips',
+      message: `Unattached Elastic IPs detected: ${unattachedElasticIps
+        .map((item) => `${item.address.publicIp}@${item.region}`)
+        .join(', ')}.`,
+    });
+  }
+
   const auditErrors = Object.entries(inventory).flatMap(([region, data]) =>
     (data.auditErrors ?? []).map((error) => ({ region, error }))
   );
@@ -253,15 +294,42 @@ function main() {
       region,
       []
     );
+    const elasticIps = runAwsJsonSafe(
+      [
+        'ec2',
+        'describe-addresses',
+        '--query',
+        'Addresses[].{publicIp:PublicIp,allocationId:AllocationId,associationId:AssociationId,networkInterfaceId:NetworkInterfaceId,domain:Domain}',
+      ],
+      region,
+      []
+    );
+    const natGateways = runAwsJsonSafe(
+      [
+        'ec2',
+        'describe-nat-gateways',
+        '--query',
+        'NatGateways[].{id:NatGatewayId,state:State,subnetId:SubnetId,vpcId:VpcId,publicIp:NatGatewayAddresses[0].PublicIp}',
+      ],
+      region,
+      []
+    );
 
     inventory[region] = {
-      auditErrors: [stacks.error, dbInstances.error, sagemakerEndpoints.error, apis.error].filter(
-        Boolean
-      ),
-      stacks: stacks.value?.StackSummaries ?? [],
+      auditErrors: [
+        stacks.error,
+        dbInstances.error,
+        sagemakerEndpoints.error,
+        apis.error,
+        elasticIps.error,
+        natGateways.error,
+      ].filter(Boolean),
+      stacks: Array.isArray(stacks.value) ? stacks.value : stacks.value?.StackSummaries ?? [],
       dbInstances: dbInstances.value ?? [],
       sagemakerEndpoints: sagemakerEndpoints.value?.Endpoints ?? [],
       apis: apis.value ?? [],
+      elasticIps: elasticIps.value ?? [],
+      natGateways: natGateways.value ?? [],
     };
   }
 
