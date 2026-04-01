@@ -30,8 +30,14 @@ function runAwsJson(args, region) {
   return output ? JSON.parse(output) : null;
 }
 
-function todayIso() {
-  return new Date().toISOString().slice(0, 10);
+function tomorrowIso() {
+  const value = new Date();
+  value.setUTCDate(value.getUTCDate() + 1);
+  return value.toISOString().slice(0, 10);
+}
+
+function monthStartIso() {
+  return `${new Date().toISOString().slice(0, 7)}-01`;
 }
 
 function daysAgoIso(days) {
@@ -145,7 +151,7 @@ function main() {
       'ce',
       'get-cost-and-usage',
       '--time-period',
-      `Start=${daysAgoIso(30)},End=${todayIso()}`,
+      `Start=${daysAgoIso(30)},End=${tomorrowIso()}`,
       '--granularity',
       'MONTHLY',
       '--metrics',
@@ -161,7 +167,7 @@ function main() {
       'ce',
       'get-cost-and-usage',
       '--time-period',
-      `Start=${new Date().toISOString().slice(0, 7)}-01,End=${todayIso()}`,
+      `Start=${monthStartIso()},End=${tomorrowIso()}`,
       '--granularity',
       'MONTHLY',
       '--metrics',
