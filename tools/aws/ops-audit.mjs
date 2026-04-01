@@ -30,6 +30,27 @@ function runAwsJson(args, region) {
   return output ? JSON.parse(output) : null;
 }
 
+function toErrorMessage(error) {
+  return `${error?.stderr ?? error?.message ?? error}`.trim();
+}
+
+function runAwsJsonSafe(args, region, fallbackValue) {
+  try {
+    return {
+      value: runAwsJson(args, region),
+      error: null,
+    };
+  } catch (error) {
+    return {
+      value: fallbackValue,
+      error: {
+        command: ['aws', ...args].join(' '),
+        message: toErrorMessage(error),
+      },
+    };
+  }
+}
+
 function tomorrowIso() {
   const value = new Date();
   value.setUTCDate(value.getUTCDate() + 1);
@@ -141,6 +162,19 @@ function buildFindings({ inventory, serviceCosts, rdsUsageCosts }) {
     });
   }
 
+  const auditErrors = Object.entries(inventory).flatMap(([region, data]) =>
+    (data.auditErrors ?? []).map((error) => ({ region, error }))
+  );
+  if (auditErrors.length > 0) {
+    findings.push({
+      severity: 'low',
+      code: 'inventory_permission_gaps',
+      message: `Some optional inventory probes were skipped due to access limits: ${auditErrors
+        .map((item) => `${item.region}: ${item.error.command}`)
+        .join(', ')}.`,
+    });
+  }
+
   return findings;
 }
 
@@ -182,41 +216,52 @@ function main() {
 
   const inventory = {};
   for (const region of REGIONS) {
+    const stacks = runAwsJsonSafe(
+      [
+        'cloudformation',
+        'list-stacks',
+        '--stack-status-filter',
+        'CREATE_COMPLETE',
+        'UPDATE_COMPLETE',
+        'UPDATE_ROLLBACK_COMPLETE',
+        '--query',
+        'StackSummaries[?contains(StackName, `crop-copilot`)]',
+      ],
+      region,
+      { StackSummaries: [] }
+    );
+    const dbInstances = runAwsJsonSafe(
+      [
+        'rds',
+        'describe-db-instances',
+        '--query',
+        'DBInstances[].{id:DBInstanceIdentifier,status:DBInstanceStatus,class:DBInstanceClass,public:PubliclyAccessible,backupRetention:BackupRetentionPeriod,allocated:AllocatedStorage,region:AvailabilityZone}',
+      ],
+      region,
+      []
+    );
+    const sagemakerEndpoints = runAwsJsonSafe(['sagemaker', 'list-endpoints'], region, {
+      Endpoints: [],
+    });
+    const apis = runAwsJsonSafe(
+      [
+        'apigatewayv2',
+        'get-apis',
+        '--query',
+        'Items[?contains(Name, `crop-copilot`)].{name:Name,id:ApiId,endpoint:ApiEndpoint}',
+      ],
+      region,
+      []
+    );
+
     inventory[region] = {
-      stacks: runAwsJson(
-        [
-          'cloudformation',
-          'list-stacks',
-          '--stack-status-filter',
-          'CREATE_COMPLETE',
-          'UPDATE_COMPLETE',
-          'UPDATE_ROLLBACK_COMPLETE',
-          '--query',
-          'StackSummaries[?contains(StackName, `crop-copilot`)]',
-        ],
-        region
-      )?.StackSummaries ?? [],
-      dbInstances: runAwsJson(
-        [
-          'rds',
-          'describe-db-instances',
-          '--query',
-          'DBInstances[].{id:DBInstanceIdentifier,status:DBInstanceStatus,class:DBInstanceClass,public:PubliclyAccessible,backupRetention:BackupRetentionPeriod,allocated:AllocatedStorage,region:AvailabilityZone}',
-        ],
-        region
-      ) ?? [],
-      sagemakerEndpoints:
-        runAwsJson(['sagemaker', 'list-endpoints'], region)?.Endpoints ?? [],
-      apis:
-        runAwsJson(
-          [
-            'apigatewayv2',
-            'get-apis',
-            '--query',
-            'Items[?contains(Name, `crop-copilot`)].{name:Name,id:ApiId,endpoint:ApiEndpoint}',
-          ],
-          region
-        ) ?? [],
+      auditErrors: [stacks.error, dbInstances.error, sagemakerEndpoints.error, apis.error].filter(
+        Boolean
+      ),
+      stacks: stacks.value?.StackSummaries ?? [],
+      dbInstances: dbInstances.value ?? [],
+      sagemakerEndpoints: sagemakerEndpoints.value?.Endpoints ?? [],
+      apis: apis.value ?? [],
     };
   }
 
