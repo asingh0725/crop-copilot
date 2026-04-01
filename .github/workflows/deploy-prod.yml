@@ -2,7 +2,7 @@ name: Deploy Prod
 
 on:
   push:
-    branches: [prod]
+    branches: [main]
   workflow_dispatch:
 
 concurrency:
@@ -17,11 +17,13 @@ jobs:
   deploy:
     name: Deploy AWS Prod
     runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
     environment: production
     env:
       CROP_ENV: prod
       API_DATABASE_MODE: external
       PROVISION_AWS_DATABASE: "false"
+      ENABLE_GITHUB_OPS_BOOTSTRAP: "false"
       ALLOW_LEGACY_ENV_FALLBACK: "false"
       REQUIRE_MODEL_OUTPUT: "true"
       AWS_REGION: ${{ vars.AWS_REGION }}
@@ -57,7 +59,7 @@ jobs:
 
       - uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          role-to-assume: ${{ vars.AWS_APP_DEPLOY_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Install dependencies

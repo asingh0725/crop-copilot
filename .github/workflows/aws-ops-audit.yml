@@ -1,0 +1,41 @@
+name: AWS Ops Audit
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 14 * * *"
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  audit:
+    name: Audit AWS Spend And Inventory
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    environment: production
+    env:
+      AWS_REGION: ${{ vars.AWS_REGION }}
+      AWS_AUDIT_REGIONS: ${{ vars.AWS_AUDIT_REGIONS || 'us-west-2,us-west-1,ca-west-1' }}
+      AWS_ROLE_TO_ASSUME: ${{ vars.AWS_AUDIT_ROLE_ARN }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.AWS_ROLE_TO_ASSUME }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Run ops audit
+        run: node tools/aws/ops-audit.mjs
+
+      - name: Upload audit report
+        uses: actions/upload-artifact@v4
+        with:
+          name: aws-ops-audit
+          path: reports/aws-ops-audit-*.json

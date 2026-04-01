@@ -14,7 +14,8 @@
     "backfill:recommendations-quality": "tsx src/scripts/backfill-recommendations-quality.ts",
     "backfill:retrieval-audit-ids": "tsx src/scripts/backfill-retrieval-audit-recommendation-ids.ts",
     "backfill:premium-insights": "tsx src/scripts/backfill-premium-insights.ts",
-    "learning:replay-feedback": "tsx src/scripts/replay-feedback-learning.ts"
+    "learning:replay-feedback": "tsx src/scripts/replay-feedback-learning.ts",
+    "teardown:sagemaker-endpoint": "tsx src/scripts/teardown-sagemaker-endpoint.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.971.0",

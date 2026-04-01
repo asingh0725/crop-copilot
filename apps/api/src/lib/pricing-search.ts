@@ -2,13 +2,13 @@
  * Live product pricing search.
  *
  * Provider selection via PRICING_SEARCH_PROVIDER env var:
- *   "perplexity"  (default) — Perplexity sonar, ~$0.006/product (6× cheaper than Gemini grounding)
- *   "brave"                 — Brave Search + Claude Haiku, ~$0.005/product (7× cheaper)
+ *   "brave"       (default) — Brave Search API + deterministic extraction (single paid call)
+ *   "perplexity"            — Perplexity sonar
  *   "gemini"                — Gemini + Google Search grounding, ~$0.035/product (original)
  *
  * Required keys per provider:
+ *   brave:      BRAVE_SEARCH_API_KEY
  *   perplexity: PERPLEXITY_API_KEY
- *   brave:      BRAVE_SEARCH_API_KEY + ANTHROPIC_API_KEY
  *   gemini:     GOOGLE_AI_API_KEY
  */
 
@@ -31,9 +31,27 @@ export interface PricingSearchOptions {
 const MAX_RETRIES = 2;
 const INITIAL_BACKOFF_MS = 800;
 const DEFAULT_REGION = 'United States';
+const DEFAULT_BRAVE_RESULT_COUNT = 6;
+const DEFAULT_PAGE_FETCH_LIMIT = 2;
+const DEFAULT_PAGE_FETCH_TIMEOUT_MS = 4_000;
+const BLOCKED_HOST_PATTERNS = [
+  'wikipedia.org',
+  'youtube.com',
+  'facebook.com',
+  'instagram.com',
+  'linkedin.com',
+  'x.com',
+  'twitter.com',
+  'reddit.com',
+];
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function parsePositiveInt(raw: string | undefined, fallback: number): number {
+  const parsed = Number.parseInt(raw ?? '', 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
 }
 
 // ─── Shared helpers ────────────────────────────────────────────────────────────
@@ -53,6 +71,169 @@ function buildRetailerList(isCanada: boolean): string {
   return isCanada
     ? 'Peavey Mart, UFA, Co-op Agro, Richardson Pioneer, Nutrien Ag Solutions Canada, Amazon Canada'
     : 'Nutrien Ag Solutions, Helena Agri-Enterprises, FBN, Tractor Supply, Amazon';
+}
+
+function normalizeUrl(raw: string | undefined): string | null {
+  if (!raw) {
+    return null;
+  }
+
+  try {
+    const parsed = new URL(raw);
+    if (parsed.protocol !== 'https:') {
+      return null;
+    }
+    parsed.hash = '';
+    return parsed.toString();
+  } catch {
+    return null;
+  }
+}
+
+function isBlockedHost(url: string): boolean {
+  try {
+    const host = new URL(url).hostname.toLowerCase();
+    return BLOCKED_HOST_PATTERNS.some((pattern) => host.includes(pattern));
+  } catch {
+    return true;
+  }
+}
+
+function extractPriceValues(text: string): number[] {
+  const matches = [...text.matchAll(/(?:c\$|cad\s*|usd\s*|\$)\s*([0-9]{1,4}(?:,[0-9]{3})*(?:\.[0-9]{1,2})?)/gi)];
+  const values = matches
+    .map((match) => Number(match[1]?.replace(/,/g, '') ?? ''))
+    .filter((value) => Number.isFinite(value) && value > 0 && value < 100_000);
+  return [...new Set(values)];
+}
+
+function extractUnit(text: string): string {
+  const unitMatch = text.match(
+    /\b(\d+(?:\.\d+)?\s?(?:gal(?:lon)?|oz|lb|lbs|kg|g|l|lt|liter|litre|qt|quart|pt|pint|bag|jug|pack|ct|count|bottle|each))\b/i
+  );
+  return unitMatch?.[1]?.trim() ?? 'each';
+}
+
+function normalizeRetailerName(rawTitle: string, url: string): string {
+  const titlePrefix = rawTitle.split(/[|\-:]/)[0]?.trim();
+  if (titlePrefix && titlePrefix.length >= 3) {
+    return titlePrefix;
+  }
+
+  try {
+    const host = new URL(url).hostname.replace(/^www\./, '');
+    const base = host.split('.').slice(0, -1).join('.');
+    return base.length > 0 ? base : host;
+  } catch {
+    return 'Unknown';
+  }
+}
+
+function dedupeOffers(offers: PricingOffer[], maxResults: number): PricingOffer[] {
+  const seen = new Set<string>();
+  const deduped: PricingOffer[] = [];
+
+  for (const offer of offers) {
+    const key = `${offer.retailer.toLowerCase()}|${offer.url ?? ''}|${offer.price ?? ''}`;
+    if (seen.has(key)) {
+      continue;
+    }
+    seen.add(key);
+    deduped.push(offer);
+    if (deduped.length >= maxResults) {
+      break;
+    }
+  }
+
+  return deduped.sort((a, b) => (a.price ?? Number.MAX_VALUE) - (b.price ?? Number.MAX_VALUE));
+}
+
+interface BraveSearchResult {
+  title?: string;
+  description?: string;
+  url?: string;
+}
+
+function buildOfferFromText(params: {
+  title: string;
+  description: string;
+  url: string;
+  region: string;
+}): PricingOffer | null {
+  const combined = `${params.title} ${params.description}`;
+  const prices = extractPriceValues(combined);
+  if (prices.length === 0) {
+    return null;
+  }
+
+  return {
+    price: prices[0] ?? null,
+    unit: extractUnit(combined),
+    retailer: normalizeRetailerName(params.title, params.url),
+    url: params.url,
+    region: params.region,
+    lastUpdated: new Date().toISOString(),
+  };
+}
+
+async function fetchPagePricing(
+  url: string,
+  region: string,
+  fallbackTitle: string
+): Promise<PricingOffer | null> {
+  const timeoutMs = parsePositiveInt(
+    process.env.PRICING_PAGE_FETCH_TIMEOUT_MS,
+    DEFAULT_PAGE_FETCH_TIMEOUT_MS
+  );
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent': 'CropCopilotPricingBot/1.0 (+https://www.cropcopilot.app)',
+        Accept: 'text/html,application/xhtml+xml',
+      },
+      signal: controller.signal,
+    });
+
+    if (!response.ok) {
+      return null;
+    }
+
+    const contentType = response.headers.get('content-type') ?? '';
+    if (!contentType.includes('text/html')) {
+      return null;
+    }
+
+    const html = (await response.text()).slice(0, 250_000);
+    const metaPrice =
+      html.match(/property=["']product:price:amount["'][^>]*content=["']([0-9.,]+)["']/i)?.[1] ??
+      html.match(/"price"\s*:\s*"([0-9.,]+)"/i)?.[1] ??
+      html.match(/"price"\s*:\s*([0-9]+(?:\.[0-9]+)?)/i)?.[1] ??
+      null;
+
+    const fallbackPrice = extractPriceValues(html)[0] ?? null;
+    const normalizedPrice = Number((metaPrice ?? '').replace(/,/g, ''));
+    const price =
+      Number.isFinite(normalizedPrice) && normalizedPrice > 0 ? normalizedPrice : fallbackPrice;
+    if (!price) {
+      return null;
+    }
+
+    return {
+      price,
+      unit: extractUnit(html),
+      retailer: normalizeRetailerName(fallbackTitle, url),
+      url,
+      region,
+      lastUpdated: new Date().toISOString(),
+    };
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 function parsePricingFromText(text: string, region: string, maxResults: number): PricingOffer[] {
@@ -175,26 +356,26 @@ async function searchWithPerplexity(
   return [];
 }
 
-// ─── Provider: Brave Search + Claude Haiku ────────────────────────────────────
-// ~$0.0055/call (Brave Search $5/1K + Haiku ~$0.0005 for extraction)
+// ─── Provider: Brave Search API + deterministic extraction ────────────────────
+// One paid Brave request, then optional free page fetches for price extraction.
 
 async function searchWithBrave(
   options: PricingSearchOptions,
-  braveKey: string,
-  anthropicKey: string
+  braveKey: string
 ): Promise<PricingOffer[]> {
   const { productName, brand, region = DEFAULT_REGION, maxResults = 5 } = options;
   const searchTerm = brand ? `${brand} ${productName}` : productName;
   const isCanada = isCanadaRegion(region);
-  const retailers = buildRetailerList(isCanada);
+  const query = `"${searchTerm}" price buy ${isCanada ? 'canada' : 'usa'} ${isCanada ? 'site:.ca OR canada' : 'site:.com OR usa'}`.trim();
+  const braveResultCount = parsePositiveInt(
+    process.env.PRICING_BRAVE_RESULT_COUNT,
+    DEFAULT_BRAVE_RESULT_COUNT
+  );
 
-  // Step 1: Brave Search — targeted query for product pricing
-  const query = `"${searchTerm}" price buy ${isCanada ? 'canada' : 'USA'} ${isCanada ? 'site:ca' : ''}`.trim();
-  let snippets: string[] = [];
-
+  let results: BraveSearchResult[] = [];
   try {
     const braveResponse = await fetch(
-      `https://api.search.brave.com/res/v1/web/search?q=${encodeURIComponent(query)}&count=8&search_lang=en&country=${isCanada ? 'ca' : 'us'}`,
+      `https://api.search.brave.com/res/v1/web/search?q=${encodeURIComponent(query)}&count=${braveResultCount}&search_lang=en&country=${isCanada ? 'ca' : 'us'}`,
       {
         headers: {
           Accept: 'application/json',
@@ -204,63 +385,58 @@ async function searchWithBrave(
       }
     );
 
-    if (braveResponse.ok) {
-      const braveData = (await braveResponse.json()) as {
-        web?: { results?: Array<{ title?: string; description?: string; url?: string }> };
-      };
-      snippets = (braveData.web?.results ?? [])
-        .slice(0, 8)
-        .map((r) => `Title: ${r.title ?? ''}\nURL: ${r.url ?? ''}\nSnippet: ${r.description ?? ''}`)
-        .filter((s) => s.length > 20);
+    if (!braveResponse.ok) {
+      throw new Error(`Brave API error: ${braveResponse.status} ${braveResponse.statusText}`);
     }
+
+    const braveData = (await braveResponse.json()) as {
+      web?: { results?: BraveSearchResult[] };
+    };
+    results = braveData.web?.results ?? [];
   } catch (err) {
     console.warn('[Pricing:brave] Search request failed:', (err as Error).message);
     return [];
   }
 
-  if (snippets.length === 0) return [];
+  const offers: PricingOffer[] = [];
+  const unresolved: Array<{ url: string; title: string }> = [];
 
-  // Step 2: Haiku — extract structured pricing from snippets
-  const extractionPrompt = `You are extracting retail prices for "${searchTerm}" from web search snippets.
-Preferred retailers: ${retailers}.
-Region: ${region}. Currency: ${isCanada ? 'CAD' : 'USD'}.
-
-Search snippets:
-${snippets.join('\n---\n')}
-
-Extract up to ${maxResults} real retail prices. Return ONLY a JSON array:
-[{ "price": 45.99, "unit": "2.5 gal", "retailer": "Name", "url": "https://...", "region": "${region}" }]
-If no real prices appear in the snippets, return: []`;
-
-  try {
-    const haikuResponse = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': anthropicKey,
-        'anthropic-version': '2023-06-01',
-      },
-      body: JSON.stringify({
-        model: 'claude-haiku-4-5-20251001',
-        max_tokens: 600,
-        messages: [{ role: 'user', content: extractionPrompt }],
-      }),
-    });
-
-    if (!haikuResponse.ok) {
-      throw new Error(`Haiku extraction error: ${haikuResponse.status}`);
+  for (const result of results) {
+    const url = normalizeUrl(result.url);
+    if (!url || isBlockedHost(url)) {
+      continue;
     }
 
-    const haikuData = (await haikuResponse.json()) as {
-      content?: Array<{ type: string; text?: string }>;
-    };
+    const title = (result.title ?? '').trim();
+    const description = (result.description ?? '').trim();
+    const offer = buildOfferFromText({ title, description, url, region });
+    if (offer) {
+      offers.push(offer);
+      if (offers.length >= maxResults) {
+        return dedupeOffers(offers, maxResults);
+      }
+      continue;
+    }
 
-    const text = haikuData.content?.find((b) => b.type === 'text')?.text ?? '';
-    return parsePricingFromText(text, region, maxResults);
-  } catch (err) {
-    console.error('[Pricing:brave] Haiku extraction failed:', (err as Error).message);
-    return [];
+    unresolved.push({ url, title });
   }
+
+  const pageFetchLimit = parsePositiveInt(
+    process.env.PRICING_PAGE_FETCH_LIMIT,
+    DEFAULT_PAGE_FETCH_LIMIT
+  );
+  for (const result of unresolved.slice(0, pageFetchLimit)) {
+    const offer = await fetchPagePricing(result.url, region, result.title);
+    if (!offer) {
+      continue;
+    }
+    offers.push(offer);
+    if (offers.length >= maxResults) {
+      break;
+    }
+  }
+
+  return dedupeOffers(offers, maxResults);
 }
 
 // ─── Provider: Gemini + Google Search grounding (legacy) ──────────────────────
@@ -320,32 +496,37 @@ async function searchWithGemini(
 // ─── Public entry point ────────────────────────────────────────────────────────
 
 export async function searchLivePricing(options: PricingSearchOptions): Promise<PricingOffer[]> {
-  const provider = (process.env.PRICING_SEARCH_PROVIDER ?? 'perplexity').toLowerCase();
+  const provider = (process.env.PRICING_SEARCH_PROVIDER ?? 'brave').toLowerCase();
+  const perplexityKey = process.env.PERPLEXITY_API_KEY?.trim();
+  const geminiKey = process.env.GOOGLE_AI_API_KEY?.trim();
 
   if (provider === 'brave') {
     const braveKey = process.env.BRAVE_SEARCH_API_KEY?.trim();
-    const anthropicKey = process.env.ANTHROPIC_API_KEY?.trim();
-    if (!braveKey || !anthropicKey) {
-      console.warn('[Pricing] BRAVE_SEARCH_API_KEY or ANTHROPIC_API_KEY missing — skipping');
+    if (!braveKey) {
+      console.warn('[Pricing] BRAVE_SEARCH_API_KEY missing — falling back to configured secondary provider');
+      if (perplexityKey) {
+        return searchWithPerplexity(options, perplexityKey);
+      }
+      if (geminiKey) {
+        return searchWithGemini(options, geminiKey);
+      }
       return [];
     }
-    return searchWithBrave(options, braveKey, anthropicKey);
+    return searchWithBrave(options, braveKey);
   }
 
   if (provider === 'gemini') {
-    const apiKey = process.env.GOOGLE_AI_API_KEY?.trim();
-    if (!apiKey) {
+    if (!geminiKey) {
       console.warn('[Pricing] No GOOGLE_AI_API_KEY — skipping');
       return [];
     }
-    return searchWithGemini(options, apiKey);
+    return searchWithGemini(options, geminiKey);
   }
 
   // Default: perplexity sonar
-  const apiKey = process.env.PERPLEXITY_API_KEY?.trim();
-  if (!apiKey) {
+  if (!perplexityKey) {
     console.warn('[Pricing] No PERPLEXITY_API_KEY — skipping live pricing search');
     return [];
   }
-  return searchWithPerplexity(options, apiKey);
+  return searchWithPerplexity(options, perplexityKey);
 }

@@ -466,8 +466,19 @@ function extractRetailPriceWithSource(pricing: unknown): {
   return { price: value, source: isEstimated ? 'estimated' : 'live' };
 }
 
-const PRICING_CACHE_TTL_MS = 6 * 60 * 60 * 1000;
 const DEFAULT_PRICING_REGION = 'United States';
+
+function parsePositiveInt(raw: string | undefined, fallback: number): number {
+  const parsed = Number.parseInt(raw ?? '', 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+}
+
+function resolvePricingCacheTtlMs(offers: PricingOffer[]): number {
+  if (offers.length === 0) {
+    return parsePositiveInt(process.env.PRICING_NEGATIVE_CACHE_TTL_MS, 24 * 60 * 60 * 1000);
+  }
+  return parsePositiveInt(process.env.PRICING_POSITIVE_CACHE_TTL_MS, 7 * 24 * 60 * 60 * 1000);
+}
 
 function safeRegion(region: string): string {
   const trimmed = region.trim();
@@ -528,7 +539,7 @@ async function upsertPricingCacheEntry(
   offers: PricingOffer[]
 ): Promise<void> {
   const now = new Date();
-  const expiresAt = new Date(now.getTime() + PRICING_CACHE_TTL_MS);
+  const expiresAt = new Date(now.getTime() + resolvePricingCacheTtlMs(offers));
   await pool.query(
     `
       INSERT INTO "ProductPricingCache" (
@@ -598,6 +609,10 @@ export async function loadCachedRetailPricing(
     .toLowerCase();
   const liveLookupEnabled = pricingMode !== 'estimated_only';
   const allowEstimatedFallback = estimatedPricingFallbackEnabled();
+  const maxLiveLookupsPerCall = parsePositiveInt(
+    process.env.PREMIUM_PRICING_MAX_LIVE_LOOKUPS_PER_CALL,
+    2
+  );
   const map = new Map<string, number | null>();
   const sourceMap = new Map<string, 'live' | 'estimated' | null>();
 
@@ -628,16 +643,21 @@ export async function loadCachedRetailPricing(
       [missingProductIds]
     );
 
+    let liveLookupsRemaining = liveLookupEnabled ? maxLiveLookupsPerCall : 0;
     for (const product of productResult.rows) {
       try {
-        const offers = liveLookupEnabled
+        const shouldUseLiveLookup = liveLookupEnabled && liveLookupsRemaining > 0;
+        const offers = shouldUseLiveLookup
           ? await searchLivePricing({
               productName: product.product_name,
               brand: product.product_brand,
               region: resolvedRegion,
-              maxResults: 5,
+              maxResults: 3,
             })
           : [];
+        if (shouldUseLiveLookup) {
+          liveLookupsRemaining -= 1;
+        }
         if (offers.length === 0) {
           if (allowEstimatedFallback) {
             const estimatedOffer = buildEstimatedPricingOffer({
@@ -645,9 +665,11 @@ export async function loadCachedRetailPricing(
               productName: product.product_name,
               region: resolvedRegion,
             });
+            await upsertPricingCacheEntry(pool, product.product_id, regionKey, [estimatedOffer]);
             map.set(product.product_id, estimatedOffer.price);
             sourceMap.set(product.product_id, 'estimated');
           } else {
+            await upsertPricingCacheEntry(pool, product.product_id, regionKey, []);
             map.set(product.product_id, null);
             sourceMap.set(product.product_id, null);
           }

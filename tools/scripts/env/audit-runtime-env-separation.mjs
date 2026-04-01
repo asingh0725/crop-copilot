@@ -3,7 +3,7 @@
 import { execSync } from 'node:child_process';
 
 const devRegion = process.env.DEV_REGION ?? 'ca-west-1';
-const prodRegion = process.env.PROD_REGION ?? process.env.AWS_REGION ?? 'us-west-1';
+const prodRegion = process.env.PROD_REGION ?? process.env.AWS_REGION ?? 'us-west-2';
 const devStack = process.env.DEV_RUNTIME_STACK ?? 'crop-copilot-dev-api-runtime';
 const prodStack = process.env.PROD_RUNTIME_STACK ?? 'crop-copilot-prod-api-runtime';
 const awsProfile = process.env.AWS_PROFILE?.trim();

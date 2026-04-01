@@ -25,12 +25,19 @@ Database bootstrap SQL:
 - `apps/api/sql/001_async_recommendation_tables.sql`
 - `apps/api/sql/002_recommendation_job_result_payload.sql`
 - `apps/api/sql/003_sync_cursor_indexes.sql`
+- `apps/api/sql/013_auth_identity_bridge.sql`
 
 Required env for Cognito auth at runtime:
 
 - `COGNITO_REGION`
 - `COGNITO_USER_POOL_ID`
 - `COGNITO_APP_CLIENT_ID` (optional but recommended)
+
+Auth behavior:
+
+- API tokens can be verified from either Cognito or Supabase during migration.
+- Tokens are resolved to a stable local app user via `AuthIdentity`, so switching
+  auth providers does not orphan recommendations, billing, profiles, or credits.
 
 Storage and persistence env:
 

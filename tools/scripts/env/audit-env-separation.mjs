@@ -99,19 +99,9 @@ const checks = [
       fileIncludes('.gitignore', '!.env.*.example'),
   },
   {
-    id: 'env_workflow_database_secret',
-    description: 'Env workflow injects DATABASE_URL secret',
-    pass: workflowContains('.github/workflows/deploy-env.yml', 'DATABASE_URL: ${{ secrets.DATABASE_URL }}'),
-  },
-  {
     id: 'prod_workflow_database_secret',
     description: 'Prod workflow injects DATABASE_URL secret',
     pass: workflowContains('.github/workflows/deploy-prod.yml', 'DATABASE_URL: ${{ secrets.DATABASE_URL }}'),
-  },
-  {
-    id: 'env_workflow_disables_legacy_fallback',
-    description: 'Env workflow disables legacy .env fallback',
-    pass: workflowContains('.github/workflows/deploy-env.yml', 'ALLOW_LEGACY_ENV_FALLBACK: "false"'),
   },
   {
     id: 'prod_workflow_disables_legacy_fallback',
@@ -119,19 +109,18 @@ const checks = [
     pass: workflowContains('.github/workflows/deploy-prod.yml', 'ALLOW_LEGACY_ENV_FALLBACK: "false"'),
   },
   {
-    id: 'env_workflow_external_db_mode',
-    description: 'Env workflow deploys API in external DB mode',
-    pass: workflowContains('.github/workflows/deploy-env.yml', 'API_DATABASE_MODE: external'),
-  },
-  {
     id: 'prod_workflow_external_db_mode',
     description: 'Prod workflow deploys API in external DB mode',
     pass: workflowContains('.github/workflows/deploy-prod.yml', 'API_DATABASE_MODE: external'),
   },
   {
-    id: 'env_workflow_model_output_guard',
-    description: 'Env workflow leaves model output guard disabled for iteration',
-    pass: workflowContains('.github/workflows/deploy-env.yml', 'REQUIRE_MODEL_OUTPUT: "false"'),
+    id: 'env_workflow_validation_only',
+    description: 'Env workflow validates code without deploying AWS infrastructure',
+    pass:
+      workflowContains('.github/workflows/deploy-env.yml', 'pnpm env:audit') &&
+      workflowContains('.github/workflows/deploy-env.yml', 'pnpm --filter infra build') &&
+      !workflowContains('.github/workflows/deploy-env.yml', 'aws-actions/configure-aws-credentials@v4') &&
+      !workflowContains('.github/workflows/deploy-env.yml', 'infra:deploy:compliance'),
   },
   {
     id: 'prod_workflow_model_output_guard',

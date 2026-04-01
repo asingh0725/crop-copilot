@@ -1,5 +1,6 @@
 import type { APIGatewayProxyEventV2 } from 'aws-lambda';
 import { AuthError } from './errors';
+import { resolveAuthenticatedUser, type VerifiedIdentity } from './identity-store';
 import type { AuthContext } from './types';
 
 interface SupabaseAuthConfig {
@@ -157,7 +158,7 @@ function resolveSupabaseAuthConfig(): SupabaseAuthConfig | null {
 async function verifySupabaseAccessToken(
   token: string,
   config: SupabaseAuthConfig
-): Promise<AuthContext> {
+): Promise<VerifiedIdentity> {
   const response = await fetch(`${config.baseUrl}/auth/v1/user`, {
     method: 'GET',
     headers: {
@@ -180,7 +181,8 @@ async function verifySupabaseAccessToken(
   }
 
   return {
-    userId: payload.id,
+    provider: 'supabase',
+    subject: payload.id,
     email: typeof payload.email === 'string' ? payload.email : undefined,
     scopes: [],
     tokenUse: 'access',
@@ -201,9 +203,9 @@ export function getBearerToken(headers: Record<string, string | undefined>): str
   return token;
 }
 
-export async function verifyAccessTokenFromEvent(
+export async function verifySupabaseIdentityFromEvent(
   event: APIGatewayProxyEventV2
-): Promise<AuthContext> {
+): Promise<VerifiedIdentity> {
   const token = resolveAccessToken(event);
   const config = resolveSupabaseAuthConfig();
 
@@ -225,3 +227,12 @@ export async function verifyAccessTokenFromEvent(
     throw new AuthError('Invalid access token', 401, 'INVALID_TOKEN');
   }
 }
+
+export async function verifyAccessTokenFromEvent(
+  event: APIGatewayProxyEventV2
+): Promise<AuthContext> {
+  const identity = await verifySupabaseIdentityFromEvent(event);
+  return resolveAuthenticatedUser(identity);
+}
+
+export const verifySupabaseAccessTokenFromEvent = verifyAccessTokenFromEvent;

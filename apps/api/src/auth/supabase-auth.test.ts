@@ -1,13 +1,16 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { getBearerToken, verifyAccessTokenFromEvent } from './supabase-auth';
+import {
+  getBearerToken,
+  verifySupabaseIdentityFromEvent,
+} from './supabase-auth';
 
 test('extracts bearer token from authorization header', () => {
   const token = getBearerToken({ authorization: 'Bearer token-123' });
   assert.equal(token, 'token-123');
 });
 
-test('verifyAccessTokenFromEvent verifies bearer token against Supabase', async () => {
+test('verifySupabaseIdentityFromEvent verifies bearer token against Supabase', async () => {
   const previousSupabaseUrl = process.env.SUPABASE_URL;
   const previousSupabaseAnonKey = process.env.SUPABASE_ANON_KEY;
   const originalFetch = globalThis.fetch;
@@ -28,11 +31,12 @@ test('verifyAccessTokenFromEvent verifies bearer token against Supabase', async 
   };
 
   try {
-    const auth = await verifyAccessTokenFromEvent({
+    const auth = await verifySupabaseIdentityFromEvent({
       headers: { authorization: 'Bearer supabase-access-token' },
     } as any);
 
-    assert.equal(auth.userId, '22222222-2222-4222-8222-222222222222');
+    assert.equal(auth.provider, 'supabase');
+    assert.equal(auth.subject, '22222222-2222-4222-8222-222222222222');
     assert.equal(auth.email, 'grower@example.com');
     assert.deepEqual(auth.scopes, []);
     assert.equal(auth.tokenUse, 'access');
@@ -43,7 +47,7 @@ test('verifyAccessTokenFromEvent verifies bearer token against Supabase', async 
   }
 });
 
-test('verifyAccessTokenFromEvent extracts Supabase access token from auth cookie', async () => {
+test('verifySupabaseIdentityFromEvent extracts Supabase access token from auth cookie', async () => {
   const previousSupabaseUrl = process.env.SUPABASE_URL;
   const previousSupabaseAnonKey = process.env.SUPABASE_ANON_KEY;
   const originalFetch = globalThis.fetch;
@@ -67,11 +71,12 @@ test('verifyAccessTokenFromEvent extracts Supabase access token from auth cookie
   const cookieValue = encodeURIComponent(JSON.stringify([accessToken, 'refresh-token']));
 
   try {
-    const auth = await verifyAccessTokenFromEvent({
+    const auth = await verifySupabaseIdentityFromEvent({
       headers: { cookie: `sb-test-auth-token=${cookieValue}` },
     } as any);
 
-    assert.equal(auth.userId, '33333333-3333-4333-8333-333333333333');
+    assert.equal(auth.provider, 'supabase');
+    assert.equal(auth.subject, '33333333-3333-4333-8333-333333333333');
     assert.equal(auth.email, 'cookie@example.com');
     assert.deepEqual(auth.scopes, []);
     assert.equal(auth.tokenUse, 'access');
@@ -82,7 +87,7 @@ test('verifyAccessTokenFromEvent extracts Supabase access token from auth cookie
   }
 });
 
-test('verifyAccessTokenFromEvent extracts Supabase access token from API Gateway cookies array', async () => {
+test('verifySupabaseIdentityFromEvent extracts Supabase access token from API Gateway cookies array', async () => {
   const previousSupabaseUrl = process.env.SUPABASE_URL;
   const previousSupabaseAnonKey = process.env.SUPABASE_ANON_KEY;
   const originalFetch = globalThis.fetch;
@@ -106,12 +111,13 @@ test('verifyAccessTokenFromEvent extracts Supabase access token from API Gateway
   const cookieValue = encodeURIComponent(JSON.stringify([accessToken, 'refresh-token']));
 
   try {
-    const auth = await verifyAccessTokenFromEvent({
+    const auth = await verifySupabaseIdentityFromEvent({
       headers: {},
       cookies: [`sb-test-auth-token=${cookieValue}`],
     } as any);
 
-    assert.equal(auth.userId, '44444444-4444-4444-8444-444444444444');
+    assert.equal(auth.provider, 'supabase');
+    assert.equal(auth.subject, '44444444-4444-4444-8444-444444444444');
     assert.equal(auth.email, 'cookies-array@example.com');
     assert.deepEqual(auth.scopes, []);
     assert.equal(auth.tokenUse, 'access');
@@ -122,7 +128,7 @@ test('verifyAccessTokenFromEvent extracts Supabase access token from API Gateway
   }
 });
 
-test('verifyAccessTokenFromEvent returns configuration error without Supabase verifier env', async () => {
+test('verifySupabaseIdentityFromEvent returns configuration error without Supabase verifier env', async () => {
   const previousSupabaseUrl = process.env.SUPABASE_URL;
   const previousSupabaseAnonKey = process.env.SUPABASE_ANON_KEY;
   const previousPublicSupabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -136,7 +142,7 @@ test('verifyAccessTokenFromEvent returns configuration error without Supabase ve
   try {
     await assert.rejects(
       () =>
-        verifyAccessTokenFromEvent({
+        verifySupabaseIdentityFromEvent({
           headers: { authorization: 'Bearer supabase-access-token' },
         } as any),
       (error: unknown) => {

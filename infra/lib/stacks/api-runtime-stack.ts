@@ -6,6 +6,7 @@ import * as integrations from 'aws-cdk-lib/aws-apigatewayv2-integrations';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as lambdaEventSources from 'aws-cdk-lib/aws-lambda-event-sources';
 import * as lambdaNodejs from 'aws-cdk-lib/aws-lambda-nodejs';
+import * as logs from 'aws-cdk-lib/aws-logs';
 import * as ssm from 'aws-cdk-lib/aws-ssm';
 import * as events from 'aws-cdk-lib/aws-events';
 import * as eventsTargets from 'aws-cdk-lib/aws-events-targets';
@@ -27,6 +28,7 @@ export class ApiRuntimeStack extends Stack {
 
     const { config, foundation, database } = props;
     const environment = buildApiEnvironment(config, foundation, database);
+    const mlAutomationEnabled = parseBooleanEnv(process.env.ENABLE_ML_AUTOMATION, false);
     const workspaceRoot = path.resolve(__dirname, '..', '..', '..');
     const pyMuPdfLayerPath = path.join(workspaceRoot, 'infra', 'layers', 'pymupdf');
     const pyMuPdfPythonDir = path.join(pyMuPdfLayerPath, 'python');
@@ -44,6 +46,115 @@ export class ApiRuntimeStack extends Stack {
       description: 'PyMuPDF dependencies for compliance PDF parsing.',
     });
 
+    const coreEnvironment = pickEnvironment(environment, [
+      'CROP_ENV',
+      'DATA_BACKEND',
+      'METRICS_NAMESPACE',
+    ]);
+    const databaseEnvironment = pickEnvironment(environment, ['DATABASE_URL', 'PG_POOL_MAX']);
+    const authEnvironment = pickEnvironment(environment, [
+      'COGNITO_REGION',
+      'COGNITO_USER_POOL_ID',
+      'COGNITO_APP_CLIENT_ID',
+      'SUPABASE_URL',
+      'SUPABASE_ANON_KEY',
+    ]);
+    const adminEnvironment = pickEnvironment(environment, ['ADMIN_USER_IDS', 'ADMIN_EMAILS']);
+    const usageEnvironment = pickEnvironment(environment, ['ENABLE_USAGE_GUARD']);
+    const notificationEnvironment = pickEnvironment(environment, ['SNS_PUSH_EVENTS_TOPIC_ARN']);
+    const uploadEnvironment = pickEnvironment(environment, ['S3_UPLOAD_BUCKET']);
+    const queueEnvironment = pickEnvironment(environment, [
+      'SQS_RECOMMENDATION_QUEUE_URL',
+      'SQS_PREMIUM_ENRICHMENT_QUEUE_URL',
+      'SQS_INGESTION_QUEUE_URL',
+      'SQS_COMPLIANCE_INGESTION_QUEUE_URL',
+      'SQS_MODEL_TRAINING_TRIGGER_QUEUE_URL',
+    ]);
+    const modelTrainingQueueEnvironment = pickEnvironment(environment, [
+      'ENABLE_ML_AUTOMATION',
+      'SQS_MODEL_TRAINING_TRIGGER_QUEUE_URL',
+    ]);
+    const recommendationEnvironment = pickEnvironment(environment, [
+      'RECOMMENDATION_COST_USD',
+      'RECOMMENDATION_COST_BY_MODEL_JSON',
+      'ANTHROPIC_API_KEY',
+      'ANTHROPIC_AUTH_TOKEN',
+      'ANTHROPIC_MODEL',
+      'RECOMMENDATION_MODEL_PROVIDERS',
+      'GEMINI_RECOMMENDATION_MODEL',
+      'OPENAI_API_KEY',
+      'OPENAI_EMBEDDING_MODEL',
+      'RAG_RETRIEVAL_LIMIT',
+      'ENABLE_ML_AUTOMATION',
+      'ENABLE_SAGEMAKER_REALTIME_ENDPOINT',
+      'DISABLE_RERANKER',
+      'SAGEMAKER_ENDPOINT_NAME',
+      'REQUIRE_MODEL_OUTPUT',
+    ]);
+    const pricingEnvironment = pickEnvironment(environment, [
+      'PRICING_SEARCH_PROVIDER',
+      'PRICING_BATCH_MAX_IDS',
+      'PRICING_BATCH_DAILY_LIVE_LOOKUP_LIMIT',
+      'PRICING_POSITIVE_CACHE_TTL_MS',
+      'PRICING_NEGATIVE_CACHE_TTL_MS',
+      'PRICING_PAGE_FETCH_LIMIT',
+      'PRICING_PAGE_FETCH_TIMEOUT_MS',
+      'PREMIUM_PRICING_MAX_LIVE_LOOKUPS_PER_CALL',
+      'PERPLEXITY_API_KEY',
+      'BRAVE_SEARCH_API_KEY',
+      'GOOGLE_AI_API_KEY',
+    ]);
+    const weatherEnvironment = pickEnvironment(environment, [
+      'OPENWEATHER_API_KEY',
+      'OPENWEATHER_PRICE_PER_CALL_USD',
+      'OPENWEATHER_DAILY_FREE_CALLS',
+      'OPENWEATHER_DAILY_HARD_CAP',
+    ]);
+    const premiumEnvironment = pickEnvironment(environment, ['ENABLE_PREMIUM_ENRICHMENT']);
+    const discoveryEnvironment = pickEnvironment(environment, [
+      'GOOGLE_AI_API_KEY',
+      'DISCOVERY_BATCH_SIZE',
+      'COMPLIANCE_DISCOVERY_BATCH_SIZE',
+    ]);
+    const ingestionEnvironment = pickEnvironment(environment, [
+      'OPENAI_API_KEY',
+      'OPENAI_EMBEDDING_MODEL',
+      'LLAMA_CLOUD_API_KEY',
+      'PYMUPDF_PYTHON_BIN',
+      'PYMUPDF_TIMEOUT_MS',
+      'PYMUPDF_ENABLE_OCR',
+      'PYMUPDF_OCR_LANGUAGE',
+      'PYMUPDF_OCR_DPI',
+    ]);
+    const billingEnvironment = pickEnvironment(environment, [
+      'APP_BASE_URL',
+      'STRIPE_SECRET_KEY',
+      'STRIPE_WEBHOOK_SECRET',
+      'STRIPE_PRICE_GROWER_FREE',
+      'STRIPE_PRICE_GROWER',
+      'STRIPE_PRICE_GROWER_PRO',
+      'STRIPE_PRICE_CREDIT_PACK_10',
+      'STRIPE_AUTO_PROVISION_CATALOG',
+      'STRIPE_CHECKOUT_URL_BASE',
+      'STRIPE_PORTAL_URL_BASE',
+      'BILLING_PORTAL_RETURN_URL',
+      'BILLING_WEBHOOK_SECRET',
+      'ALLOW_BILLING_SIMULATION',
+    ]);
+
+    const healthEnvironment = coreEnvironment;
+    const workerDbEnvironment = mergeEnvironments(coreEnvironment, databaseEnvironment);
+    const authedDbEnvironment = mergeEnvironments(
+      coreEnvironment,
+      databaseEnvironment,
+      authEnvironment
+    );
+    const authedEnvironment = mergeEnvironments(
+      coreEnvironment,
+      databaseEnvironment,
+      authEnvironment
+    );
+
     const httpApi = new apigwv2.HttpApi(this, 'ApiGateway', {
       apiName: `${config.projectSlug}-${config.envName}-api`,
       corsPreflight: {
@@ -56,177 +167,204 @@ export class ApiRuntimeStack extends Stack {
     const healthHandler = createApiFunction(this, {
       id: 'HealthHandler',
       entry: 'handlers/health.ts',
-      environment,
+      environment: healthEnvironment,
     });
 
     const createInputHandler = createApiFunction(this, {
       id: 'CreateInputHandler',
       entry: 'handlers/create-input.ts',
-      environment,
+      environment: authedDbEnvironment,
+      extraEnvironment: mergeEnvironments(
+        usageEnvironment,
+        pickEnvironment(queueEnvironment, ['SQS_RECOMMENDATION_QUEUE_URL'])
+      ),
     });
 
     const getJobStatusHandler = createApiFunction(this, {
       id: 'GetJobStatusHandler',
       entry: 'handlers/get-job-status.ts',
-      environment,
+      environment: authedDbEnvironment,
     });
 
     const createUploadUrlHandler = createApiFunction(this, {
       id: 'CreateUploadUrlHandler',
       entry: 'handlers/create-upload-url.ts',
-      environment,
+      environment: authedEnvironment,
+      extraEnvironment: uploadEnvironment,
     });
     const getUploadViewUrlHandler = createApiFunction(this, {
       id: 'GetUploadViewUrlHandler',
       entry: 'handlers/get-upload-view-url.ts',
-      environment,
+      environment: authedEnvironment,
+      extraEnvironment: uploadEnvironment,
     });
     const submitFeedbackHandler = createApiFunction(this, {
       id: 'SubmitFeedbackHandler',
       entry: 'handlers/submit-feedback.ts',
-      environment,
+      environment: authedDbEnvironment,
+      extraEnvironment: modelTrainingQueueEnvironment,
     });
     const getFeedbackHandler = createApiFunction(this, {
       id: 'GetFeedbackHandler',
       entry: 'handlers/get-feedback.ts',
-      environment,
+      environment: authedDbEnvironment,
     });
     const getSubscriptionHandler = createApiFunction(this, {
       id: 'GetSubscriptionHandler',
       entry: 'handlers/get-subscription.ts',
-      environment,
+      environment: authedDbEnvironment,
     });
     const getUsageHandler = createApiFunction(this, {
       id: 'GetUsageHandler',
       entry: 'handlers/get-usage.ts',
-      environment,
+      environment: authedDbEnvironment,
     });
     const createSubscriptionCheckoutHandler = createApiFunction(this, {
       id: 'CreateSubscriptionCheckoutHandler',
       entry: 'handlers/create-subscription-checkout.ts',
-      environment,
+      environment: authedDbEnvironment,
+      extraEnvironment: billingEnvironment,
     });
     const createCreditsCheckoutHandler = createApiFunction(this, {
       id: 'CreateCreditsCheckoutHandler',
       entry: 'handlers/create-credits-checkout.ts',
-      environment,
+      environment: authedDbEnvironment,
+      extraEnvironment: billingEnvironment,
     });
     const createSubscriptionPortalHandler = createApiFunction(this, {
       id: 'CreateSubscriptionPortalHandler',
       entry: 'handlers/create-subscription-portal.ts',
-      environment,
+      environment: authedDbEnvironment,
+      extraEnvironment: billingEnvironment,
     });
     const getAutoReloadConfigHandler = createApiFunction(this, {
       id: 'GetAutoReloadConfigHandler',
       entry: 'handlers/get-auto-reload-config.ts',
-      environment,
+      environment: authedDbEnvironment,
     });
     const updateAutoReloadConfigHandler = createApiFunction(this, {
       id: 'UpdateAutoReloadConfigHandler',
       entry: 'handlers/update-auto-reload-config.ts',
-      environment,
+      environment: authedDbEnvironment,
     });
     const billingWebhookHandler = createApiFunction(this, {
       id: 'BillingWebhookHandler',
       entry: 'handlers/billing-webhook.ts',
-      environment,
+      environment: mergeEnvironments(coreEnvironment, databaseEnvironment),
+      extraEnvironment: billingEnvironment,
     });
     const profileHandler = createApiFunction(this, {
       id: 'ProfileHandler',
       entry: 'handlers/profile.ts',
-      environment,
+      environment: authedDbEnvironment,
     });
     const listRecommendationsHandler = createApiFunction(this, {
       id: 'ListRecommendationsHandler',
       entry: 'handlers/list-recommendations.ts',
-      environment,
+      environment: authedDbEnvironment,
     });
     const getRecommendationHandler = createApiFunction(this, {
       id: 'GetRecommendationHandler',
       entry: 'handlers/get-recommendation.ts',
-      environment,
+      environment: authedDbEnvironment,
     });
     const getRecommendationPremiumHandler = createApiFunction(this, {
       id: 'GetRecommendationPremiumHandler',
       entry: 'handlers/get-recommendation-premium.ts',
-      environment,
+      environment: authedDbEnvironment,
+      extraEnvironment: pickEnvironment(queueEnvironment, ['SQS_PREMIUM_ENRICHMENT_QUEUE_URL']),
     });
     const refreshRecommendationPremiumHandler = createApiFunction(this, {
       id: 'RefreshRecommendationPremiumHandler',
       entry: 'handlers/refresh-recommendation-premium.ts',
-      environment,
+      environment: authedDbEnvironment,
+      extraEnvironment: pickEnvironment(queueEnvironment, ['SQS_PREMIUM_ENRICHMENT_QUEUE_URL']),
     });
     const createApplicationReportHandler = createApiFunction(this, {
       id: 'CreateApplicationReportHandler',
       entry: 'handlers/create-application-report.ts',
-      environment,
+      environment: authedDbEnvironment,
     });
     const deleteRecommendationHandler = createApiFunction(this, {
       id: 'DeleteRecommendationHandler',
       entry: 'handlers/delete-recommendation.ts',
-      environment,
+      environment: authedDbEnvironment,
     });
     const registerPushDeviceHandler = createApiFunction(this, {
       id: 'RegisterPushDeviceHandler',
       entry: 'handlers/register-push-device.ts',
-      environment,
+      environment: authedDbEnvironment,
     });
     const geocodeLocationHandler = createApiFunction(this, {
       id: 'GeocodeLocationHandler',
       entry: 'handlers/geocode-location.ts',
-      environment,
+      environment: authedEnvironment,
+      extraEnvironment: weatherEnvironment,
     });
     const reverseGeocodeLocationHandler = createApiFunction(this, {
       id: 'ReverseGeocodeLocationHandler',
       entry: 'handlers/reverse-geocode-location.ts',
-      environment,
+      environment: authedEnvironment,
+      extraEnvironment: weatherEnvironment,
     });
     const listProductsHandler = createApiFunction(this, {
       id: 'ListProductsHandler',
       entry: 'handlers/list-products.ts',
-      environment,
+      environment: authedDbEnvironment,
     });
     const getProductHandler = createApiFunction(this, {
       id: 'GetProductHandler',
       entry: 'handlers/get-product.ts',
-      environment,
+      environment: authedDbEnvironment,
     });
     const compareProductsHandler = createApiFunction(this, {
       id: 'CompareProductsHandler',
       entry: 'handlers/compare-products.ts',
-      environment,
+      environment: authedDbEnvironment,
     });
     const getProductPricingBatchHandler = createApiFunction(this, {
       id: 'GetProductPricingBatchHandler',
       entry: 'handlers/get-product-pricing-batch.ts',
-      environment,
+      environment: authedDbEnvironment,
+      extraEnvironment: pricingEnvironment,
     });
     const registerSourceHandler = createApiFunction(this, {
       id: 'RegisterSourceHandler',
       entry: 'handlers/register-source.ts',
-      environment,
+      environment: authedDbEnvironment,
+      extraEnvironment: mergeEnvironments(
+        adminEnvironment,
+        pickEnvironment(queueEnvironment, ['SQS_INGESTION_QUEUE_URL'])
+      ),
     });
 
     const syncPullHandler = createApiFunction(this, {
       id: 'SyncPullHandler',
       entry: 'handlers/sync-pull.ts',
-      environment,
+      environment: authedDbEnvironment,
     });
 
     const trackEventHandler = createApiFunction(this, {
       id: 'TrackEventHandler',
       entry: 'handlers/track-event.ts',
-      environment,
+      environment: authedDbEnvironment,
     });
     const adminSetSubscriptionHandler = createApiFunction(this, {
       id: 'AdminSetSubscriptionHandler',
       entry: 'handlers/admin-set-subscription.ts',
-      environment,
+      environment: authedDbEnvironment,
+      extraEnvironment: adminEnvironment,
     });
     const adminRunPipelineStepHandler = createApiFunction(this, {
       id: 'AdminRunPipelineStepHandler',
       entry: 'handlers/admin-run-pipeline-step.ts',
-      environment,
+      environment: authedDbEnvironment,
+      extraEnvironment: mergeEnvironments(
+        adminEnvironment,
+        queueEnvironment,
+        discoveryEnvironment,
+        ingestionEnvironment
+      ),
       timeout: Duration.minutes(5),
       memorySize: 1024,
     });
@@ -234,14 +372,25 @@ export class ApiRuntimeStack extends Stack {
     const processRecommendationJobWorker = createApiFunction(this, {
       id: 'ProcessRecommendationJobWorker',
       entry: 'workers/process-recommendation-job.ts',
-      environment,
+      environment: workerDbEnvironment,
+      extraEnvironment: mergeEnvironments(
+        recommendationEnvironment,
+        notificationEnvironment,
+        pickEnvironment(queueEnvironment, ['SQS_PREMIUM_ENRICHMENT_QUEUE_URL'])
+      ),
       memorySize: 1024,
       timeout: Duration.seconds(120),
     });
     const processPremiumEnrichmentWorker = createApiFunction(this, {
       id: 'ProcessPremiumEnrichmentWorker',
       entry: 'workers/process-premium-enrichment-job.ts',
-      environment,
+      environment: workerDbEnvironment,
+      extraEnvironment: mergeEnvironments(
+        premiumEnvironment,
+        pricingEnvironment,
+        weatherEnvironment,
+        notificationEnvironment
+      ),
       memorySize: 768,
       timeout: Duration.seconds(180),
     });
@@ -249,7 +398,8 @@ export class ApiRuntimeStack extends Stack {
     const processIngestionBatchWorker = createApiFunction(this, {
       id: 'ProcessIngestionBatchWorker',
       entry: 'workers/process-ingestion-batch.ts',
-      environment,
+      environment: workerDbEnvironment,
+      extraEnvironment: ingestionEnvironment,
       memorySize: 768,
       timeout: Duration.seconds(300),
     });
@@ -258,7 +408,8 @@ export class ApiRuntimeStack extends Stack {
     const runIngestionBatchWorker = createApiFunction(this, {
       id: 'RunIngestionBatchWorker',
       entry: 'workers/run-ingestion-batch.ts',
-      environment,
+      environment: workerDbEnvironment,
+      extraEnvironment: pickEnvironment(queueEnvironment, ['SQS_INGESTION_QUEUE_URL']),
       timeout: Duration.seconds(60),
     });
 
@@ -299,39 +450,49 @@ export class ApiRuntimeStack extends Stack {
     };
 
     // Nightly ML model retraining: exports training data to S3, submits SageMaker job
-    const retrainTriggerWorker = createApiFunction(this, {
-      id: 'RetrainTriggerWorker',
-      entry: 'ml/training/retrain-trigger.ts',
-      environment: mlRuntimeEnvironment,
-      extraEnvironment: mlTrainingEnvironment,
-      memorySize: 512,
-      timeout: Duration.minutes(10),
-    });
+    const retrainTriggerWorker = mlAutomationEnabled
+      ? createApiFunction(this, {
+          id: 'RetrainTriggerWorker',
+          entry: 'ml/training/retrain-trigger.ts',
+          environment: mlRuntimeEnvironment,
+          extraEnvironment: mlTrainingEnvironment,
+          memorySize: 512,
+          timeout: Duration.minutes(10),
+        })
+      : null;
 
-    const retrainPremiumTriggerWorker = createApiFunction(this, {
-      id: 'RetrainPremiumTriggerWorker',
-      entry: 'ml/training/retrain-premium-trigger.ts',
-      environment: mlRuntimeEnvironment,
-      extraEnvironment: mlTrainingEnvironment,
-      memorySize: 512,
-      timeout: Duration.minutes(10),
-    });
+    const retrainPremiumTriggerWorker = mlAutomationEnabled
+      ? createApiFunction(this, {
+          id: 'RetrainPremiumTriggerWorker',
+          entry: 'ml/training/retrain-premium-trigger.ts',
+          environment: mlRuntimeEnvironment,
+          extraEnvironment: mlTrainingEnvironment,
+          memorySize: 512,
+          timeout: Duration.minutes(10),
+        })
+      : null;
 
     // Triggered by SageMaker training completion event — promotes new model to endpoint
-    const endpointUpdaterWorker = createApiFunction(this, {
-      id: 'EndpointUpdaterWorker',
-      entry: 'ml/training/endpoint-updater.ts',
-      environment: mlRuntimeEnvironment,
-      extraEnvironment: mlTrainingEnvironment,
-      memorySize: 256,
-      timeout: Duration.seconds(60),
-    });
+    const endpointUpdaterWorker = mlAutomationEnabled
+      ? createApiFunction(this, {
+          id: 'EndpointUpdaterWorker',
+          entry: 'ml/training/endpoint-updater.ts',
+          environment: mlRuntimeEnvironment,
+          extraEnvironment: mlTrainingEnvironment,
+          memorySize: 256,
+          timeout: Duration.seconds(60),
+        })
+      : null;
 
     // Runs every 30 minutes — discovers new agricultural URLs via Gemini search grounding
     const discoverSourcesWorker = createApiFunction(this, {
       id: 'DiscoverSourcesWorker',
       entry: 'workers/discover-sources.ts',
-      environment,
+      environment: workerDbEnvironment,
+      extraEnvironment: mergeEnvironments(
+        discoveryEnvironment,
+        pickEnvironment(queueEnvironment, ['SQS_INGESTION_QUEUE_URL'])
+      ),
       memorySize: 512,
       timeout: Duration.minutes(15), // monthly run must drain all 510 crop×region combinations
     });
@@ -339,7 +500,11 @@ export class ApiRuntimeStack extends Stack {
     const discoverComplianceSourcesWorker = createApiFunction(this, {
       id: 'DiscoverComplianceSourcesWorker',
       entry: 'workers/discover-compliance-sources.ts',
-      environment,
+      environment: workerDbEnvironment,
+      extraEnvironment: mergeEnvironments(
+        discoveryEnvironment,
+        pickEnvironment(queueEnvironment, ['SQS_COMPLIANCE_INGESTION_QUEUE_URL'])
+      ),
       memorySize: 768,
       timeout: Duration.minutes(15),
     });
@@ -347,16 +512,18 @@ export class ApiRuntimeStack extends Stack {
     const runComplianceIngestionBatchWorker = createApiFunction(this, {
       id: 'RunComplianceIngestionBatchWorker',
       entry: 'workers/run-compliance-ingestion-batch.ts',
-      environment,
+      environment: workerDbEnvironment,
+      extraEnvironment: pickEnvironment(queueEnvironment, ['SQS_COMPLIANCE_INGESTION_QUEUE_URL']),
       timeout: Duration.seconds(90),
     });
 
     const processComplianceIngestionBatchWorker = createApiFunction(this, {
       id: 'ProcessComplianceIngestionBatchWorker',
       entry: 'workers/process-compliance-ingestion-batch.ts',
-      environment,
+      environment: workerDbEnvironment,
       layers: [pyMuPdfLayer],
       extraEnvironment: {
+        ...ingestionEnvironment,
         PYTHONPATH:
           process.env.PYTHONPATH ?? '/opt/python:/opt/python/lib/python3.12/site-packages',
       },
@@ -364,17 +531,21 @@ export class ApiRuntimeStack extends Stack {
       timeout: Duration.seconds(600),
     });
 
-    const processModelTrainingTriggerWorker = createApiFunction(this, {
-      id: 'ProcessModelTrainingTriggerWorker',
-      entry: 'workers/process-model-training-trigger.ts',
-      environment: mlRuntimeEnvironment,
-      extraEnvironment: mlTrainingEnvironment,
-      memorySize: 1024,
-      timeout: Duration.minutes(15),
-    });
+    const processModelTrainingTriggerWorker = mlAutomationEnabled
+      ? createApiFunction(this, {
+          id: 'ProcessModelTrainingTriggerWorker',
+          entry: 'workers/process-model-training-trigger.ts',
+          environment: mlRuntimeEnvironment,
+          extraEnvironment: mlTrainingEnvironment,
+          memorySize: 1024,
+          timeout: Duration.minutes(15),
+        })
+      : null;
 
     foundation.recommendationQueue.grantSendMessages(createInputHandler);
-    foundation.modelTrainingTriggerQueue.grantSendMessages(submitFeedbackHandler);
+    if (mlAutomationEnabled) {
+      foundation.modelTrainingTriggerQueue.grantSendMessages(submitFeedbackHandler);
+    }
     foundation.premiumEnrichmentQueue.grantSendMessages(processRecommendationJobWorker);
     foundation.premiumEnrichmentQueue.grantSendMessages(refreshRecommendationPremiumHandler);
     foundation.artifactsBucket.grantPut(createUploadUrlHandler);
@@ -387,44 +558,47 @@ export class ApiRuntimeStack extends Stack {
     foundation.ingestionQueue.grantSendMessages(registerSourceHandler);
 
     // RetrainTriggerWorker reads/writes training data and model artifacts
-    foundation.artifactsBucket.grantReadWrite(retrainTriggerWorker);
-    foundation.artifactsBucket.grantReadWrite(retrainPremiumTriggerWorker);
-    foundation.artifactsBucket.grantReadWrite(processModelTrainingTriggerWorker);
-    retrainTriggerWorker.addToRolePolicy(
-      new iam.PolicyStatement({
-        actions: ['sagemaker:CreateTrainingJob', 'sagemaker:AddTags', 'iam:PassRole'],
-        resources: ['*'],
-      }),
-    );
-    retrainPremiumTriggerWorker.addToRolePolicy(
-      new iam.PolicyStatement({
-        actions: ['sagemaker:CreateTrainingJob', 'sagemaker:AddTags', 'iam:PassRole'],
-        resources: ['*'],
-      }),
-    );
-    processModelTrainingTriggerWorker.addToRolePolicy(
-      new iam.PolicyStatement({
-        actions: ['sagemaker:CreateTrainingJob', 'sagemaker:AddTags', 'iam:PassRole'],
-        resources: ['*'],
-      }),
-    );
+    if (retrainTriggerWorker && retrainPremiumTriggerWorker && processModelTrainingTriggerWorker) {
+      foundation.artifactsBucket.grantReadWrite(retrainTriggerWorker);
+      foundation.artifactsBucket.grantReadWrite(retrainPremiumTriggerWorker);
+      foundation.artifactsBucket.grantReadWrite(processModelTrainingTriggerWorker);
+      retrainTriggerWorker.addToRolePolicy(
+        new iam.PolicyStatement({
+          actions: ['sagemaker:CreateTrainingJob', 'sagemaker:AddTags', 'iam:PassRole'],
+          resources: ['*'],
+        }),
+      );
+      retrainPremiumTriggerWorker.addToRolePolicy(
+        new iam.PolicyStatement({
+          actions: ['sagemaker:CreateTrainingJob', 'sagemaker:AddTags', 'iam:PassRole'],
+          resources: ['*'],
+        }),
+      );
+      processModelTrainingTriggerWorker.addToRolePolicy(
+        new iam.PolicyStatement({
+          actions: ['sagemaker:CreateTrainingJob', 'sagemaker:AddTags', 'iam:PassRole'],
+          resources: ['*'],
+        }),
+      );
+    }
 
-    // EndpointUpdaterWorker creates SageMaker model/endpoint resources
-    endpointUpdaterWorker.addToRolePolicy(
-      new iam.PolicyStatement({
-        actions: [
-          'sagemaker:DescribeTrainingJob',
-          'sagemaker:CreateModel',
-          'sagemaker:CreateEndpointConfig',
-          'sagemaker:CreateEndpoint',
-          'sagemaker:UpdateEndpoint',
-          'sagemaker:DescribeEndpoint',
-          'sagemaker:AddTags',
-          'iam:PassRole',
-        ],
-        resources: ['*'],
-      }),
-    );
+    if (endpointUpdaterWorker) {
+      endpointUpdaterWorker.addToRolePolicy(
+        new iam.PolicyStatement({
+          actions: [
+            'sagemaker:DescribeTrainingJob',
+            'sagemaker:CreateModel',
+            'sagemaker:CreateEndpointConfig',
+            'sagemaker:CreateEndpoint',
+            'sagemaker:UpdateEndpoint',
+            'sagemaker:DescribeEndpoint',
+            'sagemaker:AddTags',
+            'iam:PassRole',
+          ],
+          resources: ['*'],
+        }),
+      );
+    }
 
     // DiscoverSourcesWorker enqueues newly found sources for ingestion
     foundation.ingestionQueue.grantSendMessages(discoverSourcesWorker);
@@ -442,38 +616,45 @@ export class ApiRuntimeStack extends Stack {
     runIngestionScheduleRule.addTarget(new eventsTargets.LambdaFunction(runIngestionBatchWorker));
 
     // ML retraining: fires nightly at 02:00 UTC, exports CSV + submits SageMaker job
-    const retrainScheduleRule = new events.Rule(this, 'RetrainTriggerScheduleRule', {
-      ruleName: `${config.projectSlug}-${config.envName}-ml-retrain-schedule`,
-      schedule: events.Schedule.cron({ minute: '0', hour: '2' }),
-      description: 'Triggers LambdaRank model retraining check nightly at 02:00 UTC.',
-    });
-    retrainScheduleRule.addTarget(new eventsTargets.LambdaFunction(retrainTriggerWorker));
+    if (
+      mlAutomationEnabled &&
+      retrainTriggerWorker &&
+      retrainPremiumTriggerWorker &&
+      endpointUpdaterWorker
+    ) {
+      const retrainScheduleRule = new events.Rule(this, 'RetrainTriggerScheduleRule', {
+        ruleName: `${config.projectSlug}-${config.envName}-ml-retrain-schedule`,
+        schedule: events.Schedule.cron({ minute: '0', hour: '2' }),
+        description: 'Triggers LambdaRank model retraining check nightly at 02:00 UTC.',
+      });
+      retrainScheduleRule.addTarget(new eventsTargets.LambdaFunction(retrainTriggerWorker));
 
-    const retrainPremiumScheduleRule = new events.Rule(
-      this,
-      'RetrainPremiumTriggerScheduleRule',
-      {
-        ruleName: `${config.projectSlug}-${config.envName}-ml-premium-retrain-schedule`,
-        schedule: events.Schedule.cron({ minute: '30', hour: '2' }),
+      const retrainPremiumScheduleRule = new events.Rule(
+        this,
+        'RetrainPremiumTriggerScheduleRule',
+        {
+          ruleName: `${config.projectSlug}-${config.envName}-ml-premium-retrain-schedule`,
+          schedule: events.Schedule.cron({ minute: '30', hour: '2' }),
+          description:
+            'Triggers premium-quality model retraining check nightly at 02:30 UTC.',
+        }
+      );
+      retrainPremiumScheduleRule.addTarget(
+        new eventsTargets.LambdaFunction(retrainPremiumTriggerWorker)
+      );
+
+      const sageMakerCompleteRule = new events.Rule(this, 'SageMakerTrainingCompleteRule', {
+        ruleName: `${config.projectSlug}-${config.envName}-sagemaker-training-complete`,
         description:
-          'Triggers premium-quality model retraining check nightly at 02:30 UTC.',
-      }
-    );
-    retrainPremiumScheduleRule.addTarget(
-      new eventsTargets.LambdaFunction(retrainPremiumTriggerWorker)
-    );
-
-    // SageMaker training completion: automatically promotes new model to inference endpoint
-    const sageMakerCompleteRule = new events.Rule(this, 'SageMakerTrainingCompleteRule', {
-      ruleName: `${config.projectSlug}-${config.envName}-sagemaker-training-complete`,
-      description: 'Triggers endpoint update when a CropCopilot SageMaker training job completes.',
-      eventPattern: {
-        source: ['aws.sagemaker'],
-        detailType: ['SageMaker Training Job State Change'],
-        detail: { TrainingJobStatus: ['Completed', 'Failed', 'Stopped'] },
-      },
-    });
-    sageMakerCompleteRule.addTarget(new eventsTargets.LambdaFunction(endpointUpdaterWorker));
+          'Triggers endpoint update when a CropCopilot SageMaker training job completes.',
+        eventPattern: {
+          source: ['aws.sagemaker'],
+          detailType: ['SageMaker Training Job State Change'],
+          detail: { TrainingJobStatus: ['Completed', 'Failed', 'Stopped'] },
+        },
+      });
+      sageMakerCompleteRule.addTarget(new eventsTargets.LambdaFunction(endpointUpdaterWorker));
+    }
 
     // Crop × region discovery: monthly on the 1st at 06:00 UTC.
     // Each invocation calls Gemini with Google Search grounding — monthly cadence
@@ -546,12 +727,14 @@ export class ApiRuntimeStack extends Stack {
       })
     );
 
-    processModelTrainingTriggerWorker.addEventSource(
-      new lambdaEventSources.SqsEventSource(foundation.modelTrainingTriggerQueue, {
-        batchSize: 5,
-        reportBatchItemFailures: true,
-      })
-    );
+    if (processModelTrainingTriggerWorker) {
+      processModelTrainingTriggerWorker.addEventSource(
+        new lambdaEventSources.SqsEventSource(foundation.modelTrainingTriggerQueue, {
+          batchSize: 5,
+          reportBatchItemFailures: true,
+        })
+      );
+    }
 
     httpApi.addRoutes({
       path: '/api/v1/health',
@@ -834,7 +1017,8 @@ export class ApiRuntimeStack extends Stack {
     const getDiscoveryStatusHandler = createApiFunction(this, {
       id: 'GetDiscoveryStatusHandler',
       entry: 'handlers/get-discovery-status.ts',
-      environment,
+      environment: authedDbEnvironment,
+      extraEnvironment: adminEnvironment,
     });
 
     httpApi.addRoutes({
@@ -869,6 +1053,7 @@ interface ApiFunctionProps {
   id: string;
   entry: string;
   environment: Record<string, string>;
+  logRetention?: logs.RetentionDays;
   extraEnvironment?: Record<string, string>;
   layers?: lambda.ILayerVersion[];
   timeout?: Duration;
@@ -877,6 +1062,10 @@ interface ApiFunctionProps {
 
 function createApiFunction(scope: Construct, props: ApiFunctionProps): lambdaNodejs.NodejsFunction {
   const workspaceRoot = path.resolve(__dirname, '..', '..', '..');
+  const defaultLogRetention =
+    (process.env.CROP_ENV ?? 'dev').trim().toLowerCase() === 'prod'
+      ? logs.RetentionDays.TWO_WEEKS
+      : logs.RetentionDays.ONE_WEEK;
 
   return new lambdaNodejs.NodejsFunction(scope, props.id, {
     runtime: lambda.Runtime.NODEJS_22_X,
@@ -885,10 +1074,11 @@ function createApiFunction(scope: Construct, props: ApiFunctionProps): lambdaNod
     handler: 'handler',
     timeout: props.timeout ?? Duration.seconds(30),
     memorySize: props.memorySize ?? 512,
-    environment: {
+    logRetention: props.logRetention ?? defaultLogRetention,
+    environment: compactEnvironment({
       ...props.environment,
       ...(props.extraEnvironment ?? {}),
-    },
+    }),
     layers: props.layers,
     depsLockFilePath: path.join(workspaceRoot, 'pnpm-lock.yaml'),
     projectRoot: workspaceRoot,
@@ -899,6 +1089,49 @@ function createApiFunction(scope: Construct, props: ApiFunctionProps): lambdaNod
       tsconfig: path.join(workspaceRoot, 'apps', 'api', 'tsconfig.json'),
     },
   });
+}
+
+function pickEnvironment(
+  source: Record<string, string>,
+  keys: readonly string[]
+): Record<string, string> {
+  const selected: Record<string, string> = {};
+  for (const key of keys) {
+    if (key in source) {
+      selected[key] = source[key] ?? '';
+    }
+  }
+  return compactEnvironment(selected);
+}
+
+function mergeEnvironments(...parts: Array<Record<string, string>>): Record<string, string> {
+  const merged: Record<string, string> = {};
+  for (const part of parts) {
+    for (const [key, value] of Object.entries(part)) {
+      merged[key] = value;
+    }
+  }
+  return compactEnvironment(merged);
+}
+
+function compactEnvironment(source: Record<string, string>): Record<string, string> {
+  return Object.fromEntries(
+    Object.entries(source).filter(([, value]) => String(value ?? '').trim().length > 0)
+  );
+}
+
+function parseBooleanEnv(raw: string | undefined, fallback: boolean): boolean {
+  const normalized = (raw ?? '').trim().toLowerCase();
+  if (!normalized) {
+    return fallback;
+  }
+  if (['1', 'true', 'yes', 'on'].includes(normalized)) {
+    return true;
+  }
+  if (['0', 'false', 'no', 'off'].includes(normalized)) {
+    return false;
+  }
+  return fallback;
 }
 
 function buildApiEnvironment(
@@ -919,9 +1152,15 @@ function buildApiEnvironment(
   const supabaseUrl = process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseAnonKey =
     process.env.SUPABASE_ANON_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const mlAutomationEnabled = parseBooleanEnv(process.env.ENABLE_ML_AUTOMATION, false);
+  const sagemakerEndpointEnabled = parseBooleanEnv(
+    process.env.ENABLE_SAGEMAKER_REALTIME_ENDPOINT,
+    false
+  );
 
-  const cognitoRegion = process.env.COGNITO_REGION;
-  const cognitoUserPoolId = process.env.COGNITO_USER_POOL_ID;
+  const cognitoRegion = process.env.COGNITO_REGION ?? Stack.of(foundation).region;
+  const cognitoUserPoolId =
+    process.env.COGNITO_USER_POOL_ID ?? foundation.authUserPool.userPoolId;
   const hasCognitoVerifier = Boolean(cognitoRegion && cognitoUserPoolId);
   const hasSupabaseVerifier = Boolean(supabaseUrl && supabaseAnonKey);
 
@@ -940,7 +1179,9 @@ function buildApiEnvironment(
     SQS_PREMIUM_ENRICHMENT_QUEUE_URL: foundation.premiumEnrichmentQueue.queueUrl,
     SQS_INGESTION_QUEUE_URL: foundation.ingestionQueue.queueUrl,
     SQS_COMPLIANCE_INGESTION_QUEUE_URL: foundation.complianceIngestionQueue.queueUrl,
-    SQS_MODEL_TRAINING_TRIGGER_QUEUE_URL: foundation.modelTrainingTriggerQueue.queueUrl,
+    SQS_MODEL_TRAINING_TRIGGER_QUEUE_URL: mlAutomationEnabled
+      ? foundation.modelTrainingTriggerQueue.queueUrl
+      : '',
     SNS_PUSH_EVENTS_TOPIC_ARN: foundation.pushEventsTopic.topicArn,
     METRICS_NAMESPACE: config.metricsNamespace,
     RECOMMENDATION_COST_USD: process.env.RECOMMENDATION_COST_USD ?? '0.81',
@@ -957,7 +1198,13 @@ function buildApiEnvironment(
     RAG_RETRIEVAL_LIMIT: process.env.RAG_RETRIEVAL_LIMIT ?? '18',
     PG_POOL_MAX: process.env.PG_POOL_MAX ?? '6',
     // SageMaker reranker (leave empty to disable; reranker falls back to hybrid ranking)
-    SAGEMAKER_ENDPOINT_NAME: process.env.SAGEMAKER_ENDPOINT_NAME ?? '',
+    ENABLE_ML_AUTOMATION: mlAutomationEnabled ? 'true' : 'false',
+    ENABLE_SAGEMAKER_REALTIME_ENDPOINT: sagemakerEndpointEnabled ? 'true' : 'false',
+    DISABLE_RERANKER:
+      process.env.DISABLE_RERANKER ?? (sagemakerEndpointEnabled ? '0' : '1'),
+    SAGEMAKER_ENDPOINT_NAME: sagemakerEndpointEnabled
+      ? process.env.SAGEMAKER_ENDPOINT_NAME ?? ''
+      : '',
     RETRAINING_MIN_FEEDBACK: process.env.RETRAINING_MIN_FEEDBACK ?? '50',
     PREMIUM_RETRAINING_MIN_FEEDBACK: process.env.PREMIUM_RETRAINING_MIN_FEEDBACK ?? '30',
     // PDF parsing via LlamaParse (1000 free pages/day; leave empty to skip PDFs)
@@ -970,9 +1217,20 @@ function buildApiEnvironment(
     PYMUPDF_OCR_DPI: process.env.PYMUPDF_OCR_DPI ?? '150',
     // Gemini-powered source discovery (still used for discover-sources/compliance workers)
     GOOGLE_AI_API_KEY: process.env.GOOGLE_AI_API_KEY ?? '',
-    // Pricing search provider — default "perplexity" (~$0.006/product, 6× cheaper than Gemini grounding)
-    // Options: "perplexity" | "brave" | "gemini"
-    PRICING_SEARCH_PROVIDER: process.env.PRICING_SEARCH_PROVIDER ?? 'perplexity',
+    // Pricing/web search provider — default "brave" for low fixed request cost and no LLM extraction.
+    // Options: "brave" | "perplexity" | "gemini"
+    PRICING_SEARCH_PROVIDER: process.env.PRICING_SEARCH_PROVIDER ?? 'brave',
+    PRICING_BATCH_MAX_IDS: process.env.PRICING_BATCH_MAX_IDS ?? '10',
+    PRICING_BATCH_DAILY_LIVE_LOOKUP_LIMIT:
+      process.env.PRICING_BATCH_DAILY_LIVE_LOOKUP_LIMIT ?? '25',
+    PRICING_POSITIVE_CACHE_TTL_MS:
+      process.env.PRICING_POSITIVE_CACHE_TTL_MS ?? `${7 * 24 * 60 * 60 * 1000}`,
+    PRICING_NEGATIVE_CACHE_TTL_MS:
+      process.env.PRICING_NEGATIVE_CACHE_TTL_MS ?? `${24 * 60 * 60 * 1000}`,
+    PRICING_PAGE_FETCH_LIMIT: process.env.PRICING_PAGE_FETCH_LIMIT ?? '2',
+    PRICING_PAGE_FETCH_TIMEOUT_MS: process.env.PRICING_PAGE_FETCH_TIMEOUT_MS ?? '4000',
+    PREMIUM_PRICING_MAX_LIVE_LOOKUPS_PER_CALL:
+      process.env.PREMIUM_PRICING_MAX_LIVE_LOOKUPS_PER_CALL ?? '2',
     PERPLEXITY_API_KEY: process.env.PERPLEXITY_API_KEY ?? '',
     BRAVE_SEARCH_API_KEY: process.env.BRAVE_SEARCH_API_KEY ?? '',
     OPENWEATHER_API_KEY: process.env.OPENWEATHER_API_KEY ?? '',
@@ -1000,7 +1258,8 @@ function buildApiEnvironment(
     COMPLIANCE_DISCOVERY_BATCH_SIZE: process.env.COMPLIANCE_DISCOVERY_BATCH_SIZE ?? '25',
     COGNITO_REGION: cognitoRegion ?? '',
     COGNITO_USER_POOL_ID: cognitoUserPoolId ?? '',
-    COGNITO_APP_CLIENT_ID: process.env.COGNITO_APP_CLIENT_ID ?? '',
+    COGNITO_APP_CLIENT_ID:
+      process.env.COGNITO_APP_CLIENT_ID ?? foundation.authUserPoolClient.userPoolClientId,
     SUPABASE_URL: supabaseUrl ?? '',
     SUPABASE_ANON_KEY: supabaseAnonKey ?? '',
     ADMIN_USER_IDS: process.env.ADMIN_USER_IDS ?? '',
