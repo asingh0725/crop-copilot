@@ -21,11 +21,12 @@ if command -v docker >/dev/null 2>&1; then
   echo "Building PyMuPDF layer using $IMAGE ($PLATFORM)..."
   docker run --rm \
     --platform "$PLATFORM" \
+    --entrypoint /bin/sh \
     -u "$(id -u):$(id -g)" \
     -v "$PYTHON_DIR:/asset-output/python" \
     -v "$REQ_FILE:/tmp/requirements.txt:ro" \
     "$IMAGE" \
-    /bin/sh -lc "
+    -lc "
       python -m pip install --no-cache-dir -r /tmp/requirements.txt -t /asset-output/python &&
       PYTHONPATH=/asset-output/python python - <<'PY'
 import pymupdf
