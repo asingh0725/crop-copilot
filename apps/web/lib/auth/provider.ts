@@ -1,4 +1,4 @@
-export type AuthProvider = 'supabase' | 'cognito';
+export type AuthProvider = 'supabase' | 'cognito' | 'local';
 
 function isTruthy(value: string | undefined): boolean {
   return ['1', 'true', 'yes', 'on'].includes((value ?? '').trim().toLowerCase());
@@ -6,7 +6,7 @@ function isTruthy(value: string | undefined): boolean {
 
 export function getAuthProvider(): AuthProvider {
   const explicit = process.env.NEXT_PUBLIC_AUTH_PROVIDER?.trim().toLowerCase();
-  if (explicit === 'cognito' || explicit === 'supabase') {
+  if (explicit === 'local' || explicit === 'cognito' || explicit === 'supabase') {
     return explicit;
   }
 

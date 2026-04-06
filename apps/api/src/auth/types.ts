@@ -5,7 +5,7 @@ export interface AuthContext {
   email?: string;
   scopes: string[];
   tokenUse?: string;
-  authProvider?: 'supabase' | 'cognito';
+  authProvider?: 'supabase' | 'cognito' | 'local';
   authSubject?: string;
 }
 

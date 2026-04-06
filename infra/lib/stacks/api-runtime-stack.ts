@@ -433,9 +433,6 @@ export class ApiRuntimeStack extends Stack {
       XGBOOST_ETA: process.env.XGBOOST_ETA ?? '0.1',
       XGBOOST_SUBSAMPLE: process.env.XGBOOST_SUBSAMPLE ?? '0.85',
       XGBOOST_COLSAMPLE_BYTREE: process.env.XGBOOST_COLSAMPLE_BYTREE ?? '0.85',
-      SAGEMAKER_INFERENCE_IMAGE: process.env.SAGEMAKER_INFERENCE_IMAGE ?? '',
-      SAGEMAKER_ENDPOINT_CONTAINER_MODE: process.env.SAGEMAKER_ENDPOINT_CONTAINER_MODE ?? 'native',
-      SAGEMAKER_INFERENCE_PROGRAM: process.env.SAGEMAKER_INFERENCE_PROGRAM ?? 'inference.py',
     };
 
     const mlRuntimeEnvironment: Record<string, string> = {
@@ -446,10 +443,10 @@ export class ApiRuntimeStack extends Stack {
       METRICS_NAMESPACE: environment.METRICS_NAMESPACE ?? 'CropCopilot/Pipeline',
       RETRAINING_MIN_FEEDBACK: environment.RETRAINING_MIN_FEEDBACK ?? '50',
       PREMIUM_RETRAINING_MIN_FEEDBACK: environment.PREMIUM_RETRAINING_MIN_FEEDBACK ?? '30',
-      SAGEMAKER_ENDPOINT_NAME: environment.SAGEMAKER_ENDPOINT_NAME ?? '',
     };
 
-    // Nightly ML model retraining: exports training data to S3, submits SageMaker job
+    // Nightly ML model retraining: exports examples, trains in-house artifacts,
+    // and promotes them by updating MLModelVersion.
     const retrainTriggerWorker = mlAutomationEnabled
       ? createApiFunction(this, {
           id: 'RetrainTriggerWorker',
@@ -469,18 +466,6 @@ export class ApiRuntimeStack extends Stack {
           extraEnvironment: mlTrainingEnvironment,
           memorySize: 512,
           timeout: Duration.minutes(10),
-        })
-      : null;
-
-    // Triggered by SageMaker training completion event — promotes new model to endpoint
-    const endpointUpdaterWorker = mlAutomationEnabled
-      ? createApiFunction(this, {
-          id: 'EndpointUpdaterWorker',
-          entry: 'ml/training/endpoint-updater.ts',
-          environment: mlRuntimeEnvironment,
-          extraEnvironment: mlTrainingEnvironment,
-          memorySize: 256,
-          timeout: Duration.seconds(60),
         })
       : null;
 
@@ -557,47 +542,11 @@ export class ApiRuntimeStack extends Stack {
     foundation.ingestionQueue.grantSendMessages(runIngestionBatchWorker);
     foundation.ingestionQueue.grantSendMessages(registerSourceHandler);
 
-    // RetrainTriggerWorker reads/writes training data and model artifacts
+    // ML training workers read/write model artifacts and observability data.
     if (retrainTriggerWorker && retrainPremiumTriggerWorker && processModelTrainingTriggerWorker) {
       foundation.artifactsBucket.grantReadWrite(retrainTriggerWorker);
       foundation.artifactsBucket.grantReadWrite(retrainPremiumTriggerWorker);
       foundation.artifactsBucket.grantReadWrite(processModelTrainingTriggerWorker);
-      retrainTriggerWorker.addToRolePolicy(
-        new iam.PolicyStatement({
-          actions: ['sagemaker:CreateTrainingJob', 'sagemaker:AddTags', 'iam:PassRole'],
-          resources: ['*'],
-        }),
-      );
-      retrainPremiumTriggerWorker.addToRolePolicy(
-        new iam.PolicyStatement({
-          actions: ['sagemaker:CreateTrainingJob', 'sagemaker:AddTags', 'iam:PassRole'],
-          resources: ['*'],
-        }),
-      );
-      processModelTrainingTriggerWorker.addToRolePolicy(
-        new iam.PolicyStatement({
-          actions: ['sagemaker:CreateTrainingJob', 'sagemaker:AddTags', 'iam:PassRole'],
-          resources: ['*'],
-        }),
-      );
-    }
-
-    if (endpointUpdaterWorker) {
-      endpointUpdaterWorker.addToRolePolicy(
-        new iam.PolicyStatement({
-          actions: [
-            'sagemaker:DescribeTrainingJob',
-            'sagemaker:CreateModel',
-            'sagemaker:CreateEndpointConfig',
-            'sagemaker:CreateEndpoint',
-            'sagemaker:UpdateEndpoint',
-            'sagemaker:DescribeEndpoint',
-            'sagemaker:AddTags',
-            'iam:PassRole',
-          ],
-          resources: ['*'],
-        }),
-      );
     }
 
     // DiscoverSourcesWorker enqueues newly found sources for ingestion
@@ -615,13 +564,8 @@ export class ApiRuntimeStack extends Stack {
     });
     runIngestionScheduleRule.addTarget(new eventsTargets.LambdaFunction(runIngestionBatchWorker));
 
-    // ML retraining: fires nightly at 02:00 UTC, exports CSV + submits SageMaker job
-    if (
-      mlAutomationEnabled &&
-      retrainTriggerWorker &&
-      retrainPremiumTriggerWorker &&
-      endpointUpdaterWorker
-    ) {
+    // ML retraining: fires nightly and produces in-house model artifacts.
+    if (mlAutomationEnabled && retrainTriggerWorker && retrainPremiumTriggerWorker) {
       const retrainScheduleRule = new events.Rule(this, 'RetrainTriggerScheduleRule', {
         ruleName: `${config.projectSlug}-${config.envName}-ml-retrain-schedule`,
         schedule: events.Schedule.cron({ minute: '0', hour: '2' }),
@@ -642,18 +586,6 @@ export class ApiRuntimeStack extends Stack {
       retrainPremiumScheduleRule.addTarget(
         new eventsTargets.LambdaFunction(retrainPremiumTriggerWorker)
       );
-
-      const sageMakerCompleteRule = new events.Rule(this, 'SageMakerTrainingCompleteRule', {
-        ruleName: `${config.projectSlug}-${config.envName}-sagemaker-training-complete`,
-        description:
-          'Triggers endpoint update when a CropCopilot SageMaker training job completes.',
-        eventPattern: {
-          source: ['aws.sagemaker'],
-          detailType: ['SageMaker Training Job State Change'],
-          detail: { TrainingJobStatus: ['Completed', 'Failed', 'Stopped'] },
-        },
-      });
-      sageMakerCompleteRule.addTarget(new eventsTargets.LambdaFunction(endpointUpdaterWorker));
     }
 
     // Crop × region discovery: monthly on the 1st at 06:00 UTC.
@@ -1153,10 +1085,6 @@ function buildApiEnvironment(
   const supabaseAnonKey =
     process.env.SUPABASE_ANON_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   const mlAutomationEnabled = parseBooleanEnv(process.env.ENABLE_ML_AUTOMATION, false);
-  const sagemakerEndpointEnabled = parseBooleanEnv(
-    process.env.ENABLE_SAGEMAKER_REALTIME_ENDPOINT,
-    false
-  );
 
   const cognitoRegion = process.env.COGNITO_REGION ?? Stack.of(foundation).region;
   const cognitoUserPoolId =
@@ -1197,14 +1125,11 @@ function buildApiEnvironment(
     OPENAI_EMBEDDING_MODEL: process.env.OPENAI_EMBEDDING_MODEL ?? '',
     RAG_RETRIEVAL_LIMIT: process.env.RAG_RETRIEVAL_LIMIT ?? '18',
     PG_POOL_MAX: process.env.PG_POOL_MAX ?? '6',
-    // SageMaker reranker (leave empty to disable; reranker falls back to hybrid ranking)
+    // In-house reranker: disable only for incident response or debugging.
     ENABLE_ML_AUTOMATION: mlAutomationEnabled ? 'true' : 'false',
-    ENABLE_SAGEMAKER_REALTIME_ENDPOINT: sagemakerEndpointEnabled ? 'true' : 'false',
-    DISABLE_RERANKER:
-      process.env.DISABLE_RERANKER ?? (sagemakerEndpointEnabled ? '0' : '1'),
-    SAGEMAKER_ENDPOINT_NAME: sagemakerEndpointEnabled
-      ? process.env.SAGEMAKER_ENDPOINT_NAME ?? ''
-      : '',
+    ENABLE_SAGEMAKER_REALTIME_ENDPOINT: 'false',
+    DISABLE_RERANKER: process.env.DISABLE_RERANKER ?? '0',
+    SAGEMAKER_ENDPOINT_NAME: '',
     RETRAINING_MIN_FEEDBACK: process.env.RETRAINING_MIN_FEEDBACK ?? '50',
     PREMIUM_RETRAINING_MIN_FEEDBACK: process.env.PREMIUM_RETRAINING_MIN_FEEDBACK ?? '30',
     // PDF parsing via LlamaParse (1000 free pages/day; leave empty to skip PDFs)

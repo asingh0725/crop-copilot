@@ -86,6 +86,12 @@ jobs:
             --query "StackResourceSummaries[?LogicalResourceId=='$DB_RESOURCE_LOGICAL_ID'].PhysicalResourceId | [0]" \
             --output text)
           if [ -z "$DB_INSTANCE_ID" ] || [ "$DB_INSTANCE_ID" = "None" ]; then
+            DB_INSTANCE_ID=$(aws cloudformation list-stack-resources \
+              --stack-name "$DB_STACK_NAME" \
+              --query "StackResourceSummaries[?ResourceType=='AWS::RDS::DBInstance'].PhysicalResourceId | [0]" \
+              --output text)
+          fi
+          if [ -z "$DB_INSTANCE_ID" ] || [ "$DB_INSTANCE_ID" = "None" ]; then
             echo "Failed to resolve DB instance from stack $DB_STACK_NAME logical id $DB_RESOURCE_LOGICAL_ID"
             exit 1
           fi

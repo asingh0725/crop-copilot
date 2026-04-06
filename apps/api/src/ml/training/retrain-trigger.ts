@@ -1,35 +1,52 @@
 /**
- * Automated retraining trigger (EventBridge Lambda)
+ * Automated in-house retraining trigger.
  *
- * Runs on a schedule (e.g. nightly at 2 AM UTC).
- * Checks if enough new Feedback rows have accumulated since the last
- * training run. If so:
- *   1. Exports training data from Postgres to S3 (CSV)
- *   2. Kicks off a SageMaker Training Job using the exported CSV
- *   3. Records the new version in MLModelVersion table
+ * Runs on a schedule or from feedback-triggered queue work. When enough new
+ * feedback exists, it:
+ *   1. Builds retrieval ranking examples from RetrievalAudit + Feedback
+ *   2. Trains an in-house linear ranking artifact
+ *   3. Deploys that artifact by updating MLModelVersion and persisting JSON
  *
- * Environment variables:
- *   DATABASE_URL                — Postgres connection string
- *   RETRAINING_MIN_FEEDBACK     — Minimum new Feedback rows before retraining (default 50)
- *   S3_TRAINING_BUCKET          — S3 bucket for training data export and model artifacts
- *   SAGEMAKER_TRAINING_JOB_NAME — Base name for training jobs (default: cropcopilot-ltr)
- *   SAGEMAKER_TRAINING_IMAGE    — ECR image URI for the LightGBM training container
- *   SAGEMAKER_ROLE_ARN          — IAM role ARN for SageMaker jobs
- *   AWS_REGION                  — AWS region (defaults to us-east-1)
+ * No SageMaker training job or realtime endpoint is involved.
  */
 
 import type { EventBridgeHandler } from 'aws-lambda';
 import { Pool } from 'pg';
 import { resolvePoolSslConfig, sanitizeDatabaseUrlForPool } from '../../lib/store';
 import { recordPipelineEvent } from '../../lib/pipeline-events';
+import { buildFeatureVector, RETRIEVAL_FEATURE_NAMES } from '../reranker';
+import {
+  getDefaultModelArtifact,
+  trainLinearRankingModel,
+  type RankingExample,
+} from '../in-house-models';
+import { deployInHouseModelArtifact, retireModelVersion } from '../model-registry';
 
 const DEFAULT_MIN_FEEDBACK = 50;
 
 interface RetrainTriggerEvent {
-  force?: boolean; // Skip the feedback count check and always retrain
+  force?: boolean;
 }
 
-type TrainingBackend = 'lightgbm_custom' | 'xgboost_builtin';
+interface ChunkEntry {
+  id: string;
+  sourceId: string | null;
+  similarity: number;
+  rankScore: number;
+  sourceType: string;
+  cited: boolean;
+  metadata?: { crops?: string[]; topics?: string[]; position?: number };
+}
+
+interface TrainingRow {
+  recommendation_id: string;
+  candidate_chunks: unknown;
+  query_topics: unknown;
+  query_crop: string | null;
+  helpful: boolean | null;
+  rating: number | null;
+  outcome_success: boolean | null;
+}
 
 let pool: Pool | null = null;
 
@@ -59,27 +76,6 @@ async function hasActiveTrainingRun(db: Pool): Promise<boolean> {
   return Number(active.rows[0]?.count ?? 0) > 0;
 }
 
-// ── Training data export helpers ─────────────────────────────────────────────
-
-const AUTHORITY_SCORES: Record<string, number> = {
-  GOVERNMENT: 1.0,
-  UNIVERSITY_EXTENSION: 0.9,
-  RESEARCH_PAPER: 0.85,
-  MANUFACTURER: 0.6,
-  RETAILER: 0.4,
-  OTHER: 0.5,
-};
-
-interface ChunkEntry {
-  id: string;
-  sourceId: string | null;
-  similarity: number;
-  rankScore: number;
-  sourceType: string;
-  cited: boolean;
-  metadata?: { crops?: string[]; topics?: string[]; position?: number };
-}
-
 function parseChunks(raw: unknown): ChunkEntry[] {
   if (!Array.isArray(raw)) return [];
   return raw
@@ -96,12 +92,12 @@ function parseChunks(raw: unknown): ChunkEntry[] {
           ? (item['metadata'] as ChunkEntry['metadata'])
           : undefined,
     }))
-    .filter((c) => c.id.length > 0);
+    .filter((chunk) => chunk.id.length > 0);
 }
 
 function parseTopics(raw: unknown): string[] {
   if (!Array.isArray(raw)) return [];
-  return raw.filter((t): t is string => typeof t === 'string').map((t) => t.toLowerCase());
+  return raw.filter((topic): topic is string => typeof topic === 'string').map((topic) => topic.toLowerCase());
 }
 
 function computeFeedbackSignal(params: {
@@ -129,67 +125,25 @@ function computeLabel(cited: boolean, feedbackSignal: number): 0 | 1 | 2 {
   return 1;
 }
 
-function resolveTrainingBackend(raw: string | undefined): TrainingBackend {
-  const normalized = (raw ?? '').trim().toLowerCase();
-  if (normalized === 'xgboost' || normalized === 'xgboost_builtin' || normalized === 'builtin') {
-    return 'xgboost_builtin';
-  }
-  return 'lightgbm_custom';
-}
-
-function clamp(value: number, min: number, max: number): number {
-  if (!Number.isFinite(value)) return min;
-  return Math.min(max, Math.max(min, value));
-}
-
-/**
- * Export training data from Postgres directly to S3 as a CSV file.
- * Returns the S3 URI of the uploaded file.
- */
-async function exportTrainingDataToS3(
-  db: Pool,
-  bucket: string,
-  region: string,
-  backend: TrainingBackend,
-): Promise<{ s3PrefixUri: string; rowCount: number }> {
-  const { S3Client, PutObjectCommand } = await import('@aws-sdk/client-s3');
-  const s3 = new S3Client({ region });
-
-  // Pre-load source boosts for the feature vector
+async function buildRetrievalTrainingExamples(db: Pool): Promise<RankingExample[]> {
   const boostResult = await db.query<{ source_id: string; boost: number }>(
     `SELECT "sourceId" AS source_id, boost FROM "SourceBoost"`,
   );
-  const boostBySourceId = new Map<string, number>(
-    boostResult.rows.map((r) => [r.source_id, r.boost]),
-  );
+  const boostBySourceId = new Map<string, number>(boostResult.rows.map((row) => [row.source_id, row.boost]));
 
-  const csvLines: string[] =
-    backend === 'xgboost_builtin'
-      ? []
-      : [
-          'qid,label,f0_similarity,f1_rank_score,f2_authority,f3_source_boost,f4_crop_match,f5_term_density,f6_chunk_pos',
-        ];
-
+  const examples: RankingExample[] = [];
   const PAGE_SIZE = 500;
   let offset = 0;
 
   while (true) {
-    const result = await db.query<{
-      recommendation_id: string;
-      candidate_chunks: unknown;
-      query_topics: unknown;
-      query_crop: string | null;
-      helpful: boolean | null;
-      rating: number | null;
-      outcome_success: boolean | null;
-    }>(
+    const result = await db.query<TrainingRow>(
       `SELECT COALESCE(ra."recommendationId", resolved.id) AS recommendation_id,
-              ra."candidateChunks"  AS candidate_chunks,
-              ra.topics             AS query_topics,
-              i.crop                AS query_crop,
+              ra."candidateChunks" AS candidate_chunks,
+              ra.topics AS query_topics,
+              i.crop AS query_crop,
               f.helpful,
               f.rating,
-              f."outcomeSuccess"    AS outcome_success
+              f."outcomeSuccess" AS outcome_success
        FROM "RetrievalAudit" ra
        LEFT JOIN LATERAL (
          SELECT r.id
@@ -198,7 +152,7 @@ async function exportTrainingDataToS3(
          ORDER BY ABS(EXTRACT(EPOCH FROM (r."createdAt" - ra."createdAt"))), r."createdAt" DESC
          LIMIT 1
        ) resolved ON TRUE
-       LEFT JOIN "Input"    i ON i.id = ra."inputId"
+       LEFT JOIN "Input" i ON i.id = ra."inputId"
        INNER JOIN "Feedback" f ON f."recommendationId" = COALESCE(ra."recommendationId", resolved.id)
        WHERE COALESCE(ra."recommendationId", resolved.id) IS NOT NULL
        ORDER BY ra."createdAt" DESC
@@ -206,86 +160,66 @@ async function exportTrainingDataToS3(
       [PAGE_SIZE, offset],
     );
 
-    if (result.rows.length === 0) break;
+    if (result.rows.length === 0) {
+      break;
+    }
 
     for (const row of result.rows) {
       const chunks = parseChunks(row.candidate_chunks);
-      if (chunks.length === 0) continue;
+      if (chunks.length === 0) {
+        continue;
+      }
 
-      const signal = computeFeedbackSignal({
+      const feedbackSignal = computeFeedbackSignal({
         helpful: row.helpful,
         rating: row.rating,
         outcomeSuccess: row.outcome_success,
       });
-
-      const queryTopics = parseTopics(row.query_topics);
-      const queryCrop = (row.query_crop ?? '').toLowerCase().trim();
+      const queryTerms = parseTopics(row.query_topics);
+      const crop = row.query_crop ?? undefined;
 
       for (const chunk of chunks) {
-        const label = computeLabel(chunk.cited, signal);
-        const authority = AUTHORITY_SCORES[chunk.sourceType] ?? AUTHORITY_SCORES['OTHER']!;
-        const sourceBoost = clamp(boostBySourceId.get(chunk.sourceId ?? '') ?? 0, -0.1, 0.25);
-        const similarity = clamp(chunk.similarity, 0, 1);
-        const rankScore = clamp(chunk.rankScore, 0, 1);
+        const label = computeLabel(chunk.cited, feedbackSignal);
+        const features = buildFeatureVector(
+          {
+            chunkId: chunk.id,
+            sourceId: chunk.sourceId ?? undefined,
+            content: '',
+            similarity: chunk.similarity,
+            rankScore: chunk.rankScore,
+            sourceType: chunk.sourceType as any,
+            sourceTitle: '',
+            sourceBoost: boostBySourceId.get(chunk.sourceId ?? '') ?? 0,
+            metadata: chunk.metadata,
+            scoreBreakdown: {
+              vector: chunk.similarity,
+              keyword: 0,
+              authority: 0,
+              metadata: 0,
+            },
+          },
+          {
+            crop,
+            queryTerms,
+          }
+        );
 
-        const chunkCrops = (chunk.metadata?.crops ?? []).map((c) => c.toLowerCase());
-        const cropMatch = queryCrop.length > 0 && chunkCrops.includes(queryCrop) ? 1 : 0;
-
-        const chunkTopics = (chunk.metadata?.topics ?? []).map((t) => t.toLowerCase());
-        const termDensity =
-          queryTopics.length > 0
-            ? queryTopics.filter(
-                (t) => chunkTopics.includes(t) || chunkTopics.some((ct) => ct.includes(t)),
-              ).length / queryTopics.length
-            : 0;
-
-        const chunkPos = Math.min(1, (chunk.metadata?.position ?? 0) / 10);
-
-        if (backend === 'xgboost_builtin') {
-          csvLines.push(
-            `${label},` +
-              `${similarity.toFixed(6)},${rankScore.toFixed(6)},` +
-              `${authority.toFixed(2)},${sourceBoost.toFixed(4)},` +
-              `${cropMatch},${termDensity.toFixed(4)},${chunkPos.toFixed(4)}`,
-          );
-        } else {
-          csvLines.push(
-            `${row.recommendation_id},${label},` +
-              `${similarity.toFixed(6)},${rankScore.toFixed(6)},` +
-              `${authority.toFixed(2)},${sourceBoost.toFixed(4)},` +
-              `${cropMatch},${termDensity.toFixed(4)},${chunkPos.toFixed(4)}`,
-          );
-        }
+        examples.push({
+          qid: row.recommendation_id,
+          label,
+          features,
+        });
       }
     }
 
     offset += PAGE_SIZE;
-    if (result.rows.length < PAGE_SIZE) break;
+    if (result.rows.length < PAGE_SIZE) {
+      break;
+    }
   }
 
-  const s3Key = 'training-data/latest/training.csv';
-  await s3.send(
-    new PutObjectCommand({
-      Bucket: bucket,
-      Key: s3Key,
-      Body: Buffer.from(csvLines.join('\n'), 'utf-8'),
-      ContentType: 'text/csv',
-    }),
-  );
-
-  const rowCount = csvLines.length - (backend === 'xgboost_builtin' ? 0 : 1);
-  if (rowCount === 0) {
-    throw new Error('No lambdarank training rows were exported from RetrievalAudit + Feedback');
-  }
-  console.log(`[RetrainTrigger] Exported ${rowCount} training rows to s3://${bucket}/${s3Key}`);
-
-  return {
-    s3PrefixUri: `s3://${bucket}/training-data/latest/`,
-    rowCount,
-  };
+  return examples;
 }
-
-// ── Main handler ─────────────────────────────────────────────────────────────
 
 export const handler: EventBridgeHandler<
   'crop-copilot.ml.retrain.scheduled',
@@ -297,31 +231,21 @@ export const handler: EventBridgeHandler<
 
   const db = getPool();
 
-  // Find last successful training run
   const lastTrainedResult = await db.query<{ trained_at: Date }>(
     `SELECT "trainedAt" AS trained_at
      FROM "MLModelVersion"
      WHERE "modelType" = 'lambdarank' AND status = 'deployed'
      ORDER BY "trainedAt" DESC LIMIT 1`,
   );
-
   const lastTrainedAt = lastTrainedResult.rows[0]?.trained_at ?? new Date(0);
 
-  // Count new feedback since last training
   const feedbackResult = await db.query<{ count: string }>(
     `SELECT COUNT(*) AS count FROM "Feedback" WHERE "createdAt" > $1`,
     [lastTrainedAt.toISOString()],
   );
-
   const newFeedbackCount = Number(feedbackResult.rows[0]?.count ?? 0);
 
-  console.log(
-    `[RetrainTrigger] New feedback since ${lastTrainedAt.toISOString()}: ` +
-      `${newFeedbackCount} (threshold: ${minFeedback})`,
-  );
-
   if (!force && newFeedbackCount < minFeedback) {
-    console.log('[RetrainTrigger] Not enough new feedback — skipping retraining');
     await recordPipelineEvent(db, {
       pipeline: 'learning',
       stage: 'retrain_check',
@@ -339,7 +263,6 @@ export const handler: EventBridgeHandler<
   }
 
   if (await hasActiveTrainingRun(db)) {
-    console.log('[RetrainTrigger] Existing lambdarank training run in progress — skipping');
     await recordPipelineEvent(db, {
       pipeline: 'learning',
       stage: 'retrain_check',
@@ -352,32 +275,6 @@ export const handler: EventBridgeHandler<
     return;
   }
 
-  const bucket = process.env.S3_TRAINING_BUCKET;
-  const roleArn = process.env.SAGEMAKER_ROLE_ARN;
-  const trainingImage = process.env.SAGEMAKER_TRAINING_IMAGE;
-  const jobBaseName = process.env.SAGEMAKER_TRAINING_JOB_NAME ?? 'cropcopilot-ltr';
-  const trainingBackend = resolveTrainingBackend(process.env.SAGEMAKER_TRAINING_BACKEND);
-  const region = process.env.AWS_REGION ?? 'us-east-1';
-
-  if (!bucket || !roleArn || !trainingImage) {
-    console.warn(
-      '[RetrainTrigger] Missing S3_TRAINING_BUCKET / SAGEMAKER_ROLE_ARN / SAGEMAKER_TRAINING_IMAGE ' +
-        '— SageMaker job skipped. Set these env vars to enable automated retraining.',
-    );
-    await recordPipelineEvent(db, {
-      pipeline: 'learning',
-      stage: 'retrain_check',
-      severity: 'warn',
-      message:
-        'Skipped lambdarank retrain because S3_TRAINING_BUCKET / SAGEMAKER_ROLE_ARN / SAGEMAKER_TRAINING_IMAGE is not fully configured.',
-      metadata: {
-        modelType: 'lambdarank',
-      },
-    });
-    return;
-  }
-
-  // Create an MLModelVersion row with status=training
   const versionResult = await db.query<{ id: string }>(
     `INSERT INTO "MLModelVersion" ("modelType", "feedbackCount", status, "createdAt", "trainedAt")
      VALUES ('lambdarank', $1, 'training', NOW(), NOW())
@@ -389,142 +286,57 @@ export const handler: EventBridgeHandler<
   if (!modelVersionId) throw new Error('Failed to create MLModelVersion row');
 
   try {
-    // Step 1: Export training data from Postgres to S3
-    const exportResult = await exportTrainingDataToS3(
-      db,
-      bucket,
-      region,
-      trainingBackend,
-    );
-
-    // Step 2: Submit SageMaker training job
-    const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
-    const jobName = `${jobBaseName}-${timestamp}`;
-    const s3OutputPath = `s3://${bucket}/models/${jobName}/`;
-
-    const { SageMakerClient, CreateTrainingJobCommand } = await import(
-      '@aws-sdk/client-sagemaker'
-    );
-
-    const sm = new SageMakerClient({ region });
-    const channelName = trainingBackend === 'xgboost_builtin' ? 'train' : 'training';
-
-    const hyperParameters: Record<string, string> = {};
-    if (trainingBackend === 'xgboost_builtin') {
-      hyperParameters.objective = process.env.XGBOOST_OBJECTIVE ?? 'reg:squarederror';
-      hyperParameters.eval_metric = process.env.XGBOOST_EVAL_METRIC ?? 'rmse';
-      hyperParameters.num_round = process.env.XGBOOST_NUM_ROUND ?? '220';
-      hyperParameters.max_depth = process.env.XGBOOST_MAX_DEPTH ?? '6';
-      hyperParameters.eta = process.env.XGBOOST_ETA ?? '0.1';
-      hyperParameters.subsample = process.env.XGBOOST_SUBSAMPLE ?? '0.85';
-      hyperParameters.colsample_bytree = process.env.XGBOOST_COLSAMPLE_BYTREE ?? '0.85';
-    } else {
-      hyperParameters.model_version_id = modelVersionId;
+    const examples = await buildRetrievalTrainingExamples(db);
+    if (examples.length === 0) {
+      throw new Error('No lambdarank training rows were exported from RetrievalAudit + Feedback');
     }
 
-    await sm.send(
-      new CreateTrainingJobCommand({
-        TrainingJobName: jobName,
-        AlgorithmSpecification: {
-          TrainingImage: trainingImage,
-          TrainingInputMode: 'File',
-        },
-        RoleArn: roleArn,
-        InputDataConfig: [
-          {
-            ChannelName: channelName,
-            DataSource: {
-              S3DataSource: {
-                S3DataType: 'S3Prefix',
-                S3Uri: exportResult.s3PrefixUri,
-                S3DataDistributionType: 'FullyReplicated',
-              },
-            },
-            ContentType: 'text/csv',
-          },
-        ],
-        OutputDataConfig: {
-          S3OutputPath: s3OutputPath,
-        },
-        ResourceConfig: {
-          InstanceType: 'ml.m5.large',
-          InstanceCount: 1,
-          VolumeSizeInGB: 10,
-        },
-        StoppingCondition: {
-          MaxRuntimeInSeconds: 3600,
-        },
-        HyperParameters: hyperParameters,
-        Tags: [
-          { Key: 'Project', Value: 'CropCopilot' },
-          { Key: 'ModelVersionId', Value: modelVersionId },
-          { Key: 'TrainingBackend', Value: trainingBackend },
-        ],
-      }),
-    );
+    const defaultArtifact = getDefaultModelArtifact('lambdarank', [...RETRIEVAL_FEATURE_NAMES]);
+    const artifact = trainLinearRankingModel({
+      modelType: 'lambdarank',
+      featureNames: [...RETRIEVAL_FEATURE_NAMES],
+      examples,
+      defaultWeights: defaultArtifact.featureWeights,
+    });
 
-    console.log(`[RetrainTrigger] SageMaker training job submitted: ${jobName}`);
+    const deployment = await deployInHouseModelArtifact(db, {
+      modelVersionId,
+      artifact,
+      bucket: process.env.S3_TRAINING_BUCKET ?? null,
+      region: process.env.AWS_REGION ?? 'us-west-2',
+    });
+
     await recordPipelineEvent(db, {
       pipeline: 'learning',
-      stage: 'retrain_submit',
+      stage: 'retrain_deploy',
       severity: 'info',
-      message: `Submitted lambdarank training job ${jobName}.`,
+      message: 'Deployed lambdarank artifact from in-house trainer.',
       metadata: {
         modelType: 'lambdarank',
-        jobName,
         modelVersionId,
         samples: newFeedbackCount,
-        trainingRows: exportResult.rowCount,
-        trainingBackend,
+        trainingRows: examples.length,
+        backend: artifact.backend,
+        ndcgAt3: artifact.metrics.ndcgAt3,
+        ndcgAt5: artifact.metrics.ndcgAt5,
+        pairwiseAccuracy: artifact.metrics.pairwiseAccuracy,
+        baselineNdcgAt3: artifact.metrics.baselineNdcgAt3,
+        baselineNdcgAt5: artifact.metrics.baselineNdcgAt5,
+        s3Uri: deployment.s3Uri,
       },
     });
-
-    await db.query(
-      `UPDATE "MLModelVersion" SET "s3Uri" = $1, "updatedAt" = NOW() WHERE id = $2`,
-      [`${s3OutputPath}output/model.tar.gz`, modelVersionId],
-    );
   } catch (error) {
-    const message = (error as Error).message;
-    console.error('[RetrainTrigger] Job submission failed:', message);
-    const isQuotaBlocked =
-      (error as { name?: string }).name === 'ResourceLimitExceeded' ||
-      /resource.?limit.?exceeded/i.test(message) ||
-      /training job usage/i.test(message);
-
-    if (isQuotaBlocked) {
-      await recordPipelineEvent(db, {
-        pipeline: 'learning',
-        stage: 'retrain_submit',
-        severity: 'warn',
-        message:
-          'Lambdarank retrain skipped because SageMaker training quota is unavailable in this account/region.',
-        metadata: {
-          modelType: 'lambdarank',
-          modelVersionId,
-          reason: message,
-        },
-      });
-      await db.query(
-        `UPDATE "MLModelVersion" SET status = 'retired', "updatedAt" = NOW() WHERE id = $1`,
-        [modelVersionId],
-      );
-      return;
-    }
-
+    await retireModelVersion(db, modelVersionId);
     await recordPipelineEvent(db, {
       pipeline: 'learning',
-      stage: 'retrain_submit',
+      stage: 'retrain_deploy',
       severity: 'error',
-      message: `Lambdarank retrain failed: ${message}`,
+      message: `Lambdarank retrain failed: ${(error as Error).message}`,
       metadata: {
         modelType: 'lambdarank',
         modelVersionId,
       },
     });
-    await db.query(
-      `UPDATE "MLModelVersion" SET status = 'retired', "updatedAt" = NOW() WHERE id = $1`,
-      [modelVersionId],
-    );
     throw error;
   }
 };

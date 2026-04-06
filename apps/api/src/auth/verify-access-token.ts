@@ -3,6 +3,7 @@ import type { APIGatewayProxyEventV2 } from 'aws-lambda';
 import { AuthError } from './errors';
 import { verifyCognitoToken } from './cognito-auth';
 import { resolveAuthenticatedUser } from './identity-store';
+import { isLocalAuthEnabled, verifyLocalAccessTokenFromEvent } from './local-auth';
 import {
   verifyAccessTokenFromEvent as verifySupabaseAccessTokenFromEvent,
   verifySupabaseIdentityFromEvent,
@@ -99,6 +100,10 @@ function detectProviderFromToken(token: string): 'cognito' | 'supabase' {
 export async function verifyAccessTokenFromEvent(
   event: APIGatewayProxyEventV2
 ): Promise<AuthContext> {
+  if (isLocalAuthEnabled()) {
+    return verifyLocalAccessTokenFromEvent(event);
+  }
+
   const cognitoCookieToken =
     readCookieValue(event, COGNITO_ID_TOKEN_COOKIE) ?? readCookieValue(event, COGNITO_ACCESS_TOKEN_COOKIE);
   if (cognitoCookieToken) {

@@ -10,7 +10,7 @@ export interface AppAuthSession {
   token_type?: string;
   expires_at?: number;
   user: AppAuthUser;
-  provider: 'supabase' | 'cognito';
+  provider: 'supabase' | 'cognito' | 'local';
 }
 
 export interface AppAuthError {

@@ -1,11 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { buildLocalSession, isLocalAuthRequest } from '@/lib/auth/local-auth';
 import { getAuthProvider } from '@/lib/auth/provider';
 import { signUpWithPassword } from '@/lib/auth/cognito-public';
 import { buildSessionFromTokens } from '@/lib/auth/cognito-jwt';
 import { writeCognitoCookies } from '@/lib/auth/cognito-cookies';
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
-  if (getAuthProvider() !== 'cognito') {
+  const provider = getAuthProvider();
+
+  if (provider === 'local') {
+    if (!isLocalAuthRequest(request)) {
+      return NextResponse.json(
+        { error: { message: 'Local auth is restricted to localhost development.' } },
+        { status: 403 }
+      );
+    }
+
+    return NextResponse.json({ session: buildLocalSession() }, { status: 201 });
+  }
+
+  if (provider !== 'cognito') {
     return NextResponse.json(
       { error: { message: 'Cognito auth is not enabled.' } },
       { status: 404 }

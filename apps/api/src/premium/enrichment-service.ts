@@ -15,6 +15,8 @@ import {
   type ComplianceCheckResult,
   type PremiumInsightPayload,
 } from './types';
+import { getLatestDeployedModelArtifact } from '../ml/model-registry';
+import { PREMIUM_FEATURE_NAMES, buildPremiumQualityCheck } from '../ml/premium-quality';
 
 export async function runPremiumEnrichment(params: {
   pool: Pool;
@@ -131,6 +133,28 @@ export async function runPremiumEnrichment(params: {
       sources: sprayWindows.map((window) => window.source),
     },
   });
+
+  const provisionalChecks = [...compliance.checks, ...supplementalChecks];
+  const provisionalRiskReview = deriveRiskReviewDecision(provisionalChecks);
+
+  const premiumQualityModel = await getLatestDeployedModelArtifact(pool, {
+    modelType: 'premium_quality',
+    featureNames: [...PREMIUM_FEATURE_NAMES],
+  });
+  supplementalChecks.push(
+    buildPremiumQualityCheck({
+      artifact: premiumQualityModel,
+      payload: {
+        riskReview: provisionalRiskReview,
+        checks: provisionalChecks,
+        costAnalysis,
+        sprayWindows,
+        report: {
+          generatedAt: new Date().toISOString(),
+        },
+      },
+    })
+  );
 
   const checks = [...compliance.checks, ...supplementalChecks];
   const riskReview = deriveRiskReviewDecision(checks);

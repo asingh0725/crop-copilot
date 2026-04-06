@@ -66,9 +66,9 @@ Important:
 ## 4. Environment Variables
 Set these in runtime:
 - `ALLOW_BILLING_SIMULATION=false`
-- `STRIPE_SECRET_KEY=<sk_test_... or sk_live_...>` (needed for direct Stripe API session creation)
-- `STRIPE_PUBLISHABLE_KEY=<pk_test_... or pk_live_...>`
-- `STRIPE_WEBHOOK_SECRET=<whsec_...>`
+- `STRIPE_SECRET_KEY=<Stripe secret key>` (needed for direct Stripe API session creation)
+- `STRIPE_PUBLISHABLE_KEY=<Stripe publishable key>`
+- `STRIPE_WEBHOOK_SECRET=<Stripe webhook signing secret>`
 - `BILLING_PORTAL_RETURN_URL=https://<your-domain>/settings/billing`
 - `STRIPE_PRICE_GROWER_FREE=<price_...>`
 - `STRIPE_PRICE_GROWER=<price_...>`

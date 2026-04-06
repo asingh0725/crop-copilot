@@ -6,7 +6,7 @@ export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url)
   const next = searchParams.get('next') ?? '/dashboard'
 
-  if (getAuthProvider() === 'cognito') {
+  if (getAuthProvider() !== 'supabase') {
     return NextResponse.redirect(`${origin}${next}`)
   }
 

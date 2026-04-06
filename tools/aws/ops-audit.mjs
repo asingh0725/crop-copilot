@@ -203,6 +203,21 @@ function buildFindings({ inventory, serviceCosts, rdsUsageCosts }) {
     });
   }
 
+  const attachedElasticIps = Object.entries(inventory).flatMap(([region, data]) =>
+    (data.elasticIps ?? [])
+      .filter((address) => address.networkInterfaceId || address.associationId)
+      .map((address) => ({ region, address }))
+  );
+  if (attachedElasticIps.length > 0) {
+    findings.push({
+      severity: 'low',
+      code: 'attached_elastic_ips',
+      message: `Elastic IPs still attached in the runtime footprint: ${attachedElasticIps
+        .map((item) => `${item.address.publicIp}@${item.region}`)
+        .join(', ')}.`,
+    });
+  }
+
   const auditErrors = Object.entries(inventory).flatMap(([region, data]) =>
     (data.auditErrors ?? []).map((error) => ({ region, error }))
   );
@@ -217,6 +232,79 @@ function buildFindings({ inventory, serviceCosts, rdsUsageCosts }) {
   }
 
   return findings;
+}
+
+function daysElapsedInMonthUtc() {
+  return Math.max(1, new Date().getUTCDate());
+}
+
+function daysInCurrentMonthUtc() {
+  const now = new Date();
+  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 0)).getUTCDate();
+}
+
+function projectForwardRunRate({ inventory, serviceCosts, rdsUsageCosts }) {
+  const serviceCostMap = new Map(serviceCosts.map((item) => [item.key, item.amountUsd]));
+  const daysElapsed = daysElapsedInMonthUtc();
+  const daysInMonth = daysInCurrentMonthUtc();
+
+  const publicDbCount = Object.values(inventory).reduce(
+    (sum, data) => sum + (data.dbInstances ?? []).filter((db) => db.public).length,
+    0
+  );
+  const elasticIpCount = Object.values(inventory).reduce(
+    (sum, data) => sum + (data.elasticIps ?? []).length,
+    0
+  );
+  const natGatewayCount = Object.values(inventory).reduce(
+    (sum, data) => sum + (data.natGateways ?? []).length,
+    0
+  );
+  const activeSagemakerEndpointCount = Object.values(inventory).reduce(
+    (sum, data) => sum + (data.sagemakerEndpoints ?? []).length,
+    0
+  );
+
+  const rdsProjected =
+    rdsUsageCosts.reduce((sum, item) => sum + item.amountUsd, 0) * (daysInMonth / daysElapsed);
+
+  const publicIpv4Projected =
+    natGatewayCount > 0
+      ? serviceCostMap.get('Amazon Virtual Private Cloud') ?? 0
+      : (publicDbCount + elasticIpCount) * 3.6;
+
+  const components = [
+    { key: 'RDS', amountUsd: rdsProjected },
+    { key: 'VPC', amountUsd: publicIpv4Projected },
+    { key: 'CloudWatch', amountUsd: serviceCostMap.get('AmazonCloudWatch') ?? 0 },
+    { key: 'SQS', amountUsd: serviceCostMap.get('Amazon Simple Queue Service') ?? 0 },
+    { key: 'SecretsManager', amountUsd: serviceCostMap.get('AWS Secrets Manager') ?? 0 },
+    { key: 'CostExplorer', amountUsd: serviceCostMap.get('AWS Cost Explorer') ?? 0 },
+    { key: 'ApiGateway', amountUsd: serviceCostMap.get('Amazon API Gateway') ?? 0 },
+    { key: 'S3', amountUsd: serviceCostMap.get('Amazon Simple Storage Service') ?? 0 },
+    { key: 'Lambda', amountUsd: serviceCostMap.get('AWS Lambda') ?? 0 },
+    {
+      key: 'SageMaker',
+      amountUsd:
+        activeSagemakerEndpointCount > 0
+          ? serviceCostMap.get('Amazon SageMaker') ?? 0
+          : 0,
+    },
+  ].filter((item) => item.amountUsd > 0);
+
+  return {
+    monthDays: daysInMonth,
+    elapsedDays: daysElapsed,
+    assumptions: {
+      publicDbCount,
+      elasticIpCount,
+      natGatewayCount,
+      activeSagemakerEndpointCount,
+      monthlyPublicIpv4UnitUsd: 3.6,
+    },
+    components,
+    totalAmountUsd: components.reduce((sum, item) => sum + item.amountUsd, 0),
+  };
 }
 
 function main() {
@@ -336,6 +424,7 @@ function main() {
   const serviceCosts = summarizeAcrossTime(costByService?.ResultsByTime);
   const rdsUsageCosts = summarizeAcrossTime(rdsUsage?.ResultsByTime);
   const findings = buildFindings({ inventory, serviceCosts, rdsUsageCosts });
+  const forwardRunRate = projectForwardRunRate({ inventory, serviceCosts, rdsUsageCosts });
 
   const report = {
     generatedAt: new Date().toISOString(),
@@ -343,6 +432,7 @@ function main() {
     regions: REGIONS,
     costLast30DaysByService: serviceCosts,
     monthToDateRdsUsage: rdsUsageCosts,
+    estimatedForwardMonthlyRunRate: forwardRunRate,
     inventory,
     findings,
   };
@@ -359,6 +449,7 @@ function main() {
     account: identity?.Account ?? null,
     reportFile: filename,
     topServices: serviceCosts.slice(0, 8),
+    estimatedForwardMonthlyRunRate: forwardRunRate,
     findings,
   };
   console.log(JSON.stringify(summary, null, 2));
