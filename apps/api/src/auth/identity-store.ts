@@ -4,7 +4,7 @@ import { resolvePoolSslConfig, sanitizeDatabaseUrlForPool } from '../lib/store';
 import { AuthError } from './errors';
 import type { AuthContext } from './types';
 
-export type AuthProvider = 'supabase' | 'cognito';
+export type AuthProvider = 'supabase' | 'cognito' | 'local';
 
 export interface VerifiedIdentity {
   provider: AuthProvider;

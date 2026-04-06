@@ -1,0 +1,64 @@
+name: Ops Daily Digest
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "35 14 * * *"
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  digest:
+    name: Run Daily Ops Audits
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    environment: production
+    env:
+      AWS_REGION: ${{ vars.AWS_REGION }}
+      AWS_AUDIT_REGIONS: ${{ vars.AWS_AUDIT_REGIONS || 'us-west-2,us-west-1,ca-west-1' }}
+      AWS_ROLE_TO_ASSUME: ${{ vars.AWS_AUDIT_ROLE_ARN }}
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      AUDIT_ENV: prod
+      ALLOW_LEGACY_ENV_FALLBACK: "false"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: pnpm
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.AWS_ROLE_TO_ASSUME }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run AWS ops audit
+        run: node tools/aws/ops-audit.mjs
+
+      - name: Run release readiness audit
+        run: |
+          mkdir -p reports
+          TIMESTAMP=$(date -u +%Y%m%d-%H%M%S)
+          pnpm --filter @crop-copilot/api audit:release > "reports/release-readiness-${TIMESTAMP}.json"
+
+      - name: Generate digest markdown
+        run: node tools/ops/generate-daily-digest.mjs
+
+      - name: Upload ops artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ops-daily-digest
+          path: |
+            reports/aws-ops-audit-*.json
+            reports/release-readiness-*.json
+            reports/ops-daily-digest-*.md

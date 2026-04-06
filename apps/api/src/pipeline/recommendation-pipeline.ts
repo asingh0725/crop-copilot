@@ -3,12 +3,14 @@ import { Pool } from 'pg';
 import type { CreateInputCommand, RecommendationResult } from '@crop-copilot/contracts';
 import { resolvePoolSslConfig, sanitizeDatabaseUrlForPool } from '../lib/store';
 import { rankCandidates } from '../rag/hybrid-ranker';
-import { rerank } from '../ml/reranker';
+import { RETRIEVAL_FEATURE_NAMES, rerank } from '../ml/reranker';
 import { applyMMR } from '../rag/mmr';
 import { generateHypotheticalPassage } from '../rag/hyde';
 import { expandRetrievalQuery, type QueryExpansionResult } from '../rag/query-expansion';
 import type { RankedCandidate, RetrievedCandidate, SourceAuthorityType } from '../rag/types';
 import { CROPS } from '../ingestion/discovery-seeds';
+import { getLatestDeployedModelArtifact } from '../ml/model-registry';
+import type { InHouseLinearModelArtifact } from '../ml/in-house-models';
 
 export interface RecommendationPipelineInput {
   inputId: string;
@@ -105,6 +107,7 @@ export interface RecommendationPipelineDependencies {
     input: InputSnapshot,
     expansion: QueryExpansionResult
   ) => Promise<RetrievedCandidate[]>;
+  loadDeployedRerankerModel?: () => Promise<InHouseLinearModelArtifact | null>;
   generateModelOutput?: (
     params: ModelGenerationInput
   ) => Promise<ModelGenerationResult | null>;
@@ -175,6 +178,18 @@ function resolvePool(): Pool {
   return sharedPool;
 }
 
+async function loadDeployedRerankerModelFromRegistry(): Promise<InHouseLinearModelArtifact | null> {
+  const databaseUrl = process.env.DATABASE_URL;
+  if (!databaseUrl) {
+    return null;
+  }
+
+  return getLatestDeployedModelArtifact(resolvePool(), {
+    modelType: 'lambdarank',
+    featureNames: [...RETRIEVAL_FEATURE_NAMES],
+  });
+}
+
 export async function runRecommendationPipeline(
   input: RecommendationPipelineInput,
   dependencies: RecommendationPipelineDependencies = {}
@@ -184,6 +199,8 @@ export async function runRecommendationPipeline(
     dependencies.loadInputSnapshot ?? loadInputSnapshotFromDatabase;
   const retrieveCandidates =
     dependencies.retrieveCandidates ?? retrieveCandidatesFromKnowledgeBase;
+  const loadDeployedRerankerModel =
+    dependencies.loadDeployedRerankerModel ?? loadDeployedRerankerModelFromRegistry;
   const generateModelOutput =
     dependencies.generateModelOutput ?? generateModelOutputFromProviders;
   const usingDefaultModelGenerator = !dependencies.generateModelOutput;
@@ -223,11 +240,13 @@ export async function runRecommendationPipeline(
   // MMR: diversify top candidates so Claude gets varied evidence, not duplicates.
   const diversified = applyMMR(ranked, MAX_CONTEXT_CANDIDATES * 2, 0.65);
 
-  // Rerank with learned model when SageMaker endpoint is configured;
-  // falls back to MMR-diversified order on any failure.
+  const deployedRerankerModel = await loadDeployedRerankerModel();
+
+  // Re-score candidates with the latest deployed in-house ranking artifact.
   const reranked = await rerank(diversified, {
     crop: inputSnapshot.crop,
     queryTerms: queryExpansion.terms,
+    model: deployedRerankerModel,
   });
   const candidatePool = reranked ?? diversified;
   const filteredCandidates = filterCandidatesForDiagnosis(candidatePool, inputSnapshot);

@@ -33,6 +33,7 @@ interface LatestModel {
   feedbackCount: number;
   ndcgScore: number | null;
   s3Uri: string | null;
+  backend?: string | null;
 }
 
 interface ObservabilityEvent {
@@ -526,6 +527,12 @@ export default async function DiscoveryStatusPage() {
                     <p className="text-xs text-muted-foreground mb-1">Model type</p>
                     <p className="font-medium">{latestModel.modelType}</p>
                   </div>
+                  {latestModel.backend && (
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-1">Backend</p>
+                      <p className="font-medium">{latestModel.backend}</p>
+                    </div>
+                  )}
                   <div>
                     <p className="text-xs text-muted-foreground mb-1">Trained at</p>
                     <p className="font-medium">{formatDate(latestModel.trainedAt)}</p>
@@ -580,6 +587,12 @@ export default async function DiscoveryStatusPage() {
                         <p className="text-xs text-muted-foreground mb-1">Model type</p>
                         <p className="font-medium">{latestPremiumModel.modelType}</p>
                       </div>
+                      {latestPremiumModel.backend && (
+                        <div>
+                          <p className="text-xs text-muted-foreground mb-1">Backend</p>
+                          <p className="font-medium">{latestPremiumModel.backend}</p>
+                        </div>
+                      )}
                       <div>
                         <p className="text-xs text-muted-foreground mb-1">Trained at</p>
                         <p className="font-medium">{formatDate(latestPremiumModel.trainedAt)}</p>

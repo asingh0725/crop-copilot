@@ -5,6 +5,7 @@ import {
   COGNITO_ID_TOKEN_COOKIE,
   COGNITO_REFRESH_TOKEN_COOKIE,
 } from '@/lib/auth/cognito-cookies';
+import { isLocalAuthRequest } from '@/lib/auth/local-auth';
 import { getAuthProvider } from '@/lib/auth/provider';
 
 const protectedPaths = ['/dashboard', '/diagnose', '/recommendations', '/products', '/history', '/settings', '/admin'];
@@ -88,8 +89,28 @@ function handleCognitoMiddleware(request: NextRequest): NextResponse {
   return NextResponse.next({ request: { headers: request.headers } });
 }
 
+function handleLocalMiddleware(request: NextRequest): NextResponse {
+  if (!isLocalAuthRequest(request)) {
+    return new NextResponse('Local auth is restricted to localhost development.', { status: 403 });
+  }
+
+  if (isAuthPath(request.nextUrl.pathname)) {
+    const url = request.nextUrl.clone();
+    url.pathname = '/dashboard';
+    return NextResponse.redirect(url);
+  }
+
+  return NextResponse.next({ request: { headers: request.headers } });
+}
+
 export async function middleware(request: NextRequest) {
-  if (getAuthProvider() === 'cognito') {
+  const provider = getAuthProvider();
+
+  if (provider === 'local') {
+    return handleLocalMiddleware(request);
+  }
+
+  if (provider === 'cognito') {
     return handleCognitoMiddleware(request);
   }
 

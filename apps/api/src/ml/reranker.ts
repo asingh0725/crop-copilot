@@ -1,12 +1,11 @@
 /**
- * SageMaker Learning-to-Rank reranker.
+ * In-house retrieval reranker.
  *
- * Calls a deployed LightGBM LambdaRank endpoint to re-score retrieval
- * candidates using a model trained on user feedback signals.
- * Falls back gracefully to the original hybrid-ranker order when the
- * endpoint is unconfigured or unavailable.
+ * Scores retrieval candidates with a locally computed linear model trained
+ * from feedback data. Falls back to the default weight set when no deployed
+ * artifact exists.
  *
- * Feature vector (must match FEATURE_COLS in train-ranker.py and export-training-data.ts):
+ * Feature vector (must match training export/build logic):
  *   f0: similarity       — vector similarity score (0–1)
  *   f1: rank_score       — hybrid rank score (0–1)
  *   f2: source_authority — encoded source authority float
@@ -14,13 +13,14 @@
  *   f4: crop_match       — 1 if caller crop ∈ chunk metadata.crops else 0
  *   f5: term_density     — fraction of query terms found in chunk topics
  *   f6: chunk_pos        — normalised chunk position (0–1, capped at position 10)
- *
- * Environment variables:
- *   SAGEMAKER_ENDPOINT_NAME  — endpoint name; leave unset to disable reranking
- *   AWS_REGION               — AWS region (defaults to us-east-1)
  */
 
 import type { RankedCandidate, SourceAuthorityType } from '../rag/types';
+import {
+  getDefaultModelArtifact,
+  scoreFeatureVector,
+  type InHouseLinearModelArtifact,
+} from './in-house-models';
 
 const AUTHORITY_SCORES: Record<SourceAuthorityType, number> = {
   GOVERNMENT: 1.0,
@@ -34,17 +34,22 @@ const AUTHORITY_SCORES: Record<SourceAuthorityType, number> = {
 export interface RerankContext {
   crop?: string;
   queryTerms?: string[];
+  model?: InHouseLinearModelArtifact | null;
 }
 
+export const RETRIEVAL_FEATURE_NAMES = [
+  'f0_similarity',
+  'f1_rank_score',
+  'f2_authority',
+  'f3_source_boost',
+  'f4_crop_match',
+  'f5_term_density',
+  'f6_chunk_pos',
+] as const;
+
 /**
- * Re-rank candidates using the SageMaker LambdaRank endpoint.
- *
- * Returns `null` when:
- * - SAGEMAKER_ENDPOINT_NAME is not set (reranker disabled)
- * - candidates list is empty
- * - the endpoint call fails for any reason
- *
- * The caller must fall back to the original ranked order in all null cases.
+ * Re-rank candidates using the deployed in-house artifact, or the default
+ * fallback model when no artifact is available.
  */
 export async function rerank(
   candidates: RankedCandidate[],
@@ -54,158 +59,52 @@ export async function rerank(
     return null;
   }
 
-  const endpointName = process.env.SAGEMAKER_ENDPOINT_NAME?.trim();
-  if (!endpointName || candidates.length === 0) {
+  if (candidates.length === 0) {
     return null;
   }
 
-  const region = process.env.AWS_REGION?.trim() || 'us-east-1';
-  const payload = buildCsvPayload(candidates, context);
+  const model =
+    context.model ?? getDefaultModelArtifact('lambdarank', [...RETRIEVAL_FEATURE_NAMES]);
+  const scored = candidates.map((candidate) => ({
+    candidate,
+    score: scoreFeatureVector(buildFeatureVector(candidate, context), model),
+  }));
 
-  try {
-    // Dynamic import keeps @aws-sdk/client-sagemaker-runtime out of the
-    // cold-start bundle when the reranker is not configured.
-    const { SageMakerRuntimeClient, InvokeEndpointCommand } = await import(
-      '@aws-sdk/client-sagemaker-runtime'
-    );
-
-    const client = new SageMakerRuntimeClient({ region });
-    const command = new InvokeEndpointCommand({
-      EndpointName: endpointName,
-      ContentType: 'text/csv',
-      Accept: 'text/csv',
-      Body: Buffer.from(payload, 'utf-8'),
-    });
-    const timeoutMs = parsePositiveInt(
-      process.env.RERANKER_TIMEOUT_MS,
-      4_000
-    );
-    const response = await withTimeout(
-      client.send(command),
-      timeoutMs,
-      `SageMaker reranker timeout after ${timeoutMs}ms`
-    );
-
-    // Body is a Uint8ArrayBlobAdapter in the Node.js SDK runtime
-    const responseBody = response.Body
-      ? await (response.Body as unknown as { transformToString(): Promise<string> }).transformToString()
-      : '';
-
-    const scores = parseScores(responseBody, candidates.length);
-    if (!scores) {
-      return null;
-    }
-
-    return applyScores(candidates, scores);
-  } catch (error) {
-    console.warn('[reranker] SageMaker call failed — falling back to hybrid ranking', {
-      endpoint: endpointName,
-      error: (error as Error).message,
-    });
-    return null;
-  }
-}
-
-async function withTimeout<T>(
-  promise: Promise<T>,
-  timeoutMs: number,
-  message: string
-): Promise<T> {
-  let timer: NodeJS.Timeout | null = null;
-  const timeoutPromise = new Promise<never>((_, reject) => {
-    timer = setTimeout(() => reject(new Error(message)), timeoutMs);
-  });
-  try {
-    return await Promise.race([promise, timeoutPromise]);
-  } finally {
-    if (timer) {
-      clearTimeout(timer);
-    }
-  }
-}
-
-function parsePositiveInt(raw: string | undefined, fallback: number): number {
-  const parsed = Number.parseInt(raw ?? '', 10);
-  if (!Number.isFinite(parsed) || parsed <= 0) {
-    return fallback;
-  }
-  return parsed;
+  return scored
+    .sort((left, right) => right.score - left.score)
+    .map(({ candidate, score }) => ({
+      ...candidate,
+      rankScore: score,
+    }));
 }
 
 /**
- * Build a CSV payload: one line per candidate with all 7 features.
- * Row order must be preserved; scores come back in the same order.
+ * Build the 7-feature vector for training/runtime scoring.
  */
-function buildCsvPayload(candidates: RankedCandidate[], context: RerankContext): string {
+export function buildFeatureVector(
+  candidate: RankedCandidate,
+  context: Pick<RerankContext, 'crop' | 'queryTerms'>
+): number[] {
   const queryCrop = (context.crop ?? '').toLowerCase().trim();
   const queryTerms = (context.queryTerms ?? []).map((t) => t.toLowerCase());
+  const f0 = clamp(candidate.similarity, 0, 1);
+  const f1 = clamp(candidate.rankScore, 0, 1);
+  const f2 = AUTHORITY_SCORES[candidate.sourceType] ?? AUTHORITY_SCORES.OTHER;
+  const f3 = clamp(candidate.sourceBoost ?? 0, -0.1, 0.25);
 
-  return candidates
-    .map((candidate) => {
-      const f0 = clamp(candidate.similarity, 0, 1).toFixed(6);
-      const f1 = clamp(candidate.rankScore, 0, 1).toFixed(6);
-      const f2 = (AUTHORITY_SCORES[candidate.sourceType] ?? AUTHORITY_SCORES.OTHER).toFixed(2);
-      const f3 = clamp(candidate.sourceBoost ?? 0, -0.1, 0.25).toFixed(4);
+  const chunkCrops = (candidate.metadata?.crops ?? []).map((crop) => crop.toLowerCase());
+  const f4 = queryCrop.length > 0 && chunkCrops.includes(queryCrop) ? 1 : 0;
 
-      // f4: crop match
-      const chunkCrops = (candidate.metadata?.crops ?? []).map((c) => c.toLowerCase());
-      const f4 = queryCrop.length > 0 && chunkCrops.includes(queryCrop) ? '1' : '0';
+  const chunkTopics = (candidate.metadata?.topics ?? []).map((topic) => topic.toLowerCase());
+  const f5 =
+    queryTerms.length > 0
+      ? queryTerms.filter(
+          (term) => chunkTopics.includes(term) || chunkTopics.some((topic) => topic.includes(term)),
+        ).length / queryTerms.length
+      : 0;
 
-      // f5: term density
-      const chunkTopics = (candidate.metadata?.topics ?? []).map((t) => t.toLowerCase());
-      const termDensity =
-        queryTerms.length > 0
-          ? queryTerms.filter(
-              (t) => chunkTopics.includes(t) || chunkTopics.some((ct) => ct.includes(t)),
-            ).length / queryTerms.length
-          : 0;
-      const f5 = termDensity.toFixed(4);
-
-      // f6: normalised chunk position
-      const f6 = Math.min(1, (candidate.metadata?.position ?? 0) / 10).toFixed(4);
-
-      return `${f0},${f1},${f2},${f3},${f4},${f5},${f6}`;
-    })
-    .join('\n');
-}
-
-/**
- * Parse newline-separated score values returned by the endpoint.
- * Returns null on any parse error so the caller can fall back.
- */
-function parseScores(body: string, expectedCount: number): number[] | null {
-  const lines = body
-    .split(/[\n,]+/g)
-    .map((line) => line.trim())
-    .filter((line) => line.length > 0);
-
-  if (lines.length !== expectedCount) {
-    console.warn('[reranker] score count mismatch', {
-      expected: expectedCount,
-      received: lines.length,
-    });
-    return null;
-  }
-
-  const scores = lines.map((line) => Number(line));
-  if (scores.some((score) => !Number.isFinite(score))) {
-    console.warn('[reranker] non-numeric value in endpoint response');
-    return null;
-  }
-
-  return scores;
-}
-
-/**
- * Attach predicted scores to candidates and re-sort descending.
- */
-function applyScores(candidates: RankedCandidate[], scores: number[]): RankedCandidate[] {
-  return candidates
-    .map((candidate, index) => ({
-      ...candidate,
-      rankScore: scores[index]!,
-    }))
-    .sort((a, b) => b.rankScore - a.rankScore);
+  const f6 = Math.min(1, (candidate.metadata?.position ?? 0) / 10);
+  return [f0, f1, f2, f3, f4, f5, f6];
 }
 
 function clamp(value: number, min: number, max: number): number {

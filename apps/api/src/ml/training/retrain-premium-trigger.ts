@@ -2,14 +2,19 @@ import type { EventBridgeHandler } from 'aws-lambda';
 import { Pool } from 'pg';
 import { resolvePoolSslConfig, sanitizeDatabaseUrlForPool } from '../../lib/store';
 import { recordPipelineEvent } from '../../lib/pipeline-events';
+import {
+  getDefaultModelArtifact,
+  trainLinearRankingModel,
+  type RankingExample,
+} from '../in-house-models';
+import { PREMIUM_FEATURE_NAMES, buildPremiumFeatureVector } from '../premium-quality';
+import { deployInHouseModelArtifact, retireModelVersion } from '../model-registry';
 
 const DEFAULT_MIN_PREMIUM_FEEDBACK = 30;
 
 interface PremiumRetrainTriggerEvent {
   force?: boolean;
 }
-
-type TrainingBackend = 'lightgbm_custom' | 'xgboost_builtin';
 
 interface PremiumTrainingRow {
   recommendation_id: string;
@@ -39,36 +44,6 @@ function getPool(): Pool {
   return pool;
 }
 
-function toArray(raw: unknown): Array<Record<string, unknown>> {
-  if (!Array.isArray(raw)) return [];
-  return raw.filter((item): item is Record<string, unknown> => item !== null && typeof item === 'object');
-}
-
-function toObject(raw: unknown): Record<string, unknown> {
-  if (!raw || typeof raw !== 'object') return {};
-  return raw as Record<string, unknown>;
-}
-
-function toNumber(value: unknown): number | null {
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : null;
-}
-
-function resolveTrainingBackend(raw: string | undefined): TrainingBackend {
-  const normalized = (raw ?? '').trim().toLowerCase();
-  if (normalized === 'xgboost' || normalized === 'xgboost_builtin' || normalized === 'builtin') {
-    return 'xgboost_builtin';
-  }
-  return 'lightgbm_custom';
-}
-
-function decisionScore(decision: string | null): number {
-  if (decision === 'clear_signal') return 0.9;
-  if (decision === 'potential_conflict') return 0.35;
-  if (decision === 'needs_manual_verification') return 0.5;
-  return 0.4;
-}
-
 function computeFeedbackSignal(row: PremiumTrainingRow): number {
   if (row.outcome_success === true) return 2;
   if (row.outcome_success === false) return -2;
@@ -90,74 +65,11 @@ function computeFeedbackSignal(row: PremiumTrainingRow): number {
   return Math.max(-2, Math.min(2, signal));
 }
 
-function featureVector(row: PremiumTrainingRow): [number, number, number, number, number, number, number] {
-  const checks = toArray(row.checks);
-  const checkCount = checks.length;
-  const clearSignals = checks.filter((check) => check.result === 'clear_signal').length;
-  const conflicts = checks.filter((check) => check.result === 'potential_conflict').length;
-
-  const costAnalysis = toObject(row.cost_analysis);
-  const perAcre = toNumber(costAnalysis.perAcreTotalUsd) ?? 0;
-  const wholeField = toNumber(costAnalysis.wholeFieldTotalUsd) ?? 0;
-  const hasCostTotals = perAcre > 0 || wholeField > 0 ? 1 : 0;
-
-  const sprayWindows = toArray(row.spray_windows);
-  const liveWindows = sprayWindows.filter((window) => {
-    const source = String(window.source ?? '').toLowerCase();
-    return source.length > 0 && source !== 'fallback';
-  }).length;
-
-  const report = toObject(row.report);
-  const hasReport = report.htmlUrl || report.pdfUrl ? 1 : 0;
-
-  const checksNorm = Math.min(1, checkCount / 6);
-  const clearRatio = checkCount > 0 ? clearSignals / checkCount : 0;
-  const conflictRatio = checkCount > 0 ? conflicts / checkCount : 0;
-  const liveWeatherRatio = sprayWindows.length > 0 ? liveWindows / sprayWindows.length : 0;
-
-  return [
-    decisionScore(row.decision),
-    checksNorm,
-    clearRatio,
-    conflictRatio,
-    hasCostTotals,
-    liveWeatherRatio,
-    hasReport,
-  ];
-}
-
-function serializeTrainingRow(
-  qid: string,
-  label: 0 | 1 | 2,
-  features: [number, number, number, number, number, number, number],
-  backend: TrainingBackend,
-): string {
-  const featureCsv =
-    `${features[0].toFixed(6)},${features[1].toFixed(6)},${features[2].toFixed(6)},` +
-    `${features[3].toFixed(6)},${features[4].toFixed(6)},${features[5].toFixed(6)},${features[6].toFixed(6)}`;
-  if (backend === 'xgboost_builtin') {
-    return `${label},${featureCsv}`;
-  }
-  return `${qid},${label},${featureCsv}`;
-}
-
-async function exportPremiumTrainingDataToS3(
+async function buildPremiumTrainingExamples(
   db: Pool,
-  bucket: string,
-  region: string,
-  lastTrainedAt: Date,
-  backend: TrainingBackend
-): Promise<{ s3PrefixUri: string; rowCount: number }> {
-  const { S3Client, PutObjectCommand } = await import('@aws-sdk/client-s3');
-  const s3 = new S3Client({ region });
-
-  const csvLines: string[] =
-    backend === 'xgboost_builtin'
-      ? []
-      : [
-          'qid,label,f0_similarity,f1_rank_score,f2_authority,f3_source_boost,f4_crop_match,f5_term_density,f6_chunk_pos',
-        ];
-
+  lastTrainedAt: Date
+): Promise<RankingExample[]> {
+  const examples: RankingExample[] = [];
   const PAGE_SIZE = 500;
   let offset = 0;
 
@@ -185,43 +97,40 @@ async function exportPremiumTrainingDataToS3(
       [lastTrainedAt.toISOString(), PAGE_SIZE, offset]
     );
 
-    if (result.rows.length === 0) break;
+    if (result.rows.length === 0) {
+      break;
+    }
 
     for (const row of result.rows) {
       const signal = computeFeedbackSignal(row);
       const label: 0 | 1 | 2 = signal > 0 ? 2 : signal < 0 ? 0 : 1;
-      const features = featureVector(row);
-      csvLines.push(serializeTrainingRow(row.recommendation_id, label, features, backend));
+      const features = buildPremiumFeatureVector({
+        decision: row.decision,
+        checks: row.checks,
+        costAnalysis: row.cost_analysis,
+        sprayWindows: row.spray_windows,
+        report: row.report,
+      });
+      examples.push({
+        qid: row.recommendation_id,
+        label,
+        features: [...features],
+      });
 
-      // Add a simple baseline candidate per recommendation so each qid has competition.
-      csvLines.push(
-        serializeTrainingRow(row.recommendation_id, 0, [0, 0, 0, 0, 0, 0, 0], backend)
-      );
+      examples.push({
+        qid: row.recommendation_id,
+        label: 0,
+        features: [0, 0, 0, 0, 0, 0, 0],
+      });
     }
 
     offset += PAGE_SIZE;
-    if (result.rows.length < PAGE_SIZE) break;
+    if (result.rows.length < PAGE_SIZE) {
+      break;
+    }
   }
 
-  const rowCount = csvLines.length - (backend === 'xgboost_builtin' ? 0 : 1);
-  if (rowCount <= 0) {
-    throw new Error('No premium training rows were exported');
-  }
-
-  const s3Key = 'training-data/premium-quality/latest/training.csv';
-  await s3.send(
-    new PutObjectCommand({
-      Bucket: bucket,
-      Key: s3Key,
-      Body: Buffer.from(csvLines.join('\n'), 'utf-8'),
-      ContentType: 'text/csv',
-    })
-  );
-
-  return {
-    s3PrefixUri: `s3://${bucket}/training-data/premium-quality/latest/`,
-    rowCount,
-  };
+  return examples;
 }
 
 async function hasActiveTrainingRun(db: Pool): Promise<boolean> {
@@ -302,31 +211,6 @@ export const handler: EventBridgeHandler<
     return;
   }
 
-  const bucket = process.env.S3_TRAINING_BUCKET;
-  const roleArn = process.env.SAGEMAKER_ROLE_ARN;
-  const trainingImage =
-    process.env.SAGEMAKER_PREMIUM_TRAINING_IMAGE || process.env.SAGEMAKER_TRAINING_IMAGE;
-  const trainingBackend = resolveTrainingBackend(
-    process.env.SAGEMAKER_PREMIUM_TRAINING_BACKEND ?? process.env.SAGEMAKER_TRAINING_BACKEND
-  );
-  const jobBaseName =
-    process.env.SAGEMAKER_PREMIUM_TRAINING_JOB_NAME ?? 'cropcopilot-premium-quality';
-  const region = process.env.AWS_REGION ?? 'us-east-1';
-
-  if (!bucket || !roleArn || !trainingImage) {
-    await recordPipelineEvent(db, {
-      pipeline: 'learning',
-      stage: 'premium_retrain_check',
-      severity: 'warn',
-      message:
-        'Skipped premium retrain because S3_TRAINING_BUCKET / SAGEMAKER_ROLE_ARN / SAGEMAKER_PREMIUM_TRAINING_IMAGE is not fully configured.',
-      metadata: {
-        modelType: 'premium_quality',
-      },
-    });
-    return;
-  }
-
   const versionResult = await db.query<{ id: string }>(
     `
       INSERT INTO "MLModelVersion" ("modelType", "feedbackCount", status, "createdAt", "trainedAt")
@@ -339,134 +223,50 @@ export const handler: EventBridgeHandler<
   if (!modelVersionId) throw new Error('Failed to create premium MLModelVersion row');
 
   try {
-    const exportResult = await exportPremiumTrainingDataToS3(
-      db,
-      bucket,
-      region,
-      lastTrainedAt,
-      trainingBackend
-    );
-    const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
-    const jobName = `${jobBaseName}-${timestamp}`;
-    const s3OutputPath = `s3://${bucket}/models/${jobName}/`;
-
-    const { SageMakerClient, CreateTrainingJobCommand } = await import(
-      '@aws-sdk/client-sagemaker'
-    );
-    const sm = new SageMakerClient({ region });
-    const channelName = trainingBackend === 'xgboost_builtin' ? 'train' : 'training';
-
-    const hyperParameters: Record<string, string> = {};
-    if (trainingBackend === 'xgboost_builtin') {
-      hyperParameters.objective = process.env.XGBOOST_OBJECTIVE ?? 'reg:squarederror';
-      hyperParameters.eval_metric = process.env.XGBOOST_EVAL_METRIC ?? 'rmse';
-      hyperParameters.num_round = process.env.XGBOOST_NUM_ROUND ?? '220';
-      hyperParameters.max_depth = process.env.XGBOOST_MAX_DEPTH ?? '6';
-      hyperParameters.eta = process.env.XGBOOST_ETA ?? '0.1';
-      hyperParameters.subsample = process.env.XGBOOST_SUBSAMPLE ?? '0.85';
-      hyperParameters.colsample_bytree = process.env.XGBOOST_COLSAMPLE_BYTREE ?? '0.85';
-    } else {
-      hyperParameters.model_version_id = modelVersionId;
-      hyperParameters.training_domain = 'premium_quality';
+    const examples = await buildPremiumTrainingExamples(db, lastTrainedAt);
+    if (examples.length === 0) {
+      throw new Error('No premium training rows were exported');
     }
 
-    await sm.send(
-      new CreateTrainingJobCommand({
-        TrainingJobName: jobName,
-        AlgorithmSpecification: {
-          TrainingImage: trainingImage,
-          TrainingInputMode: 'File',
-        },
-        RoleArn: roleArn,
-        InputDataConfig: [
-          {
-            ChannelName: channelName,
-            DataSource: {
-              S3DataSource: {
-                S3DataType: 'S3Prefix',
-                S3Uri: exportResult.s3PrefixUri,
-                S3DataDistributionType: 'FullyReplicated',
-              },
-            },
-            ContentType: 'text/csv',
-          },
-        ],
-        OutputDataConfig: {
-          S3OutputPath: s3OutputPath,
-        },
-        ResourceConfig: {
-          InstanceType: 'ml.m5.large',
-          InstanceCount: 1,
-          VolumeSizeInGB: 10,
-        },
-        StoppingCondition: {
-          MaxRuntimeInSeconds: 3600,
-        },
-        HyperParameters: hyperParameters,
-        Tags: [
-          { Key: 'Project', Value: 'CropCopilot' },
-          { Key: 'ModelVersionId', Value: modelVersionId },
-          { Key: 'ModelType', Value: 'premium_quality' },
-          { Key: 'TrainingBackend', Value: trainingBackend },
-        ],
-      })
-    );
+    const defaultArtifact = getDefaultModelArtifact('premium_quality', [...PREMIUM_FEATURE_NAMES]);
+    const artifact = trainLinearRankingModel({
+      modelType: 'premium_quality',
+      featureNames: [...PREMIUM_FEATURE_NAMES],
+      examples,
+      defaultWeights: defaultArtifact.featureWeights,
+    });
 
-    await db.query(
-      `UPDATE "MLModelVersion" SET "s3Uri" = $1, "updatedAt" = NOW() WHERE id = $2`,
-      [`${s3OutputPath}output/model.tar.gz`, modelVersionId]
-    );
+    const deployment = await deployInHouseModelArtifact(db, {
+      modelVersionId,
+      artifact,
+      bucket: process.env.S3_TRAINING_BUCKET ?? null,
+      region: process.env.AWS_REGION ?? 'us-west-2',
+    });
 
     await recordPipelineEvent(db, {
       pipeline: 'learning',
-      stage: 'premium_retrain_submit',
+      stage: 'premium_retrain_deploy',
       severity: 'info',
-      message: `Submitted premium training job ${jobName}.`,
+      message: 'Deployed premium quality artifact from in-house trainer.',
       metadata: {
         modelType: 'premium_quality',
-        jobName,
         modelVersionId,
-        samples: newFeedbackCount,
-        trainingRows: exportResult.rowCount,
-        trainingBackend,
+        feedbackCount: newFeedbackCount,
+        trainingRows: examples.length,
+        backend: artifact.backend,
+        ndcgAt3: artifact.metrics.ndcgAt3,
+        ndcgAt5: artifact.metrics.ndcgAt5,
+        pairwiseAccuracy: artifact.metrics.pairwiseAccuracy,
+        s3Uri: deployment.s3Uri,
       },
     });
   } catch (error) {
-    const message = (error as Error).message;
-    const isQuotaBlocked =
-      (error as { name?: string }).name === 'ResourceLimitExceeded' ||
-      /resource.?limit.?exceeded/i.test(message) ||
-      /training job usage/i.test(message);
-
-    if (isQuotaBlocked) {
-      await db.query(
-        `UPDATE "MLModelVersion" SET status = 'retired', "updatedAt" = NOW() WHERE id = $1`,
-        [modelVersionId]
-      );
-      await recordPipelineEvent(db, {
-        pipeline: 'learning',
-        stage: 'premium_retrain_submit',
-        severity: 'warn',
-        message:
-          'Premium retrain skipped because SageMaker training quota is unavailable in this account/region.',
-        metadata: {
-          modelType: 'premium_quality',
-          modelVersionId,
-          reason: message,
-        },
-      });
-      return;
-    }
-
-    await db.query(
-      `UPDATE "MLModelVersion" SET status = 'retired', "updatedAt" = NOW() WHERE id = $1`,
-      [modelVersionId]
-    );
+    await retireModelVersion(db, modelVersionId);
     await recordPipelineEvent(db, {
       pipeline: 'learning',
-      stage: 'premium_retrain_submit',
+      stage: 'premium_retrain_deploy',
       severity: 'error',
-      message: `Premium retrain failed: ${message}`,
+      message: `Premium retrain failed: ${(error as Error).message}`,
       metadata: {
         modelType: 'premium_quality',
         modelVersionId,

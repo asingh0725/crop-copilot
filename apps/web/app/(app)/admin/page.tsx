@@ -35,6 +35,7 @@ interface ModelStatus {
   ndcgScore: number | null;
   feedbackCount: number;
   s3Uri: string | null;
+  backend?: string | null;
 }
 
 interface AdminStatusResponse {
@@ -502,6 +503,11 @@ export default async function AdminPage() {
                       <p>
                         Model: <span className="font-medium text-foreground">{model.modelType}</span>
                       </p>
+                      {model.backend && (
+                        <p>
+                          Backend: <span className="font-medium text-foreground">{model.backend}</span>
+                        </p>
+                      )}
                       <p>
                         Trained: <span className="font-medium text-foreground">{timeAgo(model.trainedAt)}</span>
                       </p>

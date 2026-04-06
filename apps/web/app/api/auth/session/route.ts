@@ -5,6 +5,7 @@ import {
   readCognitoCookiesFromRequest,
   writeCognitoCookies,
 } from '@/lib/auth/cognito-cookies';
+import { buildLocalSession, isLocalAuthRequest } from '@/lib/auth/local-auth';
 import { refreshSession } from '@/lib/auth/cognito-public';
 import { getAuthProvider } from '@/lib/auth/provider';
 
@@ -12,7 +13,20 @@ export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
-  if (getAuthProvider() !== 'cognito') {
+  const provider = getAuthProvider();
+
+  if (provider === 'local') {
+    if (!isLocalAuthRequest(request)) {
+      return NextResponse.json(
+        { error: { message: 'Local auth is restricted to localhost development.' } },
+        { status: 403 }
+      );
+    }
+
+    return NextResponse.json({ session: buildLocalSession() });
+  }
+
+  if (provider !== 'cognito') {
     return NextResponse.json({ session: null });
   }
 

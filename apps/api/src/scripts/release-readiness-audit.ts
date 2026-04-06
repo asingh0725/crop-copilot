@@ -173,7 +173,7 @@ async function fetchMetrics(db: Client): Promise<Record<string, unknown>> {
                 AND EXISTS (
                   SELECT 1
                   FROM jsonb_array_elements(COALESCE(rpi.checks, '[]'::jsonb)) c
-                  WHERE c->>'id' = 'diagnosis_quality'
+                  WHERE c->>'id' IN ('diagnosis_quality', 'premium_quality_confidence')
                 )
             )::text AS quality_check_present
           FROM "RecommendationPremiumInsight" rpi

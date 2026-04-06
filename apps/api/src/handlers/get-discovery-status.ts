@@ -48,6 +48,8 @@ interface MLModelRow {
   feedbackCount: number;
   ndcgScore: number | null;
   s3Uri: string | null;
+  backend: string | null;
+  metrics: unknown;
   status: string;
   createdAt: string;
 }
@@ -994,7 +996,7 @@ export function buildGetDiscoveryStatusHandler(verifier?: AuthVerifier): APIGate
 
       // ── Phase 3: ML model stats ─────────────────────────────────────────────
       const mlResult = await db.query<MLModelRow>(`
-        SELECT id, "modelType", "trainedAt", "feedbackCount", "ndcgScore", "s3Uri", status, "createdAt"
+        SELECT id, "modelType", "trainedAt", "feedbackCount", "ndcgScore", "s3Uri", backend, metrics, status, "createdAt"
         FROM "MLModelVersion"
         WHERE "modelType" = 'lambdarank'
         ORDER BY "trainedAt" DESC
@@ -1003,7 +1005,7 @@ export function buildGetDiscoveryStatusHandler(verifier?: AuthVerifier): APIGate
       const latestModel = mlResult.rows[0] ?? null;
 
       const premiumModelResult = await db.query<MLModelRow>(`
-        SELECT id, "modelType", "trainedAt", "feedbackCount", "ndcgScore", "s3Uri", status, "createdAt"
+        SELECT id, "modelType", "trainedAt", "feedbackCount", "ndcgScore", "s3Uri", backend, metrics, status, "createdAt"
         FROM "MLModelVersion"
         WHERE "modelType" = 'premium_quality'
         ORDER BY "trainedAt" DESC
@@ -1084,6 +1086,8 @@ export function buildGetDiscoveryStatusHandler(verifier?: AuthVerifier): APIGate
                 feedbackCount: Number(latestModel.feedbackCount),
                 ndcgScore: latestModel.ndcgScore != null ? Number(latestModel.ndcgScore) : null,
                 s3Uri: latestModel.s3Uri ?? null,
+                backend: latestModel.backend ?? null,
+                metrics: latestModel.metrics ?? null,
               }
             : null,
           latestPremiumModel: latestPremiumModel
@@ -1098,6 +1102,8 @@ export function buildGetDiscoveryStatusHandler(verifier?: AuthVerifier): APIGate
                     ? Number(latestPremiumModel.ndcgScore)
                     : null,
                 s3Uri: latestPremiumModel.s3Uri ?? null,
+                backend: latestPremiumModel.backend ?? null,
+                metrics: latestPremiumModel.metrics ?? null,
               }
             : null,
           // App analytics
